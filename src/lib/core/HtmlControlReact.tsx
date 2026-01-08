@@ -63,7 +63,7 @@ export function HtmlControlReact({
       }
       controlRef.current = null;
     };
-  }, [map]);
+  }, [map, position, onStateChange]);
 
   // Update HTML content when it changes
   useEffect(() => {
