@@ -68,7 +68,7 @@ export function ColorbarReact({
       }
       controlRef.current = null;
     };
-  }, [map]);
+  }, [map, position, onStateChange]);
 
   // Update options when they change
   useEffect(() => {
