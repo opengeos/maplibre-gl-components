@@ -53,6 +53,8 @@ export function HtmlControlReact({
       control.on('update', handleChange);
       control.on('show', handleChange);
       control.on('hide', handleChange);
+      control.on('expand', handleChange);
+      control.on('collapse', handleChange);
     }
 
     map.addControl(control, position);
@@ -78,12 +80,17 @@ export function HtmlControlReact({
       // Only pass defined values to avoid overwriting defaults with undefined
       const updates: Partial<typeof options> = {};
       if (options.visible !== undefined) updates.visible = options.visible;
+      if (options.title !== undefined) updates.title = options.title;
+      if (options.collapsible !== undefined) updates.collapsible = options.collapsible;
+      if (options.collapsed !== undefined) updates.collapsed = options.collapsed;
       if (options.backgroundColor !== undefined) updates.backgroundColor = options.backgroundColor;
       if (options.padding !== undefined) updates.padding = options.padding;
       if (options.borderRadius !== undefined) updates.borderRadius = options.borderRadius;
       if (options.opacity !== undefined) updates.opacity = options.opacity;
       if (options.maxWidth !== undefined) updates.maxWidth = options.maxWidth;
       if (options.maxHeight !== undefined) updates.maxHeight = options.maxHeight;
+      if (options.fontSize !== undefined) updates.fontSize = options.fontSize;
+      if (options.fontColor !== undefined) updates.fontColor = options.fontColor;
 
       if (Object.keys(updates).length > 0) {
         controlRef.current.update(updates);
@@ -91,12 +98,17 @@ export function HtmlControlReact({
     }
   }, [
     options.visible,
+    options.title,
+    options.collapsible,
+    options.collapsed,
     options.backgroundColor,
     options.padding,
     options.borderRadius,
     options.opacity,
     options.maxWidth,
     options.maxHeight,
+    options.fontSize,
+    options.fontColor,
   ]);
 
   return null;

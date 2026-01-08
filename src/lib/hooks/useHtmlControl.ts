@@ -3,6 +3,7 @@ import type { HtmlControlState } from '../core/types';
 
 const DEFAULT_STATE: HtmlControlState = {
   visible: true,
+  collapsed: false,
   html: '',
 };
 
@@ -14,7 +15,7 @@ const DEFAULT_STATE: HtmlControlState = {
  *
  * @example
  * ```tsx
- * const { state, setHtml, show, hide, toggle } = useHtmlControl({
+ * const { state, setHtml, show, hide, expand, collapse } = useHtmlControl({
  *   html: '<div>Initial content</div>'
  * });
  *
@@ -23,6 +24,8 @@ const DEFAULT_STATE: HtmlControlState = {
  *     map={map}
  *     html={state.html}
  *     visible={state.visible}
+ *     collapsed={state.collapsed}
+ *     collapsible={true}
  *   />
  * );
  * ```
@@ -49,8 +52,24 @@ export function useHtmlControl(initialState?: Partial<HtmlControlState>) {
     setState((prev) => ({ ...prev, visible: false }));
   }, []);
 
-  const toggle = useCallback(() => {
+  const toggleVisibility = useCallback(() => {
     setState((prev) => ({ ...prev, visible: !prev.visible }));
+  }, []);
+
+  const setCollapsed = useCallback((collapsed: boolean) => {
+    setState((prev) => ({ ...prev, collapsed }));
+  }, []);
+
+  const expand = useCallback(() => {
+    setState((prev) => ({ ...prev, collapsed: false }));
+  }, []);
+
+  const collapse = useCallback(() => {
+    setState((prev) => ({ ...prev, collapsed: true }));
+  }, []);
+
+  const toggle = useCallback(() => {
+    setState((prev) => ({ ...prev, collapsed: !prev.collapsed }));
   }, []);
 
   const reset = useCallback(() => {
@@ -62,9 +81,13 @@ export function useHtmlControl(initialState?: Partial<HtmlControlState>) {
     setState,
     setVisible,
     setHtml,
+    setCollapsed,
     show,
     hide,
+    expand,
+    collapse,
     toggle,
+    toggleVisibility,
     reset,
   };
 }
