@@ -295,7 +295,7 @@ export class HtmlControl implements IControl {
     // Apply container styles
     // When collapsed with header, use minimal vertical padding
     const isCollapsedWithHeader = this._state.collapsed && (title || collapsible);
-    const vertPadding = isCollapsedWithHeader ? 6 : padding;
+    const vertPadding = isCollapsedWithHeader ? 4 : padding;
     Object.assign(this._container.style, {
       backgroundColor,
       opacity: String(opacity),

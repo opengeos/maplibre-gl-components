@@ -49,7 +49,6 @@ const DEFAULT_OPTIONS: Required<LegendOptions> = {
  */
 export class Legend implements IControl {
   private _container?: HTMLElement;
-  private _contentEl?: HTMLElement;
   private _options: Required<LegendOptions>;
   private _state: LegendState;
   private _eventHandlers: Map<ComponentEvent, Set<ComponentEventHandler<LegendState>>> = new Map();
@@ -86,7 +85,6 @@ export class Legend implements IControl {
   onRemove(): void {
     this._container?.parentNode?.removeChild(this._container);
     this._container = undefined;
-    this._contentEl = undefined;
     this._eventHandlers.clear();
   }
 
@@ -122,10 +120,7 @@ export class Legend implements IControl {
   expand(): void {
     if (this._state.collapsed) {
       this._state.collapsed = false;
-      if (this._contentEl) {
-        this._contentEl.style.display = 'block';
-      }
-      this._updateToggleIcon();
+      this._render();
       this._emit('expand');
     }
   }
@@ -136,10 +131,7 @@ export class Legend implements IControl {
   collapse(): void {
     if (!this._state.collapsed) {
       this._state.collapsed = true;
-      if (this._contentEl) {
-        this._contentEl.style.display = 'none';
-      }
-      this._updateToggleIcon();
+      this._render();
       this._emit('collapse');
     }
   }
@@ -337,16 +329,6 @@ export class Legend implements IControl {
   }
 
   /**
-   * Updates the toggle icon based on collapsed state.
-   */
-  private _updateToggleIcon(): void {
-    const toggle = this._container?.querySelector('.maplibre-gl-legend-toggle');
-    if (toggle) {
-      toggle.innerHTML = this._state.collapsed ? '&#9654;' : '&#9660;';
-    }
-  }
-
-  /**
    * Renders the legend content.
    */
   private _render(): void {
@@ -369,14 +351,18 @@ export class Legend implements IControl {
     this._container.innerHTML = '';
 
     // Apply container styles
+    // When collapsed with header, use minimal vertical padding to match HtmlControl
+    const isCollapsedWithHeader = this._state.collapsed && (title || collapsible);
+    const vertPadding = isCollapsedWithHeader ? 4 : padding;
     Object.assign(this._container.style, {
       backgroundColor,
       opacity: opacity.toString(),
       borderRadius: `${borderRadius}px`,
-      padding: `${padding}px`,
+      padding: `${vertPadding}px ${padding}px`,
       fontSize: `${fontSize}px`,
       color: fontColor,
-      width: `${width}px`,
+      width: isCollapsedWithHeader ? 'auto' : `${width}px`,
+      maxWidth: `${width}px`,
       boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.1)',
       display: this._state.visible ? 'block' : 'none',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -390,7 +376,7 @@ export class Legend implements IControl {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: '8px',
+        paddingBottom: this._state.collapsed ? '0' : '4px',
         cursor: collapsible ? 'pointer' : 'default',
       });
 
@@ -422,7 +408,6 @@ export class Legend implements IControl {
       overflowY: 'auto',
       display: this._state.collapsed ? 'none' : 'block',
     });
-    this._contentEl = content;
 
     // Render legend items
     this._state.items.forEach((item) => {

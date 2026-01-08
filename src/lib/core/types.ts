@@ -239,6 +239,10 @@ export interface HtmlControlOptions {
   maxWidth?: number;
   /** Maximum height of the container. */
   maxHeight?: number;
+  /** Font size for labels in pixels. */
+  fontSize?: number;
+  /** Font color for labels. */
+  fontColor?: string;
 }
 
 /**
