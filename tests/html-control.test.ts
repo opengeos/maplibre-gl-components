@@ -22,6 +22,7 @@ describe('HtmlControl', () => {
       const ctrl = new HtmlControl();
       const state = ctrl.getState();
       expect(state.visible).toBe(true);
+      expect(state.collapsed).toBe(false);
       expect(state.html).toBe('');
     });
 
@@ -61,6 +62,96 @@ describe('HtmlControl', () => {
       expect(control.getState().visible).toBe(true);
       control.hide();
       expect(control.getState().visible).toBe(false);
+    });
+  });
+
+  describe('collapsible', () => {
+    it('should create collapsible control', () => {
+      const ctrl = new HtmlControl({
+        html: '<div>Content</div>',
+        title: 'Info Panel',
+        collapsible: true,
+        collapsed: false,
+      });
+      const container = ctrl.onAdd(mockMap);
+
+      expect(container.querySelector('.maplibre-gl-html-control-header')).not.toBeNull();
+      expect(container.querySelector('.maplibre-gl-html-control-toggle')).not.toBeNull();
+      expect(ctrl.getState().collapsed).toBe(false);
+    });
+
+    it('should start collapsed when configured', () => {
+      const ctrl = new HtmlControl({
+        html: '<div>Content</div>',
+        collapsible: true,
+        collapsed: true,
+      });
+      ctrl.onAdd(mockMap);
+
+      expect(ctrl.getState().collapsed).toBe(true);
+    });
+
+    it('should expand the control', () => {
+      const ctrl = new HtmlControl({
+        html: '<div>Content</div>',
+        collapsible: true,
+        collapsed: true,
+      });
+      ctrl.onAdd(mockMap);
+
+      expect(ctrl.getState().collapsed).toBe(true);
+      ctrl.expand();
+      expect(ctrl.getState().collapsed).toBe(false);
+    });
+
+    it('should collapse the control', () => {
+      const ctrl = new HtmlControl({
+        html: '<div>Content</div>',
+        collapsible: true,
+        collapsed: false,
+      });
+      ctrl.onAdd(mockMap);
+
+      expect(ctrl.getState().collapsed).toBe(false);
+      ctrl.collapse();
+      expect(ctrl.getState().collapsed).toBe(true);
+    });
+
+    it('should toggle the collapsed state', () => {
+      const ctrl = new HtmlControl({
+        html: '<div>Content</div>',
+        collapsible: true,
+        collapsed: false,
+      });
+      ctrl.onAdd(mockMap);
+
+      expect(ctrl.getState().collapsed).toBe(false);
+      ctrl.toggle();
+      expect(ctrl.getState().collapsed).toBe(true);
+      ctrl.toggle();
+      expect(ctrl.getState().collapsed).toBe(false);
+    });
+
+    it('should emit collapse and expand events', () => {
+      const collapseHandler = vi.fn();
+      const expandHandler = vi.fn();
+      const ctrl = new HtmlControl({
+        html: '<div>Content</div>',
+        collapsible: true,
+      });
+      ctrl.on('collapse', collapseHandler);
+      ctrl.on('expand', expandHandler);
+      ctrl.onAdd(mockMap);
+
+      ctrl.collapse();
+      expect(collapseHandler).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'collapse' })
+      );
+
+      ctrl.expand();
+      expect(expandHandler).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'expand' })
+      );
     });
   });
 

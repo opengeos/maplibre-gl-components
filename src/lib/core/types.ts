@@ -215,12 +215,18 @@ export interface HtmlControlOptions {
   html?: string;
   /** Or provide an element directly. */
   element?: HTMLElement;
+  /** Title for the control header (shown when collapsible). */
+  title?: string;
   /** Position on the map. */
   position?: ControlPosition;
   /** Custom CSS class name. */
   className?: string;
   /** Whether the control is initially visible. */
   visible?: boolean;
+  /** Whether the control is collapsible. */
+  collapsible?: boolean;
+  /** Whether the control starts collapsed. */
+  collapsed?: boolean;
   /** Background color of the container. */
   backgroundColor?: string;
   /** Padding inside the container in pixels. */
@@ -241,6 +247,8 @@ export interface HtmlControlOptions {
 export interface HtmlControlState {
   /** Whether the control is visible. */
   visible: boolean;
+  /** Whether the control is collapsed. */
+  collapsed: boolean;
   /** Current HTML content. */
   html: string;
 }

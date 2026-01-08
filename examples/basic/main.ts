@@ -13,6 +13,9 @@ const map = new maplibregl.Map({
 // Add navigation control
 map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
+// Add globe control
+map.addControl(new maplibregl.GlobeControl(), 'top-right');
+
 map.on('load', () => {
   // Add a vertical colorbar (like the elevation example)
   const colorbar = new Colorbar({
@@ -74,15 +77,31 @@ map.on('load', () => {
   });
   map.addControl(legend, 'top-left');
 
-  // Add an HtmlControl for stats
+  // Add a legend with different shape types
+  const shapeLegend = new Legend({
+    title: 'Layer Types',
+    items: [
+      { label: 'Points of Interest', color: '#e74c3c', shape: 'circle' },
+      { label: 'National Parks', color: '#2ecc71', shape: 'square' },
+      { label: 'Rivers', color: '#3498db', shape: 'line' },
+      { label: 'Roads', color: '#95a5a6', shape: 'line' },
+      { label: 'Cities', color: '#9b59b6', shape: 'circle' },
+    ],
+    collapsible: true,
+    collapsed: true,
+    width: 180,
+    position: 'bottom-left',
+  });
+  map.addControl(shapeLegend, 'bottom-left');
+
+  // Add an HtmlControl for stats (with collapsible support)
   const statsControl = new HtmlControl({
+    title: 'Map Statistics',
+    collapsible: true,
     html: `
       <div style="font-size: 13px;">
-        <strong>Map Statistics</strong>
-        <div style="margin-top: 8px;">
-          <div>Zoom: <span id="zoom-level">${map.getZoom().toFixed(2)}</span></div>
-          <div>Center: <span id="center-coords">${map.getCenter().lng.toFixed(4)}, ${map.getCenter().lat.toFixed(4)}</span></div>
-        </div>
+        <div>Zoom: <span id="zoom-level">${map.getZoom().toFixed(2)}</span></div>
+        <div>Center: <span id="center-coords">${map.getCenter().lng.toFixed(4)}, ${map.getCenter().lat.toFixed(4)}</span></div>
       </div>
     `,
     position: 'top-right',

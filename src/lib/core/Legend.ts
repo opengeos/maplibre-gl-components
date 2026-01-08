@@ -275,19 +275,49 @@ export class Legend implements IControl {
    * @returns The swatch element.
    */
   private _createSwatch(item: LegendItem): HTMLElement {
-    const { swatchSize } = this._options;
+    const { swatchSize = 16 } = this._options;
+    const shape = item.shape || 'square';
     const swatch = document.createElement('span');
-    swatch.className = `maplibre-gl-legend-swatch maplibre-gl-legend-swatch-${item.shape || 'square'}`;
+    swatch.className = `maplibre-gl-legend-swatch maplibre-gl-legend-swatch-${shape}`;
 
-    Object.assign(swatch.style, {
-      width: `${swatchSize}px`,
-      height: item.shape === 'line' ? '3px' : `${swatchSize}px`,
-      backgroundColor: item.color,
-      borderRadius: item.shape === 'circle' ? '50%' : item.shape === 'line' ? '0' : '2px',
-      border: item.strokeColor ? `1px solid ${item.strokeColor}` : '1px solid rgba(0,0,0,0.1)',
+    // Base styles
+    const baseStyles: Record<string, string> = {
       flexShrink: '0',
       display: 'inline-block',
-    });
+    };
+
+    if (shape === 'line') {
+      // Line shape: horizontal line with rounded ends
+      Object.assign(swatch.style, {
+        ...baseStyles,
+        width: `${swatchSize}px`,
+        height: '4px',
+        backgroundColor: item.color,
+        borderRadius: '2px',
+        border: 'none',
+        alignSelf: 'center',
+      });
+    } else if (shape === 'circle') {
+      // Circle shape
+      Object.assign(swatch.style, {
+        ...baseStyles,
+        width: `${swatchSize}px`,
+        height: `${swatchSize}px`,
+        backgroundColor: item.color,
+        borderRadius: '50%',
+        border: item.strokeColor ? `2px solid ${item.strokeColor}` : '1px solid rgba(0,0,0,0.1)',
+      });
+    } else {
+      // Square shape (default)
+      Object.assign(swatch.style, {
+        ...baseStyles,
+        width: `${swatchSize}px`,
+        height: `${swatchSize}px`,
+        backgroundColor: item.color,
+        borderRadius: '2px',
+        border: item.strokeColor ? `2px solid ${item.strokeColor}` : '1px solid rgba(0,0,0,0.1)',
+      });
+    }
 
     // If icon is provided, use background image
     if (item.icon) {
@@ -298,6 +328,8 @@ export class Legend implements IControl {
         backgroundPosition: 'center',
         backgroundColor: 'transparent',
         border: 'none',
+        width: `${swatchSize}px`,
+        height: `${swatchSize}px`,
       });
     }
 
