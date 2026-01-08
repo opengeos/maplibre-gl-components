@@ -73,7 +73,13 @@ export function ColorbarReact({
   // Update options when they change
   useEffect(() => {
     if (controlRef.current) {
-      controlRef.current.update(options);
+      // Filter out undefined values to avoid overwriting defaults
+      const updates = Object.fromEntries(
+        Object.entries(options).filter(([, value]) => value !== undefined)
+      );
+      if (Object.keys(updates).length > 0) {
+        controlRef.current.update(updates);
+      }
     }
   }, [
     options.colormap,

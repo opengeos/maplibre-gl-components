@@ -90,7 +90,7 @@ function App() {
       <div
         style={{
           position: 'absolute',
-          top: 60,
+          top: 120,
           right: 10,
           background: 'white',
           padding: 12,

@@ -233,7 +233,14 @@ export class HtmlControl implements IControl {
   private _render(): void {
     if (!this._container) return;
 
-    const { backgroundColor, opacity, borderRadius, padding, maxWidth, maxHeight } = this._options;
+    const {
+      backgroundColor = 'rgba(255, 255, 255, 0.9)',
+      opacity = 1,
+      borderRadius = 4,
+      padding = 10,
+      maxWidth = 300,
+      maxHeight = 400,
+    } = this._options;
 
     // Clear existing content
     this._container.innerHTML = '';
@@ -241,7 +248,7 @@ export class HtmlControl implements IControl {
     // Apply container styles
     Object.assign(this._container.style, {
       backgroundColor,
-      opacity: opacity.toString(),
+      opacity: String(opacity),
       borderRadius: `${borderRadius}px`,
       padding: `${padding}px`,
       maxWidth: `${maxWidth}px`,

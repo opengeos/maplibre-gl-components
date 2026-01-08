@@ -75,15 +75,19 @@ export function HtmlControlReact({
   // Update other options when they change
   useEffect(() => {
     if (controlRef.current) {
-      controlRef.current.update({
-        visible: options.visible,
-        backgroundColor: options.backgroundColor,
-        padding: options.padding,
-        borderRadius: options.borderRadius,
-        opacity: options.opacity,
-        maxWidth: options.maxWidth,
-        maxHeight: options.maxHeight,
-      });
+      // Only pass defined values to avoid overwriting defaults with undefined
+      const updates: Partial<typeof options> = {};
+      if (options.visible !== undefined) updates.visible = options.visible;
+      if (options.backgroundColor !== undefined) updates.backgroundColor = options.backgroundColor;
+      if (options.padding !== undefined) updates.padding = options.padding;
+      if (options.borderRadius !== undefined) updates.borderRadius = options.borderRadius;
+      if (options.opacity !== undefined) updates.opacity = options.opacity;
+      if (options.maxWidth !== undefined) updates.maxWidth = options.maxWidth;
+      if (options.maxHeight !== undefined) updates.maxHeight = options.maxHeight;
+
+      if (Object.keys(updates).length > 0) {
+        controlRef.current.update(updates);
+      }
     }
   }, [
     options.visible,
