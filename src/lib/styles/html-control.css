@@ -1,0 +1,71 @@
+/**
+ * HtmlControl Component Styles
+ */
+
+.maplibre-gl-html-control {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+}
+
+.maplibre-gl-html-control-content {
+  overflow: hidden;
+}
+
+/* Common utility styles for HTML content */
+.maplibre-gl-html-control-content h1,
+.maplibre-gl-html-control-content h2,
+.maplibre-gl-html-control-content h3,
+.maplibre-gl-html-control-content h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.maplibre-gl-html-control-content p {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.maplibre-gl-html-control-content p:last-child {
+  margin-bottom: 0;
+}
+
+.maplibre-gl-html-control-content ul,
+.maplibre-gl-html-control-content ol {
+  margin-top: 0;
+  margin-bottom: 8px;
+  padding-left: 20px;
+}
+
+.maplibre-gl-html-control-content a {
+  color: #4a90d9;
+  text-decoration: none;
+}
+
+.maplibre-gl-html-control-content a:hover {
+  text-decoration: underline;
+}
+
+.maplibre-gl-html-control-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+.maplibre-gl-html-control-content table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.maplibre-gl-html-control-content th,
+.maplibre-gl-html-control-content td {
+  border: 1px solid #ddd;
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.maplibre-gl-html-control-content th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}

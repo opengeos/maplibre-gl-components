@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MapLibre GL Components</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .container {
+        max-width: 800px;
+        margin: 40px 20px;
+        padding: 40px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      h1 {
+        margin: 0 0 8px 0;
+        color: #333;
+        font-size: 2.5em;
+      }
+      .subtitle {
+        color: #666;
+        font-size: 1.1em;
+        margin-bottom: 32px;
+      }
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 32px;
+      }
+      .feature {
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+      }
+      .feature h3 {
+        margin: 0 0 8px 0;
+        color: #333;
+      }
+      .feature p {
+        margin: 0;
+        color: #666;
+        font-size: 0.9em;
+      }
+      .examples {
+        margin-top: 32px;
+      }
+      .examples h2 {
+        margin: 0 0 16px 0;
+        color: #333;
+      }
+      .example-links {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .example-link {
+        display: inline-block;
+        padding: 12px 24px;
+        background: #667eea;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: background 0.2s;
+      }
+      .example-link:hover {
+        background: #5a6fd6;
+      }
+      .install {
+        margin-top: 32px;
+        padding: 20px;
+        background: #1e1e1e;
+        border-radius: 8px;
+        color: #e0e0e0;
+      }
+      .install h2 {
+        margin: 0 0 12px 0;
+        color: #fff;
+        font-size: 1.1em;
+      }
+      .install code {
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.95em;
+      }
+      .github {
+        margin-top: 24px;
+        text-align: center;
+      }
+      .github a {
+        color: #667eea;
+        text-decoration: none;
+      }
+      .github a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>MapLibre GL Components</h1>
+      <p class="subtitle">
+        Legend, colorbar, and HTML control components for MapLibre GL JS maps
+      </p>
+
+      <div class="features">
+        <div class="feature">
+          <h3>Colorbar</h3>
+          <p>
+            Continuous gradient legends with built-in matplotlib colormaps. Supports horizontal and
+            vertical orientations.
+          </p>
+        </div>
+        <div class="feature">
+          <h3>Legend</h3>
+          <p>
+            Categorical legends with color swatches and labels. Collapsible with customizable
+            styling.
+          </p>
+        </div>
+        <div class="feature">
+          <h3>HtmlControl</h3>
+          <p>Flexible HTML content control for custom info panels, statistics, and widgets.</p>
+        </div>
+        <div class="feature">
+          <h3>React Support</h3>
+          <p>First-class React components and hooks for seamless integration with React apps.</p>
+        </div>
+      </div>
+
+      <div class="examples">
+        <h2>Examples</h2>
+        <div class="example-links">
+          <a href="./examples/basic/" class="example-link">Basic Example</a>
+          <a href="./examples/react/" class="example-link">React Example</a>
+        </div>
+      </div>
+
+      <div class="install">
+        <h2>Installation</h2>
+        <code>npm install maplibre-gl-components</code>
+      </div>
+
+      <div class="github">
+        <a href="https://github.com/opengeos/maplibre-gl-components" target="_blank">
+          View on GitHub →
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

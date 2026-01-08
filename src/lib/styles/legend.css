@@ -1,0 +1,61 @@
+/**
+ * Legend Component Styles
+ */
+
+.maplibre-gl-legend {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+}
+
+.maplibre-gl-legend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.maplibre-gl-legend-title {
+  font-weight: 600;
+}
+
+.maplibre-gl-legend-toggle {
+  cursor: pointer;
+  user-select: none;
+}
+
+.maplibre-gl-legend-content {
+  overflow-y: auto;
+}
+
+.maplibre-gl-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.maplibre-gl-legend-swatch {
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.maplibre-gl-legend-swatch-square {
+  border-radius: 2px;
+}
+
+.maplibre-gl-legend-swatch-circle {
+  border-radius: 50%;
+}
+
+.maplibre-gl-legend-swatch-line {
+  border-radius: 0;
+}
+
+.maplibre-gl-legend-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
