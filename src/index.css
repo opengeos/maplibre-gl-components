@@ -1,0 +1,9 @@
+/**
+ * MapLibre GL Components - Main CSS entry point
+ * This file imports all component styles
+ */
+
+@import './lib/styles/common.css';
+@import './lib/styles/colorbar.css';
+@import './lib/styles/legend.css';
+@import './lib/styles/html-control.css';

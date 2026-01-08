@@ -1,0 +1,44 @@
+/**
+ * MapLibre GL Components - Common Styles
+ */
+
+/* Base control styling to match MapLibre GL controls */
+.maplibre-gl-colorbar,
+.maplibre-gl-legend,
+.maplibre-gl-html-control {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.maplibre-gl-colorbar *,
+.maplibre-gl-legend *,
+.maplibre-gl-html-control * {
+  box-sizing: border-box;
+}
+
+/* Scrollbar styling */
+.maplibre-gl-legend-content::-webkit-scrollbar,
+.maplibre-gl-colorbar::-webkit-scrollbar,
+.maplibre-gl-html-control::-webkit-scrollbar {
+  width: 6px;
+}
+
+.maplibre-gl-legend-content::-webkit-scrollbar-track,
+.maplibre-gl-colorbar::-webkit-scrollbar-track,
+.maplibre-gl-html-control::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.maplibre-gl-legend-content::-webkit-scrollbar-thumb,
+.maplibre-gl-colorbar::-webkit-scrollbar-thumb,
+.maplibre-gl-html-control::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.maplibre-gl-legend-content::-webkit-scrollbar-thumb:hover,
+.maplibre-gl-colorbar::-webkit-scrollbar-thumb:hover,
+.maplibre-gl-html-control::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}

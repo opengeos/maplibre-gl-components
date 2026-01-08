@@ -1,0 +1,67 @@
+/**
+ * Colorbar Component Styles
+ */
+
+.maplibre-gl-colorbar {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+}
+
+.maplibre-gl-colorbar-label {
+  font-weight: 600;
+  text-align: center;
+}
+
+.maplibre-gl-colorbar-bar-wrapper {
+  display: flex;
+  align-items: stretch;
+}
+
+.maplibre-gl-colorbar-bar {
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.maplibre-gl-colorbar-ticks {
+  display: flex;
+  justify-content: space-between;
+}
+
+.maplibre-gl-colorbar-tick {
+  white-space: nowrap;
+}
+
+/* Horizontal orientation */
+.maplibre-gl-colorbar.horizontal {
+  flex-direction: column;
+}
+
+.maplibre-gl-colorbar.horizontal .maplibre-gl-colorbar-bar-wrapper {
+  flex-direction: column;
+}
+
+.maplibre-gl-colorbar.horizontal .maplibre-gl-colorbar-ticks {
+  flex-direction: row;
+  margin-top: 4px;
+}
+
+/* Vertical orientation */
+.maplibre-gl-colorbar.vertical {
+  flex-direction: row;
+}
+
+.maplibre-gl-colorbar.vertical .maplibre-gl-colorbar-bar-wrapper {
+  flex-direction: row;
+}
+
+.maplibre-gl-colorbar.vertical .maplibre-gl-colorbar-ticks {
+  flex-direction: column-reverse;
+  margin-left: 4px;
+}
+
+.maplibre-gl-colorbar.vertical .maplibre-gl-colorbar-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
