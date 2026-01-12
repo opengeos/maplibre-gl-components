@@ -32,6 +32,8 @@ const DEFAULT_OPTIONS: Required<Omit<ColorbarOptions, 'colorStops'>> & { colorSt
   fontColor: '#333',
   borderRadius: 4,
   padding: 8,
+  minzoom: 0,
+  maxzoom: 24,
 };
 
 /**
@@ -59,6 +61,9 @@ export class Colorbar implements IControl {
   private _state: ColorbarState;
   private _eventHandlers: Map<ComponentEvent, Set<ComponentEventHandler<ColorbarState>>> =
     new Map();
+  private _map?: MapLibreMap;
+  private _handleZoom?: () => void;
+  private _zoomVisible: boolean = true;
 
   /**
    * Creates a new Colorbar instance.
@@ -82,9 +87,18 @@ export class Colorbar implements IControl {
    * @param map - The MapLibre GL map instance.
    * @returns The control's container element.
    */
-  onAdd(_map: MapLibreMap): HTMLElement {
+  onAdd(map: MapLibreMap): HTMLElement {
+    this._map = map;
     this._container = this._createContainer();
     this._render();
+
+    // Set up zoom listener
+    this._handleZoom = () => this._checkZoomVisibility();
+    this._map.on('zoom', this._handleZoom);
+
+    // Check initial zoom
+    this._checkZoomVisibility();
+
     return this._container;
   }
 
@@ -93,6 +107,11 @@ export class Colorbar implements IControl {
    * Implements the IControl interface.
    */
   onRemove(): void {
+    if (this._map && this._handleZoom) {
+      this._map.off('zoom', this._handleZoom);
+      this._handleZoom = undefined;
+    }
+    this._map = undefined;
     this._container?.parentNode?.removeChild(this._container);
     this._container = undefined;
     this._eventHandlers.clear();
@@ -104,9 +123,7 @@ export class Colorbar implements IControl {
   show(): void {
     if (!this._state.visible) {
       this._state.visible = true;
-      if (this._container) {
-        this._container.style.display = 'flex';
-      }
+      this._updateDisplayState();
       this._emit('show');
     }
   }
@@ -117,9 +134,7 @@ export class Colorbar implements IControl {
   hide(): void {
     if (this._state.visible) {
       this._state.visible = false;
-      if (this._container) {
-        this._container.style.display = 'none';
-      }
+      this._updateDisplayState();
       this._emit('hide');
     }
   }
@@ -264,6 +279,31 @@ export class Colorbar implements IControl {
   }
 
   /**
+   * Checks if the current zoom level is within the visibility range.
+   */
+  private _checkZoomVisibility(): void {
+    if (!this._map) return;
+
+    const zoom = this._map.getZoom();
+    const { minzoom, maxzoom } = this._options;
+    const inRange = zoom >= minzoom && zoom <= maxzoom;
+
+    if (inRange !== this._zoomVisible) {
+      this._zoomVisible = inRange;
+      this._updateDisplayState();
+    }
+  }
+
+  /**
+   * Updates the display state based on visibility and zoom level.
+   */
+  private _updateDisplayState(): void {
+    if (!this._container) return;
+    const shouldShow = this._state.visible && this._zoomVisible;
+    this._container.style.display = shouldShow ? 'flex' : 'none';
+  }
+
+  /**
    * Creates the main container element.
    *
    * @returns The container element.
@@ -274,7 +314,8 @@ export class Colorbar implements IControl {
       this._options.className ? ` ${this._options.className}` : ''
     }`;
 
-    if (!this._state.visible) {
+    const shouldShow = this._state.visible && this._zoomVisible;
+    if (!shouldShow) {
       container.style.display = 'none';
     }
 
@@ -306,6 +347,7 @@ export class Colorbar implements IControl {
     this._container.innerHTML = '';
 
     // Apply container styles
+    const shouldShow = this._state.visible && this._zoomVisible;
     Object.assign(this._container.style, {
       backgroundColor,
       opacity: opacity.toString(),
@@ -313,7 +355,7 @@ export class Colorbar implements IControl {
       padding: `${padding}px`,
       fontSize: `${fontSize}px`,
       color: fontColor,
-      display: this._state.visible ? 'flex' : 'none',
+      display: shouldShow ? 'flex' : 'none',
       flexDirection: isVertical ? 'row' : 'column',
       alignItems: 'stretch',
       gap: '6px',

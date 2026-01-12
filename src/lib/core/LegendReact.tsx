@@ -93,6 +93,8 @@ export function LegendReact({
     options.fontSize,
     options.fontColor,
     options.swatchSize,
+    options.minzoom,
+    options.maxzoom,
   ]);
 
   return null;

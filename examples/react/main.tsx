@@ -205,6 +205,22 @@ function App() {
             position="bottom-left"
           />
 
+          <LegendReact
+            map={map}
+            title="Lidar Point Cloud (8)"
+            items={[
+              { label: 'QL0 (Approx. <= 0.35m NPS)', color: '#003300', shape: 'square' },
+              { label: 'QL1 (Approx. 0.35m NPS)', color: '#006600', shape: 'square' },
+              { label: 'QL2 (Approx. 0.7m NPS)', color: '#00cc00', shape: 'square' },
+              { label: 'QL3 (Approx. 1.4m NPS)', color: '#ccff00', shape: 'square' },
+              { label: 'Other', color: '#99ccff', shape: 'square' },
+            ]}
+            visible={true}
+            collapsible={false}
+            position="top-left"
+            maxzoom={10}
+          />
+
           <HtmlControlReact
             map={map}
             html={`

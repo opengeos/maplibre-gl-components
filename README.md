@@ -10,6 +10,7 @@ Legend, colorbar, and HTML control components for MapLibre GL JS maps.
 - **Colorbar** - Continuous gradient legends with built-in matplotlib colormaps
 - **Legend** - Categorical legends with color swatches and labels
 - **HtmlControl** - Flexible HTML content control for custom info panels
+- **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
 - **TypeScript** - Full type definitions included
 - **20+ Built-in Colormaps** - viridis, plasma, terrain, jet, and more
@@ -160,6 +161,8 @@ interface ColorbarOptions {
   opacity?: number;
   fontSize?: number;
   fontColor?: string;
+  minzoom?: number;                    // Min zoom level to show (default: 0)
+  maxzoom?: number;                    // Max zoom level to show (default: 24)
 }
 
 // Methods
@@ -190,6 +193,8 @@ interface LegendOptions {
   opacity?: number;
   fontSize?: number;
   fontColor?: string;
+  minzoom?: number;                    // Min zoom level to show (default: 0)
+  maxzoom?: number;                    // Max zoom level to show (default: 24)
 }
 
 interface LegendItem {
@@ -229,6 +234,8 @@ interface HtmlControlOptions {
   opacity?: number;
   maxWidth?: number;
   maxHeight?: number;
+  minzoom?: number;                    // Min zoom level to show (default: 0)
+  maxzoom?: number;                    // Max zoom level to show (default: 24)
 }
 
 // Methods
@@ -292,6 +299,56 @@ const colorbar = new Colorbar({
   vmax: 100,
 });
 ```
+
+## Zoom-based Visibility
+
+All components support `minzoom` and `maxzoom` options to control visibility based on the map's zoom level. This is useful for showing different legends at different zoom levels, similar to how map layers work.
+
+```typescript
+// Show legend only when zoomed in (zoom >= 10)
+const detailLegend = new Legend({
+  title: 'Detailed Features',
+  items: [...],
+  minzoom: 10,  // Only visible at zoom 10 and above
+});
+
+// Show legend only when zoomed out (zoom <= 8)
+const overviewLegend = new Legend({
+  title: 'Overview',
+  items: [...],
+  maxzoom: 8,  // Only visible at zoom 8 and below
+});
+
+// Show colorbar only within a specific zoom range
+const colorbar = new Colorbar({
+  colormap: 'viridis',
+  vmin: 0,
+  vmax: 100,
+  minzoom: 5,   // Visible from zoom 5...
+  maxzoom: 15,  // ...up to zoom 15
+});
+```
+
+### React Example
+
+```tsx
+<LegendReact
+  map={map}
+  title="Lidar Point Cloud"
+  items={[
+    { label: 'QL0 (Approx. <= 0.35m NPS)', color: '#003300' },
+    { label: 'QL1 (Approx. 0.35m NPS)', color: '#006600' },
+    { label: 'QL2 (Approx. 0.7m NPS)', color: '#00cc00' },
+    { label: 'QL3 (Approx. 1.4m NPS)', color: '#ccff00' },
+    { label: 'Other', color: '#99ccff' },
+  ]}
+  minzoom={8}
+  maxzoom={18}
+  position="top-left"
+/>
+```
+
+**Note:** The `visible` option takes precedence - if `visible` is `false`, the component will be hidden regardless of zoom level.
 
 ## React Hooks
 

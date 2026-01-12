@@ -96,6 +96,8 @@ export function ColorbarReact({
     options.opacity,
     options.fontSize,
     options.fontColor,
+    options.minzoom,
+    options.maxzoom,
   ]);
 
   return null;

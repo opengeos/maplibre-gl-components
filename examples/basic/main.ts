@@ -42,6 +42,7 @@ map.on('load', () => {
     barLength: 200,
     barThickness: 15,
     position: 'bottom-left',
+    maxzoom: 8,
   });
   map.addControl(temperatureBar, 'bottom-left');
 
@@ -93,6 +94,23 @@ map.on('load', () => {
     position: 'bottom-left',
   });
   map.addControl(shapeLegend, 'bottom-left');
+
+  // Add a legend with zoom visibility control
+  const lidarLegend = new Legend({
+    title: 'LiDAR Point Cloud',
+    items: [
+      { label: 'QL0 (Approx. <= 0.35m NPS)', color: '#003300', shape: 'square' },
+      { label: 'QL1 (Approx. 0.35m NPS)', color: '#006600', shape: 'square' },
+      { label: 'QL2 (Approx. 0.7m NPS)', color: '#00cc00', shape: 'square' },
+      { label: 'QL3 (Approx. 1.4m NPS)', color: '#ccff00', shape: 'square' },
+      { label: 'Other', color: '#99ccff', shape: 'square' },
+    ],
+    collapsible: true,
+    width: 220,
+    position: 'top-left',
+    maxzoom: 10, // Always visible (default max is 24)
+  });
+  map.addControl(lidarLegend, 'top-left');
 
   // Add an HtmlControl for stats (with collapsible support)
   const statsControl = new HtmlControl({

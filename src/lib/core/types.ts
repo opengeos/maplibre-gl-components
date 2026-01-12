@@ -105,6 +105,10 @@ export interface ColorbarOptions {
   borderRadius?: number;
   /** Padding inside the container. */
   padding?: number;
+  /** Minimum zoom level at which the colorbar is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the colorbar is visible. */
+  maxzoom?: number;
 }
 
 /**
@@ -183,6 +187,10 @@ export interface LegendOptions {
   borderRadius?: number;
   /** Padding inside the container. */
   padding?: number;
+  /** Minimum zoom level at which the legend is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the legend is visible. */
+  maxzoom?: number;
 }
 
 /**
@@ -243,6 +251,10 @@ export interface HtmlControlOptions {
   fontSize?: number;
   /** Font color for labels. */
   fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
 }
 
 /**

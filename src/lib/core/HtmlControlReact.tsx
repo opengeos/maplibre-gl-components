@@ -91,6 +91,8 @@ export function HtmlControlReact({
       if (options.maxHeight !== undefined) updates.maxHeight = options.maxHeight;
       if (options.fontSize !== undefined) updates.fontSize = options.fontSize;
       if (options.fontColor !== undefined) updates.fontColor = options.fontColor;
+      if (options.minzoom !== undefined) updates.minzoom = options.minzoom;
+      if (options.maxzoom !== undefined) updates.maxzoom = options.maxzoom;
 
       if (Object.keys(updates).length > 0) {
         controlRef.current.update(updates);
@@ -109,6 +111,8 @@ export function HtmlControlReact({
     options.maxHeight,
     options.fontSize,
     options.fontColor,
+    options.minzoom,
+    options.maxzoom,
   ]);
 
   return null;
