@@ -375,6 +375,41 @@ npm run build
 npm run build:examples
 ```
 
+## Docker
+
+The examples can be run using Docker. The image is automatically built and published to GitHub Container Registry.
+
+### Pull and Run
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/opengeos/maplibre-gl-components:latest
+
+# Run the container
+docker run -p 8080:80 ghcr.io/opengeos/maplibre-gl-components:latest
+```
+
+Then open http://localhost:8080/maplibre-gl-components/ in your browser to view the examples.
+
+### Build Locally
+
+```bash
+# Build the image
+docker build -t maplibre-gl-components .
+
+# Run the container
+docker run -p 8080:80 maplibre-gl-components
+```
+
+### Available Tags
+
+| Tag | Description |
+|-----|-------------|
+| `latest` | Latest release |
+| `x.y.z` | Specific version (e.g., `1.0.0`) |
+| `x.y` | Minor version (e.g., `1.0`) |
+
+
 ## License
 
 MIT License - see [LICENSE](./LICENSE) for details.
