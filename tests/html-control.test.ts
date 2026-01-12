@@ -14,6 +14,9 @@ describe('HtmlControl', () => {
       addControl: vi.fn(),
       removeControl: vi.fn(),
       hasControl: vi.fn().mockReturnValue(true),
+      on: vi.fn(),
+      off: vi.fn(),
+      getZoom: vi.fn().mockReturnValue(10),
     };
   });
 
