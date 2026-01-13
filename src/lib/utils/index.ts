@@ -14,3 +14,13 @@ export {
   getColorAtPosition,
   generateGradientCSS,
 } from './color';
+
+export {
+  XYZSERVICES_URL,
+  buildTileUrl,
+  generateThumbnailUrl,
+  parseProviders,
+  fetchProviders,
+  groupBasemaps,
+  filterBasemaps,
+} from './providers';

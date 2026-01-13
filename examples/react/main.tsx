@@ -6,10 +6,12 @@ import {
   ColorbarReact,
   LegendReact,
   HtmlControlReact,
+  BasemapReact,
   useColorbar,
   useLegend,
+  useBasemap,
 } from '../../src/react';
-import type { ColormapName } from '../../src';
+import type { ColormapName, BasemapItem } from '../../src';
 
 const COLORMAP_OPTIONS: ColormapName[] = [
   'viridis',
@@ -49,6 +51,13 @@ function App() {
       { label: 'High', color: '#b2182b', shape: 'square' },
     ],
   });
+
+  const basemapState = useBasemap({
+    selectedBasemap: 'OpenStreetMap.Mapnik',
+    collapsed: true,
+  });
+
+  const [currentBasemap, setCurrentBasemap] = useState<string>('OpenStreetMap.Mapnik');
 
   // Initialize map
   useEffect(() => {
@@ -182,6 +191,22 @@ function App() {
       {/* Map Controls */}
       {map && (
         <>
+          <BasemapReact
+            map={map}
+            defaultBasemap={currentBasemap}
+            showSearch
+            collapsible
+            displayMode="dropdown"
+            filterGroups={['OpenStreetMap', 'CartoDB', 'Stadia', 'OpenTopoMap', 'Esri']}
+            excludeBroken
+            position="top-left"
+            maxHeight={300}
+            onBasemapChange={(basemap: BasemapItem) => {
+              setCurrentBasemap(basemap.id);
+              console.log('React: Basemap changed to:', basemap.name);
+            }}
+          />
+
           <ColorbarReact
             map={map}
             colormap={colorbarState.state.colormap}

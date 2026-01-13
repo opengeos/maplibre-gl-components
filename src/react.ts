@@ -2,9 +2,10 @@
 export { ColorbarReact } from './lib/core/ColorbarReact';
 export { LegendReact } from './lib/core/LegendReact';
 export { HtmlControlReact } from './lib/core/HtmlControlReact';
+export { BasemapReact } from './lib/core/BasemapReact';
 
 // React hooks
-export { useColorbar, useLegend, useHtmlControl } from './lib/hooks';
+export { useColorbar, useLegend, useHtmlControl, useBasemap } from './lib/hooks';
 
 // Re-export types for React consumers
 export type {
@@ -18,6 +19,12 @@ export type {
   HtmlControlOptions,
   HtmlControlState,
   HtmlControlReactProps,
+  BasemapControlOptions,
+  BasemapControlState,
+  BasemapControlReactProps,
+  BasemapItem,
+  BasemapDisplayMode,
+  BasemapEvent,
   ColormapName,
   ColorStop,
   ControlPosition,

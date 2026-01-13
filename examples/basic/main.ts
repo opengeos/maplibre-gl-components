@@ -1,6 +1,6 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Colorbar, Legend, HtmlControl } from '../../src';
+import { Colorbar, Legend, HtmlControl, BasemapControl } from '../../src';
 
 // Initialize map
 const map = new maplibregl.Map({
@@ -15,6 +15,23 @@ map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
 // Add globe control
 map.addControl(new maplibregl.GlobeControl(), 'top-right');
+
+// Add basemap control - fetches from xyzservices by default
+const basemapControl = new BasemapControl({
+  defaultBasemap: 'OpenStreetMap.Mapnik',
+  showSearch: true,
+  collapsible: true,
+  displayMode: 'dropdown',
+  filterGroups: ['OpenStreetMap', 'CartoDB', 'OpenTopoMap', 'Esri', 'Google'],
+  excludeBroken: true,
+  maxHeight: 400,
+});
+map.addControl(basemapControl, 'top-right');
+
+// Listen for basemap changes
+basemapControl.on('basemapchange', (event) => {
+  console.log('Basemap changed to:', event.basemap?.name);
+});
 
 map.on('load', () => {
   // Add a vertical colorbar (like the elevation example)

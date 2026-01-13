@@ -1,0 +1,266 @@
+/**
+ * Basemap Control Styles
+ */
+
+.maplibre-gl-basemap {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Icon button for collapsed state */
+.maplibre-gl-basemap-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #333;
+  transition: color 0.15s;
+}
+
+.maplibre-gl-basemap-icon-button:hover {
+  color: #0078d7;
+}
+
+.maplibre-gl-basemap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.maplibre-gl-basemap-title {
+  font-weight: 600;
+}
+
+.maplibre-gl-basemap-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #666;
+  border-radius: 4px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.maplibre-gl-basemap-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+.maplibre-gl-basemap-content {
+  overflow-y: auto;
+}
+
+.maplibre-gl-basemap-search {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: inherit;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.maplibre-gl-basemap-search:focus {
+  border-color: #0078d7;
+  box-shadow: 0 0 0 2px rgba(0, 120, 215, 0.2);
+}
+
+/* List mode */
+.maplibre-gl-basemap-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.maplibre-gl-basemap-group {
+  font-weight: 600;
+  padding: 8px 0 4px;
+  color: #666;
+  font-size: 0.9em;
+  border-top: 1px solid #eee;
+}
+
+.maplibre-gl-basemap-group:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.maplibre-gl-basemap-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+}
+
+.maplibre-gl-basemap-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.maplibre-gl-basemap-item--selected {
+  background: rgba(0, 120, 215, 0.1);
+}
+
+.maplibre-gl-basemap-item--selected:hover {
+  background: rgba(0, 120, 215, 0.15);
+}
+
+.maplibre-gl-basemap-item-radio {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+/* Gallery mode */
+.maplibre-gl-basemap-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 8px;
+}
+
+.maplibre-gl-basemap-gallery-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+}
+
+.maplibre-gl-basemap-gallery-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.maplibre-gl-basemap-gallery-item--selected {
+  background: rgba(0, 120, 215, 0.1);
+  outline: 2px solid #0078d7;
+}
+
+.maplibre-gl-basemap-thumbnail {
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: #f0f0f0;
+  background-size: cover;
+  background-position: center;
+}
+
+.maplibre-gl-basemap-name {
+  margin-top: 4px;
+  font-size: 0.75em;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 70px;
+}
+
+/* Dropdown mode */
+.maplibre-gl-basemap-dropdown {
+  position: relative;
+}
+
+.maplibre-gl-basemap-dropdown-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  text-align: left;
+}
+
+.maplibre-gl-basemap-dropdown-button:hover {
+  border-color: #ccc;
+}
+
+.maplibre-gl-basemap-dropdown-button:focus {
+  outline: none;
+  border-color: #0078d7;
+  box-shadow: 0 0 0 2px rgba(0, 120, 215, 0.2);
+}
+
+.maplibre-gl-basemap-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+/* Loading and error states */
+.maplibre-gl-basemap-loading {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.maplibre-gl-basemap-error {
+  padding: 10px;
+  color: #d32f2f;
+  font-size: 0.9em;
+}
+
+/* API key badge */
+.maplibre-gl-basemap-apikey-badge {
+  font-size: 0.7em;
+  background: #ff9800;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+
+/* Scrollbar styling for the dropdown menu and list */
+.maplibre-gl-basemap-dropdown-menu::-webkit-scrollbar,
+.maplibre-gl-basemap-list::-webkit-scrollbar,
+.maplibre-gl-basemap-gallery::-webkit-scrollbar {
+  width: 6px;
+}
+
+.maplibre-gl-basemap-dropdown-menu::-webkit-scrollbar-track,
+.maplibre-gl-basemap-list::-webkit-scrollbar-track,
+.maplibre-gl-basemap-gallery::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.maplibre-gl-basemap-dropdown-menu::-webkit-scrollbar-thumb,
+.maplibre-gl-basemap-list::-webkit-scrollbar-thumb,
+.maplibre-gl-basemap-gallery::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.maplibre-gl-basemap-dropdown-menu::-webkit-scrollbar-thumb:hover,
+.maplibre-gl-basemap-list::-webkit-scrollbar-thumb:hover,
+.maplibre-gl-basemap-gallery::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

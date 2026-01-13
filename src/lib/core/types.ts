@@ -298,3 +298,133 @@ export interface ColormapDefinition {
   /** Array of color stops from 0 to 1. */
   colors: ColorStop[];
 }
+
+/**
+ * Display mode for the basemap control.
+ */
+export type BasemapDisplayMode = 'dropdown' | 'gallery' | 'list';
+
+/**
+ * Basemap item definition.
+ */
+export interface BasemapItem {
+  /** Unique identifier for the basemap. */
+  id: string;
+  /** Display name. */
+  name: string;
+  /** Optional group/category for organization. */
+  group?: string;
+  /** Tile URL template for XYZ sources (with {z}, {x}, {y} placeholders). */
+  url?: string;
+  /** MapLibre style URL for vector styles. */
+  style?: string;
+  /** Attribution text. */
+  attribution?: string;
+  /** Optional thumbnail URL for preview. */
+  thumbnail?: string;
+  /** Maximum zoom level. */
+  maxZoom?: number;
+  /** Minimum zoom level. */
+  minZoom?: number;
+  /** Whether this basemap requires an API key. */
+  requiresApiKey?: boolean;
+  /** API key if required. */
+  apiKey?: string;
+  /** Variant name for URL template (e.g., 'light_all' for CartoDB). */
+  variant?: string;
+  /** File extension for URL template (e.g., 'png', 'jpg'). */
+  ext?: string;
+}
+
+/**
+ * Options for configuring the BasemapControl.
+ */
+export interface BasemapControlOptions {
+  /** Array of basemap items to display. */
+  basemaps?: BasemapItem[];
+  /** URL to fetch providers.json from xyzservices. Defaults to xyzservices URL. */
+  providersUrl?: string;
+  /** Initial/default basemap ID. */
+  defaultBasemap?: string;
+  /** Position on the map. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. */
+  visible?: boolean;
+  /** Whether the control is collapsible. */
+  collapsible?: boolean;
+  /** Whether the control starts collapsed. */
+  collapsed?: boolean;
+  /** UI display mode: 'dropdown', 'gallery', or 'list'. */
+  displayMode?: BasemapDisplayMode;
+  /** Whether to show search/filter input. */
+  showSearch?: boolean;
+  /** Filter providers by group names (only include these groups). */
+  filterGroups?: string[];
+  /** Exclude specific provider groups. */
+  excludeGroups?: string[];
+  /** Exclude broken providers (status: "broken"). Default: true. */
+  excludeBroken?: boolean;
+  /** Background color of the container. */
+  backgroundColor?: string;
+  /** Padding inside the container in pixels. */
+  padding?: number;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Maximum width of the container. */
+  maxWidth?: number;
+  /** Maximum height of the container. */
+  maxHeight?: number;
+  /** Font size for labels in pixels. */
+  fontSize?: number;
+  /** Font color for labels. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+  /** Layer ID to insert the basemap layer before (for layer ordering). */
+  beforeId?: string;
+  /** Whether to place basemap below labels (before first symbol layer). Default: false. */
+  belowLabels?: boolean;
+}
+
+/**
+ * Internal state of the BasemapControl.
+ */
+export interface BasemapControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the control is collapsed. */
+  collapsed: boolean;
+  /** Currently selected basemap ID. */
+  selectedBasemap: string | null;
+  /** Search/filter text. */
+  searchText: string;
+  /** Loading state for async operations. */
+  loading: boolean;
+  /** Error message if any. */
+  error: string | null;
+  /** Whether basemap is placed below labels. */
+  belowLabels: boolean;
+}
+
+/**
+ * Props for the React BasemapControl wrapper component.
+ */
+export interface BasemapControlReactProps extends BasemapControlOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when basemap changes. */
+  onBasemapChange?: (basemap: BasemapItem) => void;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: BasemapControlState) => void;
+}
+
+/**
+ * Basemap-specific event types.
+ */
+export type BasemapEvent = ComponentEvent | 'basemapchange';

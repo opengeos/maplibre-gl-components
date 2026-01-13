@@ -1,6 +1,6 @@
 # maplibre-gl-components
 
-Legend, colorbar, and HTML control components for MapLibre GL JS maps.
+Legend, colorbar, basemap switcher, and HTML control components for MapLibre GL JS maps.
 
 [![npm version](https://badge.fury.io/js/maplibre-gl-components.svg)](https://badge.fury.io/js/maplibre-gl-components)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -9,6 +9,7 @@ Legend, colorbar, and HTML control components for MapLibre GL JS maps.
 
 - **Colorbar** - Continuous gradient legends with built-in matplotlib colormaps
 - **Legend** - Categorical legends with color swatches and labels
+- **BasemapControl** - Interactive basemap switcher with 100+ providers from xyzservices
 - **HtmlControl** - Flexible HTML content control for custom info panels
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
@@ -27,7 +28,7 @@ npm install maplibre-gl-components
 
 ```typescript
 import maplibregl from 'maplibre-gl';
-import { Colorbar, Legend, HtmlControl } from 'maplibre-gl-components';
+import { Colorbar, Legend, HtmlControl, BasemapControl } from 'maplibre-gl-components';
 import 'maplibre-gl-components/style.css';
 
 const map = new maplibregl.Map({
@@ -36,6 +37,14 @@ const map = new maplibregl.Map({
   center: [-98, 38.5],
   zoom: 4,
 });
+
+// Add a basemap switcher
+const basemapControl = new BasemapControl({
+  defaultBasemap: 'OpenStreetMap.Mapnik',
+  showSearch: true,
+  filterGroups: ['OpenStreetMap', 'CartoDB', 'Stadia', 'Esri'],
+});
+map.addControl(basemapControl, 'top-left');
 
 // Add a colorbar
 const colorbar = new Colorbar({
@@ -75,7 +84,7 @@ htmlControl.setHtml('<div><strong>Stats:</strong> 5,678 features</div>');
 ```tsx
 import { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
-import { ColorbarReact, LegendReact, HtmlControlReact } from 'maplibre-gl-components/react';
+import { ColorbarReact, LegendReact, HtmlControlReact, BasemapReact } from 'maplibre-gl-components/react';
 import 'maplibre-gl-components/style.css';
 
 function MyMap() {
@@ -104,6 +113,14 @@ function MyMap() {
 
       {map && (
         <>
+          <BasemapReact
+            map={map}
+            defaultBasemap="OpenStreetMap.Mapnik"
+            showSearch
+            filterGroups={['OpenStreetMap', 'CartoDB', 'Stadia']}
+            position="top-left"
+          />
+
           <ColorbarReact
             map={map}
             colormap="viridis"
@@ -248,6 +265,69 @@ htmlControl.update(options)
 htmlControl.getState()
 ```
 
+### BasemapControl
+
+An interactive basemap switcher that loads providers from [xyzservices](https://github.com/geopandas/xyzservices).
+
+```typescript
+interface BasemapControlOptions {
+  basemaps?: BasemapItem[];            // Custom basemaps array
+  providersUrl?: string;               // URL to fetch providers.json (defaults to xyzservices)
+  defaultBasemap?: string;             // Initial basemap ID (e.g., 'OpenStreetMap.Mapnik')
+  position?: ControlPosition;
+  visible?: boolean;
+  collapsible?: boolean;               // Whether control is collapsible (default: true)
+  collapsed?: boolean;                 // Whether control starts collapsed (default: true)
+  displayMode?: 'dropdown' | 'gallery' | 'list';  // UI mode (default: 'dropdown')
+  showSearch?: boolean;                // Show search input (default: true)
+  filterGroups?: string[];             // Only include these provider groups
+  excludeGroups?: string[];            // Exclude these provider groups
+  excludeBroken?: boolean;             // Exclude broken providers (default: true)
+  backgroundColor?: string;
+  maxWidth?: number;
+  maxHeight?: number;
+  fontSize?: number;
+  fontColor?: string;
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+interface BasemapItem {
+  id: string;                          // Unique identifier
+  name: string;                        // Display name
+  group?: string;                      // Provider group (e.g., 'OpenStreetMap')
+  url?: string;                        // XYZ tile URL template
+  style?: string;                      // MapLibre style URL
+  attribution?: string;
+  thumbnail?: string;                  // Preview image URL
+  maxZoom?: number;
+  minZoom?: number;
+  requiresApiKey?: boolean;
+  apiKey?: string;
+}
+
+// Methods
+basemapControl.show()
+basemapControl.hide()
+basemapControl.expand()
+basemapControl.collapse()
+basemapControl.toggle()
+basemapControl.setBasemap(basemapId)   // Switch to a basemap
+basemapControl.getBasemaps()           // Get available basemaps
+basemapControl.addBasemap(basemap)     // Add a custom basemap
+basemapControl.removeBasemap(id)       // Remove a basemap
+basemapControl.setApiKey(id, key)      // Set API key for a basemap
+basemapControl.getSelectedBasemap()    // Get currently selected basemap
+basemapControl.update(options)
+basemapControl.getState()
+basemapControl.on('basemapchange', handler)  // Listen for basemap changes
+```
+
+**Available Provider Groups:**
+- OpenStreetMap, CartoDB, Stadia, Esri, OpenTopoMap
+- Thunderforest, MapBox, MapTiler (require API keys)
+- NASAGIBS, OpenSeaMap, and 20+ more
+
 ## Built-in Colormaps
 
 ### Sequential
@@ -353,12 +433,13 @@ const colorbar = new Colorbar({
 ## React Hooks
 
 ```typescript
-import { useColorbar, useLegend, useHtmlControl } from 'maplibre-gl-components/react';
+import { useColorbar, useLegend, useHtmlControl, useBasemap } from 'maplibre-gl-components/react';
 
 function MyComponent() {
   const colorbar = useColorbar({ colormap: 'viridis', vmin: 0, vmax: 100 });
   const legend = useLegend({ items: [...] });
   const htmlControl = useHtmlControl({ html: '...' });
+  const basemap = useBasemap({ selectedBasemap: 'OpenStreetMap.Mapnik' });
 
   return (
     <>
@@ -368,9 +449,15 @@ function MyComponent() {
       <button onClick={() => legend.toggle()}>
         Toggle Legend
       </button>
-      <button onClick={() => htmlControl.setHtml('<div>Updated!</div>')}>
-        Update HTML
+      <button onClick={() => basemap.setBasemap('CartoDB.Positron')}>
+        Change Basemap
       </button>
+
+      <BasemapReact
+        map={map}
+        defaultBasemap={basemap.state.selectedBasemap}
+        onBasemapChange={(b) => basemap.setBasemap(b.id)}
+      />
 
       <ColorbarReact
         map={map}
@@ -403,6 +490,11 @@ The default styles can be customized using CSS:
 /* Override HTML control styles */
 .maplibre-gl-html-control {
   max-width: 400px;
+}
+
+/* Override basemap control styles */
+.maplibre-gl-basemap {
+  max-width: 300px;
 }
 ```
 
