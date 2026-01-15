@@ -4,12 +4,14 @@ import './lib/styles/colorbar.css';
 import './lib/styles/legend.css';
 import './lib/styles/html-control.css';
 import './lib/styles/basemap.css';
+import './lib/styles/terrain.css';
 
 // Main entry point - Core exports
 export { Colorbar } from './lib/core/Colorbar';
 export { Legend } from './lib/core/Legend';
 export { HtmlControl } from './lib/core/HtmlControl';
 export { BasemapControl } from './lib/core/Basemap';
+export { TerrainControl } from './lib/core/Terrain';
 
 // Provider utilities
 export {
@@ -81,6 +83,11 @@ export type {
   BasemapItem,
   BasemapDisplayMode,
   BasemapEvent,
+  TerrainControlOptions,
+  TerrainControlState,
+  TerrainEncoding,
+  TerrainEvent,
+  TerrainEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,

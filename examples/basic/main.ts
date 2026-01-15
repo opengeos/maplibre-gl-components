@@ -1,6 +1,6 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Colorbar, Legend, HtmlControl, BasemapControl } from '../../src';
+import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl } from '../../src';
 
 // Initialize map
 const map = new maplibregl.Map({
@@ -8,6 +8,7 @@ const map = new maplibregl.Map({
   style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
   center: [-98, 38.5],
   zoom: 4,
+  maxPitch: 85,
 });
 
 // Add navigation control
@@ -15,6 +16,18 @@ map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
 // Add globe control
 map.addControl(new maplibregl.GlobeControl(), 'top-right');
+
+// Add terrain control - toggle 3D terrain using free AWS Terrarium tiles
+const terrainControl = new TerrainControl({
+  exaggeration: 1.0,
+  hillshade: true,
+});
+map.addControl(terrainControl, 'top-right');
+
+// Listen for terrain changes
+terrainControl.on('terrainchange', (event) => {
+  console.log('Terrain', event.state.enabled ? 'enabled' : 'disabled');
+});
 
 // Add basemap control - fetches from xyzservices by default
 const basemapControl = new BasemapControl({
@@ -167,4 +180,5 @@ map.on('load', () => {
 
 // Log events
 console.log('MapLibre GL Components - Basic Example');
+console.log('Click the terrain button (mountain icon) to toggle 3D terrain.');
 console.log('The colorbar will change to viridis after 5 seconds.');
