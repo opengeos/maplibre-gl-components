@@ -1,0 +1,61 @@
+/**
+ * MapLibre GL Components - Terrain Control Styles
+ */
+
+/* Base terrain control styling */
+.maplibre-gl-terrain {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.maplibre-gl-terrain * {
+  box-sizing: border-box;
+}
+
+/* Toggle button - matches MapLibre GL native controls */
+.maplibre-gl-terrain-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #333;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  border-radius: 4px;
+}
+
+.maplibre-gl-terrain-button:hover {
+  color: #0078d7;
+  background: rgba(0, 120, 215, 0.1);
+}
+
+.maplibre-gl-terrain-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 120, 215, 0.4);
+}
+
+.maplibre-gl-terrain-button:focus:not(:focus-visible) {
+  box-shadow: none;
+}
+
+/* Active state when terrain is enabled */
+.maplibre-gl-terrain-button--active {
+  color: #0078d7;
+  background: rgba(0, 120, 215, 0.15);
+}
+
+.maplibre-gl-terrain-button--active:hover {
+  background: rgba(0, 120, 215, 0.25);
+}
+
+/* Icon sizing */
+.maplibre-gl-terrain-button svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}

@@ -7,9 +7,11 @@ import {
   LegendReact,
   HtmlControlReact,
   BasemapReact,
+  TerrainReact,
   useColorbar,
   useLegend,
   useBasemap,
+  useTerrain,
 } from '../../src/react';
 import type { ColormapName, BasemapItem } from '../../src';
 
@@ -55,6 +57,12 @@ function App() {
   const basemapState = useBasemap({
     selectedBasemap: 'OpenStreetMap.Mapnik',
     collapsed: true,
+  });
+
+  const terrainState = useTerrain({
+    enabled: false,
+    exaggeration: 1.5,
+    hillshade: true,
   });
 
   const [currentBasemap, setCurrentBasemap] = useState<string>('OpenStreetMap.Mapnik');
@@ -177,7 +185,7 @@ function App() {
           </label>
         </div>
 
-        <div>
+        <div style={{ marginBottom: 12 }}>
           <button
             onClick={() => legendState.toggle()}
             disabled={!legendState.state.visible}
@@ -185,6 +193,49 @@ function App() {
           >
             {legendState.state.collapsed ? 'Expand' : 'Collapse'} Legend
           </button>
+        </div>
+
+        <hr style={{ margin: '12px 0', border: 'none', borderTop: '1px solid #ddd' }} />
+
+        <div style={{ fontWeight: 600, marginBottom: 12 }}>Terrain</div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label>
+            <input
+              type="checkbox"
+              checked={terrainState.state.enabled}
+              onChange={(e) => terrainState.setEnabled(e.target.checked)}
+            />{' '}
+            Enable 3D Terrain
+          </label>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: 'block', marginBottom: 4 }}>
+            Exaggeration: {terrainState.state.exaggeration.toFixed(1)}
+          </label>
+          <input
+            type="range"
+            min="0.5"
+            max="3"
+            step="0.1"
+            value={terrainState.state.exaggeration}
+            onChange={(e) => terrainState.setExaggeration(Number(e.target.value))}
+            style={{ width: '100%' }}
+            disabled={!terrainState.state.enabled}
+          />
+        </div>
+
+        <div>
+          <label>
+            <input
+              type="checkbox"
+              checked={terrainState.state.hillshade}
+              onChange={(e) => terrainState.setHillshade(e.target.checked)}
+              disabled={!terrainState.state.enabled}
+            />{' '}
+            Show Hillshade
+          </label>
         </div>
       </div>
 
@@ -204,6 +255,18 @@ function App() {
             onBasemapChange={(basemap: BasemapItem) => {
               setCurrentBasemap(basemap.id);
               console.log('React: Basemap changed to:', basemap.name);
+            }}
+          />
+
+          <TerrainReact
+            map={map}
+            enabled={terrainState.state.enabled}
+            exaggeration={terrainState.state.exaggeration}
+            hillshade={terrainState.state.hillshade}
+            position="top-right"
+            onTerrainChange={(enabled) => {
+              terrainState.setEnabled(enabled);
+              console.log('React: Terrain', enabled ? 'enabled' : 'disabled');
             }}
           />
 

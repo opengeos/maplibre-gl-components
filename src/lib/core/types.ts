@@ -428,3 +428,84 @@ export interface BasemapControlReactProps extends BasemapControlOptions {
  * Basemap-specific event types.
  */
 export type BasemapEvent = ComponentEvent | 'basemapchange';
+
+/**
+ * Terrain encoding format.
+ */
+export type TerrainEncoding = 'terrarium' | 'mapbox';
+
+/**
+ * Options for configuring the TerrainControl.
+ */
+export interface TerrainControlOptions {
+  /** Terrain tile source URL template. Defaults to AWS Terrarium tiles. */
+  sourceUrl?: string;
+  /** Terrain encoding format. Default: 'terrarium'. */
+  encoding?: TerrainEncoding;
+  /** Vertical exaggeration factor for terrain. Default: 1.0. */
+  exaggeration?: number;
+  /** Whether terrain is enabled by default. Default: false. */
+  enabled?: boolean;
+  /** Whether to add hillshade layer for better visualization. Default: true. */
+  hillshade?: boolean;
+  /** Hillshade exaggeration factor (0-1). Default: 0.5. */
+  hillshadeExaggeration?: number;
+  /** Minimum source zoom level for terrain tiles. Default: 0. */
+  sourceMinzoom?: number;
+  /** Maximum source zoom level for terrain tiles. Default: 15. */
+  sourceMaxzoom?: number;
+  /** Tile size for raster-dem source. Default: 256. */
+  tileSize?: number;
+  /** Position on the map. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Background color of the control button. */
+  backgroundColor?: string;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the TerrainControl.
+ */
+export interface TerrainControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether terrain is currently enabled. */
+  enabled: boolean;
+  /** Current exaggeration value. */
+  exaggeration: number;
+  /** Whether hillshade is enabled. */
+  hillshade: boolean;
+}
+
+/**
+ * Props for the React TerrainControl wrapper component.
+ */
+export interface TerrainControlReactProps extends TerrainControlOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when terrain is toggled. */
+  onTerrainChange?: (enabled: boolean) => void;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: TerrainControlState) => void;
+}
+
+/**
+ * Terrain-specific event types.
+ */
+export type TerrainEvent = ComponentEvent | 'terrainchange';
+
+/**
+ * Terrain event handler function type.
+ */
+export type TerrainEventHandler = (event: { type: TerrainEvent; state: TerrainControlState }) => void;

@@ -1,6 +1,6 @@
 # maplibre-gl-components
 
-Legend, colorbar, basemap switcher, and HTML control components for MapLibre GL JS maps.
+Legend, colorbar, basemap switcher, terrain toggle, and HTML control components for MapLibre GL JS maps.
 
 [![npm version](https://badge.fury.io/js/maplibre-gl-components.svg)](https://badge.fury.io/js/maplibre-gl-components)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -10,6 +10,7 @@ Legend, colorbar, basemap switcher, and HTML control components for MapLibre GL 
 - **Colorbar** - Continuous gradient legends with built-in matplotlib colormaps
 - **Legend** - Categorical legends with color swatches and labels
 - **BasemapControl** - Interactive basemap switcher with 100+ providers from xyzservices
+- **TerrainControl** - Toggle 3D terrain on/off using free AWS Terrarium elevation tiles
 - **HtmlControl** - Flexible HTML content control for custom info panels
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
@@ -28,7 +29,7 @@ npm install maplibre-gl-components
 
 ```typescript
 import maplibregl from 'maplibre-gl';
-import { Colorbar, Legend, HtmlControl, BasemapControl } from 'maplibre-gl-components';
+import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl } from 'maplibre-gl-components';
 import 'maplibre-gl-components/style.css';
 
 const map = new maplibregl.Map({
@@ -37,6 +38,13 @@ const map = new maplibregl.Map({
   center: [-98, 38.5],
   zoom: 4,
 });
+
+// Add a terrain toggle control
+const terrainControl = new TerrainControl({
+  exaggeration: 1.5,
+  hillshade: true,
+});
+map.addControl(terrainControl, 'top-right');
 
 // Add a basemap switcher
 const basemapControl = new BasemapControl({
@@ -84,7 +92,7 @@ htmlControl.setHtml('<div><strong>Stats:</strong> 5,678 features</div>');
 ```tsx
 import { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
-import { ColorbarReact, LegendReact, HtmlControlReact, BasemapReact } from 'maplibre-gl-components/react';
+import { ColorbarReact, LegendReact, HtmlControlReact, BasemapReact, TerrainReact } from 'maplibre-gl-components/react';
 import 'maplibre-gl-components/style.css';
 
 function MyMap() {
@@ -113,6 +121,14 @@ function MyMap() {
 
       {map && (
         <>
+          <TerrainReact
+            map={map}
+            exaggeration={1.5}
+            hillshade
+            position="top-right"
+            onTerrainChange={(enabled) => console.log('Terrain:', enabled)}
+          />
+
           <BasemapReact
             map={map}
             defaultBasemap="OpenStreetMap.Mapnik"
@@ -328,6 +344,50 @@ basemapControl.on('basemapchange', handler)  // Listen for basemap changes
 - Thunderforest, MapBox, MapTiler (require API keys)
 - NASAGIBS, OpenSeaMap, and 20+ more
 
+### TerrainControl
+
+A toggle control for 3D terrain rendering using free AWS Terrarium elevation tiles.
+
+```typescript
+interface TerrainControlOptions {
+  sourceUrl?: string;                   // Terrain tile URL (default: AWS Terrarium)
+  encoding?: 'terrarium' | 'mapbox';    // Terrain encoding (default: 'terrarium')
+  exaggeration?: number;                // Vertical scale factor (default: 1.0)
+  enabled?: boolean;                    // Initial terrain state (default: false)
+  hillshade?: boolean;                  // Add hillshade layer (default: true)
+  hillshadeExaggeration?: number;       // Hillshade intensity (default: 0.5)
+  position?: ControlPosition;
+  visible?: boolean;
+  backgroundColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  minzoom?: number;                     // Min zoom level to show (default: 0)
+  maxzoom?: number;                     // Max zoom level to show (default: 24)
+}
+
+// Methods
+terrainControl.show()
+terrainControl.hide()
+terrainControl.enable()                 // Enable terrain
+terrainControl.disable()                // Disable terrain
+terrainControl.toggle()                 // Toggle terrain on/off
+terrainControl.isEnabled()              // Check if terrain is enabled
+terrainControl.setExaggeration(value)   // Set vertical exaggeration (0.1 - 10.0)
+terrainControl.getExaggeration()        // Get current exaggeration
+terrainControl.enableHillshade()        // Enable hillshade layer
+terrainControl.disableHillshade()       // Disable hillshade layer
+terrainControl.toggleHillshade()        // Toggle hillshade layer
+terrainControl.update(options)
+terrainControl.getState()
+terrainControl.on('terrainchange', handler)  // Listen for terrain toggle
+```
+
+**Terrain Source:**
+The control uses free terrain tiles from AWS:
+- URL: `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png`
+- Encoding: Terrarium RGB-encoded elevation data
+- No API key required
+
 ## Built-in Colormaps
 
 ### Sequential
@@ -433,13 +493,14 @@ const colorbar = new Colorbar({
 ## React Hooks
 
 ```typescript
-import { useColorbar, useLegend, useHtmlControl, useBasemap } from 'maplibre-gl-components/react';
+import { useColorbar, useLegend, useHtmlControl, useBasemap, useTerrain } from 'maplibre-gl-components/react';
 
 function MyComponent() {
   const colorbar = useColorbar({ colormap: 'viridis', vmin: 0, vmax: 100 });
   const legend = useLegend({ items: [...] });
   const htmlControl = useHtmlControl({ html: '...' });
   const basemap = useBasemap({ selectedBasemap: 'OpenStreetMap.Mapnik' });
+  const terrain = useTerrain({ enabled: false, exaggeration: 1.5 });
 
   return (
     <>
@@ -452,6 +513,16 @@ function MyComponent() {
       <button onClick={() => basemap.setBasemap('CartoDB.Positron')}>
         Change Basemap
       </button>
+      <button onClick={() => terrain.toggle()}>
+        Toggle Terrain
+      </button>
+
+      <TerrainReact
+        map={map}
+        enabled={terrain.state.enabled}
+        exaggeration={terrain.state.exaggeration}
+        onTerrainChange={(enabled) => terrain.setEnabled(enabled)}
+      />
 
       <BasemapReact
         map={map}
@@ -495,6 +566,11 @@ The default styles can be customized using CSS:
 /* Override basemap control styles */
 .maplibre-gl-basemap {
   max-width: 300px;
+}
+
+/* Override terrain control styles */
+.maplibre-gl-terrain-button {
+  color: #0078d7;
 }
 ```
 

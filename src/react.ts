@@ -3,9 +3,10 @@ export { ColorbarReact } from './lib/core/ColorbarReact';
 export { LegendReact } from './lib/core/LegendReact';
 export { HtmlControlReact } from './lib/core/HtmlControlReact';
 export { BasemapReact } from './lib/core/BasemapReact';
+export { TerrainReact } from './lib/core/TerrainReact';
 
 // React hooks
-export { useColorbar, useLegend, useHtmlControl, useBasemap } from './lib/hooks';
+export { useColorbar, useLegend, useHtmlControl, useBasemap, useTerrain } from './lib/hooks';
 
 // Re-export types for React consumers
 export type {
@@ -25,6 +26,12 @@ export type {
   BasemapItem,
   BasemapDisplayMode,
   BasemapEvent,
+  TerrainControlOptions,
+  TerrainControlState,
+  TerrainControlReactProps,
+  TerrainEncoding,
+  TerrainEvent,
+  TerrainEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,
