@@ -509,3 +509,117 @@ export type TerrainEvent = ComponentEvent | 'terrainchange';
  * Terrain event handler function type.
  */
 export type TerrainEventHandler = (event: { type: TerrainEvent; state: TerrainControlState }) => void;
+
+/**
+ * Search result item from geocoding service.
+ */
+export interface SearchResult {
+  /** Unique identifier for the result. */
+  id: string;
+  /** Display name of the place. */
+  name: string;
+  /** Full display name with address details. */
+  displayName: string;
+  /** Longitude coordinate. */
+  lng: number;
+  /** Latitude coordinate. */
+  lat: number;
+  /** Bounding box [west, south, east, north]. */
+  bbox?: [number, number, number, number];
+  /** Type of place (city, street, etc.). */
+  type?: string;
+  /** Importance/relevance score. */
+  importance?: number;
+}
+
+/**
+ * Options for configuring the SearchControl.
+ */
+export interface SearchControlOptions {
+  /** Position on the map. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether the control starts collapsed (icon only). Default: true. */
+  collapsed?: boolean;
+  /** Placeholder text for the search input. Default: 'Search places...'. */
+  placeholder?: string;
+  /** Geocoding service URL. Defaults to Nominatim. */
+  geocoderUrl?: string;
+  /** Maximum number of results to display. Default: 5. */
+  maxResults?: number;
+  /** Debounce delay in ms for search requests. Default: 300. */
+  debounceMs?: number;
+  /** Zoom level to fly to when selecting a result. Default: 14. */
+  flyToZoom?: number;
+  /** Whether to add a marker at the selected location. Default: true. */
+  showMarker?: boolean;
+  /** Color for the result marker. Default: '#4264fb'. */
+  markerColor?: string;
+  /** Whether to collapse after selecting a result. Default: true. */
+  collapseOnSelect?: boolean;
+  /** Whether to clear results after selecting. Default: true. */
+  clearOnSelect?: boolean;
+  /** Custom geocoder function (overrides geocoderUrl). */
+  geocoder?: (query: string) => Promise<SearchResult[]>;
+  /** Background color of the container. */
+  backgroundColor?: string;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Width of the expanded search panel. Default: 280. */
+  width?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the SearchControl.
+ */
+export interface SearchControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the control is collapsed. */
+  collapsed: boolean;
+  /** Current search query. */
+  query: string;
+  /** Current search results. */
+  results: SearchResult[];
+  /** Whether a search is in progress. */
+  loading: boolean;
+  /** Selected result. */
+  selectedResult: SearchResult | null;
+  /** Error message if any. */
+  error: string | null;
+}
+
+/**
+ * Props for the React SearchControl wrapper component.
+ */
+export interface SearchControlReactProps extends SearchControlOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when a search result is selected. */
+  onResultSelect?: (result: SearchResult) => void;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: SearchControlState) => void;
+}
+
+/**
+ * Search-specific event types.
+ */
+export type SearchEvent = ComponentEvent | 'resultselect' | 'search' | 'clear';
+
+/**
+ * Search event handler function type.
+ */
+export type SearchEventHandler = (event: { type: SearchEvent; state: SearchControlState; result?: SearchResult }) => void;

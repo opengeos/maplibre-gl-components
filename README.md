@@ -1,6 +1,6 @@
 # maplibre-gl-components
 
-Legend, colorbar, basemap switcher, terrain toggle, and HTML control components for MapLibre GL JS maps.
+Legend, colorbar, basemap switcher, terrain toggle, search, and HTML control components for MapLibre GL JS maps.
 
 [![npm version](https://badge.fury.io/js/maplibre-gl-components.svg)](https://badge.fury.io/js/maplibre-gl-components)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -11,6 +11,7 @@ Legend, colorbar, basemap switcher, terrain toggle, and HTML control components 
 - **Legend** - Categorical legends with color swatches and labels
 - **BasemapControl** - Interactive basemap switcher with 100+ providers from xyzservices
 - **TerrainControl** - Toggle 3D terrain on/off using free AWS Terrarium elevation tiles
+- **SearchControl** - Collapsible place search with geocoding and fly-to functionality
 - **HtmlControl** - Flexible HTML content control for custom info panels
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
@@ -29,7 +30,7 @@ npm install maplibre-gl-components
 
 ```typescript
 import maplibregl from 'maplibre-gl';
-import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl } from 'maplibre-gl-components';
+import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl } from 'maplibre-gl-components';
 import 'maplibre-gl-components/style.css';
 
 const map = new maplibregl.Map({
@@ -45,6 +46,14 @@ const terrainControl = new TerrainControl({
   hillshade: true,
 });
 map.addControl(terrainControl, 'top-right');
+
+// Add a search control
+const searchControl = new SearchControl({
+  placeholder: 'Search for a place...',
+  flyToZoom: 14,
+  showMarker: true,
+});
+map.addControl(searchControl, 'top-right');
 
 // Add a basemap switcher
 const basemapControl = new BasemapControl({
@@ -92,7 +101,7 @@ htmlControl.setHtml('<div><strong>Stats:</strong> 5,678 features</div>');
 ```tsx
 import { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
-import { ColorbarReact, LegendReact, HtmlControlReact, BasemapReact, TerrainReact } from 'maplibre-gl-components/react';
+import { ColorbarReact, LegendReact, HtmlControlReact, BasemapReact, TerrainReact, SearchControlReact } from 'maplibre-gl-components/react';
 import 'maplibre-gl-components/style.css';
 
 function MyMap() {
@@ -121,6 +130,15 @@ function MyMap() {
 
       {map && (
         <>
+          <SearchControlReact
+            map={map}
+            placeholder="Search for a place..."
+            flyToZoom={14}
+            showMarker
+            position="top-right"
+            onResultSelect={(result) => console.log('Selected:', result.name)}
+          />
+
           <TerrainReact
             map={map}
             exaggeration={1.5}
@@ -344,6 +362,82 @@ basemapControl.on('basemapchange', handler)  // Listen for basemap changes
 - Thunderforest, MapBox, MapTiler (require API keys)
 - NASAGIBS, OpenSeaMap, and 20+ more
 
+### SearchControl
+
+A collapsible place search control with geocoding support.
+
+```typescript
+interface SearchControlOptions {
+  position?: ControlPosition;
+  visible?: boolean;                     // Default: true
+  collapsed?: boolean;                   // Start collapsed (icon only). Default: true
+  placeholder?: string;                  // Search input placeholder. Default: 'Search places...'
+  geocoderUrl?: string;                  // Geocoding API URL. Default: Nominatim
+  maxResults?: number;                   // Max results to show. Default: 5
+  debounceMs?: number;                   // Debounce delay in ms. Default: 300
+  flyToZoom?: number;                    // Zoom level when selecting result. Default: 14
+  showMarker?: boolean;                  // Show marker at selected location. Default: true
+  markerColor?: string;                  // Marker color. Default: '#4264fb'
+  collapseOnSelect?: boolean;            // Collapse after selecting. Default: true
+  clearOnSelect?: boolean;               // Clear results after selecting. Default: true
+  geocoder?: (query: string) => Promise<SearchResult[]>;  // Custom geocoder function
+  backgroundColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  width?: number;                        // Expanded width in pixels. Default: 280
+  fontSize?: number;
+  fontColor?: string;
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+interface SearchResult {
+  id: string;                            // Unique identifier
+  name: string;                          // Place name
+  displayName: string;                   // Full display name with address
+  lng: number;                           // Longitude
+  lat: number;                           // Latitude
+  bbox?: [number, number, number, number];  // Bounding box [west, south, east, north]
+  type?: string;                         // Place type (city, street, etc.)
+  importance?: number;                   // Relevance score
+}
+
+// Methods
+searchControl.show()
+searchControl.hide()
+searchControl.expand()                   // Expand to show input
+searchControl.collapse()                 // Collapse to icon only
+searchControl.toggle()                   // Toggle expanded/collapsed
+searchControl.search(query)              // Perform a search
+searchControl.selectResult(result)       // Select a result and fly to it
+searchControl.clear()                    // Clear search and marker
+searchControl.update(options)
+searchControl.getState()
+searchControl.on('resultselect', handler)  // Listen for result selection
+searchControl.on('search', handler)        // Listen for search completion
+searchControl.on('clear', handler)         // Listen for clear events
+```
+
+**Geocoding:**
+By default, SearchControl uses [Nominatim](https://nominatim.openstreetmap.org/) (OpenStreetMap) for geocoding, which is free and requires no API key. You can also provide a custom geocoder function for other services.
+
+```typescript
+// Using custom geocoder
+const searchControl = new SearchControl({
+  geocoder: async (query) => {
+    const response = await fetch(`https://my-geocoder.com/search?q=${query}`);
+    const data = await response.json();
+    return data.map(item => ({
+      id: item.id,
+      name: item.name,
+      displayName: item.address,
+      lng: item.longitude,
+      lat: item.latitude,
+    }));
+  },
+});
+```
+
 ### TerrainControl
 
 A toggle control for 3D terrain rendering using free AWS Terrarium elevation tiles.
@@ -493,7 +587,7 @@ const colorbar = new Colorbar({
 ## React Hooks
 
 ```typescript
-import { useColorbar, useLegend, useHtmlControl, useBasemap, useTerrain } from 'maplibre-gl-components/react';
+import { useColorbar, useLegend, useHtmlControl, useBasemap, useTerrain, useSearchControl } from 'maplibre-gl-components/react';
 
 function MyComponent() {
   const colorbar = useColorbar({ colormap: 'viridis', vmin: 0, vmax: 100 });
@@ -501,6 +595,7 @@ function MyComponent() {
   const htmlControl = useHtmlControl({ html: '...' });
   const basemap = useBasemap({ selectedBasemap: 'OpenStreetMap.Mapnik' });
   const terrain = useTerrain({ enabled: false, exaggeration: 1.5 });
+  const search = useSearchControl({ collapsed: true });
 
   return (
     <>
@@ -516,6 +611,15 @@ function MyComponent() {
       <button onClick={() => terrain.toggle()}>
         Toggle Terrain
       </button>
+      <button onClick={() => search.toggle()}>
+        Toggle Search
+      </button>
+
+      <SearchControlReact
+        map={map}
+        collapsed={search.state.collapsed}
+        onResultSelect={(result) => search.selectResult(result)}
+      />
 
       <TerrainReact
         map={map}
@@ -570,6 +674,15 @@ The default styles can be customized using CSS:
 
 /* Override terrain control styles */
 .maplibre-gl-terrain-button {
+  color: #0078d7;
+}
+
+/* Override search control styles */
+.maplibre-gl-search {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.maplibre-gl-search-toggle:hover {
   color: #0078d7;
 }
 ```

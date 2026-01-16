@@ -8,12 +8,14 @@ import {
   HtmlControlReact,
   BasemapReact,
   TerrainReact,
+  SearchControlReact,
   useColorbar,
   useLegend,
   useBasemap,
   useTerrain,
+  useSearchControl,
 } from '../../src/react';
-import type { ColormapName, BasemapItem } from '../../src';
+import type { ColormapName, BasemapItem, SearchResult } from '../../src';
 
 const COLORMAP_OPTIONS: ColormapName[] = [
   'viridis',
@@ -65,7 +67,12 @@ function App() {
     hillshade: true,
   });
 
+  const searchState = useSearchControl({
+    collapsed: true,
+  });
+
   const [currentBasemap, setCurrentBasemap] = useState<string>('OpenStreetMap.Mapnik');
+  const [lastSearchResult, setLastSearchResult] = useState<SearchResult | null>(null);
 
   // Initialize map
   useEffect(() => {
@@ -197,6 +204,25 @@ function App() {
 
         <hr style={{ margin: '12px 0', border: 'none', borderTop: '1px solid #ddd' }} />
 
+        <div style={{ fontWeight: 600, marginBottom: 12 }}>Search</div>
+
+        <div style={{ marginBottom: 12 }}>
+          <button
+            onClick={() => searchState.toggle()}
+            style={{ padding: '4px 12px', cursor: 'pointer' }}
+          >
+            {searchState.state.collapsed ? 'Expand' : 'Collapse'} Search
+          </button>
+        </div>
+
+        {lastSearchResult && (
+          <div style={{ marginBottom: 12, fontSize: 11, color: '#666' }}>
+            <strong>Last result:</strong> {lastSearchResult.name}
+          </div>
+        )}
+
+        <hr style={{ margin: '12px 0', border: 'none', borderTop: '1px solid #ddd' }} />
+
         <div style={{ fontWeight: 600, marginBottom: 12 }}>Terrain</div>
 
         <div style={{ marginBottom: 12 }}>
@@ -242,6 +268,21 @@ function App() {
       {/* Map Controls */}
       {map && (
         <>
+          <SearchControlReact
+            map={map}
+            placeholder="Search for a place..."
+            flyToZoom={14}
+            showMarker
+            markerColor="#e74c3c"
+            collapsed={searchState.state.collapsed}
+            position="top-left"
+            onResultSelect={(result: SearchResult) => {
+              setLastSearchResult(result);
+              searchState.selectResult(result);
+              console.log('React: Selected place:', result.name);
+            }}
+          />
+
           <BasemapReact
             map={map}
             defaultBasemap={currentBasemap}

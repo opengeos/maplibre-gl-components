@@ -1,6 +1,6 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl } from '../../src';
+import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl } from '../../src';
 
 // Initialize map
 const map = new maplibregl.Map({
@@ -44,6 +44,21 @@ map.addControl(basemapControl, 'top-right');
 // Listen for basemap changes
 basemapControl.on('basemapchange', (event) => {
   console.log('Basemap changed to:', event.basemap?.name);
+});
+
+// Add search control - allows searching for places
+const searchControl = new SearchControl({
+  placeholder: 'Search for a place...',
+  flyToZoom: 14,
+  showMarker: true,
+  markerColor: '#e74c3c',
+  collapsed: true,
+});
+map.addControl(searchControl, 'top-left');
+
+// Listen for search result selection
+searchControl.on('resultselect', (event) => {
+  console.log('Selected place:', event.result?.name, 'at', event.result?.lng, event.result?.lat);
 });
 
 map.on('load', () => {
@@ -181,4 +196,5 @@ map.on('load', () => {
 // Log events
 console.log('MapLibre GL Components - Basic Example');
 console.log('Click the terrain button (mountain icon) to toggle 3D terrain.');
+console.log('Click the search icon to search for places.');
 console.log('The colorbar will change to viridis after 5 seconds.');

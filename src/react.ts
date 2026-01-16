@@ -4,9 +4,10 @@ export { LegendReact } from './lib/core/LegendReact';
 export { HtmlControlReact } from './lib/core/HtmlControlReact';
 export { BasemapReact } from './lib/core/BasemapReact';
 export { TerrainReact } from './lib/core/TerrainReact';
+export { SearchControlReact } from './lib/core/SearchControlReact';
 
 // React hooks
-export { useColorbar, useLegend, useHtmlControl, useBasemap, useTerrain } from './lib/hooks';
+export { useColorbar, useLegend, useHtmlControl, useBasemap, useTerrain, useSearchControl } from './lib/hooks';
 
 // Re-export types for React consumers
 export type {
@@ -32,6 +33,12 @@ export type {
   TerrainEncoding,
   TerrainEvent,
   TerrainEventHandler,
+  SearchControlOptions,
+  SearchControlState,
+  SearchControlReactProps,
+  SearchResult,
+  SearchEvent,
+  SearchEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,

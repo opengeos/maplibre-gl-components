@@ -1,0 +1,124 @@
+/**
+ * SearchControl Component Styles
+ */
+
+.maplibre-gl-search {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.maplibre-gl-search-toggle {
+  transition: color 0.15s ease;
+}
+
+.maplibre-gl-search-toggle:hover {
+  color: #0078d7 !important;
+}
+
+.maplibre-gl-search-input-wrapper {
+  border-bottom: none;
+}
+
+.maplibre-gl-search-input::placeholder {
+  color: #999;
+}
+
+.maplibre-gl-search-input:focus {
+  outline: none;
+}
+
+.maplibre-gl-search-clear:hover,
+.maplibre-gl-search-collapse:hover {
+  color: #333 !important;
+}
+
+.maplibre-gl-search-loader svg {
+  animation: maplibre-gl-search-spin 1s linear infinite;
+}
+
+@keyframes maplibre-gl-search-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.maplibre-gl-search-results {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.maplibre-gl-search-results::-webkit-scrollbar {
+  width: 6px;
+}
+
+.maplibre-gl-search-results::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.maplibre-gl-search-results::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.maplibre-gl-search-result {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.maplibre-gl-search-result:last-child {
+  border-bottom: none;
+}
+
+.maplibre-gl-search-result:hover .maplibre-gl-search-result-name {
+  color: #0078d7;
+}
+
+/* Marker styles */
+.maplibre-gl-search-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.maplibre-gl-search-marker svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: transform 0.15s ease;
+}
+
+.maplibre-gl-search-marker:hover svg {
+  transform: scale(1.1);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .maplibre-gl-search {
+    background: rgba(40, 40, 40, 0.95);
+    color: #e0e0e0;
+  }
+
+  .maplibre-gl-search-input {
+    color: #e0e0e0;
+  }
+
+  .maplibre-gl-search-input::placeholder {
+    color: #888;
+  }
+
+  .maplibre-gl-search-icon,
+  .maplibre-gl-search-clear,
+  .maplibre-gl-search-collapse,
+  .maplibre-gl-search-toggle {
+    color: #aaa !important;
+  }
+
+  .maplibre-gl-search-result-detail {
+    color: #999 !important;
+  }
+
+  .maplibre-gl-search-result:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+  }
+}

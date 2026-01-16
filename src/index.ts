@@ -5,6 +5,7 @@ import './lib/styles/legend.css';
 import './lib/styles/html-control.css';
 import './lib/styles/basemap.css';
 import './lib/styles/terrain.css';
+import './lib/styles/search-control.css';
 
 // Main entry point - Core exports
 export { Colorbar } from './lib/core/Colorbar';
@@ -12,6 +13,7 @@ export { Legend } from './lib/core/Legend';
 export { HtmlControl } from './lib/core/HtmlControl';
 export { BasemapControl } from './lib/core/Basemap';
 export { TerrainControl } from './lib/core/Terrain';
+export { SearchControl } from './lib/core/SearchControl';
 
 // Provider utilities
 export {
@@ -88,6 +90,11 @@ export type {
   TerrainEncoding,
   TerrainEvent,
   TerrainEventHandler,
+  SearchControlOptions,
+  SearchControlState,
+  SearchResult,
+  SearchEvent,
+  SearchEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,
