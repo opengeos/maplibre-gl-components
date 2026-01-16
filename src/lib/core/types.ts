@@ -623,3 +623,129 @@ export type SearchEvent = ComponentEvent | 'resultselect' | 'search' | 'clear';
  * Search event handler function type.
  */
 export type SearchEventHandler = (event: { type: SearchEvent; state: SearchControlState; result?: SearchResult }) => void;
+
+/**
+ * Loaded vector dataset information.
+ */
+export interface LoadedDataset {
+  /** Unique identifier for the dataset. */
+  id: string;
+  /** Original filename. */
+  filename: string;
+  /** Source ID in MapLibre. */
+  sourceId: string;
+  /** Array of layer IDs created for this dataset. */
+  layerIds: string[];
+  /** GeoJSON feature count. */
+  featureCount: number;
+  /** Geometry types present in the dataset. */
+  geometryTypes: ('Point' | 'LineString' | 'Polygon' | 'MultiPoint' | 'MultiLineString' | 'MultiPolygon')[];
+  /** Timestamp when loaded. */
+  loadedAt: Date;
+}
+
+/**
+ * Default styling options for vector layers.
+ */
+export interface VectorLayerStyle {
+  /** Fill color for polygons. */
+  fillColor?: string;
+  /** Fill opacity for polygons (0-1). */
+  fillOpacity?: number;
+  /** Stroke/line color. */
+  strokeColor?: string;
+  /** Stroke/line width in pixels. */
+  strokeWidth?: number;
+  /** Stroke opacity (0-1). */
+  strokeOpacity?: number;
+  /** Circle radius for points in pixels. */
+  circleRadius?: number;
+  /** Circle color for points. */
+  circleColor?: string;
+  /** Circle stroke color for points. */
+  circleStrokeColor?: string;
+  /** Circle stroke width for points. */
+  circleStrokeWidth?: number;
+}
+
+/**
+ * Options for configuring the VectorDatasetControl.
+ */
+export interface VectorDatasetControlOptions {
+  /** Position on the map. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether to show a drop zone overlay when dragging files. Default: true. */
+  showDropZone?: boolean;
+  /** Accepted file extensions. Default: ['.geojson', '.json']. */
+  acceptedExtensions?: string[];
+  /** Whether to allow multiple file uploads. Default: true. */
+  multiple?: boolean;
+  /** Default styling for loaded layers. */
+  defaultStyle?: VectorLayerStyle;
+  /** Whether to fit map bounds to loaded data. Default: true. */
+  fitBounds?: boolean;
+  /** Padding for fitBounds in pixels. Default: 50. */
+  fitBoundsPadding?: number;
+  /** Maximum file size in bytes. Default: 50MB (52428800). */
+  maxFileSize?: number;
+  /** Background color of the control button. */
+  backgroundColor?: string;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the VectorDatasetControl.
+ */
+export interface VectorDatasetControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether a file is being dragged over the map. */
+  isDragging: boolean;
+  /** Whether files are currently being loaded. */
+  isLoading: boolean;
+  /** Array of loaded datasets. */
+  loadedDatasets: LoadedDataset[];
+  /** Error message if any. */
+  error: string | null;
+}
+
+/**
+ * Props for the React VectorDatasetControl wrapper component.
+ */
+export interface VectorDatasetControlReactProps extends VectorDatasetControlOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when a dataset is loaded. */
+  onDatasetLoad?: (dataset: LoadedDataset) => void;
+  /** Callback fired when an error occurs. */
+  onError?: (error: string, filename?: string) => void;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: VectorDatasetControlState) => void;
+}
+
+/**
+ * VectorDataset-specific event types.
+ */
+export type VectorDatasetEvent = ComponentEvent | 'load' | 'error' | 'dragenter' | 'dragleave';
+
+/**
+ * VectorDataset event handler function type.
+ */
+export type VectorDatasetEventHandler = (event: {
+  type: VectorDatasetEvent;
+  state: VectorDatasetControlState;
+  dataset?: LoadedDataset;
+  error?: string;
+  filename?: string;
+}) => void;

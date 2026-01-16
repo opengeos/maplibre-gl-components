@@ -1,0 +1,109 @@
+/**
+ * MapLibre GL Components - Vector Dataset Control Styles
+ */
+
+/* Base control styling */
+.maplibre-gl-vector-dataset {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.maplibre-gl-vector-dataset * {
+  box-sizing: border-box;
+}
+
+/* Upload button - matches MapLibre GL native controls */
+.maplibre-gl-vector-dataset-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #333;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  border-radius: 4px;
+}
+
+.maplibre-gl-vector-dataset-button:hover {
+  color: #0078d7;
+  background: rgba(0, 120, 215, 0.1);
+}
+
+.maplibre-gl-vector-dataset-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 120, 215, 0.4);
+}
+
+.maplibre-gl-vector-dataset-button:focus:not(:focus-visible) {
+  box-shadow: none;
+}
+
+.maplibre-gl-vector-dataset-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Loading state */
+.maplibre-gl-vector-dataset-button--loading {
+  animation: vector-dataset-pulse 1s ease-in-out infinite;
+}
+
+@keyframes vector-dataset-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Icon sizing */
+.maplibre-gl-vector-dataset-button svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Drop zone overlay */
+.maplibre-gl-vector-dataset-dropzone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 120, 215, 0.15);
+  border: 3px dashed #0078d7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.maplibre-gl-vector-dataset-dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.maplibre-gl-vector-dataset-dropzone-content svg {
+  color: #0078d7;
+}
+
+.maplibre-gl-vector-dataset-dropzone-content p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}

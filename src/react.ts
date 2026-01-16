@@ -5,9 +5,18 @@ export { HtmlControlReact } from './lib/core/HtmlControlReact';
 export { BasemapReact } from './lib/core/BasemapReact';
 export { TerrainReact } from './lib/core/TerrainReact';
 export { SearchControlReact } from './lib/core/SearchControlReact';
+export { VectorDatasetReact } from './lib/core/VectorDatasetReact';
 
 // React hooks
-export { useColorbar, useLegend, useHtmlControl, useBasemap, useTerrain, useSearchControl } from './lib/hooks';
+export {
+  useColorbar,
+  useLegend,
+  useHtmlControl,
+  useBasemap,
+  useTerrain,
+  useSearchControl,
+  useVectorDataset,
+} from './lib/hooks';
 
 // Re-export types for React consumers
 export type {
@@ -39,6 +48,13 @@ export type {
   SearchResult,
   SearchEvent,
   SearchEventHandler,
+  VectorDatasetControlOptions,
+  VectorDatasetControlState,
+  VectorDatasetControlReactProps,
+  LoadedDataset,
+  VectorLayerStyle,
+  VectorDatasetEvent,
+  VectorDatasetEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,

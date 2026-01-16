@@ -6,6 +6,7 @@ import './lib/styles/html-control.css';
 import './lib/styles/basemap.css';
 import './lib/styles/terrain.css';
 import './lib/styles/search-control.css';
+import './lib/styles/vector-dataset.css';
 
 // Main entry point - Core exports
 export { Colorbar } from './lib/core/Colorbar';
@@ -14,6 +15,7 @@ export { HtmlControl } from './lib/core/HtmlControl';
 export { BasemapControl } from './lib/core/Basemap';
 export { TerrainControl } from './lib/core/Terrain';
 export { SearchControl } from './lib/core/SearchControl';
+export { VectorDatasetControl } from './lib/core/VectorDataset';
 
 // Provider utilities
 export {
@@ -95,6 +97,13 @@ export type {
   SearchResult,
   SearchEvent,
   SearchEventHandler,
+  VectorDatasetControlOptions,
+  VectorDatasetControlState,
+  VectorDatasetControlReactProps,
+  LoadedDataset,
+  VectorLayerStyle,
+  VectorDatasetEvent,
+  VectorDatasetEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,

@@ -1,6 +1,14 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl } from '../../src';
+import {
+  Colorbar,
+  Legend,
+  HtmlControl,
+  BasemapControl,
+  TerrainControl,
+  SearchControl,
+  VectorDatasetControl,
+} from '../../src';
 
 // Initialize map
 const map = new maplibregl.Map({
@@ -59,6 +67,36 @@ map.addControl(searchControl, 'top-left');
 // Listen for search result selection
 searchControl.on('resultselect', (event) => {
   console.log('Selected place:', event.result?.name, 'at', event.result?.lng, event.result?.lat);
+});
+
+// Add vector dataset control - load GeoJSON files via upload or drag-drop
+const vectorControl = new VectorDatasetControl({
+  fitBounds: true,
+  fitBoundsPadding: 50,
+  defaultStyle: {
+    fillColor: '#3388ff',
+    fillOpacity: 0.3,
+    strokeColor: '#3388ff',
+    strokeWidth: 2,
+    circleRadius: 6,
+    circleColor: '#3388ff',
+  },
+});
+map.addControl(vectorControl, 'top-left');
+
+// Listen for dataset load events
+vectorControl.on('load', (event) => {
+  console.log(
+    'Loaded dataset:',
+    event.dataset?.filename,
+    'with',
+    event.dataset?.featureCount,
+    'features'
+  );
+});
+
+vectorControl.on('error', (event) => {
+  console.error('Error loading file:', event.error);
 });
 
 map.on('load', () => {
@@ -197,4 +235,5 @@ map.on('load', () => {
 console.log('MapLibre GL Components - Basic Example');
 console.log('Click the terrain button (mountain icon) to toggle 3D terrain.');
 console.log('Click the search icon to search for places.');
+console.log('Click the upload button or drag-and-drop GeoJSON files to load them.');
 console.log('The colorbar will change to viridis after 5 seconds.');

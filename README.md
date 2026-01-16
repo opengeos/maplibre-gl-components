@@ -1,6 +1,6 @@
 # maplibre-gl-components
 
-Legend, colorbar, basemap switcher, terrain toggle, search, and HTML control components for MapLibre GL JS maps.
+Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, and HTML control components for MapLibre GL JS maps.
 
 [![npm version](https://badge.fury.io/js/maplibre-gl-components.svg)](https://badge.fury.io/js/maplibre-gl-components)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -12,6 +12,7 @@ Legend, colorbar, basemap switcher, terrain toggle, search, and HTML control com
 - **BasemapControl** - Interactive basemap switcher with 100+ providers from xyzservices
 - **TerrainControl** - Toggle 3D terrain on/off using free AWS Terrarium elevation tiles
 - **SearchControl** - Collapsible place search with geocoding and fly-to functionality
+- **VectorDatasetControl** - Load GeoJSON files via file upload or drag-and-drop
 - **HtmlControl** - Flexible HTML content control for custom info panels
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
@@ -30,7 +31,7 @@ npm install maplibre-gl-components
 
 ```typescript
 import maplibregl from 'maplibre-gl';
-import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl } from 'maplibre-gl-components';
+import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl, VectorDatasetControl } from 'maplibre-gl-components';
 import 'maplibre-gl-components/style.css';
 
 const map = new maplibregl.Map({
@@ -54,6 +55,16 @@ const searchControl = new SearchControl({
   showMarker: true,
 });
 map.addControl(searchControl, 'top-right');
+
+// Add a vector dataset loader (file upload and drag-drop)
+const vectorControl = new VectorDatasetControl({
+  fitBounds: true,
+});
+map.addControl(vectorControl, 'top-left');
+
+vectorControl.on('load', (event) => {
+  console.log('Loaded:', event.dataset?.filename);
+});
 
 // Add a basemap switcher
 const basemapControl = new BasemapControl({
@@ -101,7 +112,7 @@ htmlControl.setHtml('<div><strong>Stats:</strong> 5,678 features</div>');
 ```tsx
 import { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
-import { ColorbarReact, LegendReact, HtmlControlReact, BasemapReact, TerrainReact, SearchControlReact } from 'maplibre-gl-components/react';
+import { ColorbarReact, LegendReact, HtmlControlReact, BasemapReact, TerrainReact, SearchControlReact, VectorDatasetReact } from 'maplibre-gl-components/react';
 import 'maplibre-gl-components/style.css';
 
 function MyMap() {
@@ -130,6 +141,13 @@ function MyMap() {
 
       {map && (
         <>
+          <VectorDatasetReact
+            map={map}
+            fitBounds
+            position="top-left"
+            onDatasetLoad={(dataset) => console.log('Loaded:', dataset.filename)}
+          />
+
           <SearchControlReact
             map={map}
             placeholder="Search for a place..."
@@ -438,6 +456,71 @@ const searchControl = new SearchControl({
 });
 ```
 
+### VectorDatasetControl
+
+A control for loading GeoJSON files via file upload button or drag-and-drop.
+
+```typescript
+interface VectorDatasetControlOptions {
+  position?: ControlPosition;
+  visible?: boolean;                     // Default: true
+  showDropZone?: boolean;                // Show overlay when dragging. Default: true
+  acceptedExtensions?: string[];         // File extensions. Default: ['.geojson', '.json']
+  multiple?: boolean;                    // Allow multiple files. Default: true
+  defaultStyle?: VectorLayerStyle;       // Default styling for loaded layers
+  fitBounds?: boolean;                   // Fit map to loaded data. Default: true
+  fitBoundsPadding?: number;             // Padding for fitBounds. Default: 50
+  maxFileSize?: number;                  // Max file size in bytes. Default: 50MB
+  backgroundColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+interface VectorLayerStyle {
+  fillColor?: string;                    // Polygon fill. Default: '#3388ff'
+  fillOpacity?: number;                  // Polygon fill opacity. Default: 0.3
+  strokeColor?: string;                  // Line/outline color. Default: '#3388ff'
+  strokeWidth?: number;                  // Line width. Default: 2
+  strokeOpacity?: number;                // Line opacity. Default: 1
+  circleRadius?: number;                 // Point radius. Default: 6
+  circleColor?: string;                  // Point color. Default: '#3388ff'
+  circleStrokeColor?: string;            // Point outline. Default: '#ffffff'
+  circleStrokeWidth?: number;            // Point outline width. Default: 2
+}
+
+interface LoadedDataset {
+  id: string;                            // Unique ID
+  filename: string;                      // Original filename
+  sourceId: string;                      // MapLibre source ID
+  layerIds: string[];                    // MapLibre layer IDs
+  featureCount: number;                  // Number of features
+  geometryTypes: string[];               // Geometry types present
+  loadedAt: Date;                        // When loaded
+}
+
+// Methods
+vectorControl.show()
+vectorControl.hide()
+vectorControl.getLoadedDatasets()        // Get all loaded datasets
+vectorControl.removeDataset(id)          // Remove a dataset by ID
+vectorControl.removeAllDatasets()        // Remove all datasets
+vectorControl.loadGeoJSON(geojson, filename)  // Programmatically load GeoJSON
+vectorControl.update(options)
+vectorControl.getState()
+vectorControl.on('load', handler)        // Fired when a dataset is loaded
+vectorControl.on('error', handler)       // Fired when an error occurs
+```
+
+**Loading Methods:**
+- Click the upload button to open a file picker
+- Drag and drop GeoJSON files directly onto the map
+
+**Supported Formats:**
+- GeoJSON (.geojson, .json)
+- FeatureCollection, Feature, or raw Geometry objects
+
 ### TerrainControl
 
 A toggle control for 3D terrain rendering using free AWS Terrarium elevation tiles.
@@ -587,7 +670,7 @@ const colorbar = new Colorbar({
 ## React Hooks
 
 ```typescript
-import { useColorbar, useLegend, useHtmlControl, useBasemap, useTerrain, useSearchControl } from 'maplibre-gl-components/react';
+import { useColorbar, useLegend, useHtmlControl, useBasemap, useTerrain, useSearchControl, useVectorDataset } from 'maplibre-gl-components/react';
 
 function MyComponent() {
   const colorbar = useColorbar({ colormap: 'viridis', vmin: 0, vmax: 100 });
@@ -596,6 +679,7 @@ function MyComponent() {
   const basemap = useBasemap({ selectedBasemap: 'OpenStreetMap.Mapnik' });
   const terrain = useTerrain({ enabled: false, exaggeration: 1.5 });
   const search = useSearchControl({ collapsed: true });
+  const vectorDataset = useVectorDataset();
 
   return (
     <>
@@ -684,6 +768,15 @@ The default styles can be customized using CSS:
 
 .maplibre-gl-search-toggle:hover {
   color: #0078d7;
+}
+
+/* Override vector dataset control styles */
+.maplibre-gl-vector-dataset-button:hover {
+  color: #0078d7;
+}
+
+.maplibre-gl-vector-dataset-dropzone {
+  background: rgba(0, 120, 215, 0.2);
 }
 ```
 

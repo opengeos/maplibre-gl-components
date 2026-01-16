@@ -9,13 +9,15 @@ import {
   BasemapReact,
   TerrainReact,
   SearchControlReact,
+  VectorDatasetReact,
   useColorbar,
   useLegend,
   useBasemap,
   useTerrain,
   useSearchControl,
+  useVectorDataset,
 } from '../../src/react';
-import type { ColormapName, BasemapItem, SearchResult } from '../../src';
+import type { ColormapName, BasemapItem, SearchResult, LoadedDataset } from '../../src';
 
 const COLORMAP_OPTIONS: ColormapName[] = [
   'viridis',
@@ -71,8 +73,11 @@ function App() {
     collapsed: true,
   });
 
+  const vectorDatasetState = useVectorDataset();
+
   const [currentBasemap, setCurrentBasemap] = useState<string>('OpenStreetMap.Mapnik');
   const [lastSearchResult, setLastSearchResult] = useState<SearchResult | null>(null);
+  const [lastLoadedDataset, setLastLoadedDataset] = useState<LoadedDataset | null>(null);
 
   // Initialize map
   useEffect(() => {
@@ -263,11 +268,42 @@ function App() {
             Show Hillshade
           </label>
         </div>
+
+        <hr style={{ margin: '12px 0', border: 'none', borderTop: '1px solid #ddd' }} />
+
+        <div style={{ fontWeight: 600, marginBottom: 12 }}>Vector Data</div>
+
+        <div style={{ marginBottom: 12, fontSize: 11, color: '#666' }}>
+          {vectorDatasetState.state.loadedDatasets.length} dataset(s) loaded
+        </div>
+
+        {lastLoadedDataset && (
+          <div style={{ marginBottom: 12, fontSize: 11, color: '#666' }}>
+            <strong>Last loaded:</strong> {lastLoadedDataset.filename}
+            <br />
+            <span>{lastLoadedDataset.featureCount} features</span>
+          </div>
+        )}
       </div>
 
       {/* Map Controls */}
       {map && (
         <>
+          <VectorDatasetReact
+            map={map}
+            fitBounds={true}
+            fitBoundsPadding={50}
+            position="top-left"
+            onDatasetLoad={(dataset: LoadedDataset) => {
+              setLastLoadedDataset(dataset);
+              vectorDatasetState.addDataset(dataset);
+              console.log('React: Loaded dataset:', dataset.filename);
+            }}
+            onError={(error, filename) => {
+              console.error('React: Error loading', filename, ':', error);
+            }}
+          />
+
           <SearchControlReact
             map={map}
             placeholder="Search for a place..."
