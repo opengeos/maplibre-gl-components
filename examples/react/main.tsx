@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { LayerControl } from 'maplibre-gl-layer-control';
+import 'maplibre-gl-layer-control/style.css';
 import {
   ColorbarReact,
   LegendReact,
@@ -95,6 +97,18 @@ function App() {
     mapInstance.on('load', () => {
       mapRef.current = mapInstance;
       setMap(mapInstance);
+
+      // Add layer control
+      const layerControl = new LayerControl({
+        collapsed: true,
+        panelWidth: 320,
+        panelMinWidth: 240,
+        panelMaxWidth: 450,
+        showStyleEditor: true,
+        showOpacitySlider: true,
+        showLayerSymbol: true,
+      });
+      mapInstance.addControl(layerControl, 'top-right');
     });
 
     mapInstance.on('move', () => {

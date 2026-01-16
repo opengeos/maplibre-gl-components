@@ -1,5 +1,7 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { LayerControl } from 'maplibre-gl-layer-control';
+import 'maplibre-gl-layer-control/style.css';
 import {
   Colorbar,
   Legend,
@@ -100,6 +102,18 @@ vectorControl.on('error', (event) => {
 });
 
 map.on('load', () => {
+  // Add layer control - allows toggling layer visibility and opacity
+  const layerControl = new LayerControl({
+    collapsed: true,
+    panelWidth: 360,
+    panelMinWidth: 240,
+    panelMaxWidth: 450,
+    showStyleEditor: true,
+    showOpacitySlider: true,
+    showLayerSymbol: true,
+  });
+  map.addControl(layerControl, 'top-right');
+
   // Add a vertical colorbar (like the elevation example)
   const colorbar = new Colorbar({
     colormap: 'terrain',
@@ -236,4 +250,5 @@ console.log('MapLibre GL Components - Basic Example');
 console.log('Click the terrain button (mountain icon) to toggle 3D terrain.');
 console.log('Click the search icon to search for places.');
 console.log('Click the upload button or drag-and-drop GeoJSON files to load them.');
+console.log('Click the layers button to toggle layer visibility and opacity.');
 console.log('The colorbar will change to viridis after 5 seconds.');
