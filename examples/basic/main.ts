@@ -10,6 +10,7 @@ import {
   TerrainControl,
   SearchControl,
   VectorDatasetControl,
+  InspectControl,
 } from '../../src';
 
 // Initialize map
@@ -99,6 +100,28 @@ vectorControl.on('load', (event) => {
 
 vectorControl.on('error', (event) => {
   console.error('Error loading file:', event.error);
+});
+
+// Add inspect control - click on features to view their properties
+const inspectControl = new InspectControl({
+  excludeLayers: ['Background'],
+  highlightStyle: {
+    fillColor: '#00ff00',
+    fillOpacity: 0.3,
+    strokeColor: '#00ff00',
+    strokeWidth: 3,
+  },
+  showGeometryType: true,
+  showLayerName: true,
+});
+map.addControl(inspectControl, 'top-left');
+
+// Listen for feature inspection
+inspectControl.on('featureselect', (event) => {
+  if (event.feature) {
+    console.log('Inspected feature from layer:', event.feature.layerId);
+    console.log('Properties:', event.feature.feature.properties);
+  }
 });
 
 map.on('load', () => {
@@ -250,5 +273,6 @@ console.log('MapLibre GL Components - Basic Example');
 console.log('Click the terrain button (mountain icon) to toggle 3D terrain.');
 console.log('Click the search icon to search for places.');
 console.log('Click the upload button or drag-and-drop GeoJSON files to load them.');
+console.log('Click the inspect button (info icon) to inspect feature properties.');
 console.log('Click the layers button to toggle layer visibility and opacity.');
 console.log('The colorbar will change to viridis after 5 seconds.');

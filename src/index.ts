@@ -7,6 +7,7 @@ import './lib/styles/basemap.css';
 import './lib/styles/terrain.css';
 import './lib/styles/search-control.css';
 import './lib/styles/vector-dataset.css';
+import './lib/styles/inspect-control.css';
 
 // Main entry point - Core exports
 export { Colorbar } from './lib/core/Colorbar';
@@ -16,6 +17,7 @@ export { BasemapControl } from './lib/core/Basemap';
 export { TerrainControl } from './lib/core/Terrain';
 export { SearchControl } from './lib/core/SearchControl';
 export { VectorDatasetControl } from './lib/core/VectorDataset';
+export { InspectControl } from './lib/core/InspectControl';
 
 // Provider utilities
 export {
@@ -104,6 +106,12 @@ export type {
   VectorLayerStyle,
   VectorDatasetEvent,
   VectorDatasetEventHandler,
+  InspectControlOptions,
+  InspectControlState,
+  InspectedFeature,
+  InspectHighlightStyle,
+  InspectEvent,
+  InspectEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,

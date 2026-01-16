@@ -1,0 +1,214 @@
+/**
+ * InspectControl Component Styles
+ */
+
+/* Base control styling */
+.maplibre-gl-inspect {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.maplibre-gl-inspect * {
+  box-sizing: border-box;
+}
+
+/* Button styling */
+.maplibre-gl-inspect-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #333;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  border-radius: 4px;
+}
+
+.maplibre-gl-inspect-button:hover {
+  color: #0078d7;
+  background: rgba(0, 120, 215, 0.1);
+}
+
+.maplibre-gl-inspect-button--active {
+  color: #0078d7;
+  background: rgba(0, 120, 215, 0.15);
+}
+
+.maplibre-gl-inspect-button--active:hover {
+  background: rgba(0, 120, 215, 0.25);
+}
+
+/* Popup styling */
+.maplibre-gl-inspect-popup .maplibregl-popup-content {
+  padding: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  font-size: 13px;
+  color: #333;
+}
+
+.maplibre-gl-inspect-popup .maplibregl-popup-close-button {
+  font-size: 18px;
+  padding: 4px 8px;
+  color: #666;
+  right: 4px;
+  top: 4px;
+}
+
+.maplibre-gl-inspect-popup .maplibregl-popup-close-button:hover {
+  color: #333;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.maplibre-gl-inspect-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 32px 8px 12px;
+  background: rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 11px;
+}
+
+.maplibre-gl-inspect-geometry {
+  padding: 2px 6px;
+  background: #0078d7;
+  color: white;
+  border-radius: 3px;
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.maplibre-gl-inspect-layer {
+  color: #666;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.maplibre-gl-inspect-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.maplibre-gl-inspect-nav button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.maplibre-gl-inspect-nav button:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.08);
+  color: #333;
+}
+
+.maplibre-gl-inspect-nav button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.maplibre-gl-inspect-nav-count {
+  font-size: 11px;
+  color: #666;
+  min-width: 32px;
+  text-align: center;
+}
+
+.maplibre-gl-inspect-content {
+  padding: 8px 12px;
+  overflow-y: auto;
+}
+
+.maplibre-gl-inspect-properties {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.maplibre-gl-inspect-properties tr {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.maplibre-gl-inspect-properties tr:last-child {
+  border-bottom: none;
+}
+
+.maplibre-gl-inspect-properties td {
+  padding: 4px 0;
+  vertical-align: top;
+}
+
+.maplibre-gl-inspect-properties td.key {
+  font-weight: 500;
+  color: #666;
+  padding-right: 12px;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.maplibre-gl-inspect-properties td.value {
+  color: #333;
+  word-break: break-word;
+}
+
+.maplibre-gl-inspect-properties td.value.null {
+  color: #999;
+  font-style: italic;
+}
+
+.maplibre-gl-inspect-properties td.value pre {
+  margin: 0;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 4px 6px;
+  border-radius: 3px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.maplibre-gl-inspect-empty {
+  padding: 12px;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
+
+/* Scrollbar styling */
+.maplibre-gl-inspect-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.maplibre-gl-inspect-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.maplibre-gl-inspect-content::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.maplibre-gl-inspect-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}

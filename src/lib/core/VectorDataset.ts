@@ -597,6 +597,7 @@ export class VectorDatasetControl implements IControl {
       this._map.addSource(sourceId, {
         type: 'geojson',
         data: featureCollection,
+        generateId: true,
       });
 
       // Add layers based on geometry types

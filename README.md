@@ -1,6 +1,6 @@
 # maplibre-gl-components
 
-Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, and HTML control components for MapLibre GL JS maps.
+Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, feature inspector, and HTML control components for MapLibre GL JS maps.
 
 [![npm version](https://badge.fury.io/js/maplibre-gl-components.svg)](https://badge.fury.io/js/maplibre-gl-components)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -13,6 +13,7 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **TerrainControl** - Toggle 3D terrain on/off using free AWS Terrarium elevation tiles
 - **SearchControl** - Collapsible place search with geocoding and fly-to functionality
 - **VectorDatasetControl** - Load GeoJSON files via file upload or drag-and-drop
+- **InspectControl** - Click on features to view their properties/attributes
 - **HtmlControl** - Flexible HTML content control for custom info panels
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
@@ -564,6 +565,78 @@ The control uses free terrain tiles from AWS:
 - URL: `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png`
 - Encoding: Terrarium RGB-encoded elevation data
 - No API key required
+
+### InspectControl
+
+A control for inspecting vector features on the map. Click on features to view their properties/attributes in a popup.
+
+```typescript
+interface InspectControlOptions {
+  position?: ControlPosition;
+  visible?: boolean;                     // Default: true
+  enabled?: boolean;                     // Start with inspect mode on. Default: false
+  maxFeatures?: number;                  // Max features at click point. Default: 10
+  includeLayers?: string[];              // Only inspect these layers
+  excludeLayers?: string[];              // Skip these layers
+  highlightStyle?: InspectHighlightStyle; // Style for selected feature
+  excludeProperties?: string[];          // Properties to hide (e.g., internal IDs)
+  showGeometryType?: boolean;            // Show geometry type badge. Default: true
+  showLayerName?: boolean;               // Show layer name. Default: true
+  maxWidth?: number;                     // Popup max width. Default: 320
+  maxHeight?: number;                    // Popup content max height. Default: 300
+  backgroundColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  fontSize?: number;
+  fontColor?: string;
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+interface InspectHighlightStyle {
+  fillColor?: string;                    // Polygon fill. Default: '#ffff00'
+  fillOpacity?: number;                  // Polygon fill opacity. Default: 0.3
+  strokeColor?: string;                  // Line/outline color. Default: '#ffff00'
+  strokeWidth?: number;                  // Line width. Default: 3
+  circleRadius?: number;                 // Point radius. Default: 10
+  circleStrokeWidth?: number;            // Point outline. Default: 3
+}
+
+interface InspectedFeature {
+  id: string;                            // Unique inspection ID
+  feature: GeoJSON.Feature;              // The GeoJSON feature
+  layerId: string;                       // MapLibre layer ID
+  sourceId: string;                      // MapLibre source ID
+  lngLat: [number, number];              // Click coordinates
+}
+
+// Methods
+inspectControl.show()
+inspectControl.hide()
+inspectControl.enable()                  // Enable inspect mode
+inspectControl.disable()                 // Disable inspect mode
+inspectControl.toggle()                  // Toggle inspect mode on/off
+inspectControl.isEnabled()               // Check if inspect mode is enabled
+inspectControl.clear()                   // Clear current inspection
+inspectControl.getInspectedFeatures()    // Get all features at click point
+inspectControl.getSelectedFeature()      // Get currently selected feature
+inspectControl.selectFeature(index)      // Select feature by index
+inspectControl.nextFeature()             // Navigate to next feature
+inspectControl.previousFeature()         // Navigate to previous feature
+inspectControl.update(options)
+inspectControl.getState()
+inspectControl.on('enable', handler)     // Fired when inspect mode is enabled
+inspectControl.on('disable', handler)    // Fired when inspect mode is disabled
+inspectControl.on('featureselect', handler)  // Fired when a feature is selected
+inspectControl.on('clear', handler)      // Fired when inspection is cleared
+```
+
+**Usage:**
+1. Click the info button to enable inspect mode
+2. Click on any vector feature on the map
+3. View properties in the popup
+4. Use < > buttons to navigate when multiple features are at the same location
+5. Click elsewhere or the button again to disable
 
 ## Built-in Colormaps
 
