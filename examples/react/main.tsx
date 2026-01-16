@@ -12,14 +12,16 @@ import {
   TerrainReact,
   SearchControlReact,
   VectorDatasetReact,
+  InspectControlReact,
   useColorbar,
   useLegend,
   useBasemap,
   useTerrain,
   useSearchControl,
   useVectorDataset,
+  useInspectControl,
 } from '../../src/react';
-import type { ColormapName, BasemapItem, SearchResult, LoadedDataset } from '../../src';
+import type { ColormapName, BasemapItem, SearchResult, LoadedDataset, InspectedFeature } from '../../src';
 
 const COLORMAP_OPTIONS: ColormapName[] = [
   'viridis',
@@ -77,9 +79,14 @@ function App() {
 
   const vectorDatasetState = useVectorDataset();
 
+  const inspectState = useInspectControl({
+    enabled: false,
+  });
+
   const [currentBasemap, setCurrentBasemap] = useState<string>('OpenStreetMap.Mapnik');
   const [lastSearchResult, setLastSearchResult] = useState<SearchResult | null>(null);
   const [lastLoadedDataset, setLastLoadedDataset] = useState<LoadedDataset | null>(null);
+  const [lastInspectedFeature, setLastInspectedFeature] = useState<InspectedFeature | null>(null);
 
   // Initialize map
   useEffect(() => {
@@ -298,6 +305,34 @@ function App() {
             <span>{lastLoadedDataset.featureCount} features</span>
           </div>
         )}
+
+        <hr style={{ margin: '12px 0', border: 'none', borderTop: '1px solid #ddd' }} />
+
+        <div style={{ fontWeight: 600, marginBottom: 12 }}>Inspect</div>
+
+        <div style={{ marginBottom: 12 }}>
+          <button
+            onClick={() => inspectState.toggle()}
+            style={{
+              padding: '4px 12px',
+              cursor: 'pointer',
+              backgroundColor: inspectState.state.enabled ? '#0078d7' : undefined,
+              color: inspectState.state.enabled ? 'white' : undefined,
+              border: '1px solid #ccc',
+              borderRadius: 4,
+            }}
+          >
+            {inspectState.state.enabled ? 'Disable' : 'Enable'} Inspect
+          </button>
+        </div>
+
+        {lastInspectedFeature && (
+          <div style={{ marginBottom: 12, fontSize: 11, color: '#666' }}>
+            <strong>Layer:</strong> {lastInspectedFeature.layerId}
+            <br />
+            <strong>Type:</strong> {lastInspectedFeature.feature.geometry.type}
+          </div>
+        )}
       </div>
 
       {/* Map Controls */}
@@ -413,6 +448,28 @@ function App() {
             `}
             position="top-left"
             maxWidth={180}
+          />
+
+          <InspectControlReact
+            map={map}
+            position="top-left"
+            enabled={inspectState.state.enabled}
+            excludeLayers={['background']}
+            highlightStyle={{
+              fillColor: '#00ff00',
+              fillOpacity: 0.3,
+              strokeColor: '#00ff00',
+              strokeWidth: 3,
+            }}
+            onFeatureSelect={(feature) => {
+              setLastInspectedFeature(feature);
+              if (feature) {
+                console.log('React: Inspected feature from layer:', feature.layerId);
+              }
+            }}
+            onToggle={(enabled) => {
+              inspectState.setEnabled(enabled);
+            }}
           />
         </>
       )}

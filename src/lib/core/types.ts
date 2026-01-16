@@ -749,3 +749,134 @@ export type VectorDatasetEventHandler = (event: {
   error?: string;
   filename?: string;
 }) => void;
+
+/**
+ * Highlight style configuration for inspected features.
+ */
+export interface InspectHighlightStyle {
+  /** Fill color for polygons (CSS color string). Default: '#ffff00'. */
+  fillColor?: string;
+  /** Fill opacity for polygons (0-1). Default: 0.3. */
+  fillOpacity?: number;
+  /** Stroke/line color for all geometry types. Default: '#ffff00'. */
+  strokeColor?: string;
+  /** Stroke/line width in pixels. Default: 3. */
+  strokeWidth?: number;
+  /** Circle radius for points in pixels. Default: 10. */
+  circleRadius?: number;
+  /** Circle stroke width for points in pixels. Default: 3. */
+  circleStrokeWidth?: number;
+}
+
+/**
+ * Inspected feature information.
+ */
+export interface InspectedFeature {
+  /** Unique identifier for this inspection instance. */
+  id: string;
+  /** The GeoJSON feature object with geometry and properties. */
+  feature: GeoJSON.Feature;
+  /** Layer ID the feature belongs to. */
+  layerId: string;
+  /** Source ID the feature belongs to. */
+  sourceId: string;
+  /** Source layer (for vector tile sources). */
+  sourceLayer?: string;
+  /** Feature ID from the source, if available. */
+  featureId?: string | number;
+  /** Click coordinates [lng, lat]. */
+  lngLat: [number, number];
+}
+
+/**
+ * Options for configuring the InspectControl.
+ */
+export interface InspectControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether inspect mode is enabled by default. Default: false. */
+  enabled?: boolean;
+  /** Maximum number of features to show when multiple at same point. Default: 10. */
+  maxFeatures?: number;
+  /** Only inspect features from these layers. If empty, inspect all. */
+  includeLayers?: string[];
+  /** Skip features from these layers. */
+  excludeLayers?: string[];
+  /** Highlight style for selected features. */
+  highlightStyle?: InspectHighlightStyle;
+  /** Properties to always exclude from display (e.g., internal IDs). */
+  excludeProperties?: string[];
+  /** Whether to show geometry type in the popup. Default: true. */
+  showGeometryType?: boolean;
+  /** Whether to show layer name in the popup. Default: true. */
+  showLayerName?: boolean;
+  /** Maximum width of popup in pixels. Default: 320. */
+  maxWidth?: number;
+  /** Maximum height of popup content in pixels. Default: 300. */
+  maxHeight?: number;
+  /** Background color of the container. */
+  backgroundColor?: string;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the InspectControl.
+ */
+export interface InspectControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether inspect mode is enabled. */
+  enabled: boolean;
+  /** Currently inspected features. */
+  inspectedFeatures: InspectedFeature[];
+  /** Index of currently selected feature (when multiple). */
+  selectedIndex: number;
+  /** Error message if any. */
+  error: string | null;
+}
+
+/**
+ * Props for the React InspectControl wrapper component.
+ */
+export interface InspectControlReactProps extends InspectControlOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when a feature is selected/clicked. */
+  onFeatureSelect?: (feature: InspectedFeature | null) => void;
+  /** Callback fired when features are inspected (may be multiple). */
+  onInspect?: (features: InspectedFeature[]) => void;
+  /** Callback fired when inspect mode is toggled. */
+  onToggle?: (enabled: boolean) => void;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: InspectControlState) => void;
+}
+
+/**
+ * Inspect-specific event types.
+ */
+export type InspectEvent = ComponentEvent | 'enable' | 'disable' | 'featureselect' | 'clear';
+
+/**
+ * Inspect event handler function type.
+ */
+export type InspectEventHandler = (event: {
+  type: InspectEvent;
+  state: InspectControlState;
+  feature?: InspectedFeature;
+  features?: InspectedFeature[];
+}) => void;

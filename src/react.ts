@@ -6,6 +6,7 @@ export { BasemapReact } from './lib/core/BasemapReact';
 export { TerrainReact } from './lib/core/TerrainReact';
 export { SearchControlReact } from './lib/core/SearchControlReact';
 export { VectorDatasetReact } from './lib/core/VectorDatasetReact';
+export { InspectControlReact } from './lib/core/InspectControlReact';
 
 // React hooks
 export {
@@ -16,6 +17,7 @@ export {
   useTerrain,
   useSearchControl,
   useVectorDataset,
+  useInspectControl,
 } from './lib/hooks';
 
 // Re-export types for React consumers
@@ -55,6 +57,13 @@ export type {
   VectorLayerStyle,
   VectorDatasetEvent,
   VectorDatasetEventHandler,
+  InspectControlOptions,
+  InspectControlState,
+  InspectControlReactProps,
+  InspectedFeature,
+  InspectHighlightStyle,
+  InspectEvent,
+  InspectEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,

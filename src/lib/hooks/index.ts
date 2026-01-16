@@ -5,3 +5,4 @@ export { useBasemap } from './useBasemap';
 export { useTerrain } from './useTerrain';
 export { useSearchControl } from './useSearchControl';
 export { useVectorDataset } from './useVectorDataset';
+export { useInspectControl } from './useInspectControl';
