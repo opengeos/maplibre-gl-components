@@ -75,6 +75,44 @@ export {
   classNames,
 } from './lib/utils';
 
+// File helper exports
+export {
+  detectFormat,
+  requiresDuckDB,
+  requiresConversion,
+  getAcceptedExtensions,
+  isValidExtension,
+  getFormatDisplayName,
+  getFormatDescription,
+  getFileExtension,
+  readFileAsBuffer,
+  GEOJSON_EXTENSIONS,
+  SHAPEFILE_EXTENSIONS,
+  GEOPACKAGE_EXTENSIONS,
+  GEOPARQUET_EXTENSIONS,
+  KML_EXTENSIONS,
+  KMZ_EXTENSIONS,
+  GPX_EXTENSIONS,
+  FLATGEOBUF_EXTENSIONS,
+  GML_EXTENSIONS,
+  TOPOJSON_EXTENSIONS,
+  CSV_EXTENSIONS,
+  XLSX_EXTENSIONS,
+  DXF_EXTENSIONS,
+  SHPJS_EXTENSIONS,
+  DUCKDB_EXTENSIONS,
+  ADVANCED_EXTENSIONS,
+  ALL_EXTENSIONS,
+} from './lib/utils/fileHelpers';
+
+// Converter exports
+export {
+  getDuckDBConverter,
+  DuckDBConverter,
+  getShapefileConverter,
+  ShapefileConverter,
+} from './lib/converters';
+
 // Type exports
 export type {
   ColorbarOptions,
@@ -106,6 +144,9 @@ export type {
   VectorLayerStyle,
   VectorDatasetEvent,
   VectorDatasetEventHandler,
+  VectorFormat,
+  ConversionProgress,
+  ConversionProgressCallback,
   InspectControlOptions,
   InspectControlState,
   InspectedFeature,
@@ -121,3 +162,10 @@ export type {
   ComponentEventHandler,
   ColormapDefinition,
 } from './lib/core/types';
+
+// Converter types
+export type {
+  ConversionResult,
+  ConversionMetadata,
+  VectorConverter,
+} from './lib/converters';

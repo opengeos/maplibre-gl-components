@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import dts from 'vite-plugin-dts';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 export default defineConfig({
   plugins: [
@@ -10,6 +11,13 @@ export default defineConfig({
       include: ['src'],
       outDir: 'dist/types',
       rollupTypes: false,
+    }),
+    // Polyfill Node.js modules for browser compatibility (needed for shpjs)
+    nodePolyfills({
+      include: ['buffer'],
+      globals: {
+        Buffer: true,
+      },
     }),
   ],
   resolve: {
@@ -31,7 +39,9 @@ export default defineConfig({
       },
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'maplibre-gl'],
+      // External packages that should not be bundled
+      // shpjs and @duckdb/duckdb-wasm are optional dependencies loaded at runtime
+      external: ['react', 'react-dom', 'maplibre-gl', 'shpjs', '@duckdb/duckdb-wasm'],
       output: {
         globals: {
           react: 'React',
