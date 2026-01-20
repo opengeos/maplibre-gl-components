@@ -625,6 +625,45 @@ export type SearchEvent = ComponentEvent | 'resultselect' | 'search' | 'clear';
 export type SearchEventHandler = (event: { type: SearchEvent; state: SearchControlState; result?: SearchResult }) => void;
 
 /**
+ * Supported vector file formats.
+ *
+ * DuckDB's spatial extension uses GDAL under the hood, enabling support
+ * for many common geospatial formats via ST_Read().
+ */
+export type VectorFormat =
+  | 'geojson'
+  | 'shapefile'
+  | 'geopackage'
+  | 'geoparquet'
+  | 'kml'
+  | 'kmz'
+  | 'gpx'
+  | 'flatgeobuf'
+  | 'gml'
+  | 'topojson'
+  | 'csv'
+  | 'xlsx'
+  | 'dxf'
+  | 'unknown';
+
+/**
+ * Progress information for file conversion operations.
+ */
+export interface ConversionProgress {
+  /** Current stage of the conversion. */
+  stage: 'loading' | 'initializing' | 'converting' | 'complete' | 'error';
+  /** Progress percentage (0-100). */
+  percent?: number;
+  /** Human-readable progress message. */
+  message?: string;
+}
+
+/**
+ * Callback type for conversion progress updates.
+ */
+export type ConversionProgressCallback = (progress: ConversionProgress) => void;
+
+/**
  * Loaded vector dataset information.
  */
 export interface LoadedDataset {
@@ -642,6 +681,8 @@ export interface LoadedDataset {
   geometryTypes: ('Point' | 'LineString' | 'Polygon' | 'MultiPoint' | 'MultiLineString' | 'MultiPolygon')[];
   /** Timestamp when loaded. */
   loadedAt: Date;
+  /** Original file format (geojson, shapefile, geopackage). */
+  originalFormat?: VectorFormat;
 }
 
 /**
@@ -702,6 +743,22 @@ export interface VectorDatasetControlOptions {
   minzoom?: number;
   /** Maximum zoom level at which the control is visible. */
   maxzoom?: number;
+  /**
+   * Enable support for advanced formats (Shapefile, GeoPackage).
+   * When enabled, DuckDB WASM will be lazy-loaded when processing these formats.
+   * Default: false.
+   */
+  enableAdvancedFormats?: boolean;
+  /**
+   * Custom URL for DuckDB WASM bundles.
+   * Useful for self-hosting the WASM files or using a different CDN.
+   */
+  duckdbBundleUrl?: string;
+  /**
+   * Callback for conversion progress updates.
+   * Called during file conversion with progress information.
+   */
+  onConversionProgress?: ConversionProgressCallback;
 }
 
 /**

@@ -72,10 +72,14 @@ searchControl.on('resultselect', (event) => {
   console.log('Selected place:', event.result?.name, 'at', event.result?.lng, event.result?.lat);
 });
 
-// Add vector dataset control - load GeoJSON files via upload or drag-drop
+// Add vector dataset control - load GeoJSON, Shapefile, or GeoPackage files via upload or drag-drop
 const vectorControl = new VectorDatasetControl({
   fitBounds: true,
   fitBoundsPadding: 50,
+  enableAdvancedFormats: true, // Enable Shapefile and GeoPackage support
+  onConversionProgress: (progress) => {
+    console.log(`Conversion: ${progress.stage} - ${progress.message || ''} ${progress.percent ? `(${progress.percent}%)` : ''}`);
+  },
   defaultStyle: {
     fillColor: '#3388ff',
     fillOpacity: 0.3,
@@ -272,7 +276,7 @@ map.on('load', () => {
 console.log('MapLibre GL Components - Basic Example');
 console.log('Click the terrain button (mountain icon) to toggle 3D terrain.');
 console.log('Click the search icon to search for places.');
-console.log('Click the upload button or drag-and-drop GeoJSON files to load them.');
+console.log('Click the upload button or drag-and-drop vector files (GeoJSON, Shapefile, GeoPackage, GeoParquet, KML, KMZ, GPX, FlatGeobuf, GML, TopoJSON, CSV, Excel, DXF) to load them.');
 console.log('Click the inspect button (info icon) to inspect feature properties.');
 console.log('Click the layers button to toggle layer visibility and opacity.');
 console.log('The colorbar will change to viridis after 5 seconds.');

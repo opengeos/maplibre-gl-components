@@ -6,8 +6,20 @@ import type {
   VectorDatasetEventHandler,
   LoadedDataset,
   VectorLayerStyle,
+  VectorFormat,
 } from './types';
 import { generateId } from '../utils/helpers';
+import {
+  detectFormat,
+  requiresConversion,
+  requiresDuckDB,
+  getAcceptedExtensions,
+  isValidExtension,
+  getFormatDisplayName,
+  readFileAsBuffer,
+} from '../utils/fileHelpers';
+import type { DuckDBConverter } from '../converters/DuckDBConverter';
+import type { ShapefileConverter } from '../converters/ShapefileConverter';
 
 /**
  * Default style for vector layers.
@@ -27,7 +39,10 @@ const DEFAULT_STYLE: Required<VectorLayerStyle> = {
 /**
  * Default options for the VectorDatasetControl.
  */
-const DEFAULT_OPTIONS: Required<VectorDatasetControlOptions> = {
+const DEFAULT_OPTIONS: Required<Omit<VectorDatasetControlOptions, 'onConversionProgress' | 'duckdbBundleUrl'>> & {
+  onConversionProgress: VectorDatasetControlOptions['onConversionProgress'];
+  duckdbBundleUrl: VectorDatasetControlOptions['duckdbBundleUrl'];
+} = {
   position: 'top-right',
   className: '',
   visible: true,
@@ -43,6 +58,9 @@ const DEFAULT_OPTIONS: Required<VectorDatasetControlOptions> = {
   opacity: 1,
   minzoom: 0,
   maxzoom: 24,
+  enableAdvancedFormats: false,
+  duckdbBundleUrl: undefined,
+  onConversionProgress: undefined,
 };
 
 /**
@@ -76,7 +94,10 @@ export class VectorDatasetControl implements IControl {
   private _button?: HTMLButtonElement;
   private _fileInput?: HTMLInputElement;
   private _dropZone?: HTMLElement;
-  private _options: Required<VectorDatasetControlOptions>;
+  private _options: Required<Omit<VectorDatasetControlOptions, 'onConversionProgress' | 'duckdbBundleUrl'>> & {
+    onConversionProgress: VectorDatasetControlOptions['onConversionProgress'];
+    duckdbBundleUrl: VectorDatasetControlOptions['duckdbBundleUrl'];
+  };
   private _state: VectorDatasetControlState;
   private _eventHandlers: Map<VectorDatasetEvent, Set<VectorDatasetEventHandler>> = new Map();
   private _map?: MapLibreMap;
@@ -85,6 +106,11 @@ export class VectorDatasetControl implements IControl {
   private _boundDragOver?: (e: DragEvent) => void;
   private _boundDragLeave?: (e: DragEvent) => void;
   private _boundDrop?: (e: DragEvent) => void;
+  private _duckdbConverter?: DuckDBConverter;
+  private _shapefileConverter?: ShapefileConverter;
+  private _loadingOverlay?: HTMLElement;
+  private _loadingText?: HTMLElement;
+  private _loadingProgress?: HTMLElement;
 
   /**
    * Creates a new VectorDatasetControl instance.
@@ -92,9 +118,15 @@ export class VectorDatasetControl implements IControl {
    * @param options - Configuration options for the vector dataset control.
    */
   constructor(options?: VectorDatasetControlOptions) {
+    // Determine accepted extensions based on enableAdvancedFormats
+    const enableAdvanced = options?.enableAdvancedFormats ?? DEFAULT_OPTIONS.enableAdvancedFormats;
+    const acceptedExtensions =
+      options?.acceptedExtensions ?? getAcceptedExtensions(enableAdvanced);
+
     this._options = {
       ...DEFAULT_OPTIONS,
       ...options,
+      acceptedExtensions,
       defaultStyle: { ...DEFAULT_STYLE, ...options?.defaultStyle },
     };
     this._state = {
@@ -139,6 +171,16 @@ export class VectorDatasetControl implements IControl {
 
     // Remove all loaded sources and layers
     this._removeAllDatasets();
+
+    // Dispose converters if present
+    if (this._duckdbConverter) {
+      this._duckdbConverter.dispose();
+      this._duckdbConverter = undefined;
+    }
+    if (this._shapefileConverter) {
+      this._shapefileConverter.dispose();
+      this._shapefileConverter = undefined;
+    }
 
     // Remove zoom listener
     if (this._map && this._handleZoom) {
@@ -244,7 +286,7 @@ export class VectorDatasetControl implements IControl {
     geojson: GeoJSON.GeoJSON,
     filename: string = 'data.geojson'
   ): Promise<LoadedDataset | null> {
-    return this._processGeoJSON(geojson, filename);
+    return this._processGeoJSON(geojson, filename, 'geojson');
   }
 
   /**
@@ -357,8 +399,11 @@ export class VectorDatasetControl implements IControl {
     this._button = document.createElement('button');
     this._button.type = 'button';
     this._button.className = 'maplibre-gl-vector-dataset-button';
-    this._button.title = 'Load GeoJSON file';
-    this._button.setAttribute('aria-label', 'Load GeoJSON file');
+    const buttonLabel = this._options.enableAdvancedFormats
+      ? 'Load vector file (GeoJSON, Shapefile, GeoPackage, KML, GPX, and more)'
+      : 'Load GeoJSON file';
+    this._button.title = buttonLabel;
+    this._button.setAttribute('aria-label', buttonLabel);
     this._button.innerHTML = UPLOAD_ICON;
     this._button.addEventListener('click', () => this._fileInput?.click());
     container.appendChild(this._button);
@@ -377,6 +422,9 @@ export class VectorDatasetControl implements IControl {
     // Create drop zone overlay
     this._dropZone = document.createElement('div');
     this._dropZone.className = 'maplibre-gl-vector-dataset-dropzone';
+    const dropzoneText = this._options.enableAdvancedFormats
+      ? 'Drop vector files here (GeoJSON, Shapefile, GeoPackage, KML, GPX, CSV, and more)'
+      : 'Drop GeoJSON files here';
     this._dropZone.innerHTML = `
       <div class="maplibre-gl-vector-dataset-dropzone-content">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -384,11 +432,26 @@ export class VectorDatasetControl implements IControl {
           <polyline points="17 8 12 3 7 8"/>
           <line x1="12" y1="3" x2="12" y2="15"/>
         </svg>
-        <p>Drop GeoJSON files here</p>
+        <p>${dropzoneText}</p>
       </div>
     `;
     this._dropZone.style.display = 'none';
     mapContainer.appendChild(this._dropZone);
+
+    // Create loading overlay
+    this._loadingOverlay = document.createElement('div');
+    this._loadingOverlay.className = 'maplibre-gl-vector-dataset-loading';
+    this._loadingOverlay.innerHTML = `
+      <div class="maplibre-gl-vector-dataset-loading-content">
+        <div class="maplibre-gl-vector-dataset-spinner"></div>
+        <p class="maplibre-gl-vector-dataset-loading-text">Loading...</p>
+        <p class="maplibre-gl-vector-dataset-loading-progress"></p>
+      </div>
+    `;
+    this._loadingOverlay.style.display = 'none';
+    this._loadingText = this._loadingOverlay.querySelector('.maplibre-gl-vector-dataset-loading-text') as HTMLElement;
+    this._loadingProgress = this._loadingOverlay.querySelector('.maplibre-gl-vector-dataset-loading-progress') as HTMLElement;
+    mapContainer.appendChild(this._loadingOverlay);
 
     // Bind event handlers
     this._boundDragOver = (e: DragEvent) => this._handleDragOver(e);
@@ -420,6 +483,10 @@ export class VectorDatasetControl implements IControl {
 
     if (this._dropZone && this._dropZone.parentNode) {
       this._dropZone.parentNode.removeChild(this._dropZone);
+    }
+
+    if (this._loadingOverlay && this._loadingOverlay.parentNode) {
+      this._loadingOverlay.parentNode.removeChild(this._loadingOverlay);
     }
   }
 
@@ -508,8 +575,7 @@ export class VectorDatasetControl implements IControl {
 
     for (const file of files) {
       // Validate file extension
-      const ext = '.' + file.name.split('.').pop()?.toLowerCase();
-      if (!this._options.acceptedExtensions.includes(ext)) {
+      if (!isValidExtension(file.name, this._options.enableAdvancedFormats)) {
         this._state.error = `Invalid file type: ${file.name}. Accepted: ${this._options.acceptedExtensions.join(', ')}`;
         this._emit('error', undefined, this._state.error, file.name);
         continue;
@@ -523,12 +589,32 @@ export class VectorDatasetControl implements IControl {
         continue;
       }
 
+      // Detect format and route to appropriate handler
+      const format = detectFormat(file.name);
+
       try {
-        const text = await file.text();
-        const geojson = JSON.parse(text) as GeoJSON.GeoJSON;
-        await this._processGeoJSON(geojson, file.name);
+        if (requiresConversion(format)) {
+          // Process with appropriate converter (shpjs for Shapefile, DuckDB for GeoPackage/GeoParquet)
+          if (!this._options.enableAdvancedFormats) {
+            this._state.error = `${getFormatDisplayName(format)} files require enableAdvancedFormats: true`;
+            this._emit('error', undefined, this._state.error, file.name);
+            continue;
+          }
+          // Show loading indicator for advanced formats
+          this._showLoading(`Loading ${file.name}...`);
+          await this._processAdvancedFormat(file, format);
+          this._hideLoading();
+        } else {
+          // Process as GeoJSON
+          this._showLoading(`Loading ${file.name}...`);
+          const text = await file.text();
+          const geojson = JSON.parse(text) as GeoJSON.GeoJSON;
+          await this._processGeoJSON(geojson, file.name, 'geojson');
+          this._hideLoading();
+        }
       } catch (error) {
-        this._state.error = `Failed to parse ${file.name}: ${error instanceof Error ? error.message : 'Invalid JSON'}`;
+        this._hideLoading();
+        this._state.error = `Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`;
         this._emit('error', undefined, this._state.error, file.name);
       }
     }
@@ -538,15 +624,84 @@ export class VectorDatasetControl implements IControl {
   }
 
   /**
+   * Processes a file using the appropriate converter.
+   *
+   * @param file - The file to process.
+   * @param format - The detected vector format.
+   */
+  private async _processAdvancedFormat(file: File, format: VectorFormat): Promise<void> {
+    // Create a progress callback that updates both the loading indicator and user's callback
+    const progressCallback = (progress: { stage: string; percent?: number; message?: string }) => {
+      // Update loading indicator
+      const message = progress.message || `Processing ${file.name}...`;
+      const progressText = progress.percent !== undefined ? `${progress.percent}%` : '';
+      this._updateLoading(message, progressText);
+
+      // Call user's callback if provided
+      this._options.onConversionProgress?.(progress as Parameters<NonNullable<typeof this._options.onConversionProgress>>[0]);
+    };
+
+    // Read file as buffer
+    this._updateLoading(`Reading ${file.name}...`);
+    const buffer = await readFileAsBuffer(file);
+
+    if (format === 'shapefile') {
+      // Use shpjs for Shapefiles
+      if (!this._shapefileConverter) {
+        this._updateLoading('Loading Shapefile converter...');
+        const { getShapefileConverter } = await import('../converters/ShapefileConverter');
+        this._shapefileConverter = getShapefileConverter();
+      }
+
+      const result = await this._shapefileConverter.convert(
+        buffer,
+        file.name,
+        progressCallback
+      );
+
+      if (result.geojson) {
+        this._updateLoading('Adding to map...');
+        await this._processGeoJSON(result.geojson, file.name, format);
+      }
+    } else if (requiresDuckDB(format)) {
+      // Use DuckDB for GeoPackage, GeoParquet, KML, GPX, FlatGeobuf, GML, TopoJSON, CSV, Excel, DXF
+      if (!this._duckdbConverter) {
+        this._updateLoading('Loading DuckDB converter...');
+        const { getDuckDBConverter } = await import('../converters/DuckDBConverter');
+        this._duckdbConverter = getDuckDBConverter();
+
+        // Configure custom bundle URL if provided
+        if (this._options.duckdbBundleUrl) {
+          const { DuckDBConverter } = await import('../converters/DuckDBConverter');
+          this._duckdbConverter = new DuckDBConverter(this._options.duckdbBundleUrl);
+        }
+      }
+
+      const result = await this._duckdbConverter.convert(
+        buffer,
+        file.name,
+        progressCallback
+      );
+
+      if (result.geojson) {
+        this._updateLoading('Adding to map...');
+        await this._processGeoJSON(result.geojson, file.name, format);
+      }
+    }
+  }
+
+  /**
    * Processes a GeoJSON object and adds it to the map.
    *
    * @param geojson - The GeoJSON object to process.
    * @param filename - The filename of the dataset.
+   * @param originalFormat - The original file format.
    * @returns The loaded dataset or null if failed.
    */
   private async _processGeoJSON(
     geojson: GeoJSON.GeoJSON,
-    filename: string
+    filename: string,
+    originalFormat: VectorFormat = 'geojson'
   ): Promise<LoadedDataset | null> {
     if (!this._map) return null;
 
@@ -695,6 +850,7 @@ export class VectorDatasetControl implements IControl {
         featureCount: featureCollection.features.length,
         geometryTypes: Array.from(geometryTypes) as LoadedDataset['geometryTypes'],
         loadedAt: new Date(),
+        originalFormat,
       };
 
       this._state.loadedDatasets.push(dataset);
@@ -829,5 +985,45 @@ export class VectorDatasetControl implements IControl {
       this._button.classList.remove('maplibre-gl-vector-dataset-button--loading');
       this._button.disabled = false;
     }
+  }
+
+  /**
+   * Shows the loading overlay with an optional message.
+   *
+   * @param message - The loading message to display.
+   * @param progress - Optional progress percentage or status.
+   */
+  private _showLoading(message: string, progress?: string): void {
+    if (!this._loadingOverlay) return;
+    this._loadingOverlay.style.display = 'flex';
+    if (this._loadingText) {
+      this._loadingText.textContent = message;
+    }
+    if (this._loadingProgress) {
+      this._loadingProgress.textContent = progress || '';
+    }
+  }
+
+  /**
+   * Updates the loading overlay message.
+   *
+   * @param message - The loading message to display.
+   * @param progress - Optional progress percentage or status.
+   */
+  private _updateLoading(message: string, progress?: string): void {
+    if (this._loadingText) {
+      this._loadingText.textContent = message;
+    }
+    if (this._loadingProgress) {
+      this._loadingProgress.textContent = progress || '';
+    }
+  }
+
+  /**
+   * Hides the loading overlay.
+   */
+  private _hideLoading(): void {
+    if (!this._loadingOverlay) return;
+    this._loadingOverlay.style.display = 'none';
   }
 }
