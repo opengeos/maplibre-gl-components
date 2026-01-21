@@ -1,12 +1,27 @@
-import { defineConfig } from 'vite';
+import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { copyFileSync, mkdirSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Plugin to copy static CDN example (not bundled, so users can view source)
+function copyStaticCdnExample(): Plugin {
+  return {
+    name: 'copy-static-cdn-example',
+    closeBundle() {
+      const srcPath = resolve(__dirname, 'examples/cdn/index.html');
+      const destDir = resolve(__dirname, 'dist-examples/examples/cdn');
+      const destPath = resolve(destDir, 'index.html');
+      mkdirSync(destDir, { recursive: true });
+      copyFileSync(srcPath, destPath);
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), copyStaticCdnExample()],
   base: '/maplibre-gl-components/',
   build: {
     outDir: 'dist-examples',
