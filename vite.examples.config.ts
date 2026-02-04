@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copyFileSync, mkdirSync } from 'node:fs';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -21,7 +22,17 @@ function copyStaticCdnExample(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), copyStaticCdnExample()],
+  plugins: [
+    react(),
+    copyStaticCdnExample(),
+    // Polyfill Node.js Buffer for shpjs browser compatibility
+    nodePolyfills({
+      include: ['buffer'],
+      globals: {
+        Buffer: true,
+      },
+    }),
+  ],
   base: '/maplibre-gl-components/',
   build: {
     outDir: 'dist-examples',
