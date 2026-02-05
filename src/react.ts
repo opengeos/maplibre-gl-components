@@ -7,6 +7,7 @@ export { TerrainReact } from './lib/core/TerrainReact';
 export { SearchControlReact } from './lib/core/SearchControlReact';
 export { VectorDatasetReact } from './lib/core/VectorDatasetReact';
 export { InspectControlReact } from './lib/core/InspectControlReact';
+export { ViewStateControlReact } from './lib/core/ViewStateControlReact';
 
 // React hooks
 export {
@@ -18,6 +19,7 @@ export {
   useSearchControl,
   useVectorDataset,
   useInspectControl,
+  useViewState,
 } from './lib/hooks';
 
 // Re-export types for React consumers
@@ -64,6 +66,11 @@ export type {
   InspectHighlightStyle,
   InspectEvent,
   InspectEventHandler,
+  ViewStateControlOptions,
+  ViewStateControlState,
+  ViewStateControlReactProps,
+  ViewStateEvent,
+  ViewStateEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,

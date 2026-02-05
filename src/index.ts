@@ -8,6 +8,7 @@ import './lib/styles/terrain.css';
 import './lib/styles/search-control.css';
 import './lib/styles/vector-dataset.css';
 import './lib/styles/inspect-control.css';
+import './lib/styles/view-state.css';
 
 // Main entry point - Core exports
 export { Colorbar } from './lib/core/Colorbar';
@@ -18,6 +19,7 @@ export { TerrainControl } from './lib/core/Terrain';
 export { SearchControl } from './lib/core/SearchControl';
 export { VectorDatasetControl } from './lib/core/VectorDataset';
 export { InspectControl } from './lib/core/InspectControl';
+export { ViewStateControl } from './lib/core/ViewStateControl';
 
 // Provider utilities
 export {
@@ -153,6 +155,10 @@ export type {
   InspectHighlightStyle,
   InspectEvent,
   InspectEventHandler,
+  ViewStateControlOptions,
+  ViewStateControlState,
+  ViewStateEvent,
+  ViewStateEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,

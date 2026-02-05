@@ -33,8 +33,15 @@ export default defineConfig({
       },
     }),
   ],
+  optimizeDeps: {
+    esbuildOptions: {
+      // Avoid downleveling class fields in maplibre-gl worker bundle (prevents __publicField errors).
+      target: 'es2022',
+    },
+  },
   base: '/maplibre-gl-components/',
   build: {
+    target: 'es2022',
     outDir: 'dist-examples',
     rollupOptions: {
       input: {

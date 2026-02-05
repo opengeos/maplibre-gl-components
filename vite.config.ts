@@ -12,6 +12,12 @@ export default defineConfig({
       rollupTypes: false,
     }),
   ],
+  optimizeDeps: {
+    esbuildOptions: {
+      // Avoid downleveling class fields in maplibre-gl worker bundle (prevents __publicField errors).
+      target: 'es2022',
+    },
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
