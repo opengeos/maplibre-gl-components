@@ -937,3 +937,105 @@ export type InspectEventHandler = (event: {
   feature?: InspectedFeature;
   features?: InspectedFeature[];
 }) => void;
+
+/**
+ * Options for configuring the ViewStateControl.
+ */
+export interface ViewStateControlOptions {
+  /** Position on the map. Default: 'bottom-left'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether the panel starts collapsed (button only). Default: true. */
+  collapsed?: boolean;
+  /** Decimal precision for coordinate values. Default: 4. */
+  precision?: number;
+  /** Whether to show center coordinates. Default: true. */
+  showCenter?: boolean;
+  /** Whether to show map bounds. Default: true. */
+  showBounds?: boolean;
+  /** Whether to show zoom level. Default: true. */
+  showZoom?: boolean;
+  /** Whether to show pitch value. Default: true. */
+  showPitch?: boolean;
+  /** Whether to show bearing value. Default: true. */
+  showBearing?: boolean;
+  /** Whether to enable bounding box drawing. Default: false. */
+  enableBBox?: boolean;
+  /** Fill color for drawn bounding box. Default: 'rgba(0, 120, 215, 0.1)'. */
+  bboxFillColor?: string;
+  /** Stroke color for drawn bounding box. Default: '#0078d7'. */
+  bboxStrokeColor?: string;
+  /** Stroke width for drawn bounding box. Default: 2. */
+  bboxStrokeWidth?: number;
+  /** Width of the info panel in pixels. Default: 280. */
+  panelWidth?: number;
+  /** Background color of the container. */
+  backgroundColor?: string;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the ViewStateControl.
+ */
+export interface ViewStateControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Current map center [lng, lat]. */
+  center: [number, number];
+  /** Current map bounds [west, south, east, north]. */
+  bounds: [number, number, number, number];
+  /** Current zoom level. */
+  zoom: number;
+  /** Current pitch in degrees. */
+  pitch: number;
+  /** Current bearing in degrees. */
+  bearing: number;
+  /** Whether bbox drawing mode is active. */
+  drawingBBox: boolean;
+  /** Drawn bounding box [west, south, east, north], or null if none. */
+  drawnBBox: [number, number, number, number] | null;
+}
+
+/**
+ * Props for the React ViewStateControl wrapper component.
+ */
+export interface ViewStateControlReactProps extends ViewStateControlOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when a bounding box is drawn. */
+  onBBoxDraw?: (bbox: [number, number, number, number]) => void;
+  /** Callback fired when bbox drawing mode is toggled. */
+  onDrawingToggle?: (drawing: boolean) => void;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: ViewStateControlState) => void;
+}
+
+/**
+ * ViewState-specific event types.
+ */
+export type ViewStateEvent = ComponentEvent | 'viewchange' | 'bboxdraw' | 'bboxclear' | 'drawstart' | 'drawend';
+
+/**
+ * ViewState event handler function type.
+ */
+export type ViewStateEventHandler = (event: {
+  type: ViewStateEvent;
+  state: ViewStateControlState;
+  bbox?: [number, number, number, number];
+}) => void;

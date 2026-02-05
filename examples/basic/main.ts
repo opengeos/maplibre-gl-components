@@ -11,6 +11,7 @@ import {
   SearchControl,
   VectorDatasetControl,
   InspectControl,
+  ViewStateControl,
 } from '../../src';
 
 // Initialize map
@@ -125,6 +126,21 @@ inspectControl.on('featureselect', (event) => {
   if (event.feature) {
     console.log('Inspected feature from layer:', event.feature.layerId);
     console.log('Properties:', event.feature.feature.properties);
+  }
+});
+
+// Add view state control - displays live map center, bounds, zoom, pitch, bearing
+const viewStateControl = new ViewStateControl({
+  collapsed: true,
+  enableBBox: true,
+  precision: 4,
+});
+map.addControl(viewStateControl, 'bottom-left');
+
+// Listen for bounding box draw events
+viewStateControl.on('bboxdraw', (event) => {
+  if (event.bbox) {
+    console.log('Drawn bounding box:', event.bbox);
   }
 });
 
@@ -278,5 +294,6 @@ console.log('Click the terrain button (mountain icon) to toggle 3D terrain.');
 console.log('Click the search icon to search for places.');
 console.log('Click the upload button or drag-and-drop vector files (GeoJSON, Shapefile, GeoPackage, GeoParquet, KML, KMZ, GPX, FlatGeobuf, GML, TopoJSON, CSV, Excel, DXF) to load them.');
 console.log('Click the inspect button (info icon) to inspect feature properties.');
+console.log('Click the crosshair button to view map state (center, bounds, zoom, pitch, bearing).');
 console.log('Click the layers button to toggle layer visibility and opacity.');
 console.log('The colorbar will change to viridis after 5 seconds.');
