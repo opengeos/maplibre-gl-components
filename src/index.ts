@@ -163,6 +163,7 @@ export type {
   ViewStateEventHandler,
   ControlGridOptions,
   ControlGridState,
+  DefaultControlName,
   ControlGridReactProps,
   ControlGridEvent,
   ControlGridEventHandler,

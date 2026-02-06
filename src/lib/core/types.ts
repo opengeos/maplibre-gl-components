@@ -1041,6 +1041,18 @@ export type ViewStateEventHandler = (event: {
 }) => void;
 
 /**
+ * Names of built-in controls that can be added to a ControlGrid via `defaultControls`.
+ */
+export type DefaultControlName =
+  | 'globe'
+  | 'terrain'
+  | 'search'
+  | 'viewState'
+  | 'inspect'
+  | 'vectorDataset'
+  | 'basemap';
+
+/**
  * Options for configuring the ControlGrid.
  */
 export interface ControlGridOptions {
@@ -1064,6 +1076,8 @@ export interface ControlGridOptions {
   showRowColumnControls?: boolean;
   /** Initial controls to display in the grid (IControl instances). */
   controls?: IControl[];
+  /** Built-in controls to create and add automatically (e.g. ['globe', 'terrain', 'search']). */
+  defaultControls?: DefaultControlName[];
   /** Background color of the container. */
   backgroundColor?: string;
   /** Padding inside the container in pixels. */

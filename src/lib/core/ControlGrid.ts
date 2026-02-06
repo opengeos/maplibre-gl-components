@@ -1,17 +1,24 @@
-import type { IControl, Map as MapLibreMap } from 'maplibre-gl';
+import { GlobeControl, type IControl, type Map as MapLibreMap } from 'maplibre-gl';
 import type {
   ControlGridOptions,
   ControlGridState,
   ControlGridEvent,
   ControlGridEventHandler,
+  DefaultControlName,
 } from './types';
+import { TerrainControl } from './Terrain';
+import { SearchControl } from './SearchControl';
+import { ViewStateControl } from './ViewStateControl';
+import { InspectControl } from './InspectControl';
+import { VectorDatasetControl } from './VectorDataset';
+import { BasemapControl } from './Basemap';
 
 /**
  * Default options for the ControlGrid.
  */
 const DEFAULT_OPTIONS: Required<
-  Omit<ControlGridOptions, 'controls'>
-> & { controls?: IControl[] } = {
+  Omit<ControlGridOptions, 'controls' | 'defaultControls'>
+> & { controls?: IControl[]; defaultControls?: DefaultControlName[] } = {
   title: '',
   position: 'top-right',
   className: '',
@@ -61,7 +68,7 @@ interface ChildEntry {
 export class ControlGrid implements IControl {
   private _container?: HTMLElement;
   private _gridEl?: HTMLElement;
-  private _options: Required<Omit<ControlGridOptions, 'controls'>> & { controls?: IControl[] };
+  private _options: Required<Omit<ControlGridOptions, 'controls' | 'defaultControls'>> & { controls?: IControl[]; defaultControls?: DefaultControlName[] };
   private _state: ControlGridState;
   private _children: ChildEntry[] = [];
   private _eventHandlers: Map<ControlGridEvent, Set<ControlGridEventHandler>> = new Map();
@@ -77,8 +84,30 @@ export class ControlGrid implements IControl {
       rows: this._options.rows,
       columns: this._options.columns,
     };
+    // Add explicitly passed controls
     const initial = options?.controls ?? this._options.controls ?? [];
     initial.forEach((c) => this._children.push({ control: c, element: null }));
+
+    // Create and add built-in default controls
+    const defaults = options?.defaultControls ?? [];
+    for (const name of defaults) {
+      const ctrl = ControlGrid._createDefaultControl(name);
+      if (ctrl) this._children.push({ control: ctrl, element: null });
+    }
+    this._autoGrowRows();
+  }
+
+  private static _createDefaultControl(name: DefaultControlName): IControl | null {
+    switch (name) {
+      case 'globe': return new GlobeControl();
+      case 'terrain': return new TerrainControl({ hillshade: true });
+      case 'search': return new SearchControl({ collapsed: true });
+      case 'viewState': return new ViewStateControl({ collapsed: true });
+      case 'inspect': return new InspectControl();
+      case 'vectorDataset': return new VectorDatasetControl();
+      case 'basemap': return new BasemapControl({ collapsed: true });
+      default: return null;
+    }
   }
 
   onAdd(map: MapLibreMap): HTMLElement {
