@@ -1,10 +1,13 @@
-import maplibregl from 'maplibre-gl';
+import maplibregl, { GlobeControl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   ControlGrid,
   TerrainControl,
   SearchControl,
   ViewStateControl,
+  BasemapControl,
+  InspectControl,
+  VectorDatasetControl,
 } from '../../src';
 
 const map = new maplibregl.Map({
@@ -16,7 +19,6 @@ const map = new maplibregl.Map({
 });
 
 map.addControl(new maplibregl.NavigationControl(), 'top-right');
-map.addControl(new maplibregl.GlobeControl(), 'top-right');
 
 // Create controls that will live inside the grid (do not add them to the map directly)
 const terrainControl = new TerrainControl({
@@ -37,22 +39,34 @@ const searchControl = new SearchControl({
   collapsed: true,
 });
 
+const basemapControl = new BasemapControl({
+  collapsed: true,
+});
+
+const inspectControl = new InspectControl();
+
+const vectorDatasetControl = new VectorDatasetControl();
 
 // Add a ControlGrid and put the controls inside it
 const controlGrid = new ControlGrid({
   title: '',
   position: 'top-right',
-  rows: 1,
+  rows: 2,
   columns: 3,
   collapsible: true,
   collapsed: true,
   showRowColumnControls: true,
-  gap: 8,
+  gap: 4,
 });
 
-controlGrid.addControl(viewStateControl);
+
+controlGrid.addControl(new GlobeControl());
 controlGrid.addControl(terrainControl);
 controlGrid.addControl(searchControl);
+controlGrid.addControl(viewStateControl);
+controlGrid.addControl(inspectControl);
+controlGrid.addControl(vectorDatasetControl);
+controlGrid.addControl(basemapControl);
 
 map.addControl(controlGrid, 'top-right');
 

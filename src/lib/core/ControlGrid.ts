@@ -285,7 +285,12 @@ export class ControlGrid implements IControl {
     this._gridEl.style.gridTemplateColumns = `repeat(${this._state.columns}, auto)`;
     this._gridEl.style.gridTemplateRows = `repeat(${this._state.rows}, auto)`;
     this._gridEl.style.gap = `${gap}px`;
-    this._gridEl.style.width = 'fit-content';
+    // Center grid tracks and controls to balance left/right padding when the header is wider.
+    this._gridEl.style.width = '100%';
+    this._gridEl.style.justifyContent = 'center';
+    this._gridEl.style.alignContent = 'center';
+    this._gridEl.style.justifyItems = 'center';
+    this._gridEl.style.alignItems = 'center';
   }
 
   private _mountChildren(): void {
@@ -336,14 +341,15 @@ export class ControlGrid implements IControl {
 
     const isCollapsedWithHeader = this._state.collapsed && (title || collapsible);
     const vertPadding = isCollapsedWithHeader ? 0 : padding;
-    const horzPadding = isCollapsedWithHeader ? 0 : padding;
+    const leftPadding = isCollapsedWithHeader ? 0 : padding;
+    const rightPadding = isCollapsedWithHeader ? 0 : Math.max(0, padding - 4);
     const shouldShow = this._state.visible && this._zoomVisible;
 
     Object.assign(this._container.style, {
       backgroundColor,
       opacity: String(opacity),
       borderRadius: `${borderRadius}px`,
-      padding: `${vertPadding}px ${horzPadding}px`,
+      padding: `${vertPadding}px ${rightPadding}px ${vertPadding}px ${leftPadding}px`,
       boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.1)',
       display: shouldShow ? 'block' : 'none',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -359,7 +365,7 @@ export class ControlGrid implements IControl {
         justifyContent: this._state.collapsed ? 'center' : 'space-between',
         flexWrap: 'wrap',
         gap: '6px',
-        paddingBottom: this._state.collapsed ? '0' : '8px',
+        paddingBottom: this._state.collapsed ? '0' : '0',
         cursor: collapsible ? 'pointer' : 'default',
       });
 
@@ -385,7 +391,7 @@ export class ControlGrid implements IControl {
         const left = document.createElement('div');
         left.style.display = 'flex';
         left.style.alignItems = 'center';
-        left.style.gap = '8px';
+        left.style.gap = '6px';
 
         if (title) {
           const titleEl = document.createElement('span');
@@ -400,7 +406,7 @@ export class ControlGrid implements IControl {
           const rowLabel = document.createElement('label');
           rowLabel.style.display = 'inline-flex';
           rowLabel.style.alignItems = 'center';
-          rowLabel.style.gap = '4px';
+          rowLabel.style.gap = '2px';
           rowLabel.style.fontSize = '11px';
           rowLabel.style.color = '#333';
           rowLabel.innerHTML = 'R:';
@@ -410,7 +416,9 @@ export class ControlGrid implements IControl {
           rowInput.max = '12';
           rowInput.value = String(this._state.rows);
           rowInput.style.width = '40px';
-          rowInput.style.padding = '2px 4px';
+          rowInput.style.padding = '2px 2px';
+          rowInput.style.boxSizing = 'border-box';
+          rowInput.style.textAlign = 'center';
           rowInput.style.color = '#333';
           rowInput.addEventListener('change', () => this.setRows(Number(rowInput.value) || 1));
           rowLabel.appendChild(rowInput);
@@ -418,7 +426,7 @@ export class ControlGrid implements IControl {
           const colLabel = document.createElement('label');
           colLabel.style.display = 'inline-flex';
           colLabel.style.alignItems = 'center';
-          colLabel.style.gap = '4px';
+          colLabel.style.gap = '2px';
           colLabel.style.fontSize = '11px';
           colLabel.style.color = '#333';
           colLabel.innerHTML = 'C:';
@@ -428,7 +436,9 @@ export class ControlGrid implements IControl {
           colInput.max = '12';
           colInput.value = String(this._state.columns);
           colInput.style.width = '40px';
-          colInput.style.padding = '2px 4px';
+          colInput.style.padding = '2px 2px';
+          colInput.style.boxSizing = 'border-box';
+          colInput.style.textAlign = 'center';
           colInput.style.color = '#333';
           colInput.addEventListener('change', () => this.setColumns(Number(colInput.value) || 1));
           colLabel.appendChild(colInput);
