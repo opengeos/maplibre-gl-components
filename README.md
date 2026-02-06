@@ -16,6 +16,7 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **SearchControl** - Collapsible place search with geocoding and fly-to functionality
 - **VectorDatasetControl** - Load GeoJSON files via file upload or drag-and-drop
 - **InspectControl** - Click on features to view their properties/attributes
+- **ViewStateControl** - Display live map state (center, bounds, zoom, pitch, bearing) with optional bbox drawing
 - **HtmlControl** - Flexible HTML content control for custom info panels
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
@@ -34,7 +35,7 @@ npm install maplibre-gl-components
 
 ```typescript
 import maplibregl from 'maplibre-gl';
-import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl, VectorDatasetControl } from 'maplibre-gl-components';
+import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl, VectorDatasetControl, ViewStateControl } from 'maplibre-gl-components';
 import 'maplibre-gl-components/style.css';
 
 const map = new maplibregl.Map({
@@ -67,6 +68,18 @@ map.addControl(vectorControl, 'top-left');
 
 vectorControl.on('load', (event) => {
   console.log('Loaded:', event.dataset?.filename);
+});
+
+// Add a view state control
+const viewStateControl = new ViewStateControl({
+  collapsed: false,
+  enableBBox: true,
+  precision: 4,
+});
+map.addControl(viewStateControl, 'bottom-left');
+
+viewStateControl.on('bboxdraw', (event) => {
+  console.log('Drawn bbox:', event.bbox);
 });
 
 // Add a basemap switcher
@@ -115,7 +128,7 @@ htmlControl.setHtml('<div><strong>Stats:</strong> 5,678 features</div>');
 ```tsx
 import { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
-import { ColorbarReact, LegendReact, HtmlControlReact, BasemapReact, TerrainReact, SearchControlReact, VectorDatasetReact } from 'maplibre-gl-components/react';
+import { ColorbarReact, LegendReact, HtmlControlReact, BasemapReact, TerrainReact, SearchControlReact, VectorDatasetReact, ViewStateControlReact } from 'maplibre-gl-components/react';
 import 'maplibre-gl-components/style.css';
 
 function MyMap() {
@@ -149,6 +162,15 @@ function MyMap() {
             fitBounds
             position="top-left"
             onDatasetLoad={(dataset) => console.log('Loaded:', dataset.filename)}
+          />
+
+          <ViewStateControlReact
+            map={map}
+            collapsed={false}
+            enableBBox
+            precision={4}
+            position="bottom-left"
+            onBBoxDraw={(bbox) => console.log('Drawn bbox:', bbox)}
           />
 
           <SearchControlReact
@@ -640,6 +662,74 @@ inspectControl.on('clear', handler)      // Fired when inspection is cleared
 4. Use < > buttons to navigate when multiple features are at the same location
 5. Click elsewhere or the button again to disable
 
+### ViewStateControl
+
+A control that displays live map view state (center, bounds, zoom, pitch, bearing) with optional bounding box drawing.
+
+```typescript
+interface ViewStateControlOptions {
+  position?: ControlPosition;
+  className?: string;                  // Custom CSS class
+  visible?: boolean;                   // Default: true
+  collapsed?: boolean;                 // Start collapsed (button only). Default: true
+  precision?: number;                  // Decimal precision for coordinates. Default: 4
+  showCenter?: boolean;                // Show center coordinates. Default: true
+  showBounds?: boolean;                // Show map bounds. Default: true
+  showZoom?: boolean;                  // Show zoom level. Default: true
+  showPitch?: boolean;                 // Show pitch value. Default: true
+  showBearing?: boolean;               // Show bearing value. Default: true
+  enableBBox?: boolean;                // Enable bounding box drawing. Default: false
+  bboxFillColor?: string;              // BBox fill color. Default: 'rgba(0, 120, 215, 0.1)'
+  bboxStrokeColor?: string;            // BBox stroke color. Default: '#0078d7'
+  bboxStrokeWidth?: number;            // BBox stroke width. Default: 2
+  panelWidth?: number;                 // Panel width in pixels. Default: 280
+  backgroundColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  fontSize?: number;
+  fontColor?: string;
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+interface ViewStateControlState {
+  visible: boolean;
+  collapsed: boolean;
+  center: [number, number];            // [lng, lat]
+  bounds: [number, number, number, number];  // [west, south, east, north]
+  zoom: number;
+  pitch: number;                       // Degrees
+  bearing: number;                     // Degrees
+  drawingBBox: boolean;                // Whether bbox drawing is active
+  drawnBBox: [number, number, number, number] | null;  // Drawn bbox or null
+}
+
+// Methods
+viewStateControl.show()
+viewStateControl.hide()
+viewStateControl.expand()              // Expand the panel
+viewStateControl.collapse()            // Collapse to button only
+viewStateControl.toggle()              // Toggle expanded/collapsed
+viewStateControl.isCollapsed()         // Check if collapsed
+viewStateControl.startBBoxDraw()       // Start bounding box drawing mode
+viewStateControl.stopBBoxDraw()        // Stop bounding box drawing mode
+viewStateControl.clearBBox()           // Clear the drawn bounding box
+viewStateControl.update(options)
+viewStateControl.getState()
+viewStateControl.on('viewchange', handler)  // Fired when map view changes
+viewStateControl.on('bboxdraw', handler)    // Fired when bbox is drawn
+viewStateControl.on('bboxclear', handler)   // Fired when bbox is cleared
+viewStateControl.on('drawstart', handler)   // Fired when drawing mode starts
+viewStateControl.on('drawend', handler)     // Fired when drawing mode ends
+```
+
+**Usage:**
+1. Click the target button to expand/collapse the panel
+2. Pan, zoom, or tilt the map to see live updates
+3. Click "Draw BBox" to enter drawing mode
+4. Click and drag on the map to draw a bounding box
+5. Copy coordinates using the copy button next to each value
+
 ## Built-in Colormaps
 
 ### Sequential
@@ -745,7 +835,7 @@ const colorbar = new Colorbar({
 ## React Hooks
 
 ```typescript
-import { useColorbar, useLegend, useHtmlControl, useBasemap, useTerrain, useSearchControl, useVectorDataset } from 'maplibre-gl-components/react';
+import { useColorbar, useLegend, useHtmlControl, useBasemap, useTerrain, useSearchControl, useVectorDataset, useViewState } from 'maplibre-gl-components/react';
 
 function MyComponent() {
   const colorbar = useColorbar({ colormap: 'viridis', vmin: 0, vmax: 100 });
@@ -755,6 +845,7 @@ function MyComponent() {
   const terrain = useTerrain({ enabled: false, exaggeration: 1.5 });
   const search = useSearchControl({ collapsed: true });
   const vectorDataset = useVectorDataset();
+  const viewState = useViewState({ collapsed: false, enableBBox: true });
 
   return (
     <>
@@ -853,14 +944,29 @@ The default styles can be customized using CSS:
 .maplibre-gl-vector-dataset-dropzone {
   background: rgba(0, 120, 215, 0.2);
 }
+
+/* Override view state control styles */
+.maplibre-gl-view-state-button:hover {
+  color: #0078d7;
+}
+
+.maplibre-gl-view-state-panel {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.maplibre-gl-view-state-bbox-toggle--active {
+  background: #0078d7;
+  color: white;
+}
 ```
 
 ## Examples
 
 See the [examples](./examples/) directory for complete working examples:
 
-- **Basic Example** - Vanilla TypeScript with all three components
+- **Basic Example** - Vanilla TypeScript with all components
 - **React Example** - React with hooks and dynamic updates
+- **View State Example** - View state control with bounding box drawing
 
 ## Development
 

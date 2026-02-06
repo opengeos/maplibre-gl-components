@@ -1,4 +1,4 @@
-import type { Map } from 'maplibre-gl';
+import type { IControl, Map } from 'maplibre-gl';
 
 /**
  * Position options for legend controls.
@@ -1038,4 +1038,82 @@ export type ViewStateEventHandler = (event: {
   type: ViewStateEvent;
   state: ViewStateControlState;
   bbox?: [number, number, number, number];
+}) => void;
+
+/**
+ * Options for configuring the ControlGrid.
+ */
+export interface ControlGridOptions {
+  /** Title for the control header. */
+  title?: string;
+  /** Position on the map. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. */
+  visible?: boolean;
+  /** Whether the control is collapsible. */
+  collapsible?: boolean;
+  /** Whether the control starts collapsed. */
+  collapsed?: boolean;
+  /** Number of rows in the grid. */
+  rows?: number;
+  /** Number of columns in the grid. */
+  columns?: number;
+  /** Show row/column number inputs in the UI. */
+  showRowColumnControls?: boolean;
+  /** Initial controls to display in the grid (IControl instances). */
+  controls?: IControl[];
+  /** Background color of the container. */
+  backgroundColor?: string;
+  /** Padding inside the container in pixels. */
+  padding?: number;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Gap between grid cells in pixels. */
+  gap?: number;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the ControlGrid.
+ */
+export interface ControlGridState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the control is collapsed. */
+  collapsed: boolean;
+  /** Current number of rows. */
+  rows: number;
+  /** Current number of columns. */
+  columns: number;
+}
+
+/**
+ * Props for the React ControlGrid wrapper component.
+ */
+export interface ControlGridReactProps extends ControlGridOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: ControlGridState) => void;
+}
+
+/**
+ * ControlGrid-specific event types.
+ */
+export type ControlGridEvent = ComponentEvent | 'controladd' | 'controlremove';
+
+/**
+ * ControlGrid event handler function type.
+ */
+export type ControlGridEventHandler = (event: {
+  type: ControlGridEvent;
+  state: ControlGridState;
+  control?: IControl;
 }) => void;

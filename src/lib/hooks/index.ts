@@ -7,3 +7,4 @@ export { useSearchControl } from './useSearchControl';
 export { useVectorDataset } from './useVectorDataset';
 export { useInspectControl } from './useInspectControl';
 export { useViewState } from './useViewState';
+export { useControlGrid } from './useControlGrid';

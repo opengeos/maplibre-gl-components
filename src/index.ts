@@ -9,6 +9,7 @@ import './lib/styles/search-control.css';
 import './lib/styles/vector-dataset.css';
 import './lib/styles/inspect-control.css';
 import './lib/styles/view-state.css';
+import './lib/styles/control-grid.css';
 
 // Main entry point - Core exports
 export { Colorbar } from './lib/core/Colorbar';
@@ -20,6 +21,7 @@ export { SearchControl } from './lib/core/SearchControl';
 export { VectorDatasetControl } from './lib/core/VectorDataset';
 export { InspectControl } from './lib/core/InspectControl';
 export { ViewStateControl } from './lib/core/ViewStateControl';
+export { ControlGrid } from './lib/core/ControlGrid';
 
 // Provider utilities
 export {
@@ -159,6 +161,11 @@ export type {
   ViewStateControlState,
   ViewStateEvent,
   ViewStateEventHandler,
+  ControlGridOptions,
+  ControlGridState,
+  ControlGridReactProps,
+  ControlGridEvent,
+  ControlGridEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,

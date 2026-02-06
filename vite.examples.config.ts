@@ -48,6 +48,8 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         basic: resolve(__dirname, 'examples/basic/index.html'),
         react: resolve(__dirname, 'examples/react/index.html'),
+        controlGrid: resolve(__dirname, 'examples/control-grid/index.html'),
+        controlGridReact: resolve(__dirname, 'examples/control-grid-react/index.html'),
       },
     },
   },

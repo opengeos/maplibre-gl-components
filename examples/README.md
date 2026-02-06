@@ -26,6 +26,26 @@ A React example demonstrating:
 
 **Location:** `examples/react/`
 
+### Control Grid Example
+
+A vanilla TypeScript example showing the **ControlGrid** component:
+
+- Collapsible grid container that holds multiple map controls (Terrain, Search, View State)
+- Configurable rows and columns via options or R/C inputs in the header
+- Controls are added with `addControl()` and can be removed with `removeControl()`
+
+**Location:** `examples/control-grid/`
+
+### Control Grid (React) Example
+
+A React example for **ControlGridReact** and **useControlGrid**:
+
+- ControlGridReact hosts TerrainControl, SearchControl, and ViewStateControl in a grid
+- useControlGrid hook for rows, columns, and collapsed state
+- Optional sidebar to drive grid state from React (expand/collapse, rows, columns)
+
+**Location:** `examples/control-grid-react/`
+
 ## Running Examples Locally
 
 1. Install dependencies from the project root:

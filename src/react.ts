@@ -8,6 +8,7 @@ export { SearchControlReact } from './lib/core/SearchControlReact';
 export { VectorDatasetReact } from './lib/core/VectorDatasetReact';
 export { InspectControlReact } from './lib/core/InspectControlReact';
 export { ViewStateControlReact } from './lib/core/ViewStateControlReact';
+export { ControlGridReact } from './lib/core/ControlGridReact';
 
 // React hooks
 export {
@@ -20,6 +21,7 @@ export {
   useVectorDataset,
   useInspectControl,
   useViewState,
+  useControlGrid,
 } from './lib/hooks';
 
 // Re-export types for React consumers
@@ -71,6 +73,11 @@ export type {
   ViewStateControlReactProps,
   ViewStateEvent,
   ViewStateEventHandler,
+  ControlGridOptions,
+  ControlGridState,
+  ControlGridReactProps,
+  ControlGridEvent,
+  ControlGridEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,

@@ -800,8 +800,10 @@ export class SearchControl implements IControl {
     Object.assign(inputWrapper.style, {
       display: 'flex',
       alignItems: 'center',
-      padding: '6px 10px',
+      padding: '0 10px',
       gap: '8px',
+      height: '30px',
+      boxSizing: 'border-box',
     });
 
     // Search icon

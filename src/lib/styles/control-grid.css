@@ -1,0 +1,108 @@
+/**
+ * ControlGrid Component Styles
+ */
+
+.maplibre-gl-control-grid {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  color: #1a1a1a;
+}
+
+/* Collapsed: single square wrench button, no grid visible */
+.maplibre-gl-control-grid--collapsed {
+  padding: 0;
+}
+
+.maplibre-gl-control-grid--collapsed .maplibre-gl-control-grid-content {
+  display: none !important;
+}
+
+.maplibre-gl-control-grid-header {
+  user-select: none;
+  color: #1a1a1a;
+}
+
+.maplibre-gl-control-grid-title {
+  color: #1a1a1a;
+}
+
+.maplibre-gl-control-grid-toggle {
+  color: #1a1a1a;
+  transition: color 0.15s ease;
+}
+
+.maplibre-gl-control-grid-toggle:hover {
+  color: #0078d7;
+}
+
+/* Collapsed state: wrench icon only (same size as Terrain/Globe/Navigation icons) */
+.maplibre-gl-control-grid-wrench {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a1a1a;
+  transition: color 0.15s ease;
+}
+
+.maplibre-gl-control-grid-wrench svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.maplibre-gl-control-grid-wrench:hover {
+  color: #0078d7;
+}
+
+.maplibre-gl-control-grid-content {
+  /* Grid layout applied inline for dynamic rows/columns */
+}
+
+.maplibre-gl-control-grid-content > * {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Number inputs in header */
+.maplibre-gl-control-grid input[type='number'] {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+  font-size: inherit;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1a1a1a;
+}
+
+.maplibre-gl-control-grid input[type='number']:focus {
+  outline: none;
+  border-color: #0078d7;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .maplibre-gl-control-grid {
+    background: rgba(40, 40, 40, 0.9);
+    color: #e0e0e0;
+  }
+
+  .maplibre-gl-control-grid input[type='number'] {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+  }
+
+  .maplibre-gl-control-grid-toggle:hover,
+  .maplibre-gl-control-grid-wrench:hover {
+    color: #58a6ff;
+  }
+
+  .maplibre-gl-control-grid-wrench {
+    color: #e8e8e8;
+  }
+
+  .maplibre-gl-control-grid-title,
+  .maplibre-gl-control-grid-toggle {
+    color: #e8e8e8;
+  }
+}

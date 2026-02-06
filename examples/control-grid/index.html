@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Control Grid - MapLibre GL Components</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      #map {
+        width: 100vw;
+        height: 100vh;
+      }
+      .info-banner {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.95);
+        padding: 10px 18px;
+        border-radius: 8px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+        font-size: 13px;
+        color: #333;
+        z-index: 10;
+        text-align: center;
+        max-width: 560px;
+      }
+      .info-banner strong {
+        color: #0078d7;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <div class="info-banner">
+      <strong>Control Grid</strong> — A collapsible grid that holds multiple map controls (Terrain, Search, View State).
+      Change <strong>R</strong> / <strong>C</strong> to adjust rows and columns. Click the header to collapse or expand.
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
