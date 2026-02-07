@@ -16,7 +16,7 @@ const cogControl = new CogLayerControl({
   collapsed: false,
   defaultUrl:
     'https://s3.us-east-1.amazonaws.com/ds-deck.gl-raster-public/cog/Annual_NLCD_LndCov_2024_CU_C1V1.tif',
-  defaultColormap: 'terrain',
+  defaultColormap: 'none',
   defaultRescaleMin: 0,
   defaultRescaleMax: 4000,
 });

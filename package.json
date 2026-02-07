@@ -95,24 +95,24 @@
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
     "@vitejs/plugin-react": "^4.3.0",
-    "@vitest/ui": "^2.1.0",
+    "@vitest/ui": "^4.0.18",
     "eslint": "^9.17.0",
     "jsdom": "^25.0.0",
     "maplibre-gl": "^5.16.0",
     "prettier": "^3.4.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
+    "shpjs": "^5.0.0",
     "typescript": "^5.7.0",
     "vite": "^6.0.0",
-    "shpjs": "^5.0.0",
     "vite-plugin-dts": "^4.3.0",
-    "vite-plugin-node-polyfills": "^0.25.0",
-    "vitest": "^2.1.0"
+    "vite-plugin-node-polyfills": "^0.2.0",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@deck.gl/core": "^9.1.0",
     "@deck.gl/mapbox": "^9.1.0",
-    "@developmentseed/deck.gl-geotiff": "^0.1.0",
+    "@developmentseed/deck.gl-geotiff": "^0.2.0",
     "geotiff-geokeys-to-proj4": "^2024.4.5",
     "maplibre-gl-layer-control": "^0.12.0"
   }

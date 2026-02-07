@@ -10,6 +10,48 @@ import type {
 } from './types';
 
 /**
+ * Shader module that rescales float raster values to [0,1] for visualization.
+ * Single-band: maps value from [minVal, maxVal] to grayscale.
+ * Multi-band: rescales each channel independently.
+ */
+const RescaleFloat = {
+  name: 'rescaleFloat',
+  fs: `\
+uniform rescaleFloatUniforms {
+  float minVal;
+  float maxVal;
+  float isSingleBand;
+} rescaleFloat;
+`,
+  inject: {
+    'fs:DECKGL_FILTER_COLOR': /* glsl */ `
+    float range = rescaleFloat.maxVal - rescaleFloat.minVal;
+    if (range > 0.0) {
+      if (rescaleFloat.isSingleBand > 0.5) {
+        float val = clamp((color.r - rescaleFloat.minVal) / range, 0.0, 1.0);
+        color = vec4(val, val, val, 1.0);
+      } else {
+        color.r = clamp((color.r - rescaleFloat.minVal) / range, 0.0, 1.0);
+        color.g = clamp((color.g - rescaleFloat.minVal) / range, 0.0, 1.0);
+        color.b = clamp((color.b - rescaleFloat.minVal) / range, 0.0, 1.0);
+      }
+    }
+    `,
+  },
+  uniformTypes: {
+    minVal: 'f32' as const,
+    maxVal: 'f32' as const,
+    isSingleBand: 'f32' as const,
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getUniforms: (props: any) => ({
+    minVal: props.minVal,
+    maxVal: props.maxVal,
+    isSingleBand: props.isSingleBand,
+  }),
+};
+
+/**
  * All available colormap names for the dropdown.
  */
 const COLORMAP_NAMES: (ColormapName | 'none')[] = [
@@ -47,7 +89,7 @@ const DEFAULT_OPTIONS: Required<CogLayerControlOptions> = {
   collapsed: true,
   defaultUrl: '',
   defaultBands: '1',
-  defaultColormap: 'viridis',
+  defaultColormap: 'none',
   defaultRescaleMin: 0,
   defaultRescaleMax: 255,
   defaultNodata: 0,
@@ -363,7 +405,7 @@ export class CogLayerControl implements IControl {
     for (const name of COLORMAP_NAMES) {
       const opt = document.createElement('option');
       opt.value = name;
-      opt.textContent = name === 'none' ? 'none (RGB)' : name;
+      opt.textContent = name;
       if (name === this._state.colormap) opt.selected = true;
       cmSelect.appendChild(opt);
     }
@@ -545,6 +587,198 @@ export class CogLayerControl implements IControl {
     };
   }
 
+  /**
+   * Monkey-patch COGLayer._parseGeoTIFF to handle floating-point GeoTIFFs.
+   * The upstream library only supports unsigned integer data (SampleFormat: 1).
+   * This patch catches the "non-unsigned integers not yet supported" error and
+   * re-implements the parsing with a float-compatible render pipeline.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _patchCOGLayerForFloat(COGLayerClass: any): void {
+    // Guard: only patch once
+    if (COGLayerClass.__floatPatched) return;
+    COGLayerClass.__floatPatched = true;
+
+    const originalParseGeoTIFF = COGLayerClass.prototype._parseGeoTIFF;
+
+    COGLayerClass.prototype._parseGeoTIFF = async function () {
+      try {
+        await originalParseGeoTIFF.call(this);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!msg.includes('non-unsigned integers not yet supported')) {
+          throw err;
+        }
+
+        // Float fallback: re-do the GeoTIFF parsing with a custom pipeline.
+        // We use the public exports from the library plus `geotiff` (transitive dep).
+        const { fromUrl } = await import('geotiff');
+        const { parseCOGTileMatrixSet, texture } = await import(
+          '@developmentseed/deck.gl-geotiff'
+        );
+        const { CreateTexture, FilterNoDataVal } = await import(
+          '@developmentseed/deck.gl-raster/gpu-modules'
+        );
+        const proj4Module = await import('proj4');
+        const proj4Fn = proj4Module.default || proj4Module;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const geotiffInput = (this as any).props.geotiff;
+        const geotiff = typeof geotiffInput === 'string'
+          ? await fromUrl(geotiffInput)
+          : geotiffInput;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const geoKeysParser = (this as any).props.geoKeysParser;
+        const metadata = await parseCOGTileMatrixSet(geotiff, geoKeysParser);
+
+        const image = await geotiff.getImage();
+        const imageCount = await geotiff.getImageCount();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const images: any[] = [];
+        for (let i = 0; i < imageCount; i++) {
+          images.push(await geotiff.getImage(i));
+        }
+
+        const sourceProjection = await geoKeysParser(image.getGeoKeys());
+        if (!sourceProjection) {
+          throw new Error('Could not determine source projection from GeoTIFF geo keys');
+        }
+        const converter = proj4Fn(sourceProjection.def, 'EPSG:4326');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const forwardReproject = (x: number, y: number) => converter.forward([x, y], false as any);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const inverseReproject = (x: number, y: number) => converter.inverse([x, y], false as any);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((this as any).props.onGeoTIFFLoad) {
+          // Compute geographic bounds for fitBounds callback
+          const bbox = image.getBoundingBox();
+          const corners = [
+            converter.forward([bbox[0], bbox[1]]),
+            converter.forward([bbox[2], bbox[1]]),
+            converter.forward([bbox[2], bbox[3]]),
+            converter.forward([bbox[0], bbox[3]]),
+          ];
+          const lons = corners.map((c: number[]) => c[0]);
+          const lats = corners.map((c: number[]) => c[1]);
+          const geographicBounds = {
+            west: Math.min(...lons),
+            south: Math.min(...lats),
+            east: Math.max(...lons),
+            north: Math.max(...lats),
+          };
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (this as any).props.onGeoTIFFLoad(geotiff, {
+            projection: sourceProjection,
+            geographicBounds,
+          });
+        }
+
+        // Build float-compatible getTileData and renderTile
+        const ifd = image.getFileDirectory();
+        const { BitsPerSample, SampleFormat, SamplesPerPixel, GDAL_NODATA } = ifd;
+
+        // Parse GDAL_NODATA tag (inline, since it's not publicly exported)
+        let noDataVal: number | null = null;
+        if (GDAL_NODATA) {
+          const ndStr = GDAL_NODATA[GDAL_NODATA.length - 1] === '\x00'
+            ? GDAL_NODATA.slice(0, -1)
+            : GDAL_NODATA;
+          if (ndStr.length > 0) noDataVal = parseFloat(ndStr);
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const defaultGetTileData = async (geotiffImage: any, options: any) => {
+          const { device } = options;
+          const rasterData = await geotiffImage.readRasters({
+            ...options,
+            interleave: true,
+          });
+
+          let data = rasterData;
+          let numSamples = SamplesPerPixel;
+
+          // WebGL2 has no RGB-only float format; expand 3-band to RGBA
+          if (SamplesPerPixel === 3) {
+            const pixelCount = rasterData.width * rasterData.height;
+            const rgba = new Float32Array(pixelCount * 4);
+            for (let i = 0; i < pixelCount; i++) {
+              rgba[i * 4] = rasterData[i * 3];
+              rgba[i * 4 + 1] = rasterData[i * 3 + 1];
+              rgba[i * 4 + 2] = rasterData[i * 3 + 2];
+              rgba[i * 4 + 3] = 1.0;
+            }
+            data = rgba;
+            // Preserve dimensions for texture creation
+            (data as { width?: number; height?: number }).width = rasterData.width;
+            (data as { width?: number; height?: number }).height = rasterData.height;
+            numSamples = 4;
+          }
+
+          const textureFormat = texture.inferTextureFormat(numSamples, BitsPerSample, SampleFormat);
+          const tex = device.createTexture({
+            data,
+            format: textureFormat,
+            width: rasterData.width,
+            height: rasterData.height,
+            sampler: { magFilter: 'nearest', minFilter: 'nearest' },
+          });
+
+          return {
+            texture: tex,
+            height: rasterData.height,
+            width: rasterData.width,
+          };
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const self = this as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const defaultRenderTile = (tileData: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pipeline: any[] = [
+            {
+              module: CreateTexture,
+              props: { textureName: tileData.texture },
+            },
+          ];
+
+          // Filter nodata pixels
+          if (noDataVal !== null) {
+            pipeline.push({
+              module: FilterNoDataVal,
+              props: { value: noDataVal },
+            });
+          }
+
+          // Rescale float values to [0,1] for visualization
+          const rescaleMin = self.props._rescaleMin ?? 0;
+          const rescaleMax = self.props._rescaleMax ?? 255;
+          pipeline.push({
+            module: RescaleFloat,
+            props: {
+              minVal: rescaleMin,
+              maxVal: rescaleMax,
+              isSingleBand: SamplesPerPixel === 1 ? 1.0 : 0.0,
+            },
+          });
+
+          return pipeline;
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this as any).setState({
+          metadata,
+          forwardReproject,
+          inverseReproject,
+          images,
+          defaultGetTileData,
+          defaultRenderTile,
+        });
+      }
+    };
+  }
+
   private async _addLayer(): Promise<void> {
     if (!this._map || !this._state.url) {
       this._state.error = 'Please enter a COG URL.';
@@ -562,6 +796,9 @@ export class CogLayerControl implements IControl {
 
       const { COGLayer } = await import('@developmentseed/deck.gl-geotiff');
 
+      // Patch COGLayer to support floating-point GeoTIFFs
+      this._patchCOGLayerForFloat(COGLayer);
+
       const map = this._map;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -569,6 +806,8 @@ export class CogLayerControl implements IControl {
         id: 'cog-layer',
         geotiff: this._state.url,
         opacity: this._state.layerOpacity,
+        _rescaleMin: this._state.rescaleMin,
+        _rescaleMax: this._state.rescaleMax,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onGeoTIFFLoad: (_geotiff: any, options: any) => {
           try {
