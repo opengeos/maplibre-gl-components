@@ -433,7 +433,7 @@ export class PMTilesLayerControl implements IControl {
 
     // Source layers section with Fetch button
     const sourceLayersGroup = this._createFormGroup("Source Layers", "source-layers");
-    
+
     // Fetch button row
     const fetchRow = document.createElement("div");
     fetchRow.style.display = "flex";
