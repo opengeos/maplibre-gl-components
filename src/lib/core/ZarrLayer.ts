@@ -129,7 +129,7 @@ export class ZarrLayerControl implements IControl {
 
   constructor(options?: ZarrLayerControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
-    
+
     // Detect if a custom colormap was provided
     if (options?.defaultColormap) {
       this._colormapName = findColormapName(options.defaultColormap);
@@ -137,7 +137,7 @@ export class ZarrLayerControl implements IControl {
         this._customColormap = options.defaultColormap;
       }
     }
-    
+
     this._state = {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
@@ -449,7 +449,7 @@ export class ZarrLayerControl implements IControl {
     const cmGroup = this._createFormGroup('Colormap', 'colormap');
     const cmSelect = document.createElement('select');
     cmSelect.className = 'maplibre-gl-zarr-layer-select';
-    
+
     // Add 'custom' option if we have a custom colormap
     if (this._customColormap) {
       const customOpt = document.createElement('option');
@@ -460,7 +460,7 @@ export class ZarrLayerControl implements IControl {
       }
       cmSelect.appendChild(customOpt);
     }
-    
+
     for (const name of COLORMAP_NAMES) {
       const opt = document.createElement('option');
       opt.value = name;
