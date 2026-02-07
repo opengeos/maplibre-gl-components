@@ -15,9 +15,9 @@ import { generateId } from "../utils/helpers";
  * Vector/polygon icon for the control button.
  */
 const VECTOR_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <polygon points="2 8 9 3 16 8 16 16 9 21 2 16 2 8" fill="currentColor" fill-opacity="0.2"/>
-  <polyline points="14 6 22 6 22 14" stroke-width="2.5"/>
-  <circle cx="19" cy="19" r="3.5" fill="currentColor"/>
+  <circle cx="5" cy="5" r="3" fill="currentColor"/>
+  <polyline points="12 4 20 4 20 12" stroke-width="2"/>
+  <polygon points="4 14 12 11 18 16 14 22 6 22 4 14" fill="currentColor" fill-opacity="0.25"/>
 </svg>`;
 
 /**
