@@ -39,6 +39,19 @@ const COLORMAP_NAMES: ColormapName[] = [
 ];
 
 /**
+ * Check if a colormap array matches a named colormap.
+ */
+function findColormapName(colors: string[]): ColormapName | 'custom' {
+  for (const name of COLORMAP_NAMES) {
+    const preset = getColormapColors(name);
+    if (JSON.stringify(preset) === JSON.stringify(colors)) {
+      return name;
+    }
+  }
+  return 'custom';
+}
+
+/**
  * Convert colormap stops to array of hex colors for Zarr layer.
  */
 function getColormapColors(name: ColormapName): string[] {
@@ -111,10 +124,20 @@ export class ZarrLayerControl implements IControl {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _zarrLayerPropsMap: Map<string, Record<string, any>> = new Map();
   private _layerCounter = 0;
-  private _colormapName: ColormapName = 'viridis';
+  private _colormapName: ColormapName | 'custom' = 'viridis';
+  private _customColormap?: string[];
 
   constructor(options?: ZarrLayerControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
+    
+    // Detect if a custom colormap was provided
+    if (options?.defaultColormap) {
+      this._colormapName = findColormapName(options.defaultColormap);
+      if (this._colormapName === 'custom') {
+        this._customColormap = options.defaultColormap;
+      }
+    }
+    
     this._state = {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
@@ -426,6 +449,18 @@ export class ZarrLayerControl implements IControl {
     const cmGroup = this._createFormGroup('Colormap', 'colormap');
     const cmSelect = document.createElement('select');
     cmSelect.className = 'maplibre-gl-zarr-layer-select';
+    
+    // Add 'custom' option if we have a custom colormap
+    if (this._customColormap) {
+      const customOpt = document.createElement('option');
+      customOpt.value = 'custom';
+      customOpt.textContent = 'custom';
+      if (this._colormapName === 'custom') {
+        customOpt.selected = true;
+      }
+      cmSelect.appendChild(customOpt);
+    }
+    
     for (const name of COLORMAP_NAMES) {
       const opt = document.createElement('option');
       opt.value = name;
@@ -436,8 +471,14 @@ export class ZarrLayerControl implements IControl {
       cmSelect.appendChild(opt);
     }
     cmSelect.addEventListener('change', () => {
-      this._colormapName = cmSelect.value as ColormapName;
-      this._state.colormap = getColormapColors(this._colormapName);
+      const value = cmSelect.value;
+      if (value === 'custom' && this._customColormap) {
+        this._colormapName = 'custom';
+        this._state.colormap = this._customColormap;
+      } else {
+        this._colormapName = value as ColormapName;
+        this._state.colormap = getColormapColors(this._colormapName);
+      }
       this._updateColormapPreview();
     });
     cmGroup.appendChild(cmSelect);

@@ -21,7 +21,8 @@ const zarrControl = new ZarrLayerControl({
   collapsed: false,
   defaultUrl: 'https://carbonplan-maps.s3.us-west-2.amazonaws.com/v2/demo/4d/tavg-prec-month',
   defaultVariable: 'climate',
-  // Uses viridis colormap by default
+  // Custom blue colormap for precipitation data - will show as "custom" in dropdown
+  defaultColormap: ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
   defaultClim: [0, 300],
   defaultSelector: { band: 'prec', month: 1 },
   defaultOpacity: 0.8,
