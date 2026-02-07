@@ -110,6 +110,10 @@
     "vitest": "^2.1.0"
   },
   "dependencies": {
+    "@deck.gl/core": "^9.1.0",
+    "@deck.gl/mapbox": "^9.1.0",
+    "@developmentseed/deck.gl-geotiff": "^0.1.0",
+    "geotiff-geokeys-to-proj4": "^2024.4.5",
     "maplibre-gl-layer-control": "^0.12.0"
   }
 }

@@ -1050,7 +1050,8 @@ export type DefaultControlName =
   | 'viewState'
   | 'inspect'
   | 'vectorDataset'
-  | 'basemap';
+  | 'basemap'
+  | 'cogLayer';
 
 /**
  * Options for configuring the ControlGrid.
@@ -1130,4 +1131,113 @@ export type ControlGridEventHandler = (event: {
   type: ControlGridEvent;
   state: ControlGridState;
   control?: IControl;
+}) => void;
+
+/**
+ * Options for configuring the CogLayerControl.
+ */
+export interface CogLayerControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether the panel starts collapsed (button only). Default: true. */
+  collapsed?: boolean;
+  /** Default COG URL to pre-fill. */
+  defaultUrl?: string;
+  /** Default bands (comma-separated, e.g. '1' or '1,2,3'). Default: '1'. */
+  defaultBands?: string;
+  /** Default colormap name. Default: 'viridis'. */
+  defaultColormap?: ColormapName | 'none';
+  /** Default rescale minimum. Default: 0. */
+  defaultRescaleMin?: number;
+  /** Default rescale maximum. Default: 255. */
+  defaultRescaleMax?: number;
+  /** Default nodata value. */
+  defaultNodata?: number;
+  /** Default opacity (0-1). Default: 1. */
+  defaultOpacity?: number;
+  /** Width of the panel in pixels. Default: 300. */
+  panelWidth?: number;
+  /** Background color of the container. */
+  backgroundColor?: string;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the CogLayerControl.
+ */
+export interface CogLayerControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Current COG URL. */
+  url: string;
+  /** Current bands. */
+  bands: string;
+  /** Current colormap. */
+  colormap: ColormapName | 'none';
+  /** Current rescale min. */
+  rescaleMin: number;
+  /** Current rescale max. */
+  rescaleMax: number;
+  /** Current nodata value. */
+  nodata: number | undefined;
+  /** Current opacity (0-1). */
+  layerOpacity: number;
+  /** Whether a COG layer is currently active. */
+  hasLayer: boolean;
+  /** Whether the layer is loading. */
+  loading: boolean;
+  /** Error message if any. */
+  error: string | null;
+  /** Status message. */
+  status: string | null;
+}
+
+/**
+ * Props for the React CogLayerControl wrapper component.
+ */
+export interface CogLayerControlReactProps extends CogLayerControlOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when a layer is added. */
+  onLayerAdd?: (url: string) => void;
+  /** Callback fired when a layer is removed. */
+  onLayerRemove?: () => void;
+  /** Callback fired when a layer is updated. */
+  onLayerUpdate?: (url: string) => void;
+  /** Callback fired when an error occurs. */
+  onError?: (error: string) => void;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: CogLayerControlState) => void;
+}
+
+/**
+ * CogLayer-specific event types.
+ */
+export type CogLayerEvent = ComponentEvent | 'layeradd' | 'layerremove' | 'layerupdate' | 'error';
+
+/**
+ * CogLayer event handler function type.
+ */
+export type CogLayerEventHandler = (event: {
+  type: CogLayerEvent;
+  state: CogLayerControlState;
+  url?: string;
+  error?: string;
 }) => void;
