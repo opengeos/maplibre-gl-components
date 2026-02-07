@@ -1222,6 +1222,8 @@ export interface CogLayerControlOptions {
   defaultNodata?: number;
   /** Default opacity (0-1). Default: 1. */
   defaultOpacity?: number;
+  /** Whether COG layers are pickable (clickable to show pixel values). Default: true. */
+  defaultPickable?: boolean;
   /** Width of the panel in pixels. Default: 300. */
   panelWidth?: number;
   /** Background color of the container. */
@@ -1262,6 +1264,8 @@ export interface CogLayerControlState {
   nodata: number | undefined;
   /** Current opacity (0-1). */
   layerOpacity: number;
+  /** Whether layers are pickable (clickable). */
+  pickable: boolean;
   /** Whether any COG layer is currently active. */
   hasLayer: boolean;
   /** Number of active COG layers. */

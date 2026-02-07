@@ -11,6 +11,7 @@ const DEFAULT_STATE: CogLayerControlState = {
   rescaleMax: 255,
   nodata: 0,
   layerOpacity: 1,
+  pickable: true,
   hasLayer: false,
   layerCount: 0,
   layers: [],
