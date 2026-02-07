@@ -313,7 +313,7 @@ export class AddVectorControl implements IControl {
 
     const type = layer.type;
     if (type === "fill") {
-      this._map.setPaintProperty(layerId, "fill-opacity", opacity * 0.5);
+      this._map.setPaintProperty(layerId, "fill-opacity", opacity);
     } else if (type === "line") {
       this._map.setPaintProperty(layerId, "line-opacity", opacity);
     } else if (type === "circle") {
@@ -825,7 +825,7 @@ export class AddVectorControl implements IControl {
             ],
             paint: {
               "fill-color": this._state.fillColor,
-              "fill-opacity": this._state.layerOpacity * 0.5,
+              "fill-opacity": this._state.layerOpacity,
             },
           },
           beforeId,
