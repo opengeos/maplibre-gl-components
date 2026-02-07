@@ -591,6 +591,13 @@ export class AddVectorControl implements IControl {
       const pct = Number(slider.value);
       this._state.layerOpacity = pct / 100;
       sliderValue.textContent = `${pct}%`;
+      // Update opacity for all existing layers
+      for (const [, info] of this._vectorLayers) {
+        for (const layerId of info.layerIds) {
+          this._setLayerOpacityDirect(layerId, this._state.layerOpacity);
+        }
+        info.opacity = this._state.layerOpacity;
+      }
     });
     sliderRow.appendChild(slider);
     sliderRow.appendChild(sliderValue);
