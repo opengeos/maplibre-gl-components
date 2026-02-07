@@ -1208,6 +1208,8 @@ export interface CogLayerControlOptions {
   beforeId?: string;
   /** Default COG URL to pre-fill. */
   defaultUrl?: string;
+  /** Whether to automatically load the defaultUrl when control is added. Default: false. */
+  loadDefaultUrl?: boolean;
   /** Default bands (comma-separated, e.g. '1' or '1,2,3'). Default: '1'. */
   defaultBands?: string;
   /** Default colormap name. Default: 'viridis'. */
@@ -1353,6 +1355,8 @@ export interface ZarrLayerControlOptions {
   beforeId?: string;
   /** Default Zarr URL to pre-fill. */
   defaultUrl?: string;
+  /** Whether to automatically load the defaultUrl when control is added. Default: false. */
+  loadDefaultUrl?: boolean;
   /** Default variable name. Default: ''. */
   defaultVariable?: string;
   /** Default colormap (array of hex colors). */

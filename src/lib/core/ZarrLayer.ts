@@ -74,6 +74,7 @@ const DEFAULT_OPTIONS: Required<ZarrLayerControlOptions> = {
   collapsed: true,
   beforeId: "",
   defaultUrl: "",
+  loadDefaultUrl: false,
   defaultVariable: "",
   defaultColormap: getColormapColors("viridis"),
   defaultClim: [0, 1],
@@ -167,6 +168,22 @@ export class ZarrLayerControl implements IControl {
     this._handleZoom = () => this._checkZoomVisibility();
     this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
+
+    // Auto-load default URL if specified
+    if (
+      this._options.loadDefaultUrl &&
+      this._options.defaultUrl &&
+      this._options.defaultVariable
+    ) {
+      const loadLayer = () => {
+        this._addLayer();
+      };
+      if (this._map.loaded()) {
+        loadLayer();
+      } else {
+        this._map.once("load", loadLayer);
+      }
+    }
 
     return this._container;
   }

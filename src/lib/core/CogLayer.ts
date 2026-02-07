@@ -158,6 +158,7 @@ const DEFAULT_OPTIONS: Required<CogLayerControlOptions> = {
   collapsed: true,
   beforeId: "",
   defaultUrl: "",
+  loadDefaultUrl: false,
   defaultBands: "1",
   defaultColormap: "none",
   defaultRescaleMin: 0,
@@ -246,6 +247,18 @@ export class CogLayerControl implements IControl {
     this._handleZoom = () => this._checkZoomVisibility();
     this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
+
+    // Auto-load default URL if specified
+    if (this._options.loadDefaultUrl && this._options.defaultUrl) {
+      const loadLayer = () => {
+        this._addLayer();
+      };
+      if (this._map.loaded()) {
+        loadLayer();
+      } else {
+        this._map.once("load", loadLayer);
+      }
+    }
 
     return this._container;
   }
