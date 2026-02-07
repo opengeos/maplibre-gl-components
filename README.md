@@ -124,12 +124,13 @@ map.addControl(htmlControl, 'top-left');
 // Update HTML dynamically
 htmlControl.setHtml('<div><strong>Stats:</strong> 5,678 features</div>');
 
-// Add a COG layer control
+// Add a COG layer control (auto-loads the layer)
 const cogControl = new CogLayerControl({
   defaultUrl: 'https://example.com/dem.tif',
   defaultColormap: 'terrain',
   defaultRescaleMin: 0,
   defaultRescaleMax: 4000,
+  loadDefaultUrl: true,  // Auto-load the layer when control is added
 });
 map.addControl(cogControl, 'top-right');
 
@@ -137,12 +138,13 @@ cogControl.on('layeradd', (event) => {
   console.log('COG layer added:', event.url);
 });
 
-// Add a Zarr layer control
+// Add a Zarr layer control (auto-loads the layer)
 const zarrControl = new ZarrLayerControl({
   defaultUrl: 'https://example.com/climate.zarr',
   defaultVariable: 'temperature',
   defaultColormap: ['#440154', '#21918c', '#fde725'],
   defaultClim: [0, 30],
+  loadDefaultUrl: true,  // Auto-load the layer when control is added
 });
 map.addControl(zarrControl, 'top-right');
 
@@ -770,6 +772,7 @@ interface CogLayerControlOptions {
   collapsed?: boolean;                 // Start collapsed. Default: true
   beforeId?: string;                   // Layer ID to insert before (for ordering)
   defaultUrl?: string;                 // Initial COG URL
+  loadDefaultUrl?: boolean;            // Auto-load defaultUrl on add. Default: false
   defaultBands?: string;               // Band selection (e.g., "1" or "1,2,3"). Default: "1"
   defaultColormap?: ColormapName | 'none';  // Colormap name. Default: 'none'
   defaultRescaleMin?: number;          // Min value for rescaling. Default: 0
@@ -829,6 +832,7 @@ interface ZarrLayerControlOptions {
   collapsed?: boolean;                 // Start collapsed. Default: true
   beforeId?: string;                   // Layer ID to insert before (for ordering)
   defaultUrl?: string;                 // Initial Zarr store URL
+  loadDefaultUrl?: boolean;            // Auto-load defaultUrl on add. Default: false
   defaultVariable?: string;            // Variable/array name to visualize
   defaultColormap?: string[];          // Array of hex colors. Default: viridis
   defaultClim?: [number, number];      // Color limits [min, max]. Default: [0, 1]

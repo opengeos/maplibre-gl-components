@@ -26,6 +26,7 @@ const zarrControl = new ZarrLayerControl({
   defaultClim: [0, 300],
   defaultSelector: { band: 'prec', month: 1 },
   defaultOpacity: 0.8,
+  loadDefaultUrl: true,
 });
 
 

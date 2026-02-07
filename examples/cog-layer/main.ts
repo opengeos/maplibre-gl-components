@@ -25,6 +25,7 @@ const cogControl = new CogLayerControl({
   defaultColormap: 'none',
   defaultRescaleMin: 0,
   defaultRescaleMax: 4000,
+  loadDefaultUrl: true,
 });
 
 
