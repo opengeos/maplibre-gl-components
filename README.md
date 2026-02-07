@@ -15,6 +15,7 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **TerrainControl** - Toggle 3D terrain on/off using free AWS Terrarium elevation tiles
 - **SearchControl** - Collapsible place search with geocoding and fly-to functionality
 - **VectorDatasetControl** - Load GeoJSON files via file upload or drag-and-drop
+- **AddVectorControl** - Load vector data from URLs (GeoJSON, GeoParquet, FlatGeobuf) with styling options
 - **InspectControl** - Click on features to view their properties/attributes
 - **ViewStateControl** - Display live map state (center, bounds, zoom, pitch, bearing) with optional bbox drawing
 - **HtmlControl** - Flexible HTML content control for custom info panels
@@ -37,7 +38,7 @@ npm install maplibre-gl-components
 
 ```typescript
 import maplibregl from 'maplibre-gl';
-import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl, VectorDatasetControl, ViewStateControl, CogLayerControl, ZarrLayerControl } from 'maplibre-gl-components';
+import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl, VectorDatasetControl, AddVectorControl, ViewStateControl, CogLayerControl, ZarrLayerControl } from 'maplibre-gl-components';
 import 'maplibre-gl-components/style.css';
 
 const map = new maplibregl.Map({
@@ -575,6 +576,107 @@ vectorControl.on('error', handler)       // Fired when an error occurs
 **Supported Formats:**
 - GeoJSON (.geojson, .json)
 - FeatureCollection, Feature, or raw Geometry objects
+
+### AddVectorControl
+
+A control for loading vector data from URLs with support for multiple formats and styling options.
+
+```typescript
+interface AddVectorControlOptions {
+  position?: ControlPosition;           // Control position (default: 'top-right')
+  className?: string;                   // Custom CSS class
+  visible?: boolean;                    // Initial visibility (default: true)
+  collapsed?: boolean;                  // Start collapsed (default: true)
+  beforeId?: string;                    // Layer ID to insert before
+  defaultUrl?: string;                  // Pre-filled URL
+  defaultLayerName?: string;            // Pre-filled layer name
+  loadDefaultUrl?: boolean;             // Auto-load defaultUrl on init (default: false)
+  defaultFormat?: 'auto' | 'geojson' | 'geoparquet' | 'flatgeobuf';  // Default format (default: 'auto')
+  defaultOpacity?: number;              // Default opacity 0-1 (default: 1)
+  defaultFillColor?: string;            // Default fill color (default: '#3388ff')
+  defaultStrokeColor?: string;          // Default stroke color (default: '#3388ff')
+  defaultCircleColor?: string;          // Default point color (default: '#3388ff')
+  defaultPickable?: boolean;            // Enable click popups (default: true)
+  fitBounds?: boolean;                  // Fit to data bounds (default: true)
+  fitBoundsPadding?: number;            // Padding for fitBounds (default: 50)
+  panelWidth?: number;                  // Panel width in pixels (default: 300)
+  backgroundColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  fontSize?: number;
+  fontColor?: string;
+  minzoom?: number;
+  maxzoom?: number;
+}
+```
+
+**Usage:**
+
+```typescript
+import { AddVectorControl } from 'maplibre-gl-components';
+
+// Basic usage
+const addVectorControl = new AddVectorControl({
+  position: 'top-right',
+  collapsed: false,
+});
+map.addControl(addVectorControl);
+
+// With pre-filled URL that auto-loads
+const addVectorControl = new AddVectorControl({
+  defaultUrl: 'https://example.com/data.geojson',
+  loadDefaultUrl: true,
+  defaultOpacity: 0.8,
+  defaultFillColor: '#ff6600',
+  fitBounds: true,
+});
+map.addControl(addVectorControl);
+
+// Listen for events
+addVectorControl.on('layeradd', (event) => {
+  console.log('Layer added:', event.layerId, event.url);
+});
+
+addVectorControl.on('layerremove', (event) => {
+  console.log('Layer removed:', event.layerId);
+});
+
+addVectorControl.on('error', (event) => {
+  console.error('Error:', event.error);
+});
+```
+
+**Methods:**
+
+```typescript
+addVectorControl.expand()
+addVectorControl.collapse()
+addVectorControl.toggle()
+addVectorControl.show()
+addVectorControl.hide()
+addVectorControl.getState()
+addVectorControl.update(options)
+addVectorControl.loadUrl(url, format?)       // Programmatically load a URL
+addVectorControl.getOpacity(layerId)         // Get layer opacity
+addVectorControl.setOpacity(layerId, value)  // Set layer opacity
+addVectorControl.getVisibility(layerId)      // Get layer visibility
+addVectorControl.setVisibility(layerId, visible)  // Set layer visibility
+addVectorControl.removeLayer(layerId)        // Remove a layer
+addVectorControl.removeAllLayers()           // Remove all layers
+```
+
+**Supported Formats:**
+- GeoJSON (.geojson, .json)
+- GeoParquet (.parquet, .geoparquet)
+- FlatGeobuf (.fgb)
+
+**Features:**
+- Auto-detect format from URL extension
+- Customizable fill, stroke, and point colors
+- Opacity slider with real-time updates
+- Pickable layers with feature info popups on click
+- Layer name and beforeId for layer ordering
+- Fit map bounds to loaded data
 
 ### TerrainControl
 
