@@ -887,7 +887,6 @@ export class CogLayerControl implements IControl {
         }
       }
       html += '</table>';
-      html += '<div style="font-size:10px;color:#888;margin-top:6px;">Note: Pixel values require server-side query</div>';
       html += '</div>';
 
       this._activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "280px" })
