@@ -207,6 +207,7 @@ export class CogLayerControl implements IControl {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _cogLayerPropsMap: Map<string, Record<string, any>> = new Map();
   private _layerCounter = 0;
+  private _opacityUpdateTimer?: ReturnType<typeof setTimeout>;
 
   constructor(options?: CogLayerControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -243,6 +244,12 @@ export class CogLayerControl implements IControl {
 
   onRemove(): void {
     this._removeLayer(); // Remove all layers on cleanup
+
+    // Clear any pending opacity update
+    if (this._opacityUpdateTimer) {
+      clearTimeout(this._opacityUpdateTimer);
+      this._opacityUpdateTimer = undefined;
+    }
 
     if (this._map && this._handleZoom) {
       this._map.off('zoom', this._handleZoom);
@@ -374,13 +381,18 @@ export class CogLayerControl implements IControl {
     const updatedLayer = layer.clone({ opacity: clampedOpacity });
     this._cogLayers.set(layerId, updatedLayer);
 
-    if (this._deckOverlay) {
-      this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
+    // Debounce the overlay update
+    if (this._opacityUpdateTimer) {
+      clearTimeout(this._opacityUpdateTimer);
     }
-
-    if (this._map) {
-      this._map.triggerRepaint();
-    }
+    this._opacityUpdateTimer = setTimeout(() => {
+      if (this._deckOverlay) {
+        this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
+      }
+      if (this._map) {
+        this._map.triggerRepaint();
+      }
+    }, 16);
   }
 
   /**
@@ -1147,6 +1159,16 @@ export class CogLayerControl implements IControl {
   }
 
   private _updateOpacity(): void {
+    // Debounce opacity updates since deck.gl layer cloning is expensive
+    if (this._opacityUpdateTimer) {
+      clearTimeout(this._opacityUpdateTimer);
+    }
+    this._opacityUpdateTimer = setTimeout(() => {
+      this._applyOpacity();
+    }, 16); // ~60fps, avoids lag while still being responsive
+  }
+
+  private _applyOpacity(): void {
     if (!this._deckOverlay || this._cogLayers.size === 0) return;
     const opacity = this._state.layerOpacity;
     // deck.gl layers are immutable; clone each with the new opacity
