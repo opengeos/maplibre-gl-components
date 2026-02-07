@@ -989,9 +989,14 @@ export class ZarrLayerControl implements IControl {
       html += `<tr><td><strong>Lng</strong></td><td>${lngLat.lng.toFixed(6)}</td></tr>`;
       html += `<tr><td><strong>Lat</strong></td><td>${lngLat.lat.toFixed(6)}</td></tr>`;
       if (props?.clim) {
-        html += `<tr><td><strong>Range</strong></td><td>${props.clim[0]} - ${props.clim[1]}</td></tr>`;
+        html += `<tr><td><strong>Color Range</strong></td><td>${props.clim[0]} - ${props.clim[1]}</td></tr>`;
       }
-      html += '</table></div>';
+      if (props?.source) {
+        html += `<tr><td><strong>Source</strong></td><td style="word-break:break-all;max-width:150px;">${props.source.split('/').pop()}</td></tr>`;
+      }
+      html += '</table>';
+      html += '<div style="font-size:10px;color:#888;margin-top:6px;">Note: Pixel values require server-side query</div>';
+      html += '</div>';
 
       this._activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "250px" })
         .setLngLat(lngLat)

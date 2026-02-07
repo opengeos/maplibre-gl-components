@@ -222,6 +222,8 @@ export class CogLayerControl implements IControl {
   private _cogLayerPropsMap: Map<string, Record<string, any>> = new Map();
   private _layerCounter = 0;
   private _activePopup?: maplibregl.Popup;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _mapClickHandler?: (e: any) => void;
 
   constructor(options?: CogLayerControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -277,6 +279,16 @@ export class CogLayerControl implements IControl {
     if (this._map && this._handleZoom) {
       this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
+    }
+
+    if (this._map && this._mapClickHandler) {
+      this._map.off("click", this._mapClickHandler);
+      this._mapClickHandler = undefined;
+    }
+
+    if (this._activePopup) {
+      this._activePopup.remove();
+      this._activePopup = undefined;
     }
 
     if (this._deckOverlay && this._map) {
@@ -838,45 +850,46 @@ export class CogLayerControl implements IControl {
     this._deckOverlay = new MapboxOverlay({
       interleaved: !!this._options.beforeId,
       layers: [],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      onClick: (info: any) => {
-        if (!this._state.pickable || !info.picked) return;
-
-        // Close existing popup
-        if (this._activePopup) {
-          this._activePopup.remove();
-        }
-
-        // Get pixel value from the picked object
-        const { coordinate, color, layer } = info;
-        if (!coordinate || !color) return;
-
-        let html = '<div class="maplibre-gl-cog-layer-popup">';
-        html += '<table class="maplibre-gl-cog-layer-popup-table">';
-        html += `<tr><td><strong>Layer</strong></td><td>${layer?.id || 'COG'}</td></tr>`;
-        html += `<tr><td><strong>Lng</strong></td><td>${coordinate[0].toFixed(6)}</td></tr>`;
-        html += `<tr><td><strong>Lat</strong></td><td>${coordinate[1].toFixed(6)}</td></tr>`;
-        if (Array.isArray(color)) {
-          if (color.length >= 3) {
-            html += `<tr><td><strong>R</strong></td><td>${color[0]}</td></tr>`;
-            html += `<tr><td><strong>G</strong></td><td>${color[1]}</td></tr>`;
-            html += `<tr><td><strong>B</strong></td><td>${color[2]}</td></tr>`;
-            if (color.length >= 4) {
-              html += `<tr><td><strong>A</strong></td><td>${color[3]}</td></tr>`;
-            }
-          }
-        }
-        html += '</table></div>';
-
-        this._activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "250px" })
-          .setLngLat([coordinate[0], coordinate[1]])
-          .setHTML(html)
-          .addTo(map);
-      },
     });
     (this._map as unknown as { addControl(c: IControl): void }).addControl(
       this._deckOverlay,
     );
+
+    // Set up map click handler for pickable COG layers
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this._mapClickHandler = (e: any) => {
+      if (!this._state.pickable || this._cogLayers.size === 0) return;
+
+      // Close existing popup
+      if (this._activePopup) {
+        this._activePopup.remove();
+      }
+
+      const { lngLat } = e;
+      const layerIds = Array.from(this._cogLayers.keys());
+      const props = this._cogLayerPropsMap.get(layerIds[0]);
+
+      let html = '<div class="maplibre-gl-cog-layer-popup">';
+      html += '<table class="maplibre-gl-cog-layer-popup-table">';
+      html += `<tr><td><strong>Layers</strong></td><td>${layerIds.length} COG layer(s)</td></tr>`;
+      html += `<tr><td><strong>Lng</strong></td><td>${lngLat.lng.toFixed(6)}</td></tr>`;
+      html += `<tr><td><strong>Lat</strong></td><td>${lngLat.lat.toFixed(6)}</td></tr>`;
+      if (props) {
+        html += `<tr><td><strong>Rescale</strong></td><td>${props._rescaleMin} - ${props._rescaleMax}</td></tr>`;
+        if (props._colormap && props._colormap !== 'none') {
+          html += `<tr><td><strong>Colormap</strong></td><td>${props._colormap}</td></tr>`;
+        }
+      }
+      html += '</table>';
+      html += '<div style="font-size:10px;color:#888;margin-top:6px;">Note: Pixel values require server-side query</div>';
+      html += '</div>';
+
+      this._activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "280px" })
+        .setLngLat(lngLat)
+        .setHTML(html)
+        .addTo(map);
+    };
+    map.on("click", this._mapClickHandler);
   }
 
   private _updatePickable(): void {
