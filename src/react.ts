@@ -9,6 +9,7 @@ export { VectorDatasetReact } from './lib/core/VectorDatasetReact';
 export { InspectControlReact } from './lib/core/InspectControlReact';
 export { ViewStateControlReact } from './lib/core/ViewStateControlReact';
 export { ControlGridReact } from './lib/core/ControlGridReact';
+export { CogLayerReact } from './lib/core/CogLayerReact';
 
 // React hooks
 export {
@@ -22,6 +23,7 @@ export {
   useInspectControl,
   useViewState,
   useControlGrid,
+  useCogLayer,
 } from './lib/hooks';
 
 // Re-export types for React consumers
@@ -78,6 +80,11 @@ export type {
   ControlGridReactProps,
   ControlGridEvent,
   ControlGridEventHandler,
+  CogLayerControlOptions,
+  CogLayerControlState,
+  CogLayerControlReactProps,
+  CogLayerEvent,
+  CogLayerEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,

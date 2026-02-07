@@ -10,6 +10,7 @@ import './lib/styles/vector-dataset.css';
 import './lib/styles/inspect-control.css';
 import './lib/styles/view-state.css';
 import './lib/styles/control-grid.css';
+import './lib/styles/cog-layer.css';
 
 // Main entry point - Core exports
 export { Colorbar } from './lib/core/Colorbar';
@@ -22,6 +23,7 @@ export { VectorDatasetControl } from './lib/core/VectorDataset';
 export { InspectControl } from './lib/core/InspectControl';
 export { ViewStateControl } from './lib/core/ViewStateControl';
 export { ControlGrid } from './lib/core/ControlGrid';
+export { CogLayerControl } from './lib/core/CogLayer';
 
 // Provider utilities
 export {
@@ -167,6 +169,10 @@ export type {
   ControlGridReactProps,
   ControlGridEvent,
   ControlGridEventHandler,
+  CogLayerControlOptions,
+  CogLayerControlState,
+  CogLayerEvent,
+  CogLayerEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,

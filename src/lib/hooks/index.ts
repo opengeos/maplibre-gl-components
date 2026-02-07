@@ -8,3 +8,4 @@ export { useVectorDataset } from './useVectorDataset';
 export { useInspectControl } from './useInspectControl';
 export { useViewState } from './useViewState';
 export { useControlGrid } from './useControlGrid';
+export { useCogLayer } from './useCogLayer';

@@ -50,6 +50,7 @@ export default defineConfig({
         react: resolve(__dirname, 'examples/react/index.html'),
         controlGrid: resolve(__dirname, 'examples/control-grid/index.html'),
         controlGridReact: resolve(__dirname, 'examples/control-grid-react/index.html'),
+        cogLayer: resolve(__dirname, 'examples/cog-layer/index.html'),
       },
     },
   },

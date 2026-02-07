@@ -14,6 +14,7 @@ import { ViewStateControl } from './ViewStateControl';
 import { InspectControl } from './InspectControl';
 import { VectorDatasetControl } from './VectorDataset';
 import { BasemapControl } from './Basemap';
+import { CogLayerControl } from './CogLayer';
 
 /**
  * Default options for the ControlGrid.
@@ -108,6 +109,7 @@ export class ControlGrid implements IControl {
       case 'inspect': return new InspectControl();
       case 'vectorDataset': return new VectorDatasetControl();
       case 'basemap': return new BasemapControl({ collapsed: true });
+      case 'cogLayer': return new CogLayerControl({ collapsed: true });
       default: return null;
     }
   }
