@@ -38,6 +38,7 @@ const DEFAULT_OPTIONS: Required<AddVectorControlOptions> = {
   defaultStrokeColor: "#3388ff",
   defaultCircleColor: "#3388ff",
   defaultPickable: true,
+  corsProxy: "",
   fitBounds: true,
   fitBoundsPadding: 50,
   panelWidth: 300,
@@ -1018,21 +1019,44 @@ export class AddVectorControl implements IControl {
     }
   }
 
+  private async _fetchWithCorsProxy(url: string): Promise<Response> {
+    // Try direct fetch first
+    try {
+      const response = await fetch(url, { mode: "cors" });
+      if (response.ok) return response;
+    } catch {
+      // Direct fetch failed, try CORS proxy if configured
+    }
+
+    // Try with CORS proxy if configured
+    if (this._options.corsProxy) {
+      const proxyUrl = this._options.corsProxy + encodeURIComponent(url);
+      try {
+        const response = await fetch(proxyUrl, { mode: "cors" });
+        if (response.ok) return response;
+      } catch {
+        // Proxy also failed
+      }
+    }
+
+    // Try with public CORS proxy as last resort
+    const publicProxy = "https://corsproxy.io/?";
+    try {
+      const response = await fetch(publicProxy + encodeURIComponent(url), { mode: "cors" });
+      if (response.ok) return response;
+    } catch {
+      // All attempts failed
+    }
+
+    throw new Error(`CORS error: Unable to fetch the file. The server doesn't allow cross-origin requests.`);
+  }
+
   private async _loadGeoParquet(url: string): Promise<GeoJSON.FeatureCollection> {
     // Use DuckDB converter for GeoParquet support (most reliable)
     const { getDuckDBConverter } = await import("../converters/DuckDBConverter");
     const converter = getDuckDBConverter();
 
-    let response: Response;
-    try {
-      response = await fetch(url, { mode: "cors" });
-    } catch (fetchError) {
-      throw new Error(`CORS error: The server doesn't allow cross-origin requests. Try hosting the file on a CORS-enabled server or CDN.`);
-    }
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch GeoParquet: ${response.status} ${response.statusText}`);
-    }
+    const response = await this._fetchWithCorsProxy(url);
 
     let buffer: ArrayBuffer;
     try {

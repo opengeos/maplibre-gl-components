@@ -9,7 +9,7 @@ import 'maplibre-gl-layer-control/style.css';
 const BASEMAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
 // Sample GeoJSON URLs for testing
-const SAMPLE_GEOJSON = 'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson';
+const SAMPLE_GEOJSON = 'https://flatgeobuf.org/test/data/UScounties.fgb';
 
 const map = new maplibregl.Map({
   container: 'map',

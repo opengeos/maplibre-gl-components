@@ -597,6 +597,7 @@ interface AddVectorControlOptions {
   defaultStrokeColor?: string;          // Default stroke color (default: '#3388ff')
   defaultCircleColor?: string;          // Default point color (default: '#3388ff')
   defaultPickable?: boolean;            // Enable click popups (default: true)
+  corsProxy?: string;                   // CORS proxy URL for cross-origin files
   fitBounds?: boolean;                  // Fit to data bounds (default: true)
   fitBoundsPadding?: number;            // Padding for fitBounds (default: 50)
   panelWidth?: number;                  // Panel width in pixels (default: 300)

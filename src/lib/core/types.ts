@@ -1670,6 +1670,8 @@ export interface AddVectorControlOptions {
   defaultCircleColor?: string;
   /** Whether layers are pickable (clickable to show feature info). Default: true. */
   defaultPickable?: boolean;
+  /** CORS proxy URL prefix for fetching files from servers without CORS. The URL will be appended. */
+  corsProxy?: string;
   /** Whether to fit map bounds to loaded data. Default: true. */
   fitBounds?: boolean;
   /** Padding for fitBounds in pixels. Default: 50. */
