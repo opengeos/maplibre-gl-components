@@ -1,6 +1,6 @@
 import "../styles/common.css";
 import "../styles/zarr-layer.css";
-import type { IControl, Map as MapLibreMap } from "maplibre-gl";
+import maplibregl, { type IControl, type Map as MapLibreMap } from "maplibre-gl";
 import type {
   ZarrLayerControlOptions,
   ZarrLayerControlState,
@@ -83,6 +83,7 @@ const DEFAULT_OPTIONS: Required<ZarrLayerControlOptions> = {
   defaultClim: [0, 1],
   defaultSelector: {},
   defaultOpacity: 1,
+  defaultPickable: true,
   panelWidth: 300,
   backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
@@ -129,6 +130,7 @@ export class ZarrLayerControl implements IControl {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _zarrLayerPropsMap: Map<string, Record<string, any>> = new Map();
   private _layerCounter = 0;
+  private _activePopup?: maplibregl.Popup;
   private _colormapName: ColormapName | "custom" = "viridis";
   private _customColormap?: string[];
   private _availableVariables: string[] = [];
@@ -154,6 +156,7 @@ export class ZarrLayerControl implements IControl {
       clim: this._options.defaultClim,
       selector: this._options.defaultSelector,
       layerOpacity: this._options.defaultOpacity,
+      pickable: this._options.defaultPickable,
       hasLayer: false,
       layerCount: 0,
       layers: [],
@@ -748,6 +751,26 @@ export class ZarrLayerControl implements IControl {
     opacityGroup.appendChild(sliderRow);
     panel.appendChild(opacityGroup);
 
+    // Pickable checkbox
+    const pickableGroup = document.createElement("div");
+    pickableGroup.className = "maplibre-gl-zarr-layer-form-group maplibre-gl-zarr-layer-checkbox-group";
+    const pickableLabel = document.createElement("label");
+    pickableLabel.className = "maplibre-gl-zarr-layer-checkbox-label";
+    const pickableCheckbox = document.createElement("input");
+    pickableCheckbox.type = "checkbox";
+    pickableCheckbox.className = "maplibre-gl-zarr-layer-checkbox";
+    pickableCheckbox.checked = this._state.pickable;
+    pickableCheckbox.addEventListener("change", () => {
+      this._state.pickable = pickableCheckbox.checked;
+      this._updatePickable();
+    });
+    pickableLabel.appendChild(pickableCheckbox);
+    const pickableLabelText = document.createElement("span");
+    pickableLabelText.textContent = "Pickable (click to show pixel value)";
+    pickableLabel.appendChild(pickableLabelText);
+    pickableGroup.appendChild(pickableLabel);
+    panel.appendChild(pickableGroup);
+
     // Before ID input (for layer ordering)
     const beforeIdGroup = this._createFormGroup(
       "Before Layer ID (optional)",
@@ -923,6 +946,11 @@ export class ZarrLayerControl implements IControl {
         this._map.addLayer(newLayer);
       }
 
+      // Set up pickable click handler if enabled
+      if (this._state.pickable) {
+        this._setupLayerClickHandler(layerId);
+      }
+
       this._state.hasLayer = this._zarrLayers.size > 0;
       this._state.layerCount = this._zarrLayers.size;
       this._state.layers = this._buildLayerInfoList();
@@ -936,6 +964,49 @@ export class ZarrLayerControl implements IControl {
       this._render();
       this._emit("error", { error: this._state.error });
     }
+  }
+
+  private _setupLayerClickHandler(layerId: string): void {
+    if (!this._map) return;
+    const map = this._map;
+    const props = this._zarrLayerPropsMap.get(layerId);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const clickHandler = (e: any) => {
+      if (!this._state.pickable) return;
+
+      // Close existing popup
+      if (this._activePopup) {
+        this._activePopup.remove();
+      }
+
+      const { lngLat } = e;
+
+      let html = '<div class="maplibre-gl-zarr-layer-popup">';
+      html += '<table class="maplibre-gl-zarr-layer-popup-table">';
+      html += `<tr><td><strong>Layer</strong></td><td>${layerId}</td></tr>`;
+      html += `<tr><td><strong>Variable</strong></td><td>${props?.variable || 'N/A'}</td></tr>`;
+      html += `<tr><td><strong>Lng</strong></td><td>${lngLat.lng.toFixed(6)}</td></tr>`;
+      html += `<tr><td><strong>Lat</strong></td><td>${lngLat.lat.toFixed(6)}</td></tr>`;
+      if (props?.clim) {
+        html += `<tr><td><strong>Range</strong></td><td>${props.clim[0]} - ${props.clim[1]}</td></tr>`;
+      }
+      html += '</table></div>';
+
+      this._activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "250px" })
+        .setLngLat(lngLat)
+        .setHTML(html)
+        .addTo(map);
+    };
+
+    // Store handler reference for cleanup
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (this._zarrLayers.get(layerId) as any)._clickHandler = clickHandler;
+    map.on("click", clickHandler);
+  }
+
+  private _updatePickable(): void {
+    // Pickable state is checked in click handler, no layer rebuild needed
   }
 
   private _removeLayer(id?: string): void {
