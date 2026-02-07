@@ -922,11 +922,11 @@ export class AddVectorControl implements IControl {
             if (!e.features || e.features.length === 0) return;
             const feature = e.features[0];
             const props = feature.properties || {};
-            
+
             // Build popup content
             const entries = Object.entries(props);
             if (entries.length === 0) return;
-            
+
             let html = '<div class="maplibre-gl-add-vector-popup">';
             html += '<table class="maplibre-gl-add-vector-popup-table">';
             for (const [key, value] of entries) {
