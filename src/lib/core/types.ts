@@ -1541,6 +1541,10 @@ export interface PMTilesLayerControlState {
   url: string;
   /** Current opacity (0-1). */
   layerOpacity: number;
+  /** Available source layers (fetched from metadata). */
+  availableSourceLayers: string[];
+  /** Selected source layers to render. */
+  selectedSourceLayers: string[];
   /** Whether any PMTiles layer is currently active. */
   hasLayer: boolean;
   /** Number of active PMTiles layers. */

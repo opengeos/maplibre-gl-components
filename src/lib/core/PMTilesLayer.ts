@@ -11,9 +11,9 @@ import type {
 } from "./types";
 
 /**
- * PMTiles/tile stack icon - represents tiled map data.
+ * Map pin/marker icon - represents map tiles data.
  */
-const PMTILES_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`;
+const PMTILES_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
 
 /**
  * Default options for the PMTilesLayerControl.
@@ -82,6 +82,8 @@ export class PMTilesLayerControl implements IControl {
       collapsed: this._options.collapsed,
       url: this._options.defaultUrl,
       layerOpacity: this._options.defaultOpacity,
+      availableSourceLayers: [],
+      selectedSourceLayers: [],
       hasLayer: false,
       layerCount: 0,
       layers: [],
@@ -429,6 +431,64 @@ export class PMTilesLayerControl implements IControl {
     opacityGroup.appendChild(sliderRow);
     panel.appendChild(opacityGroup);
 
+    // Source layers selection (for vector tiles)
+    const sourceLayersGroup = this._createFormGroup("Source Layers", "source-layers");
+    const sourceLayersRow = document.createElement("div");
+    sourceLayersRow.style.display = "flex";
+    sourceLayersRow.style.gap = "6px";
+    sourceLayersRow.style.flexWrap = "wrap";
+    sourceLayersRow.style.alignItems = "center";
+
+    if (this._state.availableSourceLayers.length > 0) {
+      // Show checkboxes for each available layer
+      for (const layerName of this._state.availableSourceLayers) {
+        const label = document.createElement("label");
+        label.style.display = "flex";
+        label.style.alignItems = "center";
+        label.style.gap = "3px";
+        label.style.fontSize = "11px";
+        label.style.cursor = "pointer";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = this._state.selectedSourceLayers.includes(layerName);
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) {
+            if (!this._state.selectedSourceLayers.includes(layerName)) {
+              this._state.selectedSourceLayers.push(layerName);
+            }
+          } else {
+            this._state.selectedSourceLayers = this._state.selectedSourceLayers.filter(
+              (l) => l !== layerName,
+            );
+          }
+        });
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(layerName));
+        sourceLayersRow.appendChild(label);
+      }
+    } else {
+      const hint = document.createElement("span");
+      hint.style.fontSize = "11px";
+      hint.style.color = "#888";
+      hint.textContent = "Enter URL and click Fetch to see available layers";
+      sourceLayersRow.appendChild(hint);
+    }
+
+    // Fetch button
+    const fetchBtn = document.createElement("button");
+    fetchBtn.className = "maplibre-gl-pmtiles-layer-btn";
+    fetchBtn.textContent = "Fetch";
+    fetchBtn.style.padding = "4px 8px";
+    fetchBtn.style.fontSize = "11px";
+    fetchBtn.style.flex = "0 0 auto";
+    fetchBtn.disabled = !this._state.url;
+    fetchBtn.addEventListener("click", () => this._fetchSourceLayers());
+    sourceLayersRow.appendChild(fetchBtn);
+
+    sourceLayersGroup.appendChild(sourceLayersRow);
+    panel.appendChild(sourceLayersGroup);
+
     // Before ID input (for layer ordering)
     const beforeIdGroup = this._createFormGroup(
       "Before Layer ID (optional)",
@@ -571,6 +631,56 @@ export class PMTilesLayerControl implements IControl {
     this._protocolRegistered = true;
   }
 
+  private async _fetchSourceLayers(): Promise<void> {
+    if (!this._state.url) {
+      this._state.error = "Please enter a PMTiles URL.";
+      this._render();
+      return;
+    }
+
+    this._state.loading = true;
+    this._state.error = null;
+    this._state.status = null;
+    this._render();
+
+    try {
+      await this._ensureProtocol();
+
+      const pmtiles = await import("pmtiles");
+      const p = new pmtiles.PMTiles(this._state.url);
+      this._protocol.add(p);
+
+      const header = await p.getHeader();
+      const metadata = await p.getMetadata();
+
+      // Check if vector tiles
+      if (header.tileType === 1) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const vectorLayers = (metadata as any)?.vector_layers || [];
+        const sourceLayers: string[] = vectorLayers.map(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (l: any) => l.id as string,
+        );
+
+        this._state.availableSourceLayers = sourceLayers;
+        // Select all by default
+        this._state.selectedSourceLayers = [...sourceLayers];
+        this._state.status = `Found ${sourceLayers.length} source layer(s)`;
+      } else {
+        this._state.availableSourceLayers = [];
+        this._state.selectedSourceLayers = [];
+        this._state.status = "Raster tiles (no source layers)";
+      }
+
+      this._state.loading = false;
+      this._render();
+    } catch (err) {
+      this._state.loading = false;
+      this._state.error = `Failed to fetch: ${err instanceof Error ? err.message : String(err)}`;
+      this._render();
+    }
+  }
+
   private async _addLayer(): Promise<void> {
     if (!this._map || !this._state.url) {
       this._state.error = "Please enter a PMTiles URL.";
@@ -636,8 +746,14 @@ export class PMTilesLayerControl implements IControl {
         : undefined;
 
       if (tileType === "vector") {
+        // Use selected source layers if available, otherwise use all
+        const layersToRender =
+          this._state.selectedSourceLayers.length > 0
+            ? this._state.selectedSourceLayers
+            : sourceLayers;
+
         // Add layers for each source layer
-        for (const sourceLayer of sourceLayers) {
+        for (const sourceLayer of layersToRender) {
           // Determine layer type based on geometry (simplified - add all types)
           const fillLayerId = `${sourceId}-${sourceLayer}-fill`;
           const lineLayerId = `${sourceId}-${sourceLayer}-line`;
@@ -698,7 +814,7 @@ export class PMTilesLayerControl implements IControl {
         }
 
         // If no source layers found, try adding a generic layer
-        if (sourceLayers.length === 0) {
+        if (layersToRender.length === 0) {
           const genericLayerId = `${sourceId}-generic`;
           this._map.addLayer(
             {
