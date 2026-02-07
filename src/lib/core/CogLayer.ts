@@ -1,6 +1,6 @@
 import "../styles/common.css";
 import "../styles/cog-layer.css";
-import type { IControl, Map as MapLibreMap } from "maplibre-gl";
+import maplibregl, { type IControl, type Map as MapLibreMap } from "maplibre-gl";
 import type {
   CogLayerControlOptions,
   CogLayerControlState,
@@ -165,6 +165,7 @@ const DEFAULT_OPTIONS: Required<CogLayerControlOptions> = {
   defaultRescaleMax: 255,
   defaultNodata: 0,
   defaultOpacity: 1,
+  defaultPickable: true,
   panelWidth: 300,
   backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
@@ -220,6 +221,7 @@ export class CogLayerControl implements IControl {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _cogLayerPropsMap: Map<string, Record<string, any>> = new Map();
   private _layerCounter = 0;
+  private _activePopup?: maplibregl.Popup;
 
   constructor(options?: CogLayerControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -233,6 +235,7 @@ export class CogLayerControl implements IControl {
       rescaleMax: this._options.defaultRescaleMax,
       nodata: this._options.defaultNodata,
       layerOpacity: this._options.defaultOpacity,
+      pickable: this._options.defaultPickable,
       hasLayer: false,
       layerCount: 0,
       layers: [],
@@ -673,6 +676,26 @@ export class CogLayerControl implements IControl {
     opacityGroup.appendChild(sliderRow);
     panel.appendChild(opacityGroup);
 
+    // Pickable checkbox
+    const pickableGroup = document.createElement("div");
+    pickableGroup.className = "maplibre-gl-cog-layer-form-group maplibre-gl-cog-layer-checkbox-group";
+    const pickableLabel = document.createElement("label");
+    pickableLabel.className = "maplibre-gl-cog-layer-checkbox-label";
+    const pickableCheckbox = document.createElement("input");
+    pickableCheckbox.type = "checkbox";
+    pickableCheckbox.className = "maplibre-gl-cog-layer-checkbox";
+    pickableCheckbox.checked = this._state.pickable;
+    pickableCheckbox.addEventListener("change", () => {
+      this._state.pickable = pickableCheckbox.checked;
+      this._updatePickable();
+    });
+    pickableLabel.appendChild(pickableCheckbox);
+    const pickableLabelText = document.createElement("span");
+    pickableLabelText.textContent = "Pickable (click to show pixel value)";
+    pickableLabel.appendChild(pickableLabelText);
+    pickableGroup.appendChild(pickableLabel);
+    panel.appendChild(pickableGroup);
+
     // Before ID input (for layer ordering)
     const beforeIdGroup = this._createFormGroup(
       "Before Layer ID (optional)",
@@ -809,15 +832,79 @@ export class CogLayerControl implements IControl {
     if (!this._map) return;
 
     const { MapboxOverlay } = await import("@deck.gl/mapbox");
+    const map = this._map;
     // Only use interleaved mode if beforeId is specified (for layer ordering)
     // interleaved: false is much faster for opacity updates
     this._deckOverlay = new MapboxOverlay({
       interleaved: !!this._options.beforeId,
       layers: [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      onClick: (info: any) => {
+        if (!this._state.pickable || !info.picked) return;
+
+        // Close existing popup
+        if (this._activePopup) {
+          this._activePopup.remove();
+        }
+
+        // Get pixel value from the picked object
+        const { coordinate, color, layer } = info;
+        if (!coordinate || !color) return;
+
+        let html = '<div class="maplibre-gl-cog-layer-popup">';
+        html += '<table class="maplibre-gl-cog-layer-popup-table">';
+        html += `<tr><td><strong>Layer</strong></td><td>${layer?.id || 'COG'}</td></tr>`;
+        html += `<tr><td><strong>Lng</strong></td><td>${coordinate[0].toFixed(6)}</td></tr>`;
+        html += `<tr><td><strong>Lat</strong></td><td>${coordinate[1].toFixed(6)}</td></tr>`;
+        if (Array.isArray(color)) {
+          if (color.length >= 3) {
+            html += `<tr><td><strong>R</strong></td><td>${color[0]}</td></tr>`;
+            html += `<tr><td><strong>G</strong></td><td>${color[1]}</td></tr>`;
+            html += `<tr><td><strong>B</strong></td><td>${color[2]}</td></tr>`;
+            if (color.length >= 4) {
+              html += `<tr><td><strong>A</strong></td><td>${color[3]}</td></tr>`;
+            }
+          }
+        }
+        html += '</table></div>';
+
+        this._activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "250px" })
+          .setLngLat([coordinate[0], coordinate[1]])
+          .setHTML(html)
+          .addTo(map);
+      },
     });
     (this._map as unknown as { addControl(c: IControl): void }).addControl(
       this._deckOverlay,
     );
+  }
+
+  private _updatePickable(): void {
+    if (!this._deckOverlay) return;
+    // Update all COG layers with new pickable state
+    for (const [, props] of this._cogLayerPropsMap) {
+      props.pickable = this._state.pickable;
+    }
+    this._rebuildLayers();
+  }
+
+  private async _rebuildLayers(): Promise<void> {
+    if (!this._deckOverlay) return;
+    try {
+      const { COGLayer } = await import("@developmentseed/deck.gl-geotiff");
+      this._patchCOGLayerForFloat(COGLayer);
+      this._patchCOGLayerForOpacity(COGLayer);
+
+      const newLayers = [];
+      for (const [layerId, props] of this._cogLayerPropsMap) {
+        const newLayer = new COGLayer(props);
+        this._cogLayers.set(layerId, newLayer);
+        newLayers.push(newLayer);
+      }
+      this._deckOverlay.setProps({ layers: newLayers });
+    } catch (err) {
+      console.error("Failed to rebuild layers:", err);
+    }
   }
 
   /**
@@ -1155,6 +1242,7 @@ export class CogLayerControl implements IControl {
       const layerProps: Record<string, any> = {
         geotiff: this._state.url,
         opacity: this._state.layerOpacity,
+        pickable: this._state.pickable,
         _rescaleMin: this._state.rescaleMin,
         _rescaleMax: this._state.rescaleMax,
         _colormap: this._state.colormap,

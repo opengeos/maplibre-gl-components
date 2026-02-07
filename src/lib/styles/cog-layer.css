@@ -288,3 +288,56 @@
   margin-top: 4px;
   border: 1px solid #ccc;
 }
+
+/* Checkbox styles */
+.maplibre-gl-cog-layer-checkbox-group {
+  margin-top: 12px;
+}
+
+.maplibre-gl-cog-layer-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #333;
+}
+
+.maplibre-gl-cog-layer-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #0078d7;
+}
+
+/* Popup styles for pickable COG layers */
+.maplibre-gl-cog-layer-popup {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.maplibre-gl-cog-layer-popup-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: 100%;
+}
+
+.maplibre-gl-cog-layer-popup-table td {
+  padding: 3px 8px;
+  border-bottom: 1px solid #eee;
+  vertical-align: top;
+}
+
+.maplibre-gl-cog-layer-popup-table tr:last-child td {
+  border-bottom: none;
+}
+
+.maplibre-gl-cog-layer-popup-table td:first-child {
+  color: #555;
+  white-space: nowrap;
+  padding-right: 12px;
+}
+
+.maplibre-gl-cog-layer-popup-table td:last-child {
+  color: #333;
+}
