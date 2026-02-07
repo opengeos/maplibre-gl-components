@@ -1779,3 +1779,128 @@ export type AddVectorEventHandler = (event: {
   error?: string;
   layerId?: string;
 }) => void;
+
+// ============================================================================
+// STAC Layer Control Types
+// ============================================================================
+
+/**
+ * Information about a STAC asset.
+ */
+export interface StacAssetInfo {
+  /** Asset key in the STAC item. */
+  key: string;
+  /** URL to the asset. */
+  href: string;
+  /** Asset MIME type. */
+  type: string;
+  /** Asset title. */
+  title?: string;
+}
+
+/**
+ * Options for configuring the StacLayerControl.
+ */
+export interface StacLayerControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether the panel starts collapsed (button only). Default: true. */
+  collapsed?: boolean;
+  /** Layer ID to insert layers before. If not specified, layers are added on top. */
+  beforeId?: string;
+  /** Default STAC item URL to pre-fill. */
+  defaultUrl?: string;
+  /** Whether to automatically load the defaultUrl when control is added. Default: false. */
+  loadDefaultUrl?: boolean;
+  /** Default colormap name. Default: 'none'. */
+  defaultColormap?: ColormapName | "none";
+  /** Default rescale minimum. Default: 0. */
+  defaultRescaleMin?: number;
+  /** Default rescale maximum. Default: 255. */
+  defaultRescaleMax?: number;
+  /** Default opacity (0-1). Default: 1. */
+  defaultOpacity?: number;
+  /** Whether layers are pickable (clickable to show info). Default: true. */
+  defaultPickable?: boolean;
+  /** Width of the panel in pixels. Default: 320. */
+  panelWidth?: number;
+  /** Background color of the container. */
+  backgroundColor?: string;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the StacLayerControl.
+ */
+export interface StacLayerControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Current STAC item URL. */
+  stacUrl: string;
+  /** Loaded STAC item. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  stacItem: any | null;
+  /** Available COG assets from the STAC item. */
+  assets: StacAssetInfo[];
+  /** Currently selected asset key. */
+  selectedAsset: string | null;
+  /** Current colormap. */
+  colormap: ColormapName | "none";
+  /** Current rescale min. */
+  rescaleMin: number;
+  /** Current rescale max. */
+  rescaleMax: number;
+  /** Current opacity (0-1). */
+  layerOpacity: number;
+  /** Whether layers are pickable. */
+  pickable: boolean;
+  /** Whether any layer is currently active. */
+  hasLayer: boolean;
+  /** Number of active layers. */
+  layerCount: number;
+  /** Whether the control is loading. */
+  loading: boolean;
+  /** Error message if any. */
+  error: string | null;
+  /** Status message. */
+  status: string | null;
+}
+
+/**
+ * STAC-specific event types.
+ */
+export type StacLayerEvent =
+  | ComponentEvent
+  | "stacload"
+  | "layeradd"
+  | "layerremove"
+  | "error";
+
+/**
+ * STAC event handler function type.
+ */
+export type StacLayerEventHandler = (event: {
+  type: StacLayerEvent;
+  state: StacLayerControlState;
+  url?: string;
+  error?: string;
+  layerId?: string;
+  assetKey?: string;
+}) => void;

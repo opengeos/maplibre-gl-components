@@ -1,0 +1,358 @@
+/**
+ * StacLayerControl styles
+ */
+
+.maplibre-gl-stac-layer {
+  position: relative;
+}
+
+.maplibre-gl-stac-layer-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #333;
+  transition: color 0.15s ease;
+}
+
+.maplibre-gl-stac-layer-button:hover {
+  color: #0078d7;
+}
+
+.maplibre-gl-stac-layer-button--active {
+  color: #0078d7;
+}
+
+.maplibre-gl-stac-layer-panel {
+  padding: 12px;
+  min-width: 280px;
+}
+
+.maplibre-gl-stac-layer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.maplibre-gl-stac-layer-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.maplibre-gl-stac-layer-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.maplibre-gl-stac-layer-close:hover {
+  color: #333;
+}
+
+.maplibre-gl-stac-layer-form-group {
+  margin-bottom: 12px;
+}
+
+.maplibre-gl-stac-layer-form-group > label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.maplibre-gl-stac-layer-input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-stac-layer-input:focus {
+  outline: none;
+  border-color: #0078d7;
+}
+
+.maplibre-gl-stac-layer-input::placeholder {
+  color: #999;
+}
+
+.maplibre-gl-stac-layer-input--half {
+  width: calc(50% - 4px);
+}
+
+.maplibre-gl-stac-layer-select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+}
+
+.maplibre-gl-stac-layer-select:focus {
+  outline: none;
+  border-color: #0078d7;
+}
+
+.maplibre-gl-stac-layer-rescale-row {
+  display: flex;
+  gap: 8px;
+}
+
+.maplibre-gl-stac-layer-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.maplibre-gl-stac-layer-slider {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #ddd;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.maplibre-gl-stac-layer-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #0078d7;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.maplibre-gl-stac-layer-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #0078d7;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.maplibre-gl-stac-layer-slider-value {
+  min-width: 36px;
+  font-size: 12px;
+  color: #666;
+  text-align: right;
+}
+
+.maplibre-gl-stac-layer-checkbox-group {
+  margin-top: 12px;
+}
+
+.maplibre-gl-stac-layer-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #333;
+}
+
+.maplibre-gl-stac-layer-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #0078d7;
+}
+
+.maplibre-gl-stac-layer-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.maplibre-gl-stac-layer-btn {
+  flex: 1;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f8f8f8;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-stac-layer-btn:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.maplibre-gl-stac-layer-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.maplibre-gl-stac-layer-btn--primary {
+  background: #0078d7;
+  border-color: #0078d7;
+  color: white;
+}
+
+.maplibre-gl-stac-layer-btn--primary:hover:not(:disabled) {
+  background: #006bc1;
+  border-color: #006bc1;
+}
+
+.maplibre-gl-stac-layer-btn--secondary {
+  background: #f0f0f0;
+  border-color: #ccc;
+}
+
+.maplibre-gl-stac-layer-btn--secondary:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.maplibre-gl-stac-layer-status {
+  margin-top: 12px;
+  padding: 8px 10px;
+  font-size: 11px;
+  border-radius: 4px;
+}
+
+.maplibre-gl-stac-layer-status--info {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.maplibre-gl-stac-layer-status--error {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.maplibre-gl-stac-layer-status--success {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.maplibre-gl-stac-layer-info {
+  margin-top: 12px;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #555;
+}
+
+.maplibre-gl-stac-layer-info-title {
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.maplibre-gl-stac-layer-colormap-preview {
+  height: 12px;
+  border-radius: 2px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+}
+
+.maplibre-gl-stac-layer-list {
+  margin-top: 16px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 12px;
+}
+
+.maplibre-gl-stac-layer-list-header {
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.maplibre-gl-stac-layer-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: #f8f8f8;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.maplibre-gl-stac-layer-list-label {
+  flex: 1;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 8px;
+}
+
+.maplibre-gl-stac-layer-list-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #999;
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 3px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.maplibre-gl-stac-layer-list-remove:hover {
+  background: rgba(211, 47, 47, 0.1);
+  color: #d32f2f;
+}
+
+/* Popup styles */
+.maplibre-gl-stac-layer-popup {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.maplibre-gl-stac-layer-popup-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: 100%;
+}
+
+.maplibre-gl-stac-layer-popup-table td {
+  padding: 3px 8px;
+  border-bottom: 1px solid #eee;
+  vertical-align: top;
+}
+
+.maplibre-gl-stac-layer-popup-table tr:last-child td {
+  border-bottom: none;
+}
+
+.maplibre-gl-stac-layer-popup-table td:first-child {
+  color: #555;
+  white-space: nowrap;
+  padding-right: 12px;
+}
+
+.maplibre-gl-stac-layer-popup-table td:last-child {
+  color: #333;
+}

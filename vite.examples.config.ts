@@ -54,6 +54,7 @@ export default defineConfig({
         zarrLayer: resolve(__dirname, 'examples/zarr-layer/index.html'),
         pmtilesLayer: resolve(__dirname, 'examples/pmtiles-layer/index.html'),
         addVector: resolve(__dirname, 'examples/add-vector/index.html'),
+        stacLayer: resolve(__dirname, 'examples/stac-layer/index.html'),
       },
     },
   },

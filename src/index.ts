@@ -14,6 +14,7 @@ import "./lib/styles/cog-layer.css";
 import "./lib/styles/zarr-layer.css";
 import "./lib/styles/pmtiles-layer.css";
 import "./lib/styles/add-vector.css";
+import "./lib/styles/stac-layer.css";
 
 // Main entry point - Core exports
 export { Colorbar } from "./lib/core/Colorbar";
@@ -30,6 +31,7 @@ export { CogLayerControl } from "./lib/core/CogLayer";
 export { ZarrLayerControl } from "./lib/core/ZarrLayer";
 export { PMTilesLayerControl } from "./lib/core/PMTilesLayer";
 export { AddVectorControl } from "./lib/core/AddVector";
+export { StacLayerControl } from "./lib/core/StacLayer";
 
 // Adapters for layer control integration
 export { CogLayerAdapter, ZarrLayerAdapter, PMTilesLayerAdapter, AddVectorAdapter } from "./lib/adapters";
@@ -201,6 +203,11 @@ export type {
   AddVectorEventHandler,
   AddVectorLayerInfo,
   RemoteVectorFormat,
+  StacLayerControlOptions,
+  StacLayerControlState,
+  StacLayerEvent,
+  StacLayerEventHandler,
+  StacAssetInfo,
   ColormapName,
   ColorStop,
   ControlPosition,
