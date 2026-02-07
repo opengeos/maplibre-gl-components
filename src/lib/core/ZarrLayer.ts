@@ -126,6 +126,8 @@ export class ZarrLayerControl implements IControl {
   private _layerCounter = 0;
   private _colormapName: ColormapName | 'custom' = 'viridis';
   private _customColormap?: string[];
+  private _availableVariables: string[] = [];
+  private _variablesLoading: boolean = false;
 
   constructor(options?: ZarrLayerControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -326,6 +328,76 @@ export class ZarrLayerControl implements IControl {
     return this._zarrLayers;
   }
 
+  /**
+   * Fetch available variables from the Zarr store.
+   */
+  async fetchVariables(): Promise<string[]> {
+    if (!this._state.url) return [];
+    
+    this._variablesLoading = true;
+    this._render();
+    
+    try {
+      const url = this._state.url.replace(/\/$/, '');
+      
+      // Try to fetch .zmetadata (consolidated metadata for Zarr v2)
+      try {
+        const response = await fetch(`${url}/.zmetadata`);
+        if (response.ok) {
+          const metadata = await response.json();
+          const variables = Object.keys(metadata.metadata || {})
+            .filter(key => key.endsWith('/.zarray'))
+            .map(key => key.replace('/.zarray', ''))
+            .filter(name => name && !name.startsWith('.'));
+          if (variables.length > 0) {
+            this._availableVariables = variables;
+            this._variablesLoading = false;
+            this._render();
+            return variables;
+          }
+        }
+      } catch {
+        // .zmetadata not available
+      }
+      
+      // Try to fetch zarr.json (Zarr v3)
+      try {
+        const response = await fetch(`${url}/zarr.json`);
+        if (response.ok) {
+          const metadata = await response.json();
+          // For Zarr v3, look for node_type: "array" in the root
+          if (metadata.node_type === 'group') {
+            // Need to list contents - this is more complex for v3
+            // For now, return empty and let user enter manually
+          }
+        }
+      } catch {
+        // zarr.json not available
+      }
+      
+      // Try to fetch .zgroup and then list directory contents
+      try {
+        const zgroupResponse = await fetch(`${url}/.zgroup`);
+        if (zgroupResponse.ok) {
+          // It's a Zarr v2 group but without consolidated metadata
+          // We can't easily list contents without server-side directory listing
+          // Some servers support this via index.html or directory listing
+        }
+      } catch {
+        // Not a standard Zarr structure
+      }
+      
+      this._variablesLoading = false;
+      this._render();
+      return this._availableVariables;
+    } catch (error) {
+      console.warn('[ZarrLayerControl] Failed to fetch variables:', error);
+      this._variablesLoading = false;
+      this._render();
+      return [];
+    }
+  }
+
   private _emit(event: ZarrLayerEvent, extra?: { url?: string; error?: string; layerId?: string }): void {
     const handlers = this._eventHandlers.get(event);
     if (handlers) {
@@ -434,15 +506,55 @@ export class ZarrLayerControl implements IControl {
     urlGroup.appendChild(urlInput);
     panel.appendChild(urlGroup);
 
-    // Variable input
+    // Variable input with fetch button
     const varGroup = this._createFormGroup('Variable', 'variable');
-    const varInput = document.createElement('input');
-    varInput.type = 'text';
-    varInput.className = 'maplibre-gl-zarr-layer-input';
-    varInput.placeholder = 'e.g., temperature';
-    varInput.value = this._state.variable;
-    varInput.addEventListener('input', () => { this._state.variable = varInput.value; });
-    varGroup.appendChild(varInput);
+    const varRow = document.createElement('div');
+    varRow.className = 'maplibre-gl-zarr-layer-var-row';
+    varRow.style.display = 'flex';
+    varRow.style.gap = '6px';
+    
+    if (this._availableVariables.length > 0) {
+      // Show dropdown if variables are available
+      const varSelect = document.createElement('select');
+      varSelect.className = 'maplibre-gl-zarr-layer-select';
+      varSelect.style.flex = '1';
+      
+      for (const varName of this._availableVariables) {
+        const opt = document.createElement('option');
+        opt.value = varName;
+        opt.textContent = varName;
+        if (varName === this._state.variable) {
+          opt.selected = true;
+        }
+        varSelect.appendChild(opt);
+      }
+      varSelect.addEventListener('change', () => {
+        this._state.variable = varSelect.value;
+      });
+      varRow.appendChild(varSelect);
+    } else {
+      // Show text input if no variables fetched yet
+      const varInput = document.createElement('input');
+      varInput.type = 'text';
+      varInput.className = 'maplibre-gl-zarr-layer-input';
+      varInput.style.flex = '1';
+      varInput.placeholder = 'e.g., temperature';
+      varInput.value = this._state.variable;
+      varInput.addEventListener('input', () => { this._state.variable = varInput.value; });
+      varRow.appendChild(varInput);
+    }
+    
+    // Fetch button
+    const fetchBtn = document.createElement('button');
+    fetchBtn.className = 'maplibre-gl-zarr-layer-btn';
+    fetchBtn.textContent = this._variablesLoading ? '...' : 'Fetch';
+    fetchBtn.disabled = this._variablesLoading || !this._state.url;
+    fetchBtn.style.padding = '5px 10px';
+    fetchBtn.style.flexShrink = '0';
+    fetchBtn.addEventListener('click', () => this.fetchVariables());
+    varRow.appendChild(fetchBtn);
+    
+    varGroup.appendChild(varRow);
     panel.appendChild(varGroup);
 
     // Colormap dropdown
