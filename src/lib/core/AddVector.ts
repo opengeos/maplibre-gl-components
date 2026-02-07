@@ -483,7 +483,7 @@ export class AddVectorControl implements IControl {
     urlInput.type = "text";
     urlInput.id = "add-vector-url";
     urlInput.className = "maplibre-gl-add-vector-input";
-    urlInput.placeholder = "https://example.com/data.geojson";
+    urlInput.placeholder = "https://flatgeobuf.org/test/data/UScounties.fgb";
     urlInput.value = this._state.url;
     urlInput.addEventListener("input", () => {
       this._state.url = urlInput.value;
