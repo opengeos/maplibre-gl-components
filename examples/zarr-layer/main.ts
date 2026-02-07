@@ -1,5 +1,8 @@
 import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { ZarrLayerControl, ZarrLayerAdapter } from '../../src';
+import '../../src/lib/styles/zarr-layer.css';
+import '../../src/lib/styles/common.css';
 import { LayerControl } from 'maplibre-gl-layer-control';
 import 'maplibre-gl-layer-control/style.css';
 
