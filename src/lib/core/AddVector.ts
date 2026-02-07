@@ -1018,17 +1018,35 @@ export class AddVectorControl implements IControl {
     const { getDuckDBConverter } = await import("../converters/DuckDBConverter");
     const converter = getDuckDBConverter();
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+    let response: Response;
+    try {
+      response = await fetch(url, { mode: "cors" });
+    } catch (fetchError) {
+      throw new Error(`Network error fetching GeoParquet: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}. This may be a CORS issue.`);
     }
-    const buffer = await response.arrayBuffer();
-    const result = await converter.convert(buffer, "data.parquet");
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch GeoParquet: ${response.status} ${response.statusText}`);
+    }
+
+    let buffer: ArrayBuffer;
+    try {
+      buffer = await response.arrayBuffer();
+    } catch (bufferError) {
+      throw new Error(`Failed to read GeoParquet response: ${bufferError instanceof Error ? bufferError.message : String(bufferError)}`);
+    }
+
+    let result;
+    try {
+      result = await converter.convert(buffer, "data.parquet");
+    } catch (convertError) {
+      throw new Error(`Failed to convert GeoParquet: ${convertError instanceof Error ? convertError.message : String(convertError)}`);
+    }
 
     if (result.geojson) {
       return result.geojson as GeoJSON.FeatureCollection;
     }
-    throw new Error("Failed to convert GeoParquet");
+    throw new Error("Failed to convert GeoParquet: No GeoJSON output");
   }
 
   private async _loadFlatGeobuf(url: string): Promise<GeoJSON.FeatureCollection> {
