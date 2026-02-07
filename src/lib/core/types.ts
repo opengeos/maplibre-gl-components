@@ -1634,6 +1634,8 @@ export interface AddVectorLayerInfo {
   fillColor: string;
   /** Stroke color. */
   strokeColor: string;
+  /** Whether the layer is pickable (clickable). */
+  pickable?: boolean;
 }
 
 /**
@@ -1666,6 +1668,8 @@ export interface AddVectorControlOptions {
   defaultStrokeColor?: string;
   /** Default circle color for points. Default: '#3388ff'. */
   defaultCircleColor?: string;
+  /** Whether layers are pickable (clickable to show feature info). Default: true. */
+  defaultPickable?: boolean;
   /** Whether to fit map bounds to loaded data. Default: true. */
   fitBounds?: boolean;
   /** Padding for fitBounds in pixels. Default: 50. */
@@ -1712,6 +1716,8 @@ export interface AddVectorControlState {
   strokeColor: string;
   /** Current circle/point color. */
   circleColor: string;
+  /** Whether layers are pickable (clickable). */
+  pickable: boolean;
   /** Whether any vector layer is currently active. */
   hasLayer: boolean;
   /** Number of active vector layers. */

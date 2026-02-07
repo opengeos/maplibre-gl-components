@@ -1,6 +1,6 @@
 import "../styles/common.css";
 import "../styles/add-vector.css";
-import type { IControl, Map as MapLibreMap } from "maplibre-gl";
+import maplibregl, { type IControl, type Map as MapLibreMap } from "maplibre-gl";
 import type {
   AddVectorControlOptions,
   AddVectorControlState,
@@ -33,6 +33,7 @@ const DEFAULT_OPTIONS: Required<AddVectorControlOptions> = {
   defaultFillColor: "#3388ff",
   defaultStrokeColor: "#3388ff",
   defaultCircleColor: "#3388ff",
+  defaultPickable: true,
   fitBounds: true,
   fitBoundsPadding: 50,
   panelWidth: 300,
@@ -118,6 +119,7 @@ export class AddVectorControl implements IControl {
       fillColor: this._options.defaultFillColor,
       strokeColor: this._options.defaultStrokeColor,
       circleColor: this._options.defaultCircleColor,
+      pickable: this._options.defaultPickable,
       hasLayer: false,
       layerCount: 0,
       layers: [],
@@ -623,6 +625,26 @@ export class AddVectorControl implements IControl {
     opacityGroup.appendChild(sliderRow);
     panel.appendChild(opacityGroup);
 
+    // Pickable checkbox
+    const pickableGroup = document.createElement("div");
+    pickableGroup.className = "maplibre-gl-add-vector-form-group maplibre-gl-add-vector-checkbox-group";
+    const pickableLabel = document.createElement("label");
+    pickableLabel.className = "maplibre-gl-add-vector-checkbox-label";
+    const pickableCheckbox = document.createElement("input");
+    pickableCheckbox.type = "checkbox";
+    pickableCheckbox.id = "add-vector-pickable";
+    pickableCheckbox.className = "maplibre-gl-add-vector-checkbox";
+    pickableCheckbox.checked = this._state.pickable;
+    pickableCheckbox.addEventListener("change", () => {
+      this._state.pickable = pickableCheckbox.checked;
+    });
+    pickableLabel.appendChild(pickableCheckbox);
+    const pickableLabelText = document.createElement("span");
+    pickableLabelText.textContent = "Pickable (click to show feature info)";
+    pickableLabel.appendChild(pickableLabelText);
+    pickableGroup.appendChild(pickableLabel);
+    panel.appendChild(pickableGroup);
+
     // Buttons
     const btns = document.createElement("div");
     btns.className = "maplibre-gl-add-vector-buttons";
@@ -883,6 +905,43 @@ export class AddVectorControl implements IControl {
         layerIds.push(pointLayerId);
       }
 
+      // Set up pickable interactions if enabled
+      if (this._state.pickable && this._map) {
+        const map = this._map;
+        for (const lid of layerIds) {
+          // Change cursor on hover
+          map.on("mouseenter", lid, () => {
+            map.getCanvas().style.cursor = "pointer";
+          });
+          map.on("mouseleave", lid, () => {
+            map.getCanvas().style.cursor = "";
+          });
+
+          // Show popup on click
+          map.on("click", lid, (e) => {
+            if (!e.features || e.features.length === 0) return;
+            const feature = e.features[0];
+            const props = feature.properties || {};
+            
+            // Build popup content
+            const entries = Object.entries(props);
+            if (entries.length === 0) return;
+            
+            let html = '<div class="maplibre-gl-add-vector-popup">';
+            html += '<table class="maplibre-gl-add-vector-popup-table">';
+            for (const [key, value] of entries) {
+              html += `<tr><td><strong>${key}</strong></td><td>${value}</td></tr>`;
+            }
+            html += '</table></div>';
+
+            new maplibregl.Popup({ closeButton: true, maxWidth: "300px" })
+              .setLngLat(e.lngLat)
+              .setHTML(html)
+              .addTo(map);
+          });
+        }
+      }
+
       // Store layer info
       const layerInfo: AddVectorLayerInfo = {
         id: layerId,
@@ -895,6 +954,7 @@ export class AddVectorControl implements IControl {
         opacity: this._state.layerOpacity,
         fillColor: this._state.fillColor,
         strokeColor: this._state.strokeColor,
+        pickable: this._state.pickable,
       };
       this._vectorLayers.set(layerId, layerInfo);
 
