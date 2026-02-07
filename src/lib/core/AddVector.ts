@@ -26,6 +26,7 @@ const DEFAULT_OPTIONS: Required<AddVectorControlOptions> = {
   collapsed: true,
   beforeId: "",
   defaultUrl: "",
+  defaultLayerName: "",
   loadDefaultUrl: false,
   defaultFormat: "auto",
   defaultOpacity: 1,
@@ -110,6 +111,8 @@ export class AddVectorControl implements IControl {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
       url: this._options.defaultUrl,
+      layerName: this._options.defaultLayerName,
+      beforeId: this._options.beforeId,
       format: this._options.defaultFormat,
       layerOpacity: this._options.defaultOpacity,
       fillColor: this._options.defaultFillColor,
@@ -492,6 +495,34 @@ export class AddVectorControl implements IControl {
     urlGroup.appendChild(formatHint);
     panel.appendChild(urlGroup);
 
+    // Layer name input
+    const layerNameGroup = this._createFormGroup("Layer Name", "layer-name");
+    const layerNameInput = document.createElement("input");
+    layerNameInput.type = "text";
+    layerNameInput.id = "add-vector-layer-name";
+    layerNameInput.className = "maplibre-gl-add-vector-input";
+    layerNameInput.placeholder = "Optional custom layer name";
+    layerNameInput.value = this._state.layerName;
+    layerNameInput.addEventListener("input", () => {
+      this._state.layerName = layerNameInput.value;
+    });
+    layerNameGroup.appendChild(layerNameInput);
+    panel.appendChild(layerNameGroup);
+
+    // Before ID input
+    const beforeIdGroup = this._createFormGroup("Before Layer ID", "before-id");
+    const beforeIdInput = document.createElement("input");
+    beforeIdInput.type = "text";
+    beforeIdInput.id = "add-vector-before-id";
+    beforeIdInput.className = "maplibre-gl-add-vector-input";
+    beforeIdInput.placeholder = "Optional layer ID to insert before";
+    beforeIdInput.value = this._state.beforeId;
+    beforeIdInput.addEventListener("input", () => {
+      this._state.beforeId = beforeIdInput.value;
+    });
+    beforeIdGroup.appendChild(beforeIdInput);
+    panel.appendChild(beforeIdGroup);
+
     // Format selector
     const formatGroup = this._createFormGroup("Format", "format");
     const formatSelect = document.createElement("select");
@@ -729,8 +760,8 @@ export class AddVectorControl implements IControl {
         throw new Error(`Unsupported format: ${format}`);
       }
 
-      // Generate unique IDs
-      const layerId = generateId("addvec");
+      // Generate unique IDs (use custom layer name if provided)
+      const layerId = this._state.layerName?.trim() || generateId("addvec");
       const sourceId = `${layerId}-source`;
 
       // Analyze geometry types
@@ -749,8 +780,12 @@ export class AddVectorControl implements IControl {
       });
 
       const layerIds: string[] = [];
-      const beforeId = this._options.beforeId && this._map.getLayer(this._options.beforeId)
-        ? this._options.beforeId
+      // Use beforeId from state (UI input) or fall back to options
+      const stateBeforeId = this._state.beforeId?.trim();
+      const optionsBeforeId = this._options.beforeId;
+      const beforeIdToUse = stateBeforeId || optionsBeforeId;
+      const beforeId = beforeIdToUse && this._map.getLayer(beforeIdToUse)
+        ? beforeIdToUse
         : undefined;
 
       // Add polygon fill layer

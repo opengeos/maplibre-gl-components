@@ -175,7 +175,8 @@
 }
 
 .maplibre-gl-add-vector-btn:hover:not(:disabled) {
-  background: #eee;
+  background: #e0e0e0;
+  color: #333;
 }
 
 .maplibre-gl-add-vector-btn:disabled {

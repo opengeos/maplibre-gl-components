@@ -1652,6 +1652,8 @@ export interface AddVectorControlOptions {
   beforeId?: string;
   /** Default URL to pre-fill. */
   defaultUrl?: string;
+  /** Default layer name to pre-fill. If not specified, a unique ID is generated. */
+  defaultLayerName?: string;
   /** Whether to automatically load the defaultUrl when control is added. Default: false. */
   loadDefaultUrl?: boolean;
   /** Default format. Default: 'auto'. */
@@ -1696,6 +1698,10 @@ export interface AddVectorControlState {
   collapsed: boolean;
   /** Current vector URL. */
   url: string;
+  /** Current layer name (optional, auto-generated if empty). */
+  layerName: string;
+  /** Current beforeId for layer ordering. */
+  beforeId: string;
   /** Current format. */
   format: RemoteVectorFormat;
   /** Current opacity (0-1). */
