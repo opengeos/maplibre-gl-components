@@ -21,6 +21,7 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **HtmlControl** - Flexible HTML content control for custom info panels
 - **CogLayerControl** - Load and visualize Cloud Optimized GeoTIFF (COG) files with colormaps
 - **ZarrLayerControl** - Load and visualize multi-dimensional Zarr arrays with colormaps
+- **StacLayerControl** - Load COG layers from STAC (SpatioTemporal Asset Catalog) items
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
 - **TypeScript** - Full type definitions included
@@ -38,7 +39,7 @@ npm install maplibre-gl-components
 
 ```typescript
 import maplibregl from 'maplibre-gl';
-import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl, VectorDatasetControl, AddVectorControl, ViewStateControl, CogLayerControl, ZarrLayerControl } from 'maplibre-gl-components';
+import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl, VectorDatasetControl, AddVectorControl, ViewStateControl, CogLayerControl, ZarrLayerControl, StacLayerControl } from 'maplibre-gl-components';
 import 'maplibre-gl-components/style.css';
 
 const map = new maplibregl.Map({
@@ -151,6 +152,24 @@ map.addControl(zarrControl, 'top-right');
 
 zarrControl.on('layeradd', (event) => {
   console.log('Zarr layer added:', event.url);
+});
+
+// Add a STAC layer control (loads COG from STAC items)
+const stacControl = new StacLayerControl({
+  defaultUrl: 'https://example.com/stac-item.json',
+  loadDefaultUrl: true,
+  defaultColormap: 'viridis',
+  defaultRescaleMin: 0,
+  defaultRescaleMax: 255,
+});
+map.addControl(stacControl, 'top-right');
+
+stacControl.on('stacload', (event) => {
+  console.log('STAC item loaded:', event.url);
+});
+
+stacControl.on('layeradd', (event) => {
+  console.log('STAC layer added:', event.assetKey);
 });
 ```
 
@@ -994,6 +1013,93 @@ const zarrControl = new ZarrLayerControl({
 });
 ```
 
+### StacLayerControl
+
+A control for loading Cloud Optimized GeoTIFF (COG) layers from STAC (SpatioTemporal Asset Catalog) items. Fetches STAC item metadata and displays available COG assets for visualization.
+
+```typescript
+interface StacLayerControlOptions {
+  position?: ControlPosition;
+  className?: string;                  // Custom CSS class
+  visible?: boolean;                   // Default: true
+  collapsed?: boolean;                 // Start collapsed. Default: true
+  beforeId?: string;                   // Layer ID to insert before (for ordering)
+  defaultUrl?: string;                 // Initial STAC item URL
+  loadDefaultUrl?: boolean;            // Auto-load defaultUrl on add. Default: false
+  defaultColormap?: ColormapName | 'none';  // Colormap name. Default: 'none'
+  defaultRescaleMin?: number;          // Min value for rescaling. Default: 0
+  defaultRescaleMax?: number;          // Max value for rescaling. Default: 255
+  defaultOpacity?: number;             // Layer opacity. Default: 1
+  defaultPickable?: boolean;           // Enable click popups. Default: true
+  panelWidth?: number;                 // Panel width in pixels. Default: 320
+  backgroundColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  fontSize?: number;
+  fontColor?: string;
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+// Methods
+stacControl.show()
+stacControl.hide()
+stacControl.expand()
+stacControl.collapse()
+stacControl.toggle()
+stacControl.getState()
+stacControl.update(options)
+stacControl.loadStacUrl(url)           // Fetch and parse a STAC item
+stacControl.on('stacload', handler)    // Fired when STAC item is loaded
+stacControl.on('layeradd', handler)    // Fired when layer is added
+stacControl.on('layerremove', handler) // Fired when layer is removed
+stacControl.on('error', handler)       // Fired on error
+```
+
+**Usage:**
+
+```typescript
+import { StacLayerControl } from 'maplibre-gl-components';
+
+// Basic usage with STAC item URL
+const stacControl = new StacLayerControl({
+  defaultUrl: 'https://canada-spot-ortho.s3.amazonaws.com/.../S5_11055_6057_20070622.json',
+  loadDefaultUrl: true,
+  defaultColormap: 'viridis',
+  defaultRescaleMin: 0,
+  defaultRescaleMax: 255,
+});
+map.addControl(stacControl, 'top-right');
+
+// Listen for events
+stacControl.on('stacload', (event) => {
+  console.log('STAC loaded:', event.url);
+  console.log('Available assets:', event.state.assets);
+});
+
+stacControl.on('layeradd', (event) => {
+  console.log('Layer added:', event.assetKey, event.layerId);
+});
+```
+
+**Features:**
+- Fetches and parses STAC item JSON
+- Lists available COG assets (GeoTIFF files)
+- Asset selector dropdown
+- 21 built-in colormaps with live preview
+- Rescale values for visualization
+- Opacity control
+- Pickable layers with info popup on click
+- Auto-fits map to STAC item bounding box
+- Multiple layer support
+
+**Workflow:**
+1. Enter a STAC item URL and click "Fetch STAC"
+2. Select a COG asset from the dropdown
+3. Configure colormap, rescale range, and opacity
+4. Click "Add Layer" to visualize
+5. Click on the layer to view info (if pickable)
+
 ### Layer Control Adapters
 
 To integrate COG and Zarr layers with [maplibre-gl-layer-control](https://github.com/AJPNorthwest/maplibre-gl-layer-control), use the included adapters:
@@ -1270,6 +1376,7 @@ See the [examples](./examples/) directory for complete working examples:
 - **View State Example** - View state control with bounding box drawing
 - **COG Layer Example** - Cloud Optimized GeoTIFF visualization with colormaps
 - **Zarr Layer Example** - Multi-dimensional Zarr data visualization
+- **STAC Layer Example** - Load COG layers from STAC catalog items
 
 ## Development
 
