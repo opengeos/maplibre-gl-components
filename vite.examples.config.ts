@@ -52,6 +52,7 @@ export default defineConfig({
         controlGridReact: resolve(__dirname, 'examples/control-grid-react/index.html'),
         cogLayer: resolve(__dirname, 'examples/cog-layer/index.html'),
         zarrLayer: resolve(__dirname, 'examples/zarr-layer/index.html'),
+        pmtilesLayer: resolve(__dirname, 'examples/pmtiles-layer/index.html'),
       },
     },
   },

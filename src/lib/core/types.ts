@@ -1457,3 +1457,140 @@ export type ZarrLayerEventHandler = (event: {
   error?: string;
   layerId?: string;
 }) => void;
+
+// =============================================================================
+// PMTilesLayerControl Types
+// =============================================================================
+
+/**
+ * PMTiles tile type.
+ */
+export type PMTilesTileType = "vector" | "raster" | "unknown";
+
+/**
+ * Information about a single added PMTiles layer.
+ */
+export interface PMTilesLayerInfo {
+  /** Unique layer identifier. */
+  id: string;
+  /** PMTiles URL. */
+  url: string;
+  /** Tile type (vector or raster). */
+  tileType: PMTilesTileType;
+  /** Source layers available (for vector tiles). */
+  sourceLayers: string[];
+  /** MapLibre layer IDs created for this source. */
+  layerIds: string[];
+  /** Layer opacity. */
+  opacity: number;
+}
+
+/**
+ * Options for configuring the PMTilesLayerControl.
+ */
+export interface PMTilesLayerControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether the panel starts collapsed (button only). Default: true. */
+  collapsed?: boolean;
+  /** Layer ID to insert PMTiles layers before. If not specified, layers are added on top. */
+  beforeId?: string;
+  /** Default PMTiles URL to pre-fill. */
+  defaultUrl?: string;
+  /** Whether to automatically load the defaultUrl when control is added. Default: false. */
+  loadDefaultUrl?: boolean;
+  /** Default opacity (0-1). Default: 1. */
+  defaultOpacity?: number;
+  /** Default fill color for vector polygons. Default: 'steelblue'. */
+  defaultFillColor?: string;
+  /** Default line color for vector lines. Default: '#333'. */
+  defaultLineColor?: string;
+  /** Default circle color for vector points. Default: 'steelblue'. */
+  defaultCircleColor?: string;
+  /** Width of the panel in pixels. Default: 300. */
+  panelWidth?: number;
+  /** Background color of the container. */
+  backgroundColor?: string;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the PMTilesLayerControl.
+ */
+export interface PMTilesLayerControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Current PMTiles URL. */
+  url: string;
+  /** Current opacity (0-1). */
+  layerOpacity: number;
+  /** Available source layers (fetched from metadata). */
+  availableSourceLayers: string[];
+  /** Selected source layers to render. */
+  selectedSourceLayers: string[];
+  /** Whether any PMTiles layer is currently active. */
+  hasLayer: boolean;
+  /** Number of active PMTiles layers. */
+  layerCount: number;
+  /** Information about all active PMTiles layers. */
+  layers: PMTilesLayerInfo[];
+  /** Whether the layer is loading. */
+  loading: boolean;
+  /** Error message if any. */
+  error: string | null;
+  /** Status message. */
+  status: string | null;
+}
+
+/**
+ * Props for the React PMTilesLayerControl wrapper component.
+ */
+export interface PMTilesLayerControlReactProps extends PMTilesLayerControlOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when a layer is added. */
+  onLayerAdd?: (url: string) => void;
+  /** Callback fired when a layer is removed. */
+  onLayerRemove?: () => void;
+  /** Callback fired when an error occurs. */
+  onError?: (error: string) => void;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: PMTilesLayerControlState) => void;
+}
+
+/**
+ * PMTilesLayer-specific event types.
+ */
+export type PMTilesLayerEvent =
+  | ComponentEvent
+  | "layeradd"
+  | "layerremove"
+  | "error";
+
+/**
+ * PMTilesLayer event handler function type.
+ */
+export type PMTilesLayerEventHandler = (event: {
+  type: PMTilesLayerEvent;
+  state: PMTilesLayerControlState;
+  url?: string;
+  error?: string;
+  layerId?: string;
+}) => void;
