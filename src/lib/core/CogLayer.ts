@@ -253,10 +253,12 @@ export class CogLayerControl implements IControl {
       const loadLayer = () => {
         this._addLayer();
       };
-      if (this._map.loaded()) {
-        loadLayer();
+      // Use 'idle' event for more reliable layer loading - ensures style is fully loaded
+      if (this._map.isStyleLoaded()) {
+        // Small delay to ensure everything is ready
+        setTimeout(loadLayer, 100);
       } else {
-        this._map.once("load", loadLayer);
+        this._map.once("idle", loadLayer);
       }
     }
 
