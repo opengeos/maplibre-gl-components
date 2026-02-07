@@ -497,34 +497,6 @@ export class AddVectorControl implements IControl {
     urlGroup.appendChild(formatHint);
     panel.appendChild(urlGroup);
 
-    // Layer name input
-    const layerNameGroup = this._createFormGroup("Layer Name", "layer-name");
-    const layerNameInput = document.createElement("input");
-    layerNameInput.type = "text";
-    layerNameInput.id = "add-vector-layer-name";
-    layerNameInput.className = "maplibre-gl-add-vector-input";
-    layerNameInput.placeholder = "Optional custom layer name";
-    layerNameInput.value = this._state.layerName;
-    layerNameInput.addEventListener("input", () => {
-      this._state.layerName = layerNameInput.value;
-    });
-    layerNameGroup.appendChild(layerNameInput);
-    panel.appendChild(layerNameGroup);
-
-    // Before ID input
-    const beforeIdGroup = this._createFormGroup("Before Layer ID", "before-id");
-    const beforeIdInput = document.createElement("input");
-    beforeIdInput.type = "text";
-    beforeIdInput.id = "add-vector-before-id";
-    beforeIdInput.className = "maplibre-gl-add-vector-input";
-    beforeIdInput.placeholder = "Optional layer ID to insert before";
-    beforeIdInput.value = this._state.beforeId;
-    beforeIdInput.addEventListener("input", () => {
-      this._state.beforeId = beforeIdInput.value;
-    });
-    beforeIdGroup.appendChild(beforeIdInput);
-    panel.appendChild(beforeIdGroup);
-
     // Format selector
     const formatGroup = this._createFormGroup("Format", "format");
     const formatSelect = document.createElement("select");
@@ -644,6 +616,34 @@ export class AddVectorControl implements IControl {
     pickableLabel.appendChild(pickableLabelText);
     pickableGroup.appendChild(pickableLabel);
     panel.appendChild(pickableGroup);
+
+    // Layer name input
+    const layerNameGroup = this._createFormGroup("Layer Name", "layer-name");
+    const layerNameInput = document.createElement("input");
+    layerNameInput.type = "text";
+    layerNameInput.id = "add-vector-layer-name";
+    layerNameInput.className = "maplibre-gl-add-vector-input";
+    layerNameInput.placeholder = "Optional custom layer name";
+    layerNameInput.value = this._state.layerName;
+    layerNameInput.addEventListener("input", () => {
+      this._state.layerName = layerNameInput.value;
+    });
+    layerNameGroup.appendChild(layerNameInput);
+    panel.appendChild(layerNameGroup);
+
+    // Before ID input
+    const beforeIdGroup = this._createFormGroup("Before Layer ID", "before-id");
+    const beforeIdInput = document.createElement("input");
+    beforeIdInput.type = "text";
+    beforeIdInput.id = "add-vector-before-id";
+    beforeIdInput.className = "maplibre-gl-add-vector-input";
+    beforeIdInput.placeholder = "Optional layer ID to insert before";
+    beforeIdInput.value = this._state.beforeId;
+    beforeIdInput.addEventListener("input", () => {
+      this._state.beforeId = beforeIdInput.value;
+    });
+    beforeIdGroup.appendChild(beforeIdInput);
+    panel.appendChild(beforeIdGroup);
 
     // Buttons
     const btns = document.createElement("div");
