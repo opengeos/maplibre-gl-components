@@ -110,6 +110,7 @@ export class AddVectorControl implements IControl {
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
   private _vectorLayers: Map<string, AddVectorLayerInfo> = new Map();
+  private _activePopup?: maplibregl.Popup;
 
   constructor(options?: AddVectorControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -951,7 +952,12 @@ export class AddVectorControl implements IControl {
             }
             html += '</table></div>';
 
-            new maplibregl.Popup({ closeButton: true, maxWidth: "300px" })
+            // Close any existing popup first
+            if (this._activePopup) {
+              this._activePopup.remove();
+            }
+
+            this._activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "300px" })
               .setLngLat(e.lngLat)
               .setHTML(html)
               .addTo(map);
