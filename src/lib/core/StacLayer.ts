@@ -95,6 +95,7 @@ export class StacLayerControl implements IControl {
   private _button?: HTMLButtonElement;
   // @ts-expect-error - Used for potential future reference/debugging
   private _panel?: HTMLElement;
+  private _colormapPreview?: HTMLElement;
   private _options: Required<StacLayerControlOptions>;
   private _state: StacLayerControlState;
   private _eventHandlers: Map<StacLayerEvent, Set<StacLayerEventHandler>> =
@@ -122,6 +123,8 @@ export class StacLayerControl implements IControl {
       stacItem: null,
       assets: [],
       selectedAsset: null,
+      rgbMode: false,
+      rgbAssets: [null, null, null],
       colormap: this._options.defaultColormap,
       rescaleMin: this._options.defaultRescaleMin,
       rescaleMax: this._options.defaultRescaleMax,
@@ -394,66 +397,148 @@ export class StacLayerControl implements IControl {
 
     // Asset selector (only show if STAC item is loaded)
     if (this._state.stacItem && this._state.assets.length > 0) {
-      const assetGroup = this._createFormGroup("Select Asset", "asset");
-      const assetSelect = document.createElement("select");
-      assetSelect.id = "stac-layer-asset";
-      assetSelect.className = "maplibre-gl-stac-layer-select";
+      // RGB Mode toggle
+      const modeGroup = document.createElement("div");
+      modeGroup.className = "maplibre-gl-stac-layer-form-group maplibre-gl-stac-layer-mode-toggle";
 
-      const defaultOption = document.createElement("option");
-      defaultOption.value = "";
-      defaultOption.textContent = "-- Select an asset --";
-      assetSelect.appendChild(defaultOption);
+      const modeLabel = document.createElement("label");
+      modeLabel.textContent = "Layer Mode";
+      modeGroup.appendChild(modeLabel);
 
-      for (const asset of this._state.assets) {
-        const option = document.createElement("option");
-        option.value = asset.key;
-        option.textContent = `${asset.title || asset.key} (${asset.type})`;
-        option.selected = this._state.selectedAsset === asset.key;
-        assetSelect.appendChild(option);
-      }
+      const modeButtons = document.createElement("div");
+      modeButtons.className = "maplibre-gl-stac-layer-mode-buttons";
 
-      assetSelect.addEventListener("change", () => {
-        this._state.selectedAsset = assetSelect.value || null;
+      const singleBtn = document.createElement("button");
+      singleBtn.type = "button";
+      singleBtn.className = `maplibre-gl-stac-layer-mode-btn${!this._state.rgbMode ? " maplibre-gl-stac-layer-mode-btn--active" : ""}`;
+      singleBtn.textContent = "Single Band";
+      singleBtn.addEventListener("click", () => {
+        this._state.rgbMode = false;
+        this._render();
       });
 
-      assetGroup.appendChild(assetSelect);
-      panel.appendChild(assetGroup);
+      const rgbBtn = document.createElement("button");
+      rgbBtn.type = "button";
+      rgbBtn.className = `maplibre-gl-stac-layer-mode-btn${this._state.rgbMode ? " maplibre-gl-stac-layer-mode-btn--active" : ""}`;
+      rgbBtn.textContent = "RGB Composite";
+      rgbBtn.addEventListener("click", () => {
+        this._state.rgbMode = true;
+        this._render();
+      });
 
-      // Colormap selector
-      const colormapGroup = this._createFormGroup("Colormap", "colormap");
-      const colormapSelect = document.createElement("select");
-      colormapSelect.id = "stac-layer-colormap";
-      colormapSelect.className = "maplibre-gl-stac-layer-select";
+      modeButtons.appendChild(singleBtn);
+      modeButtons.appendChild(rgbBtn);
+      modeGroup.appendChild(modeButtons);
+      panel.appendChild(modeGroup);
 
-      const noneOption = document.createElement("option");
-      noneOption.value = "none";
-      noneOption.textContent = "None (Original)";
-      noneOption.selected = this._state.colormap === "none";
-      colormapSelect.appendChild(noneOption);
+      if (!this._state.rgbMode) {
+        // Single band mode - asset selector
+        const assetGroup = this._createFormGroup("Select Asset", "asset");
+        const assetSelect = document.createElement("select");
+        assetSelect.id = "stac-layer-asset";
+        assetSelect.className = "maplibre-gl-stac-layer-select";
 
-      for (const name of COLORMAP_NAMES) {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
-        opt.selected = this._state.colormap === name;
-        colormapSelect.appendChild(opt);
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = "-- Select an asset --";
+        assetSelect.appendChild(defaultOption);
+
+        for (const asset of this._state.assets) {
+          const option = document.createElement("option");
+          option.value = asset.key;
+          option.textContent = asset.title || asset.key;
+          option.selected = this._state.selectedAsset === asset.key;
+          assetSelect.appendChild(option);
+        }
+
+        assetSelect.addEventListener("change", () => {
+          this._state.selectedAsset = assetSelect.value || null;
+          this._render();
+        });
+
+        assetGroup.appendChild(assetSelect);
+        panel.appendChild(assetGroup);
+      } else {
+        // RGB mode - 3 band selectors
+        const rgbGroup = this._createFormGroup("RGB Bands", "rgb");
+        const channels = ["Red", "Green", "Blue"] as const;
+
+        for (let i = 0; i < 3; i++) {
+          const row = document.createElement("div");
+          row.className = "maplibre-gl-stac-layer-rgb-row";
+
+          const channelLabel = document.createElement("span");
+          channelLabel.className = "maplibre-gl-stac-layer-rgb-label";
+          channelLabel.textContent = channels[i];
+          channelLabel.style.color = i === 0 ? "#d32f2f" : i === 1 ? "#388e3c" : "#1976d2";
+          row.appendChild(channelLabel);
+
+          const select = document.createElement("select");
+          select.className = "maplibre-gl-stac-layer-select maplibre-gl-stac-layer-rgb-select";
+
+          const defaultOpt = document.createElement("option");
+          defaultOpt.value = "";
+          defaultOpt.textContent = "-- Select --";
+          select.appendChild(defaultOpt);
+
+          for (const asset of this._state.assets) {
+            const opt = document.createElement("option");
+            opt.value = asset.key;
+            opt.textContent = asset.title || asset.key;
+            opt.selected = this._state.rgbAssets[i] === asset.key;
+            select.appendChild(opt);
+          }
+
+          const idx = i;
+          select.addEventListener("change", () => {
+            this._state.rgbAssets[idx] = select.value || null;
+            this._render();
+          });
+
+          row.appendChild(select);
+          rgbGroup.appendChild(row);
+        }
+
+        panel.appendChild(rgbGroup);
       }
 
-      colormapSelect.addEventListener("change", () => {
-        this._state.colormap = colormapSelect.value as ColormapName | "none";
+      // Colormap selector (only for single band mode)
+      if (!this._state.rgbMode) {
+        const colormapGroup = this._createFormGroup("Colormap", "colormap");
+        const colormapSelect = document.createElement("select");
+        colormapSelect.id = "stac-layer-colormap";
+        colormapSelect.className = "maplibre-gl-stac-layer-select";
+
+        const noneOption = document.createElement("option");
+        noneOption.value = "none";
+        noneOption.textContent = "None (Original)";
+        noneOption.selected = this._state.colormap === "none";
+        colormapSelect.appendChild(noneOption);
+
+        for (const name of COLORMAP_NAMES) {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          opt.selected = this._state.colormap === name;
+          colormapSelect.appendChild(opt);
+        }
+
+        colormapSelect.addEventListener("change", () => {
+          this._state.colormap = colormapSelect.value as ColormapName | "none";
+          this._updateColormapPreview();
+        });
+
+        colormapGroup.appendChild(colormapSelect);
+
+        // Colormap preview
+        const colormapPreview = document.createElement("div");
+        colormapPreview.className = "maplibre-gl-stac-layer-colormap-preview";
+        this._colormapPreview = colormapPreview;
+        colormapGroup.appendChild(colormapPreview);
+
+        panel.appendChild(colormapGroup);
         this._updateColormapPreview();
-      });
-
-      colormapGroup.appendChild(colormapSelect);
-
-      // Colormap preview
-      const colormapPreview = document.createElement("div");
-      colormapPreview.id = "stac-colormap-preview";
-      colormapPreview.className = "maplibre-gl-stac-layer-colormap-preview";
-      colormapGroup.appendChild(colormapPreview);
-
-      panel.appendChild(colormapGroup);
-      this._updateColormapPreview();
+      }
 
       // Rescale inputs
       const rescaleGroup = this._createFormGroup("Rescale Range", "rescale");
@@ -533,7 +618,13 @@ export class StacLayerControl implements IControl {
       const addBtn = document.createElement("button");
       addBtn.className = "maplibre-gl-stac-layer-btn maplibre-gl-stac-layer-btn--primary";
       addBtn.textContent = "Add Layer";
-      addBtn.disabled = this._state.loading || !this._state.selectedAsset;
+
+      // Check if button should be enabled
+      const canAdd = this._state.rgbMode
+        ? this._state.rgbAssets.every((a) => a !== null)
+        : this._state.selectedAsset !== null;
+      addBtn.disabled = this._state.loading || !canAdd;
+
       addBtn.addEventListener("click", () => this._addLayer());
       btns.appendChild(addBtn);
 
@@ -625,7 +716,7 @@ export class StacLayerControl implements IControl {
   }
 
   private _updateColormapPreview(): void {
-    const preview = document.getElementById("stac-colormap-preview");
+    const preview = this._colormapPreview;
     if (!preview) return;
 
     if (this._state.colormap === "none") {
@@ -763,7 +854,91 @@ export class StacLayerControl implements IControl {
   }
 
   private async _addLayer(): Promise<void> {
-    if (!this._map || !this._state.selectedAsset) {
+    if (!this._map) {
+      this._state.error = "Map not available.";
+      this._render();
+      return;
+    }
+
+    // Handle RGB mode
+    if (this._state.rgbMode) {
+      const [r, g, b] = this._state.rgbAssets;
+      if (!r || !g || !b) {
+        this._state.error = "Please select assets for all RGB bands.";
+        this._render();
+        return;
+      }
+
+      const rAsset = this._state.assets.find((a) => a.key === r);
+      const gAsset = this._state.assets.find((a) => a.key === g);
+      const bAsset = this._state.assets.find((a) => a.key === b);
+
+      if (!rAsset || !gAsset || !bAsset) {
+        this._state.error = "One or more selected assets not found.";
+        this._render();
+        return;
+      }
+
+      this._state.loading = true;
+      this._state.error = null;
+      this._state.status = null;
+      this._render();
+
+      try {
+        await this._ensureOverlay();
+
+        const { COGLayer } = await import("@developmentseed/deck.gl-geotiff");
+
+        // For RGB composite, we load each band separately and combine
+        const layerId = `stac-${this._state.stacItem?.id || "layer"}-rgb-${this._layerCounter++}`;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const layerProps: Record<string, any> = {
+          id: layerId,
+          geotiff: [rAsset.href, gAsset.href, bAsset.href],
+          opacity: this._state.layerOpacity,
+          pickable: this._state.pickable,
+          _rescaleMin: this._state.rescaleMin,
+          _rescaleMax: this._state.rescaleMax,
+          _isRgb: true,
+        };
+
+        this._cogLayerPropsMap.set(layerId, layerProps);
+        const newLayer = new COGLayer(layerProps);
+        this._cogLayers.set(layerId, newLayer);
+        this._deckOverlay.setProps({
+          layers: Array.from(this._cogLayers.values()),
+        });
+
+        // Fit to bounds if available
+        if (this._state.stacItem?.bbox) {
+          const [west, south, east, north] = this._state.stacItem.bbox;
+          this._map.fitBounds(
+            [
+              [west, south],
+              [east, north],
+            ],
+            { padding: 50, duration: 1000 },
+          );
+        }
+
+        this._state.hasLayer = this._cogLayers.size > 0;
+        this._state.layerCount = this._cogLayers.size;
+        this._state.loading = false;
+        this._state.status = `Added RGB layer: ${r}, ${g}, ${b}`;
+        this._render();
+        this._emit("layeradd", { layerId, assetKey: `${r},${g},${b}`, url: rAsset.href });
+      } catch (err) {
+        this._state.loading = false;
+        this._state.error = `Failed to add RGB layer: ${err instanceof Error ? err.message : String(err)}`;
+        this._render();
+        this._emit("error", { error: this._state.error });
+      }
+      return;
+    }
+
+    // Single band mode
+    if (!this._state.selectedAsset) {
       this._state.error = "Please select an asset.";
       this._render();
       return;

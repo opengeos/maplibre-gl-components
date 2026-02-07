@@ -1859,8 +1859,12 @@ export interface StacLayerControlState {
   stacItem: any | null;
   /** Available COG assets from the STAC item. */
   assets: StacAssetInfo[];
-  /** Currently selected asset key. */
+  /** Currently selected asset key (single band mode). */
   selectedAsset: string | null;
+  /** Whether RGB composite mode is enabled. */
+  rgbMode: boolean;
+  /** Selected assets for RGB composite [R, G, B]. */
+  rgbAssets: [string | null, string | null, string | null];
   /** Current colormap. */
   colormap: ColormapName | "none";
   /** Current rescale min. */

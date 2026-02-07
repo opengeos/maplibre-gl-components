@@ -356,3 +356,67 @@
 .maplibre-gl-stac-layer-popup-table td:last-child {
   color: #333;
 }
+
+/* Mode toggle buttons */
+.maplibre-gl-stac-layer-mode-toggle {
+  margin-bottom: 12px;
+}
+
+.maplibre-gl-stac-layer-mode-buttons {
+  display: flex;
+  gap: 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.maplibre-gl-stac-layer-mode-btn {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  border: none;
+  background: #f8f8f8;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-stac-layer-mode-btn:first-child {
+  border-right: 1px solid #ddd;
+}
+
+.maplibre-gl-stac-layer-mode-btn:hover {
+  background: #e8e8e8;
+}
+
+.maplibre-gl-stac-layer-mode-btn--active {
+  background: #0078d7;
+  color: white;
+}
+
+.maplibre-gl-stac-layer-mode-btn--active:hover {
+  background: #006bc1;
+}
+
+/* RGB band selectors */
+.maplibre-gl-stac-layer-rgb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.maplibre-gl-stac-layer-rgb-row:last-child {
+  margin-bottom: 0;
+}
+
+.maplibre-gl-stac-layer-rgb-label {
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 40px;
+}
+
+.maplibre-gl-stac-layer-rgb-select {
+  flex: 1;
+}
