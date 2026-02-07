@@ -223,63 +223,130 @@ export class PMTilesLayerControl implements IControl {
   }
 
   /**
-   * Get the opacity of a specific PMTiles source.
+   * Find the source info that contains a specific layer ID.
    */
-  getLayerOpacity(sourceId: string): number | null {
-    const info = this._pmtilesLayers.get(sourceId);
+  private _findSourceByLayerId(layerId: string): PMTilesLayerInfo | undefined {
+    for (const info of this._pmtilesLayers.values()) {
+      if (info.layerIds.includes(layerId)) {
+        return info;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Get the opacity of a layer (by layer ID or source ID).
+   */
+  getLayerOpacity(id: string): number | null {
+    // Check if it's a source ID first
+    let info = this._pmtilesLayers.get(id);
+    // If not found, check if it's a layer ID
+    if (!info) {
+      info = this._findSourceByLayerId(id);
+    }
     return info?.opacity ?? null;
   }
 
   /**
-   * Set the opacity of all layers from a specific PMTiles source.
+   * Set the opacity of a layer (by layer ID or source ID).
+   * If layer ID is provided, sets opacity for that specific layer.
+   * If source ID is provided, sets opacity for all layers from that source.
    */
-  setLayerOpacity(sourceId: string, opacity: number): void {
-    const info = this._pmtilesLayers.get(sourceId);
-    if (!info || !this._map) return;
-
+  setLayerOpacity(id: string, opacity: number): void {
+    if (!this._map) return;
     const clampedOpacity = Math.max(0, Math.min(1, opacity));
-    info.opacity = clampedOpacity;
 
-    for (const layerId of info.layerIds) {
-      const layer = this._map.getLayer(layerId);
-      if (!layer) continue;
-
-      const type = layer.type;
-      if (type === "fill") {
-        this._map.setPaintProperty(layerId, "fill-opacity", clampedOpacity);
-      } else if (type === "line") {
-        this._map.setPaintProperty(layerId, "line-opacity", clampedOpacity);
-      } else if (type === "circle") {
-        this._map.setPaintProperty(layerId, "circle-opacity", clampedOpacity);
-      } else if (type === "raster") {
-        this._map.setPaintProperty(layerId, "raster-opacity", clampedOpacity);
+    // Check if it's a source ID
+    const sourceInfo = this._pmtilesLayers.get(id);
+    if (sourceInfo) {
+      // Set opacity for all layers in the source
+      sourceInfo.opacity = clampedOpacity;
+      for (const layerId of sourceInfo.layerIds) {
+        this._setLayerOpacityDirect(layerId, clampedOpacity);
       }
+      return;
+    }
+
+    // Check if it's a layer ID
+    const info = this._findSourceByLayerId(id);
+    if (info) {
+      // Set opacity for this specific layer only
+      this._setLayerOpacityDirect(id, clampedOpacity);
     }
   }
 
   /**
-   * Get the visibility of a specific PMTiles source.
+   * Set opacity directly on a MapLibre layer.
    */
-  getLayerVisibility(sourceId: string): boolean {
-    const info = this._pmtilesLayers.get(sourceId);
-    if (!info || !this._map || info.layerIds.length === 0) return false;
-    const visibility = this._map.getLayoutProperty(
-      info.layerIds[0],
-      "visibility",
-    );
-    return visibility !== "none";
+  private _setLayerOpacityDirect(layerId: string, opacity: number): void {
+    if (!this._map) return;
+    const layer = this._map.getLayer(layerId);
+    if (!layer) return;
+
+    const type = layer.type;
+    if (type === "fill") {
+      this._map.setPaintProperty(layerId, "fill-opacity", opacity * 0.6);
+    } else if (type === "line") {
+      this._map.setPaintProperty(layerId, "line-opacity", opacity);
+    } else if (type === "circle") {
+      this._map.setPaintProperty(layerId, "circle-opacity", opacity);
+    } else if (type === "raster") {
+      this._map.setPaintProperty(layerId, "raster-opacity", opacity);
+    }
   }
 
   /**
-   * Set the visibility of all layers from a specific PMTiles source.
+   * Get the visibility of a layer (by layer ID or source ID).
    */
-  setLayerVisibility(sourceId: string, visible: boolean): void {
-    const info = this._pmtilesLayers.get(sourceId);
-    if (!info || !this._map) return;
+  getLayerVisibility(id: string): boolean {
+    if (!this._map) return false;
 
-    for (const layerId of info.layerIds) {
+    // Check if it's a source ID
+    const sourceInfo = this._pmtilesLayers.get(id);
+    if (sourceInfo && sourceInfo.layerIds.length > 0) {
+      const visibility = this._map.getLayoutProperty(
+        sourceInfo.layerIds[0],
+        "visibility",
+      );
+      return visibility !== "none";
+    }
+
+    // Check if it's a layer ID
+    const info = this._findSourceByLayerId(id);
+    if (info) {
+      const visibility = this._map.getLayoutProperty(id, "visibility");
+      return visibility !== "none";
+    }
+
+    return false;
+  }
+
+  /**
+   * Set the visibility of a layer (by layer ID or source ID).
+   * If layer ID is provided, sets visibility for that specific layer.
+   * If source ID is provided, sets visibility for all layers from that source.
+   */
+  setLayerVisibility(id: string, visible: boolean): void {
+    if (!this._map) return;
+
+    // Check if it's a source ID
+    const sourceInfo = this._pmtilesLayers.get(id);
+    if (sourceInfo) {
+      for (const layerId of sourceInfo.layerIds) {
+        this._map.setLayoutProperty(
+          layerId,
+          "visibility",
+          visible ? "visible" : "none",
+        );
+      }
+      return;
+    }
+
+    // Check if it's a layer ID
+    const info = this._findSourceByLayerId(id);
+    if (info) {
       this._map.setLayoutProperty(
-        layerId,
+        id,
         "visibility",
         visible ? "visible" : "none",
       );

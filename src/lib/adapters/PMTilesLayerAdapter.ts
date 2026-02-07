@@ -28,18 +28,13 @@ export class PMTilesLayerAdapter implements CustomLayerAdapter {
   readonly type = "pmtiles";
 
   private _control: PMTilesLayerControl;
-  private _defaultOpacity: number;
-  private _storedOpacity: number;
   private _changeCallbacks: Array<(event: "add" | "remove", layerId: string) => void> = [];
 
   constructor(
     control: PMTilesLayerControl,
-    options?: PMTilesLayerAdapterOptions,
+    _options?: PMTilesLayerAdapterOptions,
   ) {
     this._control = control;
-    this._defaultOpacity = options?.defaultOpacity ?? 1;
-    this._storedOpacity = this._defaultOpacity;
-    // Note: options.name is for adapter identification, not used internally
 
     // Listen for layer changes
     this._control.on("layeradd", (event) => {
@@ -73,13 +68,15 @@ export class PMTilesLayerAdapter implements CustomLayerAdapter {
    * Get the state of a PMTiles layer.
    */
   getLayerState(layerId: string): LayerState | null {
-    const state = this._control.getState();
-    const layer = state.layers.find((l) => l.id === layerId);
-    if (!layer) return null;
+    // Check if it's a source ID or a layer ID
+    const visible = this._control.getLayerVisibility(layerId);
+    const opacity = this._control.getLayerOpacity(layerId);
+    
+    if (opacity === null) return null;
 
     return {
-      visible: this._control.getLayerVisibility(layerId),
-      opacity: layer.opacity ?? this._storedOpacity,
+      visible,
+      opacity,
       name: this.getName(layerId),
     };
   }
@@ -88,16 +85,16 @@ export class PMTilesLayerAdapter implements CustomLayerAdapter {
    * Get display name for a layer.
    */
   getName(layerId: string): string {
-    const state = this._control.getState();
-    const layer = state.layers.find((l) => l.id === layerId);
-    if (!layer) return layerId;
-
-    try {
-      const urlObj = new URL(layer.url);
-      return urlObj.pathname.split("/").pop() || layerId;
-    } catch {
-      return layer.url || layerId;
+    // Extract a readable name from the layer ID
+    // Layer IDs are like: pmtiles-source-0-buildings-fill
+    const parts = layerId.split("-");
+    if (parts.length >= 4) {
+      // Get the source layer name and type (e.g., "buildings-fill")
+      const sourceLayer = parts.slice(3, -1).join("-");
+      const type = parts[parts.length - 1];
+      return `${sourceLayer} (${type})`;
     }
+    return layerId;
   }
 
   /**
@@ -111,7 +108,6 @@ export class PMTilesLayerAdapter implements CustomLayerAdapter {
    * Set opacity for a specific PMTiles layer.
    */
   setOpacity(layerId: string, opacity: number): void {
-    this._storedOpacity = opacity;
     this._control.setLayerOpacity(layerId, opacity);
   }
 
