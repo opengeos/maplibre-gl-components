@@ -71,7 +71,7 @@ export class PMTilesLayerAdapter implements CustomLayerAdapter {
     // Check if it's a source ID or a layer ID
     const visible = this._control.getLayerVisibility(layerId);
     const opacity = this._control.getLayerOpacity(layerId);
-    
+
     if (opacity === null) return null;
 
     return {
