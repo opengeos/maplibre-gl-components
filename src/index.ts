@@ -13,6 +13,7 @@ import "./lib/styles/control-grid.css";
 import "./lib/styles/cog-layer.css";
 import "./lib/styles/zarr-layer.css";
 import "./lib/styles/pmtiles-layer.css";
+import "./lib/styles/add-vector.css";
 
 // Main entry point - Core exports
 export { Colorbar } from "./lib/core/Colorbar";
@@ -28,9 +29,10 @@ export { ControlGrid } from "./lib/core/ControlGrid";
 export { CogLayerControl } from "./lib/core/CogLayer";
 export { ZarrLayerControl } from "./lib/core/ZarrLayer";
 export { PMTilesLayerControl } from "./lib/core/PMTilesLayer";
+export { AddVectorControl } from "./lib/core/AddVector";
 
 // Adapters for layer control integration
-export { CogLayerAdapter, ZarrLayerAdapter, PMTilesLayerAdapter } from "./lib/adapters";
+export { CogLayerAdapter, ZarrLayerAdapter, PMTilesLayerAdapter, AddVectorAdapter } from "./lib/adapters";
 export type { CustomLayerAdapter } from "./lib/adapters";
 
 // Provider utilities
@@ -193,6 +195,12 @@ export type {
   PMTilesLayerEventHandler,
   PMTilesLayerInfo,
   PMTilesTileType,
+  AddVectorControlOptions,
+  AddVectorControlState,
+  AddVectorEvent,
+  AddVectorEventHandler,
+  AddVectorLayerInfo,
+  RemoteVectorFormat,
   ColormapName,
   ColorStop,
   ControlPosition,
