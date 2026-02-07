@@ -12,6 +12,8 @@ const DEFAULT_STATE: CogLayerControlState = {
   nodata: 0,
   layerOpacity: 1,
   hasLayer: false,
+  layerCount: 0,
+  layers: [],
   loading: false,
   error: null,
   status: null,

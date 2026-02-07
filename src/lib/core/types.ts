@@ -1134,6 +1134,28 @@ export type ControlGridEventHandler = (event: {
 }) => void;
 
 /**
+ * Information about a single added COG layer.
+ */
+export interface CogLayerInfo {
+  /** Unique layer identifier. */
+  id: string;
+  /** COG URL. */
+  url: string;
+  /** Bands string. */
+  bands: string;
+  /** Colormap name. */
+  colormap: ColormapName | 'none';
+  /** Rescale minimum. */
+  rescaleMin: number;
+  /** Rescale maximum. */
+  rescaleMax: number;
+  /** Nodata value. */
+  nodata: number | undefined;
+  /** Layer opacity. */
+  opacity: number;
+}
+
+/**
  * Options for configuring the CogLayerControl.
  */
 export interface CogLayerControlOptions {
@@ -1199,8 +1221,12 @@ export interface CogLayerControlState {
   nodata: number | undefined;
   /** Current opacity (0-1). */
   layerOpacity: number;
-  /** Whether a COG layer is currently active. */
+  /** Whether any COG layer is currently active. */
   hasLayer: boolean;
+  /** Number of active COG layers. */
+  layerCount: number;
+  /** Information about all active COG layers. */
+  layers: CogLayerInfo[];
   /** Whether the layer is loading. */
   loading: boolean;
   /** Error message if any. */
@@ -1240,4 +1266,5 @@ export type CogLayerEventHandler = (event: {
   state: CogLayerControlState;
   url?: string;
   error?: string;
+  layerId?: string;
 }) => void;

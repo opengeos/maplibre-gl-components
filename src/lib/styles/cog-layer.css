@@ -222,3 +222,56 @@
   background: #e8f5e9;
   color: #2e7d32;
 }
+
+.maplibre-gl-cog-layer-list {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.maplibre-gl-cog-layer-list-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.maplibre-gl-cog-layer-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  gap: 6px;
+}
+
+.maplibre-gl-cog-layer-list-label {
+  font-size: 11px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.maplibre-gl-cog-layer-list-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #999;
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 3px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.maplibre-gl-cog-layer-list-remove:hover {
+  background: rgba(211, 47, 47, 0.1);
+  color: #d32f2f;
+}

@@ -173,6 +173,7 @@ export type {
   CogLayerControlState,
   CogLayerEvent,
   CogLayerEventHandler,
+  CogLayerInfo,
   ColormapName,
   ColorStop,
   ControlPosition,

@@ -6,6 +6,7 @@ import type {
   CogLayerControlState,
   CogLayerEvent,
   CogLayerEventHandler,
+  CogLayerInfo,
   ColorStop,
   ColormapName,
 } from './types';
@@ -183,11 +184,10 @@ export class CogLayerControl implements IControl {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _deckOverlay?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _cogLayer?: any;
+  private _cogLayers: Map<string, any> = new Map();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _COGLayerClass?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _cogLayerProps?: Record<string, any>;
+  private _cogLayerPropsMap: Map<string, Record<string, any>> = new Map();
+  private _layerCounter = 0;
 
   constructor(options?: CogLayerControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -202,6 +202,8 @@ export class CogLayerControl implements IControl {
       nodata: this._options.defaultNodata,
       layerOpacity: this._options.defaultOpacity,
       hasLayer: false,
+      layerCount: 0,
+      layers: [],
       loading: false,
       error: null,
       status: null,
@@ -221,7 +223,7 @@ export class CogLayerControl implements IControl {
   }
 
   onRemove(): void {
-    this._removeLayer();
+    this._removeLayer(); // Remove all layers on cleanup
 
     if (this._map && this._handleZoom) {
       this._map.off('zoom', this._handleZoom);
@@ -314,14 +316,14 @@ export class CogLayerControl implements IControl {
   }
 
   /**
-   * Programmatically remove the COG layer.
+   * Programmatically remove a COG layer by ID, or all layers if no ID given.
    */
-  removeLayer(): void {
-    this._removeLayer();
+  removeLayer(id?: string): void {
+    this._removeLayer(id);
     this._render();
   }
 
-  private _emit(event: CogLayerEvent, extra?: { url?: string; error?: string }): void {
+  private _emit(event: CogLayerEvent, extra?: { url?: string; error?: string; layerId?: string }): void {
     const handlers = this._eventHandlers.get(event);
     if (handlers) {
       const payload = { type: event, state: this.getState(), ...extra };
@@ -512,41 +514,22 @@ export class CogLayerControl implements IControl {
       const pct = Number(slider.value);
       this._state.layerOpacity = pct / 100;
       sliderValue.textContent = `${pct}%`;
-      this._updateOpacity();
     });
     sliderRow.appendChild(slider);
     sliderRow.appendChild(sliderValue);
     opacityGroup.appendChild(sliderRow);
     panel.appendChild(opacityGroup);
 
-    // Buttons
+    // Buttons — always show Add Layer
     const btns = document.createElement('div');
     btns.className = 'maplibre-gl-cog-layer-buttons';
 
-    if (!this._state.hasLayer) {
-      const addBtn = document.createElement('button');
-      addBtn.className = 'maplibre-gl-cog-layer-btn maplibre-gl-cog-layer-btn--primary';
-      addBtn.textContent = 'Add Layer';
-      addBtn.disabled = this._state.loading;
-      addBtn.addEventListener('click', () => this._addLayer());
-      btns.appendChild(addBtn);
-    } else {
-      const updateBtn = document.createElement('button');
-      updateBtn.className = 'maplibre-gl-cog-layer-btn maplibre-gl-cog-layer-btn--primary';
-      updateBtn.textContent = 'Update Layer';
-      updateBtn.disabled = this._state.loading;
-      updateBtn.addEventListener('click', () => this._updateLayer());
-      btns.appendChild(updateBtn);
-
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'maplibre-gl-cog-layer-btn maplibre-gl-cog-layer-btn--danger';
-      removeBtn.textContent = 'Remove Layer';
-      removeBtn.addEventListener('click', () => {
-        this._removeLayer();
-        this._render();
-      });
-      btns.appendChild(removeBtn);
-    }
+    const addBtn = document.createElement('button');
+    addBtn.className = 'maplibre-gl-cog-layer-btn maplibre-gl-cog-layer-btn--primary';
+    addBtn.textContent = 'Add Layer';
+    addBtn.disabled = this._state.loading;
+    addBtn.addEventListener('click', () => this._addLayer());
+    btns.appendChild(addBtn);
 
     panel.appendChild(btns);
 
@@ -557,6 +540,54 @@ export class CogLayerControl implements IControl {
       this._appendStatus(this._state.error, 'error');
     } else if (this._state.status) {
       this._appendStatus(this._state.status, 'success');
+    }
+
+    // Layer list
+    if (this._cogLayers.size > 0) {
+      const listContainer = document.createElement('div');
+      listContainer.className = 'maplibre-gl-cog-layer-list';
+
+      const listHeader = document.createElement('div');
+      listHeader.className = 'maplibre-gl-cog-layer-list-header';
+      listHeader.textContent = `Layers (${this._cogLayers.size})`;
+      listContainer.appendChild(listHeader);
+
+      for (const [layerId, ] of this._cogLayers) {
+        const props = this._cogLayerPropsMap.get(layerId);
+        if (!props) continue;
+
+        const item = document.createElement('div');
+        item.className = 'maplibre-gl-cog-layer-list-item';
+
+        const label = document.createElement('span');
+        label.className = 'maplibre-gl-cog-layer-list-label';
+        // Extract filename from URL for display
+        const url = props.geotiff as string;
+        let displayName: string;
+        try {
+          const urlObj = new URL(url);
+          displayName = urlObj.pathname.split('/').pop() || url;
+        } catch {
+          displayName = url;
+        }
+        label.textContent = displayName;
+        label.title = url;
+        item.appendChild(label);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'maplibre-gl-cog-layer-list-remove';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.title = 'Remove layer';
+        removeBtn.addEventListener('click', () => {
+          this._removeLayer(layerId);
+          this._render();
+        });
+        item.appendChild(removeBtn);
+
+        listContainer.appendChild(item);
+      }
+
+      panel.appendChild(listContainer);
     }
 
     this._container.appendChild(panel);
@@ -879,7 +910,6 @@ export class CogLayerControl implements IControl {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const layerProps: Record<string, any> = {
-        id: 'cog-layer',
         geotiff: this._state.url,
         opacity: this._state.layerOpacity,
         _rescaleMin: this._state.rescaleMin,
@@ -912,16 +942,22 @@ export class CogLayerControl implements IControl {
         // geotiff-geokeys-to-proj4 not available, use default parser
       }
 
-      this._COGLayerClass = COGLayer;
-      this._cogLayerProps = layerProps;
-      this._cogLayer = new COGLayer(layerProps);
-      this._deckOverlay.setProps({ layers: [this._cogLayer] });
+      // Generate unique layer ID
+      const layerId = `cog-layer-${this._layerCounter++}`;
+      layerProps.id = layerId;
 
-      this._state.hasLayer = true;
+      this._cogLayerPropsMap.set(layerId, layerProps);
+      const newLayer = new COGLayer(layerProps);
+      this._cogLayers.set(layerId, newLayer);
+      this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
+
+      this._state.hasLayer = this._cogLayers.size > 0;
+      this._state.layerCount = this._cogLayers.size;
+      this._state.layers = this._buildLayerInfoList();
       this._state.loading = false;
       this._state.status = 'COG layer added successfully.';
       this._render();
-      this._emit('layeradd', { url: this._state.url });
+      this._emit('layeradd', { url: this._state.url, layerId });
     } catch (err) {
       this._state.loading = false;
       this._state.error = `Failed to load COG: ${err instanceof Error ? err.message : String(err)}`;
@@ -930,31 +966,50 @@ export class CogLayerControl implements IControl {
     }
   }
 
-  private _updateOpacity(): void {
-    if (this._COGLayerClass && this._cogLayerProps && this._deckOverlay) {
-      this._cogLayerProps.opacity = this._state.layerOpacity;
-      this._cogLayer = new this._COGLayerClass(this._cogLayerProps);
-      this._deckOverlay.setProps({ layers: [this._cogLayer] });
+  private _removeLayer(id?: string): void {
+    if (id) {
+      // Remove a specific layer
+      this._cogLayers.delete(id);
+      this._cogLayerPropsMap.delete(id);
+      if (this._deckOverlay) {
+        this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
+      }
+      this._state.hasLayer = this._cogLayers.size > 0;
+      this._state.layerCount = this._cogLayers.size;
+      this._state.layers = this._buildLayerInfoList();
+      this._state.status = null;
+      this._state.error = null;
+      this._emit('layerremove', { layerId: id });
+    } else {
+      // Remove all layers (cleanup)
+      if (this._deckOverlay) {
+        this._deckOverlay.setProps({ layers: [] });
+      }
+      this._cogLayers.clear();
+      this._cogLayerPropsMap.clear();
+      this._state.hasLayer = false;
+      this._state.layerCount = 0;
+      this._state.layers = [];
+      this._state.status = null;
+      this._state.error = null;
+      this._emit('layerremove');
     }
   }
 
-  private async _updateLayer(): Promise<void> {
-    this._removeLayer();
-    await this._addLayer();
-    if (this._state.hasLayer) {
-      this._emit('layerupdate', { url: this._state.url });
+  private _buildLayerInfoList(): CogLayerInfo[] {
+    const list: CogLayerInfo[] = [];
+    for (const [layerId, props] of this._cogLayerPropsMap) {
+      list.push({
+        id: layerId,
+        url: props.geotiff as string,
+        bands: '1', // bands are baked into COGLayer at creation
+        colormap: (props._colormap as ColormapName | 'none') || 'none',
+        rescaleMin: (props._rescaleMin as number) ?? 0,
+        rescaleMax: (props._rescaleMax as number) ?? 255,
+        nodata: undefined,
+        opacity: (props.opacity as number) ?? 1,
+      });
     }
-  }
-
-  private _removeLayer(): void {
-    if (this._cogLayer && this._deckOverlay) {
-      this._deckOverlay.setProps({ layers: [] });
-      this._cogLayer = undefined;
-      this._cogLayerProps = undefined;
-    }
-    this._state.hasLayer = false;
-    this._state.status = null;
-    this._state.error = null;
-    this._emit('layerremove');
+    return list;
   }
 }
