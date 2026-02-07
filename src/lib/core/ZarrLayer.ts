@@ -333,13 +333,13 @@ export class ZarrLayerControl implements IControl {
    */
   async fetchVariables(): Promise<string[]> {
     if (!this._state.url) return [];
-    
+
     this._variablesLoading = true;
     this._render();
-    
+
     try {
       const url = this._state.url.replace(/\/$/, '');
-      
+
       // Try to fetch .zmetadata (consolidated metadata for Zarr v2)
       try {
         const response = await fetch(`${url}/.zmetadata`);
@@ -359,7 +359,7 @@ export class ZarrLayerControl implements IControl {
       } catch {
         // .zmetadata not available
       }
-      
+
       // Try to fetch zarr.json (Zarr v3)
       try {
         const response = await fetch(`${url}/zarr.json`);
@@ -374,7 +374,7 @@ export class ZarrLayerControl implements IControl {
       } catch {
         // zarr.json not available
       }
-      
+
       // Try to fetch .zgroup and then list directory contents
       try {
         const zgroupResponse = await fetch(`${url}/.zgroup`);
@@ -386,7 +386,7 @@ export class ZarrLayerControl implements IControl {
       } catch {
         // Not a standard Zarr structure
       }
-      
+
       this._variablesLoading = false;
       this._render();
       return this._availableVariables;
@@ -512,13 +512,13 @@ export class ZarrLayerControl implements IControl {
     varRow.className = 'maplibre-gl-zarr-layer-var-row';
     varRow.style.display = 'flex';
     varRow.style.gap = '6px';
-    
+
     if (this._availableVariables.length > 0) {
       // Show dropdown if variables are available
       const varSelect = document.createElement('select');
       varSelect.className = 'maplibre-gl-zarr-layer-select';
       varSelect.style.flex = '1';
-      
+
       for (const varName of this._availableVariables) {
         const opt = document.createElement('option');
         opt.value = varName;
@@ -543,7 +543,7 @@ export class ZarrLayerControl implements IControl {
       varInput.addEventListener('input', () => { this._state.variable = varInput.value; });
       varRow.appendChild(varInput);
     }
-    
+
     // Fetch button
     const fetchBtn = document.createElement('button');
     fetchBtn.className = 'maplibre-gl-zarr-layer-btn';
@@ -553,7 +553,7 @@ export class ZarrLayerControl implements IControl {
     fetchBtn.style.flexShrink = '0';
     fetchBtn.addEventListener('click', () => this.fetchVariables());
     varRow.appendChild(fetchBtn);
-    
+
     varGroup.appendChild(varRow);
     panel.appendChild(varGroup);
 
