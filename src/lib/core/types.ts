@@ -1268,3 +1268,137 @@ export type CogLayerEventHandler = (event: {
   error?: string;
   layerId?: string;
 }) => void;
+
+// =============================================================================
+// ZarrLayerControl Types
+// =============================================================================
+
+/**
+ * Information about a single added Zarr layer.
+ */
+export interface ZarrLayerInfo {
+  /** Unique layer identifier. */
+  id: string;
+  /** Zarr URL. */
+  url: string;
+  /** Variable name. */
+  variable: string;
+  /** Colormap (array of hex colors). */
+  colormap: string[];
+  /** Color limits [min, max]. */
+  clim: [number, number];
+  /** Selector for dimensions (e.g., { time: 0, band: 'prec' }). */
+  selector?: Record<string, number | string>;
+  /** Layer opacity. */
+  opacity: number;
+}
+
+/**
+ * Options for configuring the ZarrLayerControl.
+ */
+export interface ZarrLayerControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether the panel starts collapsed (button only). Default: true. */
+  collapsed?: boolean;
+  /** Default Zarr URL to pre-fill. */
+  defaultUrl?: string;
+  /** Default variable name. Default: ''. */
+  defaultVariable?: string;
+  /** Default colormap (array of hex colors). */
+  defaultColormap?: string[];
+  /** Default color limits. Default: [0, 1]. */
+  defaultClim?: [number, number];
+  /** Default selector for dimensions. */
+  defaultSelector?: Record<string, number | string>;
+  /** Default opacity (0-1). Default: 1. */
+  defaultOpacity?: number;
+  /** Width of the panel in pixels. Default: 300. */
+  panelWidth?: number;
+  /** Background color of the container. */
+  backgroundColor?: string;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the ZarrLayerControl.
+ */
+export interface ZarrLayerControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Current Zarr URL. */
+  url: string;
+  /** Current variable name. */
+  variable: string;
+  /** Current colormap. */
+  colormap: string[];
+  /** Current color limits. */
+  clim: [number, number];
+  /** Current selector. */
+  selector?: Record<string, number | string>;
+  /** Current opacity (0-1). */
+  layerOpacity: number;
+  /** Whether any Zarr layer is currently active. */
+  hasLayer: boolean;
+  /** Number of active Zarr layers. */
+  layerCount: number;
+  /** Information about all active Zarr layers. */
+  layers: ZarrLayerInfo[];
+  /** Whether the layer is loading. */
+  loading: boolean;
+  /** Error message if any. */
+  error: string | null;
+  /** Status message. */
+  status: string | null;
+}
+
+/**
+ * Props for the React ZarrLayerControl wrapper component.
+ */
+export interface ZarrLayerControlReactProps extends ZarrLayerControlOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when a layer is added. */
+  onLayerAdd?: (url: string) => void;
+  /** Callback fired when a layer is removed. */
+  onLayerRemove?: () => void;
+  /** Callback fired when a layer is updated. */
+  onLayerUpdate?: (url: string) => void;
+  /** Callback fired when an error occurs. */
+  onError?: (error: string) => void;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: ZarrLayerControlState) => void;
+}
+
+/**
+ * ZarrLayer-specific event types.
+ */
+export type ZarrLayerEvent = ComponentEvent | 'layeradd' | 'layerremove' | 'layerupdate' | 'error';
+
+/**
+ * ZarrLayer event handler function type.
+ */
+export type ZarrLayerEventHandler = (event: {
+  type: ZarrLayerEvent;
+  state: ZarrLayerControlState;
+  url?: string;
+  error?: string;
+  layerId?: string;
+}) => void;

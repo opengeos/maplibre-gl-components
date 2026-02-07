@@ -110,6 +110,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@carbonplan/zarr-layer": "^0.3.1",
     "@deck.gl/core": "^9.1.0",
     "@deck.gl/mapbox": "^9.1.0",
     "@developmentseed/deck.gl-geotiff": "^0.2.0",
