@@ -55,6 +55,24 @@ uniform rescaleFloatUniforms {
 };
 
 /**
+ * Recursively apply opacity to deck.gl sublayers via clone().
+ * COGLayer doesn't propagate opacity to its RasterLayer/PathLayer sublayers,
+ * so this is needed for opacity changes to take visual effect.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyOpacity(layers: any, opacity: number): any {
+  if (!layers) return layers;
+  if (Array.isArray(layers)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return layers.map((layer: any) => applyOpacity(layer, opacity));
+  }
+  if (typeof layers.clone === 'function') {
+    return layers.clone({ opacity });
+  }
+  return layers;
+}
+
+/**
  * Parse a CSS hex color (#RGB or #RRGGBB) to [r, g, b] values (0-255).
  */
 function parseHexColor(hex: string): [number, number, number] {
@@ -514,6 +532,7 @@ export class CogLayerControl implements IControl {
       const pct = Number(slider.value);
       this._state.layerOpacity = pct / 100;
       sliderValue.textContent = `${pct}%`;
+      this._updateOpacity();
     });
     sliderRow.appendChild(slider);
     sliderRow.appendChild(sliderValue);
@@ -886,6 +905,28 @@ export class CogLayerControl implements IControl {
     };
   }
 
+  /**
+   * Monkey-patch COGLayer._renderSubLayers to propagate opacity to sublayers.
+   * The upstream COGLayer doesn't pass opacity to its RasterLayer/PathLayer
+   * sublayers, so opacity changes have no visual effect without this patch.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _patchCOGLayerForOpacity(COGLayerClass: any): void {
+    if (COGLayerClass.__opacityPatched) return;
+    COGLayerClass.__opacityPatched = true;
+
+    const originalRenderSubLayers = COGLayerClass.prototype._renderSubLayers;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    COGLayerClass.prototype._renderSubLayers = function (...args: any[]) {
+      const layers = originalRenderSubLayers.apply(this, args);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const opacity = (this as any).props.opacity;
+      if (opacity === undefined || opacity === null) return layers;
+      return applyOpacity(layers, Math.max(0, Math.min(1, opacity)));
+    };
+  }
+
   private async _addLayer(): Promise<void> {
     if (!this._map || !this._state.url) {
       this._state.error = 'Please enter a COG URL.';
@@ -903,8 +944,9 @@ export class CogLayerControl implements IControl {
 
       const { COGLayer } = await import('@developmentseed/deck.gl-geotiff');
 
-      // Patch COGLayer to support floating-point GeoTIFFs
+      // Patch COGLayer to support floating-point GeoTIFFs and opacity
       this._patchCOGLayerForFloat(COGLayer);
+      this._patchCOGLayerForOpacity(COGLayer);
 
       const map = this._map;
 
@@ -993,6 +1035,21 @@ export class CogLayerControl implements IControl {
       this._state.status = null;
       this._state.error = null;
       this._emit('layerremove');
+    }
+  }
+
+  private _updateOpacity(): void {
+    if (!this._deckOverlay || this._cogLayers.size === 0) return;
+    const opacity = this._state.layerOpacity;
+    // deck.gl layers are immutable; clone each with the new opacity
+    for (const [id, layer] of this._cogLayers) {
+      if (typeof layer.clone === 'function') {
+        this._cogLayers.set(id, layer.clone({ opacity }));
+      }
+    }
+    this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
+    if (this._map) {
+      this._map.triggerRepaint();
     }
   }
 
