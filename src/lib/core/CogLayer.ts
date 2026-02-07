@@ -625,6 +625,19 @@ export class CogLayerControl implements IControl {
     opacityGroup.appendChild(sliderRow);
     panel.appendChild(opacityGroup);
 
+    // Before ID input (for layer ordering)
+    const beforeIdGroup = this._createFormGroup('Before Layer ID (optional)', 'before-id');
+    const beforeIdInput = document.createElement('input');
+    beforeIdInput.type = 'text';
+    beforeIdInput.className = 'maplibre-gl-cog-layer-input';
+    beforeIdInput.placeholder = 'e.g. labels or water';
+    beforeIdInput.value = this._options.beforeId || '';
+    beforeIdInput.addEventListener('input', () => {
+      this._options.beforeId = beforeIdInput.value || '';
+    });
+    beforeIdGroup.appendChild(beforeIdInput);
+    panel.appendChild(beforeIdGroup);
+
     // Buttons — always show Add Layer
     const btns = document.createElement('div');
     btns.className = 'maplibre-gl-cog-layer-buttons';

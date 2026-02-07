@@ -558,6 +558,19 @@ export class ZarrLayerControl implements IControl {
     opacityGroup.appendChild(sliderRow);
     panel.appendChild(opacityGroup);
 
+    // Before ID input (for layer ordering)
+    const beforeIdGroup = this._createFormGroup('Before Layer ID (optional)', 'before-id');
+    const beforeIdInput = document.createElement('input');
+    beforeIdInput.type = 'text';
+    beforeIdInput.className = 'maplibre-gl-zarr-layer-input';
+    beforeIdInput.placeholder = 'e.g. labels or water';
+    beforeIdInput.value = this._options.beforeId || '';
+    beforeIdInput.addEventListener('input', () => {
+      this._options.beforeId = beforeIdInput.value || '';
+    });
+    beforeIdGroup.appendChild(beforeIdInput);
+    panel.appendChild(beforeIdGroup);
+
     // Buttons
     const btns = document.createElement('div');
     btns.className = 'maplibre-gl-zarr-layer-buttons';
