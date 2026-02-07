@@ -345,10 +345,38 @@ export class ZarrLayerControl implements IControl {
         const response = await fetch(`${url}/.zmetadata`);
         if (response.ok) {
           const metadata = await response.json();
-          const variables = Object.keys(metadata.metadata || {})
+          const allPaths = Object.keys(metadata.metadata || {})
             .filter(key => key.endsWith('/.zarray'))
             .map(key => key.replace('/.zarray', ''))
             .filter(name => name && !name.startsWith('.'));
+          
+          // Extract unique variable names (last part of path, excluding coordinate arrays)
+          const coordArrays = new Set(['x', 'y', 'lat', 'lon', 'latitude', 'longitude', 'time', 'band', 'month', 'spatial_ref']);
+          const uniqueVars = new Set<string>();
+          
+          for (const path of allPaths) {
+            // Get the last part of the path (e.g., "5/climate" -> "climate")
+            const parts = path.split('/');
+            const varName = parts[parts.length - 1];
+            // Skip coordinate/dimension arrays, keep data variables
+            if (!coordArrays.has(varName)) {
+              uniqueVars.add(varName);
+            }
+          }
+          
+          // If no data variables found, fall back to showing all unique names
+          let variables = Array.from(uniqueVars);
+          if (variables.length === 0) {
+            const allNames = new Set<string>();
+            for (const path of allPaths) {
+              const parts = path.split('/');
+              allNames.add(parts[parts.length - 1]);
+            }
+            variables = Array.from(allNames);
+          }
+          
+          variables.sort();
+          
           if (variables.length > 0) {
             this._availableVariables = variables;
             this._variablesLoading = false;
