@@ -114,6 +114,7 @@ export class AddVectorControl implements IControl {
       layerOpacity: this._options.defaultOpacity,
       fillColor: this._options.defaultFillColor,
       strokeColor: this._options.defaultStrokeColor,
+      circleColor: this._options.defaultCircleColor,
       hasLayer: false,
       layerCount: 0,
       layers: [],
@@ -265,7 +266,7 @@ export class AddVectorControl implements IControl {
   }
 
   /**
-   * Get the opacity of a layer (by layer ID or source ID).
+   * Get the opacity of a layer by its layer ID.
    */
   getLayerOpacity(id: string): number | null {
     let info = this._vectorLayers.get(id);
@@ -276,7 +277,7 @@ export class AddVectorControl implements IControl {
   }
 
   /**
-   * Set the opacity of a layer (by layer ID or source ID).
+   * Set the opacity of a layer by its layer ID.
    */
   setLayerOpacity(id: string, opacity: number): void {
     if (!this._map) return;
@@ -471,16 +472,16 @@ export class AddVectorControl implements IControl {
     const urlGroup = this._createFormGroup("Vector URL", "url");
     const urlInput = document.createElement("input");
     urlInput.type = "text";
+    urlInput.id = "add-vector-url";
     urlInput.className = "maplibre-gl-add-vector-input";
     urlInput.placeholder = "https://example.com/data.geojson";
     urlInput.value = this._state.url;
     urlInput.addEventListener("input", () => {
       this._state.url = urlInput.value;
-      // Auto-detect format
+      // Auto-detect format for UI display only (don't mutate state.format)
       if (this._state.format === "auto" && urlInput.value) {
         const detected = detectFormatFromUrl(urlInput.value);
         formatSelect.value = detected;
-        this._state.format = detected;
       }
     });
     urlGroup.appendChild(urlInput);
@@ -494,6 +495,7 @@ export class AddVectorControl implements IControl {
     // Format selector
     const formatGroup = this._createFormGroup("Format", "format");
     const formatSelect = document.createElement("select");
+    formatSelect.id = "add-vector-format";
     formatSelect.className = "maplibre-gl-add-vector-select";
     const formats: { value: RemoteVectorFormat; label: string }[] = [
       { value: "auto", label: "Auto-detect" },
@@ -520,6 +522,7 @@ export class AddVectorControl implements IControl {
     fillColorRow.className = "maplibre-gl-add-vector-color-row";
     const fillColorInput = document.createElement("input");
     fillColorInput.type = "color";
+    fillColorInput.id = "add-vector-fill-color";
     fillColorInput.className = "maplibre-gl-add-vector-color-input";
     fillColorInput.value = this._state.fillColor;
     fillColorInput.addEventListener("input", () => {
@@ -545,6 +548,7 @@ export class AddVectorControl implements IControl {
     strokeColorRow.className = "maplibre-gl-add-vector-color-row";
     const strokeColorInput = document.createElement("input");
     strokeColorInput.type = "color";
+    strokeColorInput.id = "add-vector-stroke-color";
     strokeColorInput.className = "maplibre-gl-add-vector-color-input";
     strokeColorInput.value = this._state.strokeColor;
     strokeColorInput.addEventListener("input", () => {
@@ -570,6 +574,7 @@ export class AddVectorControl implements IControl {
     sliderRow.className = "maplibre-gl-add-vector-slider-row";
     const slider = document.createElement("input");
     slider.type = "range";
+    slider.id = "add-vector-opacity";
     slider.className = "maplibre-gl-add-vector-slider";
     slider.min = "0";
     slider.max = "100";
@@ -832,7 +837,7 @@ export class AddVectorControl implements IControl {
             ],
             paint: {
               "circle-radius": 6,
-              "circle-color": this._state.fillColor,
+              "circle-color": this._state.circleColor,
               "circle-stroke-color": this._state.strokeColor,
               "circle-stroke-width": 2,
               "circle-opacity": this._state.layerOpacity,
@@ -929,10 +934,14 @@ export class AddVectorControl implements IControl {
       throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
     }
 
+    if (!response.body) {
+      throw new Error("Response body is null - streaming not supported");
+    }
+
     const features: GeoJSON.Feature[] = [];
 
     // Use streaming deserializer from geojson module
-    for await (const feature of fgb.deserialize(response.body!)) {
+    for await (const feature of fgb.deserialize(response.body)) {
       features.push(feature as GeoJSON.Feature);
     }
 

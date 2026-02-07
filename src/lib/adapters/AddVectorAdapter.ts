@@ -7,8 +7,6 @@ import type { AddVectorControl } from "../core/AddVector";
 export interface AddVectorAdapterOptions {
   /** Display name in layer control. Default: 'Vector Layer'. */
   name?: string;
-  /** Opacity to use when toggled on. Default: 1. */
-  defaultOpacity?: number;
 }
 
 /**

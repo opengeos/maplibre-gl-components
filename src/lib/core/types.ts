@@ -1704,6 +1704,8 @@ export interface AddVectorControlState {
   fillColor: string;
   /** Current stroke color. */
   strokeColor: string;
+  /** Current circle/point color. */
+  circleColor: string;
   /** Whether any vector layer is currently active. */
   hasLayer: boolean;
   /** Number of active vector layers. */
@@ -1719,7 +1721,9 @@ export interface AddVectorControlState {
 }
 
 /**
- * Props for the React AddVectorControl wrapper component.
+ * Props for a potential React AddVectorControl wrapper component.
+ * Note: No React wrapper is currently implemented. This interface is provided
+ * for type consistency with other controls and future implementation.
  */
 export interface AddVectorControlReactProps extends AddVectorControlOptions {
   /** MapLibre GL map instance. */
