@@ -1600,3 +1600,174 @@ export type PMTilesLayerEventHandler = (event: {
   error?: string;
   layerId?: string;
 }) => void;
+
+// =============================================================================
+// AddVectorControl Types
+// =============================================================================
+
+/**
+ * Supported remote vector format types for AddVectorControl.
+ */
+export type RemoteVectorFormat = "geojson" | "geoparquet" | "flatgeobuf" | "auto";
+
+/**
+ * Information about a single added vector layer from URL.
+ */
+export interface AddVectorLayerInfo {
+  /** Unique layer identifier. */
+  id: string;
+  /** Vector data URL. */
+  url: string;
+  /** Detected or specified format. */
+  format: RemoteVectorFormat;
+  /** Source ID in MapLibre. */
+  sourceId: string;
+  /** Array of layer IDs created for this dataset. */
+  layerIds: string[];
+  /** GeoJSON feature count. */
+  featureCount: number;
+  /** Geometry types present in the dataset. */
+  geometryTypes: string[];
+  /** Layer opacity. */
+  opacity: number;
+  /** Fill color. */
+  fillColor: string;
+  /** Stroke color. */
+  strokeColor: string;
+  /** Whether the layer is pickable (clickable). */
+  pickable?: boolean;
+}
+
+/**
+ * Options for configuring the AddVectorControl.
+ */
+export interface AddVectorControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether the panel starts collapsed (button only). Default: true. */
+  collapsed?: boolean;
+  /** Layer ID to insert vector layers before. If not specified, layers are added on top. */
+  beforeId?: string;
+  /** Default URL to pre-fill. */
+  defaultUrl?: string;
+  /** Default layer name to pre-fill. If not specified, a unique ID is generated. */
+  defaultLayerName?: string;
+  /** Whether to automatically load the defaultUrl when control is added. Default: false. */
+  loadDefaultUrl?: boolean;
+  /** Default format. Default: 'auto'. */
+  defaultFormat?: RemoteVectorFormat;
+  /** Default opacity (0-1). Default: 1. */
+  defaultOpacity?: number;
+  /** Default fill color for polygons. Default: '#3388ff'. */
+  defaultFillColor?: string;
+  /** Default stroke color for lines and polygon outlines. Default: '#3388ff'. */
+  defaultStrokeColor?: string;
+  /** Default circle color for points. Default: '#3388ff'. */
+  defaultCircleColor?: string;
+  /** Whether layers are pickable (clickable to show feature info). Default: true. */
+  defaultPickable?: boolean;
+  /** CORS proxy URL prefix for fetching files from servers without CORS. The URL will be appended. */
+  corsProxy?: string;
+  /** Whether to fit map bounds to loaded data. Default: true. */
+  fitBounds?: boolean;
+  /** Padding for fitBounds in pixels. Default: 50. */
+  fitBoundsPadding?: number;
+  /** Width of the panel in pixels. Default: 300. */
+  panelWidth?: number;
+  /** Background color of the container. */
+  backgroundColor?: string;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the AddVectorControl.
+ */
+export interface AddVectorControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Current vector URL. */
+  url: string;
+  /** Current layer name (optional, auto-generated if empty). */
+  layerName: string;
+  /** Current beforeId for layer ordering. */
+  beforeId: string;
+  /** Current format. */
+  format: RemoteVectorFormat;
+  /** Current opacity (0-1). */
+  layerOpacity: number;
+  /** Current fill color. */
+  fillColor: string;
+  /** Current stroke color. */
+  strokeColor: string;
+  /** Current circle/point color. */
+  circleColor: string;
+  /** Whether layers are pickable (clickable). */
+  pickable: boolean;
+  /** Whether any vector layer is currently active. */
+  hasLayer: boolean;
+  /** Number of active vector layers. */
+  layerCount: number;
+  /** Information about all active vector layers. */
+  layers: AddVectorLayerInfo[];
+  /** Whether the layer is loading. */
+  loading: boolean;
+  /** Error message if any. */
+  error: string | null;
+  /** Status message. */
+  status: string | null;
+}
+
+/**
+ * Props for a potential React AddVectorControl wrapper component.
+ * Note: No React wrapper is currently implemented. This interface is provided
+ * for type consistency with other controls and future implementation.
+ */
+export interface AddVectorControlReactProps extends AddVectorControlOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when a layer is added. */
+  onLayerAdd?: (url: string) => void;
+  /** Callback fired when a layer is removed. */
+  onLayerRemove?: () => void;
+  /** Callback fired when an error occurs. */
+  onError?: (error: string) => void;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: AddVectorControlState) => void;
+}
+
+/**
+ * AddVector-specific event types.
+ */
+export type AddVectorEvent =
+  | ComponentEvent
+  | "layeradd"
+  | "layerremove"
+  | "error";
+
+/**
+ * AddVector event handler function type.
+ */
+export type AddVectorEventHandler = (event: {
+  type: AddVectorEvent;
+  state: AddVectorControlState;
+  url?: string;
+  error?: string;
+  layerId?: string;
+}) => void;
