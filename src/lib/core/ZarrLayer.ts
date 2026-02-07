@@ -1002,6 +1002,12 @@ export class ZarrLayerControl implements IControl {
         .setLngLat(lngLat)
         .setHTML(html)
         .addTo(map);
+
+      // Ensure popup is above any overlay layers
+      const popupEl = this._activePopup.getElement();
+      if (popupEl) {
+        popupEl.style.zIndex = "1000";
+      }
     };
 
     // Store handler reference for cleanup

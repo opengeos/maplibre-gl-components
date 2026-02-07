@@ -341,3 +341,8 @@
 .maplibre-gl-cog-layer-popup-table td:last-child {
   color: #333;
 }
+
+/* Ensure popup appears above deck.gl layers */
+.maplibregl-popup {
+  z-index: 10 !important;
+}
