@@ -7,24 +7,44 @@ import type {
   ZarrLayerEvent,
   ZarrLayerEventHandler,
   ZarrLayerInfo,
+  ColormapName,
 } from './types';
+import { getColormap } from '../colormaps';
 
 /**
- * Default colormaps for the dropdown.
+ * All available colormap names (same as COG layer).
  */
-const COLORMAP_PRESETS: Record<string, string[]> = {
-  viridis: ['#440154', '#482777', '#3e4989', '#31688e', '#26828e', '#1f9e89', '#35b779', '#6ece58', '#b5de2b', '#fde725'],
-  plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786', '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'],
-  inferno: ['#000004', '#1b0c41', '#4a0c6b', '#781c6d', '#a52c60', '#cf4446', '#ed6925', '#fb9b06', '#f7d13d', '#fcffa4'],
-  magma: ['#000004', '#180f3d', '#440f76', '#721f81', '#9e2f7f', '#cd4071', '#f1605d', '#fd9668', '#feca8d', '#fcfdbf'],
-  cividis: ['#00224e', '#123570', '#3b496c', '#575d6d', '#707173', '#8a8678', '#a59c74', '#c3b369', '#e1cc55', '#fee838'],
-  coolwarm: ['#3b4cc0', '#5977e3', '#7b9ff9', '#9ebeff', '#c0d4f5', '#f2cbb7', '#f7ac8e', '#ee8468', '#d65244', '#b40426'],
-  RdBu: ['#053061', '#2166ac', '#4393c3', '#92c5de', '#d1e5f0', '#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f'],
-  RdYlGn: ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee08b', '#d9ef8b', '#a6d96a', '#66bd63', '#1a9850', '#006837'],
-  spectral: ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2'],
-  turbo: ['#30123b', '#4777ef', '#1bd0d5', '#62fc6b', '#d2e935', '#fe9b2d', '#db3a07', '#7a0403'],
-  gray: ['#000000', '#111111', '#222222', '#333333', '#444444', '#666666', '#888888', '#aaaaaa', '#cccccc', '#ffffff'],
-};
+const COLORMAP_NAMES: ColormapName[] = [
+  'bone',
+  'bwr',
+  'cividis',
+  'cool',
+  'coolwarm',
+  'gray',
+  'hot',
+  'inferno',
+  'jet',
+  'magma',
+  'ocean',
+  'plasma',
+  'rainbow',
+  'RdBu',
+  'RdYlBu',
+  'RdYlGn',
+  'seismic',
+  'spectral',
+  'terrain',
+  'turbo',
+  'viridis',
+];
+
+/**
+ * Convert colormap stops to array of hex colors for Zarr layer.
+ */
+function getColormapColors(name: ColormapName): string[] {
+  const stops = getColormap(name);
+  return stops.map(s => s.color);
+}
 
 /**
  * Zarr/grid icon SVG for the toggle button.
@@ -42,7 +62,7 @@ const DEFAULT_OPTIONS: Required<ZarrLayerControlOptions> = {
   beforeId: '',
   defaultUrl: '',
   defaultVariable: '',
-  defaultColormap: COLORMAP_PRESETS.viridis,
+  defaultColormap: getColormapColors('viridis'),
   defaultClim: [0, 1],
   defaultSelector: {},
   defaultOpacity: 1,
@@ -405,19 +425,19 @@ export class ZarrLayerControl implements IControl {
     const cmGroup = this._createFormGroup('Colormap', 'colormap');
     const cmSelect = document.createElement('select');
     cmSelect.className = 'maplibre-gl-zarr-layer-select';
-    for (const name of Object.keys(COLORMAP_PRESETS)) {
+    for (const name of COLORMAP_NAMES) {
       const opt = document.createElement('option');
       opt.value = name;
       opt.textContent = name;
       // Check if current colormap matches this preset
-      const preset = COLORMAP_PRESETS[name];
+      const preset = getColormapColors(name);
       if (JSON.stringify(preset) === JSON.stringify(this._state.colormap)) {
         opt.selected = true;
       }
       cmSelect.appendChild(opt);
     }
     cmSelect.addEventListener('change', () => {
-      this._state.colormap = COLORMAP_PRESETS[cmSelect.value] || COLORMAP_PRESETS.viridis;
+      this._state.colormap = getColormapColors(cmSelect.value as ColormapName);
       this._updateColormapPreview();
     });
     cmGroup.appendChild(cmSelect);
