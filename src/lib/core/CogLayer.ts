@@ -6,8 +6,10 @@ import type {
   CogLayerControlState,
   CogLayerEvent,
   CogLayerEventHandler,
+  ColorStop,
   ColormapName,
 } from './types';
+import { getColormap } from '../colormaps';
 
 /**
  * Shader module that rescales float raster values to [0,1] for visualization.
@@ -52,31 +54,71 @@ uniform rescaleFloatUniforms {
 };
 
 /**
- * All available colormap names for the dropdown.
+ * Parse a CSS hex color (#RGB or #RRGGBB) to [r, g, b] values (0-255).
+ */
+function parseHexColor(hex: string): [number, number, number] {
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+/**
+ * Build a 256×1 RGBA ImageData from an array of ColorStops.
+ * Linearly interpolates between stops.
+ */
+function colormapToImageData(stops: ColorStop[]): ImageData {
+  const size = 256;
+  const rgba = new Uint8ClampedArray(size * 4);
+  const parsed = stops.map(s => ({ pos: s.position, rgb: parseHexColor(s.color) }));
+  for (let i = 0; i < size; i++) {
+    const t = i / (size - 1);
+    // Find surrounding stops
+    let lo = parsed[0], hi = parsed[parsed.length - 1];
+    for (let j = 0; j < parsed.length - 1; j++) {
+      if (t >= parsed[j].pos && t <= parsed[j + 1].pos) {
+        lo = parsed[j];
+        hi = parsed[j + 1];
+        break;
+      }
+    }
+    const range = hi.pos - lo.pos;
+    const f = range > 0 ? (t - lo.pos) / range : 0;
+    rgba[i * 4] = lo.rgb[0] + (hi.rgb[0] - lo.rgb[0]) * f;
+    rgba[i * 4 + 1] = lo.rgb[1] + (hi.rgb[1] - lo.rgb[1]) * f;
+    rgba[i * 4 + 2] = lo.rgb[2] + (hi.rgb[2] - lo.rgb[2]) * f;
+    rgba[i * 4 + 3] = 255;
+  }
+  return new ImageData(rgba, size, 1);
+}
+
+/**
+ * All available colormap names for the dropdown (sorted alphabetically, 'none' first).
  */
 const COLORMAP_NAMES: (ColormapName | 'none')[] = [
   'none',
-  'viridis',
-  'plasma',
-  'inferno',
-  'magma',
-  'cividis',
-  'coolwarm',
-  'bwr',
-  'seismic',
-  'RdBu',
-  'RdYlBu',
-  'RdYlGn',
-  'spectral',
-  'jet',
-  'rainbow',
-  'turbo',
-  'terrain',
-  'ocean',
-  'hot',
-  'cool',
-  'gray',
-  'bone',
+  ...([
+    'bone',
+    'bwr',
+    'cividis',
+    'cool',
+    'coolwarm',
+    'gray',
+    'hot',
+    'inferno',
+    'jet',
+    'magma',
+    'ocean',
+    'plasma',
+    'rainbow',
+    'RdBu',
+    'RdYlBu',
+    'RdYlGn',
+    'seismic',
+    'spectral',
+    'terrain',
+    'turbo',
+    'viridis',
+  ] as ColormapName[]),
 ];
 
 /**
@@ -733,6 +775,14 @@ export class CogLayerControl implements IControl {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const self = this as any;
+        // Cache colormap texture to avoid recreating per tile
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let cachedCmapName: string | null = null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let cachedCmapTexture: any = null;
+
+        const { Colormap } = await import('@developmentseed/deck.gl-raster/gpu-modules');
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const defaultRenderTile = (tileData: any) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -762,6 +812,32 @@ export class CogLayerControl implements IControl {
               isSingleBand: SamplesPerPixel === 1 ? 1.0 : 0.0,
             },
           });
+
+          // Apply colormap if selected
+          const cmapName = self.props._colormap;
+          if (cmapName && cmapName !== 'none') {
+            if (cmapName !== cachedCmapName) {
+              const stops = getColormap(cmapName);
+              const imageData = colormapToImageData(stops);
+              cachedCmapTexture = self.context.device.createTexture({
+                data: imageData.data,
+                format: 'rgba8unorm',
+                width: imageData.width,
+                height: imageData.height,
+                sampler: {
+                  minFilter: 'linear',
+                  magFilter: 'linear',
+                  addressModeU: 'clamp-to-edge',
+                  addressModeV: 'clamp-to-edge',
+                },
+              });
+              cachedCmapName = cmapName;
+            }
+            pipeline.push({
+              module: Colormap,
+              props: { colormapTexture: cachedCmapTexture },
+            });
+          }
 
           return pipeline;
         };
@@ -808,6 +884,7 @@ export class CogLayerControl implements IControl {
         opacity: this._state.layerOpacity,
         _rescaleMin: this._state.rescaleMin,
         _rescaleMax: this._state.rescaleMax,
+        _colormap: this._state.colormap,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onGeoTIFFLoad: (_geotiff: any, options: any) => {
           try {
