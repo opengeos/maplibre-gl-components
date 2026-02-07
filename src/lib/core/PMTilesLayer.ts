@@ -1,6 +1,6 @@
 import "../styles/common.css";
 import "../styles/pmtiles-layer.css";
-import type { IControl, Map as MapLibreMap } from "maplibre-gl";
+import { type IControl, type Map as MapLibreMap, type MapMouseEvent, Popup } from "maplibre-gl";
 import type {
   PMTilesLayerControlOptions,
   PMTilesLayerControlState,
@@ -30,6 +30,7 @@ const DEFAULT_OPTIONS: Required<PMTilesLayerControlOptions> = {
   defaultFillColor: "steelblue",
   defaultLineColor: "#333333",
   defaultCircleColor: "steelblue",
+  defaultPickable: true,
   panelWidth: 300,
   backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
@@ -74,6 +75,8 @@ export class PMTilesLayerControl implements IControl {
   private _protocolRegistered = false;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _protocol?: any;
+  private _popup?: Popup;
+  private _clickHandler?: (e: MapMouseEvent) => void;
 
   constructor(options?: PMTilesLayerControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -84,6 +87,7 @@ export class PMTilesLayerControl implements IControl {
       layerOpacity: this._options.defaultOpacity,
       availableSourceLayers: [],
       selectedSourceLayers: [],
+      pickable: this._options.defaultPickable,
       hasLayer: false,
       layerCount: 0,
       layers: [],
@@ -101,6 +105,9 @@ export class PMTilesLayerControl implements IControl {
     this._handleZoom = () => this._checkZoomVisibility();
     this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
+
+    // Set up click handler for pickable features
+    this._setupClickHandler();
 
     // Auto-load default URL if specified
     if (this._options.loadDefaultUrl && this._options.defaultUrl) {
@@ -124,6 +131,18 @@ export class PMTilesLayerControl implements IControl {
     if (this._map && this._handleZoom) {
       this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
+    }
+
+    // Clean up click handler
+    if (this._map && this._clickHandler) {
+      this._map.off("click", this._clickHandler);
+      this._clickHandler = undefined;
+    }
+
+    // Clean up popup
+    if (this._popup) {
+      this._popup.remove();
+      this._popup = undefined;
     }
 
     this._map = undefined;
@@ -361,6 +380,38 @@ export class PMTilesLayerControl implements IControl {
     return info?.url ?? null;
   }
 
+  /**
+   * Get whether features are pickable (clickable) globally or for a specific source.
+   */
+  getPickable(sourceId?: string): boolean {
+    if (sourceId) {
+      const info = this._pmtilesLayers.get(sourceId);
+      return info?.pickable ?? this._state.pickable;
+    }
+    return this._state.pickable;
+  }
+
+  /**
+   * Set whether features are pickable (clickable).
+   * If sourceId is provided, sets pickable for that specific source.
+   * If no sourceId, sets the global pickable state for all current and future layers.
+   */
+  setPickable(pickable: boolean, sourceId?: string): void {
+    if (sourceId) {
+      const info = this._pmtilesLayers.get(sourceId);
+      if (info) {
+        info.pickable = pickable;
+      }
+    } else {
+      this._state.pickable = pickable;
+      // Update all existing layers
+      for (const info of this._pmtilesLayers.values()) {
+        info.pickable = pickable;
+      }
+    }
+    this._render();
+  }
+
   private _emit(
     event: PMTilesLayerEvent,
     extra?: { url?: string; error?: string; layerId?: string },
@@ -370,6 +421,76 @@ export class PMTilesLayerControl implements IControl {
       const payload = { type: event, state: this.getState(), ...extra };
       handlers.forEach((h) => h(payload));
     }
+  }
+
+  private _setupClickHandler(): void {
+    if (!this._map) return;
+
+    this._clickHandler = (e: MapMouseEvent) => {
+      if (!this._map || !this._state.pickable) return;
+
+      // Get all layer IDs from pickable sources
+      const pickableLayerIds: string[] = [];
+      for (const info of this._pmtilesLayers.values()) {
+        if (info.pickable && info.tileType === "vector") {
+          pickableLayerIds.push(...info.layerIds);
+        }
+      }
+
+      if (pickableLayerIds.length === 0) return;
+
+      // Query features at click point
+      const features = this._map.queryRenderedFeatures(e.point, {
+        layers: pickableLayerIds,
+      });
+
+      if (features.length === 0) {
+        // Close popup if clicking on empty area
+        if (this._popup) {
+          this._popup.remove();
+        }
+        return;
+      }
+
+      // Get the first feature
+      const feature = features[0];
+      const properties = feature.properties || {};
+
+      // Build popup content
+      let html = '<div class="maplibre-gl-pmtiles-popup">';
+      html += `<div class="maplibre-gl-pmtiles-popup-header">${feature.sourceLayer || "Feature"}</div>`;
+      html += '<div class="maplibre-gl-pmtiles-popup-content">';
+
+      const propEntries = Object.entries(properties);
+      if (propEntries.length === 0) {
+        html += '<div class="maplibre-gl-pmtiles-popup-empty">No properties</div>';
+      } else {
+        html += '<table class="maplibre-gl-pmtiles-popup-table">';
+        for (const [key, value] of propEntries) {
+          const displayValue = typeof value === "object" ? JSON.stringify(value) : String(value);
+          html += `<tr><td class="maplibre-gl-pmtiles-popup-key">${key}</td><td class="maplibre-gl-pmtiles-popup-value">${displayValue}</td></tr>`;
+        }
+        html += '</table>';
+      }
+
+      html += '</div></div>';
+
+      // Show popup
+      if (!this._popup) {
+        this._popup = new Popup({
+          closeButton: true,
+          closeOnClick: false,
+          maxWidth: "320px",
+        });
+      }
+
+      this._popup
+        .setLngLat(e.lngLat)
+        .setHTML(html)
+        .addTo(this._map);
+    };
+
+    this._map.on("click", this._clickHandler);
   }
 
   private _checkZoomVisibility(): void {
@@ -497,6 +618,32 @@ export class PMTilesLayerControl implements IControl {
     sliderRow.appendChild(sliderValue);
     opacityGroup.appendChild(sliderRow);
     panel.appendChild(opacityGroup);
+
+    // Pickable checkbox
+    const pickableGroup = this._createFormGroup("Interactivity", "pickable");
+    const pickableRow = document.createElement("div");
+    pickableRow.style.display = "flex";
+    pickableRow.style.alignItems = "center";
+    pickableRow.style.gap = "6px";
+
+    const pickableCheckbox = document.createElement("input");
+    pickableCheckbox.type = "checkbox";
+    pickableCheckbox.id = "pmtiles-layer-pickable";
+    pickableCheckbox.checked = this._state.pickable;
+    pickableCheckbox.addEventListener("change", () => {
+      this.setPickable(pickableCheckbox.checked);
+    });
+
+    const pickableLabel = document.createElement("label");
+    pickableLabel.htmlFor = "pmtiles-layer-pickable";
+    pickableLabel.textContent = "Enable feature picking (click to inspect)";
+    pickableLabel.style.fontSize = "12px";
+    pickableLabel.style.cursor = "pointer";
+
+    pickableRow.appendChild(pickableCheckbox);
+    pickableRow.appendChild(pickableLabel);
+    pickableGroup.appendChild(pickableRow);
+    panel.appendChild(pickableGroup);
 
     // Source layers section with Fetch button
     const sourceLayersGroup = this._createFormGroup("Source Layers", "source-layers");
@@ -966,6 +1113,7 @@ export class PMTilesLayerControl implements IControl {
         sourceLayers,
         layerIds,
         opacity: this._state.layerOpacity,
+        pickable: this._state.pickable,
       };
       this._pmtilesLayers.set(sourceId, layerInfo);
 
