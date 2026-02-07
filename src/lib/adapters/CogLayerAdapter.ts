@@ -5,7 +5,7 @@
  * allowing COG layers managed by CogLayerControl to appear in the layer control.
  */
 
-import type { CogLayerControl } from '../core/CogLayer';
+import type { CogLayerControl } from "../core/CogLayer";
 
 /**
  * State for a layer managed by an adapter.
@@ -41,7 +41,9 @@ export interface CustomLayerAdapter {
    * Subscribe to layer changes (add/remove).
    * Returns an unsubscribe function.
    */
-  onLayerChange?(callback: (event: 'add' | 'remove', layerId: string) => void): () => void;
+  onLayerChange?(
+    callback: (event: "add" | "remove", layerId: string) => void,
+  ): () => void;
   /**
    * Get the bounds of a layer (optional).
    * Returns [west, south, east, north] or null if not available.
@@ -83,17 +85,19 @@ interface CogLayerInfo {
  * ```
  */
 export class CogLayerAdapter implements CustomLayerAdapter {
-  readonly type = 'cog';
+  readonly type = "cog";
 
   private cogControl: CogLayerControl;
   private layerInfoMap: Map<string, CogLayerInfo> = new Map();
-  private changeCallbacks: Array<(event: 'add' | 'remove', layerId: string) => void> = [];
+  private changeCallbacks: Array<
+    (event: "add" | "remove", layerId: string) => void
+  > = [];
 
   constructor(cogControl: CogLayerControl) {
     this.cogControl = cogControl;
 
     // Listen for layer add/remove events from CogLayerControl
-    this.cogControl.on('layeradd', (event) => {
+    this.cogControl.on("layeradd", (event) => {
       const layerId = event.layerId;
       if (layerId) {
         // Extract name from URL
@@ -101,7 +105,7 @@ export class CogLayerAdapter implements CustomLayerAdapter {
         if (event.url) {
           try {
             const urlObj = new URL(event.url);
-            displayName = urlObj.pathname.split('/').pop() || layerId;
+            displayName = urlObj.pathname.split("/").pop() || layerId;
           } catch {
             displayName = event.url;
           }
@@ -118,7 +122,7 @@ export class CogLayerAdapter implements CustomLayerAdapter {
       }
     });
 
-    this.cogControl.on('layerremove', (event) => {
+    this.cogControl.on("layerremove", (event) => {
       const layerId = event.layerId;
       if (layerId) {
         this.layerInfoMap.delete(layerId);
@@ -142,7 +146,7 @@ export class CogLayerAdapter implements CustomLayerAdapter {
         if (layer.url) {
           try {
             const urlObj = new URL(layer.url);
-            displayName = urlObj.pathname.split('/').pop() || layer.id;
+            displayName = urlObj.pathname.split("/").pop() || layer.id;
           } catch {
             displayName = layer.url;
           }
@@ -219,7 +223,7 @@ export class CogLayerAdapter implements CustomLayerAdapter {
    * Get the symbol type for COG layers.
    */
   getSymbolType(_layerId: string): string {
-    return 'raster';
+    return "raster";
   }
 
   /**
@@ -241,20 +245,22 @@ export class CogLayerAdapter implements CustomLayerAdapter {
    * Notify that a layer was added.
    */
   private notifyLayerAdded(layerId: string): void {
-    this.changeCallbacks.forEach((cb) => cb('add', layerId));
+    this.changeCallbacks.forEach((cb) => cb("add", layerId));
   }
 
   /**
    * Notify that a layer was removed.
    */
   private notifyLayerRemoved(layerId: string): void {
-    this.changeCallbacks.forEach((cb) => cb('remove', layerId));
+    this.changeCallbacks.forEach((cb) => cb("remove", layerId));
   }
 
   /**
    * Subscribe to layer changes.
    */
-  onLayerChange(callback: (event: 'add' | 'remove', layerId: string) => void): () => void {
+  onLayerChange(
+    callback: (event: "add" | "remove", layerId: string) => void,
+  ): () => void {
     this.changeCallbacks.push(callback);
     return () => {
       const idx = this.changeCallbacks.indexOf(callback);

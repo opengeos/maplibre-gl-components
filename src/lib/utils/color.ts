@@ -1,4 +1,4 @@
-import type { ColorStop } from '../core/types';
+import type { ColorStop } from "../core/types";
 
 /**
  * Converts a hex color to RGB values.
@@ -6,7 +6,9 @@ import type { ColorStop } from '../core/types';
  * @param hex - The hex color string (with or without #).
  * @returns Object with r, g, b values (0-255).
  */
-export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+export function hexToRgb(
+  hex: string,
+): { r: number; g: number; b: number } | null {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
     ? {
@@ -26,7 +28,7 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
  * @returns Hex color string with #.
  */
 export function rgbToHex(r: number, g: number, b: number): string {
-  return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
+  return "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 
 /**
@@ -37,7 +39,11 @@ export function rgbToHex(r: number, g: number, b: number): string {
  * @param factor - Interpolation factor (0-1).
  * @returns Interpolated hex color.
  */
-export function interpolateColor(color1: string, color2: string, factor: number): string {
+export function interpolateColor(
+  color1: string,
+  color2: string,
+  factor: number,
+): string {
   const rgb1 = hexToRgb(color1);
   const rgb2 = hexToRgb(color2);
 
@@ -59,7 +65,10 @@ export function interpolateColor(color1: string, color2: string, factor: number)
  * @param position - Position (0-1) to sample.
  * @returns The interpolated color at the position.
  */
-export function getColorAtPosition(colorStops: ColorStop[], position: number): string {
+export function getColorAtPosition(
+  colorStops: ColorStop[],
+  position: number,
+): string {
   // Clamp position to valid range
   const pos = Math.max(0, Math.min(1, position));
 
@@ -95,10 +104,10 @@ export function getColorAtPosition(colorStops: ColorStop[], position: number): s
  */
 export function generateGradientCSS(
   colorStops: ColorStop[],
-  direction: string = 'to right'
+  direction: string = "to right",
 ): string {
   const stops = colorStops
     .map((stop) => `${stop.color} ${stop.position * 100}%`)
-    .join(', ');
+    .join(", ");
   return `linear-gradient(${direction}, ${stops})`;
 }

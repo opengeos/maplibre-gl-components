@@ -1,6 +1,9 @@
-import { useEffect, useRef } from 'react';
-import { ViewStateControl } from './ViewStateControl';
-import type { ViewStateControlReactProps, ViewStateControlState } from './types';
+import { useEffect, useRef } from "react";
+import { ViewStateControl } from "./ViewStateControl";
+import type {
+  ViewStateControlReactProps,
+  ViewStateControlState,
+} from "./types";
 
 /**
  * React wrapper component for ViewStateControl.
@@ -36,7 +39,7 @@ export function ViewStateControlReact({
   onBBoxDraw,
   onDrawingToggle,
   onStateChange,
-  position = 'bottom-left',
+  position = "bottom-left",
   ...options
 }: ViewStateControlReactProps): null {
   const controlRef = useRef<ViewStateControl | null>(null);
@@ -52,25 +55,28 @@ export function ViewStateControlReact({
       const handleChange = (event: { state: ViewStateControlState }) => {
         onStateChange(event.state);
       };
-      control.on('update', handleChange);
-      control.on('show', handleChange);
-      control.on('hide', handleChange);
-      control.on('expand', handleChange);
-      control.on('collapse', handleChange);
-      control.on('viewchange', handleChange);
+      control.on("update", handleChange);
+      control.on("show", handleChange);
+      control.on("hide", handleChange);
+      control.on("expand", handleChange);
+      control.on("collapse", handleChange);
+      control.on("viewchange", handleChange);
     }
 
     if (onBBoxDraw) {
-      control.on('bboxdraw', (event: { bbox?: [number, number, number, number] }) => {
-        if (event.bbox) {
-          onBBoxDraw(event.bbox);
-        }
-      });
+      control.on(
+        "bboxdraw",
+        (event: { bbox?: [number, number, number, number] }) => {
+          if (event.bbox) {
+            onBBoxDraw(event.bbox);
+          }
+        },
+      );
     }
 
     if (onDrawingToggle) {
-      control.on('drawstart', () => onDrawingToggle(true));
-      control.on('drawend', () => onDrawingToggle(false));
+      control.on("drawstart", () => onDrawingToggle(true));
+      control.on("drawend", () => onDrawingToggle(false));
     }
 
     map.addControl(control, position);
@@ -88,14 +94,20 @@ export function ViewStateControlReact({
     if (controlRef.current) {
       const updates: Partial<typeof options> = {};
       if (options.visible !== undefined) updates.visible = options.visible;
-      if (options.collapsed !== undefined) updates.collapsed = options.collapsed;
-      if (options.precision !== undefined) updates.precision = options.precision;
-      if (options.panelWidth !== undefined) updates.panelWidth = options.panelWidth;
-      if (options.backgroundColor !== undefined) updates.backgroundColor = options.backgroundColor;
-      if (options.borderRadius !== undefined) updates.borderRadius = options.borderRadius;
+      if (options.collapsed !== undefined)
+        updates.collapsed = options.collapsed;
+      if (options.precision !== undefined)
+        updates.precision = options.precision;
+      if (options.panelWidth !== undefined)
+        updates.panelWidth = options.panelWidth;
+      if (options.backgroundColor !== undefined)
+        updates.backgroundColor = options.backgroundColor;
+      if (options.borderRadius !== undefined)
+        updates.borderRadius = options.borderRadius;
       if (options.opacity !== undefined) updates.opacity = options.opacity;
       if (options.fontSize !== undefined) updates.fontSize = options.fontSize;
-      if (options.fontColor !== undefined) updates.fontColor = options.fontColor;
+      if (options.fontColor !== undefined)
+        updates.fontColor = options.fontColor;
       if (options.minzoom !== undefined) updates.minzoom = options.minzoom;
       if (options.maxzoom !== undefined) updates.maxzoom = options.maxzoom;
 

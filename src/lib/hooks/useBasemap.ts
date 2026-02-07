@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
-import type { BasemapControlState } from '../core/types';
+import { useState, useCallback } from "react";
+import type { BasemapControlState } from "../core/types";
 
 const DEFAULT_STATE: BasemapControlState = {
   visible: true,
   collapsed: true,
   selectedBasemap: null,
-  searchText: '',
+  searchText: "",
   loading: false,
   error: null,
   belowLabels: false,
@@ -92,7 +92,7 @@ export function useBasemap(initialState?: Partial<BasemapControlState>) {
   }, []);
 
   const clearSearch = useCallback(() => {
-    setState((prev) => ({ ...prev, searchText: '' }));
+    setState((prev) => ({ ...prev, searchText: "" }));
   }, []);
 
   const reset = useCallback(() => {

@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { HtmlControl } from './HtmlControl';
-import type { HtmlControlReactProps, HtmlControlState } from './types';
+import { useEffect, useRef } from "react";
+import { HtmlControl } from "./HtmlControl";
+import type { HtmlControlReactProps, HtmlControlState } from "./types";
 
 /**
  * React wrapper component for HtmlControl.
@@ -34,7 +34,7 @@ import type { HtmlControlReactProps, HtmlControlState } from './types';
 export function HtmlControlReact({
   map,
   onStateChange,
-  position = 'top-left',
+  position = "top-left",
   ...options
 }: HtmlControlReactProps): null {
   const controlRef = useRef<HtmlControl | null>(null);
@@ -50,11 +50,11 @@ export function HtmlControlReact({
       const handleChange = (event: { state: HtmlControlState }) => {
         onStateChange(event.state);
       };
-      control.on('update', handleChange);
-      control.on('show', handleChange);
-      control.on('hide', handleChange);
-      control.on('expand', handleChange);
-      control.on('collapse', handleChange);
+      control.on("update", handleChange);
+      control.on("show", handleChange);
+      control.on("hide", handleChange);
+      control.on("expand", handleChange);
+      control.on("collapse", handleChange);
     }
 
     map.addControl(control, position);
@@ -81,16 +81,22 @@ export function HtmlControlReact({
       const updates: Partial<typeof options> = {};
       if (options.visible !== undefined) updates.visible = options.visible;
       if (options.title !== undefined) updates.title = options.title;
-      if (options.collapsible !== undefined) updates.collapsible = options.collapsible;
-      if (options.collapsed !== undefined) updates.collapsed = options.collapsed;
-      if (options.backgroundColor !== undefined) updates.backgroundColor = options.backgroundColor;
+      if (options.collapsible !== undefined)
+        updates.collapsible = options.collapsible;
+      if (options.collapsed !== undefined)
+        updates.collapsed = options.collapsed;
+      if (options.backgroundColor !== undefined)
+        updates.backgroundColor = options.backgroundColor;
       if (options.padding !== undefined) updates.padding = options.padding;
-      if (options.borderRadius !== undefined) updates.borderRadius = options.borderRadius;
+      if (options.borderRadius !== undefined)
+        updates.borderRadius = options.borderRadius;
       if (options.opacity !== undefined) updates.opacity = options.opacity;
       if (options.maxWidth !== undefined) updates.maxWidth = options.maxWidth;
-      if (options.maxHeight !== undefined) updates.maxHeight = options.maxHeight;
+      if (options.maxHeight !== undefined)
+        updates.maxHeight = options.maxHeight;
       if (options.fontSize !== undefined) updates.fontSize = options.fontSize;
-      if (options.fontColor !== undefined) updates.fontColor = options.fontColor;
+      if (options.fontColor !== undefined)
+        updates.fontColor = options.fontColor;
       if (options.minzoom !== undefined) updates.minzoom = options.minzoom;
       if (options.maxzoom !== undefined) updates.maxzoom = options.maxzoom;
 

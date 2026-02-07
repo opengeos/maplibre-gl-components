@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
-import { VectorDatasetControl } from './VectorDataset';
+import { useEffect, useRef } from "react";
+import { VectorDatasetControl } from "./VectorDataset";
 import type {
   VectorDatasetControlReactProps,
   VectorDatasetControlState,
   LoadedDataset,
-} from './types';
+} from "./types";
 
 /**
  * React wrapper component for VectorDatasetControl.
@@ -39,7 +39,7 @@ export function VectorDatasetReact({
   onDatasetLoad,
   onError,
   onStateChange,
-  position = 'top-right',
+  position = "top-right",
   ...options
 }: VectorDatasetControlReactProps): null {
   const controlRef = useRef<VectorDatasetControl | null>(null);
@@ -55,9 +55,9 @@ export function VectorDatasetReact({
       const handleChange = (event: { state: VectorDatasetControlState }) => {
         onStateChange(event.state);
       };
-      control.on('update', handleChange);
-      control.on('show', handleChange);
-      control.on('hide', handleChange);
+      control.on("update", handleChange);
+      control.on("show", handleChange);
+      control.on("hide", handleChange);
     }
 
     if (onDatasetLoad) {
@@ -66,7 +66,7 @@ export function VectorDatasetReact({
           onDatasetLoad(event.dataset);
         }
       };
-      control.on('load', handleLoad);
+      control.on("load", handleLoad);
     }
 
     if (onError) {
@@ -75,7 +75,7 @@ export function VectorDatasetReact({
           onError(event.error, event.filename);
         }
       };
-      control.on('error', handleError);
+      control.on("error", handleError);
     }
 
     map.addControl(control, position);
@@ -93,7 +93,7 @@ export function VectorDatasetReact({
     if (controlRef.current) {
       // Filter out undefined values to avoid overwriting defaults
       const updates = Object.fromEntries(
-        Object.entries(options).filter(([, value]) => value !== undefined)
+        Object.entries(options).filter(([, value]) => value !== undefined),
       );
       if (Object.keys(updates).length > 0) {
         controlRef.current.update(updates);

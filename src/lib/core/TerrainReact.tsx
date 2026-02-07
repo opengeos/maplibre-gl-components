@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { TerrainControl } from './Terrain';
-import type { TerrainControlReactProps, TerrainControlState } from './types';
+import { useEffect, useRef } from "react";
+import { TerrainControl } from "./Terrain";
+import type { TerrainControlReactProps, TerrainControlState } from "./types";
 
 /**
  * React wrapper component for TerrainControl.
@@ -35,7 +35,7 @@ export function TerrainReact({
   map,
   onTerrainChange,
   onStateChange,
-  position = 'top-right',
+  position = "top-right",
   ...options
 }: TerrainControlReactProps): null {
   const controlRef = useRef<TerrainControl | null>(null);
@@ -51,16 +51,16 @@ export function TerrainReact({
       const handleChange = (event: { state: TerrainControlState }) => {
         onStateChange(event.state);
       };
-      control.on('update', handleChange);
-      control.on('show', handleChange);
-      control.on('hide', handleChange);
+      control.on("update", handleChange);
+      control.on("show", handleChange);
+      control.on("hide", handleChange);
     }
 
     if (onTerrainChange) {
       const handleTerrainChange = (event: { state: TerrainControlState }) => {
         onTerrainChange(event.state.enabled);
       };
-      control.on('terrainchange', handleTerrainChange);
+      control.on("terrainchange", handleTerrainChange);
     }
 
     map.addControl(control, position);
@@ -78,7 +78,7 @@ export function TerrainReact({
     if (controlRef.current) {
       // Filter out undefined values to avoid overwriting defaults
       const updates = Object.fromEntries(
-        Object.entries(options).filter(([, value]) => value !== undefined)
+        Object.entries(options).filter(([, value]) => value !== undefined),
       );
       if (Object.keys(updates).length > 0) {
         controlRef.current.update(updates);

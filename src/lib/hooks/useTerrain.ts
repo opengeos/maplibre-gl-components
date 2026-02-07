@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import type { TerrainControlState } from '../core/types';
+import { useState, useCallback } from "react";
+import type { TerrainControlState } from "../core/types";
 
 const DEFAULT_STATE: TerrainControlState = {
   visible: true,

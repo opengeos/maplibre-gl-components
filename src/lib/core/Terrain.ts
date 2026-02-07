@@ -1,35 +1,35 @@
-import '../styles/common.css';
-import '../styles/terrain.css';
-import type { IControl, Map as MapLibreMap } from 'maplibre-gl';
+import "../styles/common.css";
+import "../styles/terrain.css";
+import type { IControl, Map as MapLibreMap } from "maplibre-gl";
 import type {
   TerrainControlOptions,
   TerrainControlState,
   TerrainEvent,
   TerrainEventHandler,
-} from './types';
+} from "./types";
 
 /**
  * AWS Terrarium terrain tiles URL.
  */
 const DEFAULT_TERRAIN_URL =
-  'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+  "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";
 
 /**
  * Unique source ID for terrain DEM.
  */
-const TERRAIN_SOURCE_ID = 'maplibre-gl-terrain-dem';
+const TERRAIN_SOURCE_ID = "maplibre-gl-terrain-dem";
 
 /**
  * Unique layer ID for hillshade.
  */
-const HILLSHADE_LAYER_ID = 'maplibre-gl-terrain-hillshade';
+const HILLSHADE_LAYER_ID = "maplibre-gl-terrain-hillshade";
 
 /**
  * Default options for the TerrainControl.
  */
 const DEFAULT_OPTIONS: Required<TerrainControlOptions> = {
   sourceUrl: DEFAULT_TERRAIN_URL,
-  encoding: 'terrarium',
+  encoding: "terrarium",
   exaggeration: 1.0,
   enabled: false,
   hillshade: true,
@@ -37,10 +37,10 @@ const DEFAULT_OPTIONS: Required<TerrainControlOptions> = {
   sourceMinzoom: 0,
   sourceMaxzoom: 15,
   tileSize: 256,
-  position: 'top-right',
-  className: '',
+  position: "top-right",
+  className: "",
   visible: true,
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  backgroundColor: "rgba(255, 255, 255, 0.9)",
   borderRadius: 4,
   opacity: 1,
   minzoom: 0,
@@ -75,7 +75,8 @@ export class TerrainControl implements IControl {
   private _button?: HTMLButtonElement;
   private _options: Required<TerrainControlOptions>;
   private _state: TerrainControlState;
-  private _eventHandlers: Map<TerrainEvent, Set<TerrainEventHandler>> = new Map();
+  private _eventHandlers: Map<TerrainEvent, Set<TerrainEventHandler>> =
+    new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _handleStyleLoad?: () => void;
@@ -109,7 +110,7 @@ export class TerrainControl implements IControl {
 
     // Set up zoom listener
     this._handleZoom = () => this._checkZoomVisibility();
-    this._map.on('zoom', this._handleZoom);
+    this._map.on("zoom", this._handleZoom);
 
     // Handle style changes (e.g., when basemap changes)
     this._handleStyleLoad = () => {
@@ -118,7 +119,7 @@ export class TerrainControl implements IControl {
         this._setupTerrain();
       }
     };
-    this._map.on('style.load', this._handleStyleLoad);
+    this._map.on("style.load", this._handleStyleLoad);
 
     // Check initial zoom
     this._checkZoomVisibility();
@@ -129,7 +130,7 @@ export class TerrainControl implements IControl {
       if (this._map.isStyleLoaded()) {
         this._setupTerrain();
       } else {
-        this._map.once('load', () => this._setupTerrain());
+        this._map.once("load", () => this._setupTerrain());
       }
     }
 
@@ -145,11 +146,11 @@ export class TerrainControl implements IControl {
 
     // Remove event listeners
     if (this._map && this._handleZoom) {
-      this._map.off('zoom', this._handleZoom);
+      this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
     }
     if (this._map && this._handleStyleLoad) {
-      this._map.off('style.load', this._handleStyleLoad);
+      this._map.off("style.load", this._handleStyleLoad);
       this._handleStyleLoad = undefined;
     }
 
@@ -167,7 +168,7 @@ export class TerrainControl implements IControl {
     if (!this._state.visible) {
       this._state.visible = true;
       this._updateDisplayState();
-      this._emit('show');
+      this._emit("show");
     }
   }
 
@@ -178,7 +179,7 @@ export class TerrainControl implements IControl {
     if (this._state.visible) {
       this._state.visible = false;
       this._updateDisplayState();
-      this._emit('hide');
+      this._emit("hide");
     }
   }
 
@@ -189,8 +190,8 @@ export class TerrainControl implements IControl {
     if (!this._state.enabled) {
       this._setupTerrain();
       this._render();
-      this._emit('terrainchange');
-      this._emit('update');
+      this._emit("terrainchange");
+      this._emit("update");
     }
   }
 
@@ -201,8 +202,8 @@ export class TerrainControl implements IControl {
     if (this._state.enabled) {
       this._removeTerrain();
       this._render();
-      this._emit('terrainchange');
-      this._emit('update');
+      this._emit("terrainchange");
+      this._emit("update");
     }
   }
 
@@ -243,7 +244,7 @@ export class TerrainControl implements IControl {
       });
     }
 
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -265,7 +266,7 @@ export class TerrainControl implements IControl {
       if (this._state.enabled) {
         this._addHillshadeLayer();
       }
-      this._emit('update');
+      this._emit("update");
     }
   }
 
@@ -277,7 +278,7 @@ export class TerrainControl implements IControl {
       this._state.hillshade = false;
       this._options.hillshade = false;
       this._removeHillshadeLayer();
-      this._emit('update');
+      this._emit("update");
     }
   }
 
@@ -307,7 +308,8 @@ export class TerrainControl implements IControl {
     if (options.exaggeration !== undefined) {
       this._state.exaggeration = options.exaggeration;
     }
-    if (options.hillshade !== undefined) this._state.hillshade = options.hillshade;
+    if (options.hillshade !== undefined)
+      this._state.hillshade = options.hillshade;
 
     // Handle terrain enable/disable
     if (options.enabled !== undefined && options.enabled !== prevEnabled) {
@@ -322,7 +324,7 @@ export class TerrainControl implements IControl {
     }
 
     this._render();
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -380,7 +382,7 @@ export class TerrainControl implements IControl {
       // Add raster-dem source if not already present
       if (!this._map.getSource(TERRAIN_SOURCE_ID)) {
         this._map.addSource(TERRAIN_SOURCE_ID, {
-          type: 'raster-dem',
+          type: "raster-dem",
           tiles: [this._options.sourceUrl],
           encoding: this._options.encoding,
           tileSize: this._options.tileSize,
@@ -402,7 +404,7 @@ export class TerrainControl implements IControl {
 
       this._state.enabled = true;
     } catch (error) {
-      console.error('Failed to setup terrain:', error);
+      console.error("Failed to setup terrain:", error);
     }
   }
 
@@ -426,7 +428,7 @@ export class TerrainControl implements IControl {
 
       this._state.enabled = false;
     } catch (error) {
-      console.error('Failed to remove terrain:', error);
+      console.error("Failed to remove terrain:", error);
     }
   }
 
@@ -441,7 +443,7 @@ export class TerrainControl implements IControl {
       const layers = this._map.getStyle().layers || [];
       let firstSymbolId: string | undefined;
       for (const layer of layers) {
-        if (layer.type === 'symbol') {
+        if (layer.type === "symbol") {
           firstSymbolId = layer.id;
           break;
         }
@@ -450,16 +452,16 @@ export class TerrainControl implements IControl {
       this._map.addLayer(
         {
           id: HILLSHADE_LAYER_ID,
-          type: 'hillshade',
+          type: "hillshade",
           source: TERRAIN_SOURCE_ID,
           paint: {
-            'hillshade-exaggeration': this._options.hillshadeExaggeration,
+            "hillshade-exaggeration": this._options.hillshadeExaggeration,
           },
         },
-        firstSymbolId
+        firstSymbolId,
       );
     } catch (error) {
-      console.error('Failed to add hillshade layer:', error);
+      console.error("Failed to add hillshade layer:", error);
     }
   }
 
@@ -474,7 +476,7 @@ export class TerrainControl implements IControl {
         this._map.removeLayer(HILLSHADE_LAYER_ID);
       }
     } catch (error) {
-      console.error('Failed to remove hillshade layer:', error);
+      console.error("Failed to remove hillshade layer:", error);
     }
   }
 
@@ -500,7 +502,7 @@ export class TerrainControl implements IControl {
   private _updateDisplayState(): void {
     if (!this._container) return;
     const shouldShow = this._state.visible && this._zoomVisible;
-    this._container.style.display = shouldShow ? 'flex' : 'none';
+    this._container.style.display = shouldShow ? "flex" : "none";
   }
 
   /**
@@ -509,14 +511,14 @@ export class TerrainControl implements IControl {
    * @returns The container element.
    */
   private _createContainer(): HTMLElement {
-    const container = document.createElement('div');
+    const container = document.createElement("div");
     container.className = `maplibregl-ctrl maplibregl-ctrl-group maplibre-gl-terrain${
-      this._options.className ? ` ${this._options.className}` : ''
+      this._options.className ? ` ${this._options.className}` : ""
     }`;
 
     const shouldShow = this._state.visible && this._zoomVisible;
     if (!shouldShow) {
-      container.style.display = 'none';
+      container.style.display = "none";
     }
 
     // Apply custom styles
@@ -531,14 +533,14 @@ export class TerrainControl implements IControl {
     }
 
     // Create button
-    this._button = document.createElement('button');
-    this._button.type = 'button';
-    this._button.className = 'maplibre-gl-terrain-button';
-    this._button.title = 'Toggle terrain';
-    this._button.setAttribute('aria-label', 'Toggle terrain');
+    this._button = document.createElement("button");
+    this._button.type = "button";
+    this._button.className = "maplibre-gl-terrain-button";
+    this._button.title = "Toggle terrain";
+    this._button.setAttribute("aria-label", "Toggle terrain");
     this._button.innerHTML = TERRAIN_ICON;
 
-    this._button.addEventListener('click', () => this.toggle());
+    this._button.addEventListener("click", () => this.toggle());
 
     container.appendChild(this._button);
 
@@ -553,13 +555,13 @@ export class TerrainControl implements IControl {
 
     // Update button active state
     if (this._state.enabled) {
-      this._button.classList.add('maplibre-gl-terrain-button--active');
-      this._button.title = 'Disable terrain';
-      this._button.setAttribute('aria-label', 'Disable terrain');
+      this._button.classList.add("maplibre-gl-terrain-button--active");
+      this._button.title = "Disable terrain";
+      this._button.setAttribute("aria-label", "Disable terrain");
     } else {
-      this._button.classList.remove('maplibre-gl-terrain-button--active');
-      this._button.title = 'Enable terrain';
-      this._button.setAttribute('aria-label', 'Enable terrain');
+      this._button.classList.remove("maplibre-gl-terrain-button--active");
+      this._button.title = "Enable terrain";
+      this._button.setAttribute("aria-label", "Enable terrain");
     }
 
     this._updateDisplayState();

@@ -1,6 +1,11 @@
-import '../styles/common.css';
-import '../styles/inspect-control.css';
-import maplibregl, { type IControl, type Map as MapLibreMap, type MapMouseEvent, Popup } from 'maplibre-gl';
+import "../styles/common.css";
+import "../styles/inspect-control.css";
+import maplibregl, {
+  type IControl,
+  type Map as MapLibreMap,
+  type MapMouseEvent,
+  Popup,
+} from "maplibre-gl";
 import type {
   InspectControlOptions,
   InspectControlState,
@@ -8,16 +13,16 @@ import type {
   InspectHighlightStyle,
   InspectEvent,
   InspectEventHandler,
-} from './types';
-import { generateId } from '../utils/helpers';
+} from "./types";
+import { generateId } from "../utils/helpers";
 
 /**
  * Default highlight style for selected features.
  */
 const DEFAULT_HIGHLIGHT_STYLE: Required<InspectHighlightStyle> = {
-  fillColor: '#ffff00',
+  fillColor: "#ffff00",
   fillOpacity: 0.3,
-  strokeColor: '#ffff00',
+  strokeColor: "#ffff00",
   strokeWidth: 3,
   circleRadius: 10,
   circleStrokeWidth: 3,
@@ -27,8 +32,8 @@ const DEFAULT_HIGHLIGHT_STYLE: Required<InspectHighlightStyle> = {
  * Default options for the InspectControl.
  */
 const DEFAULT_OPTIONS: Required<InspectControlOptions> = {
-  position: 'top-right',
-  className: '',
+  position: "top-right",
+  className: "",
   visible: true,
   enabled: false,
   maxFeatures: 10,
@@ -40,11 +45,11 @@ const DEFAULT_OPTIONS: Required<InspectControlOptions> = {
   showLayerName: true,
   maxWidth: 320,
   maxHeight: 300,
-  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+  backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
   opacity: 1,
   fontSize: 13,
-  fontColor: '#333',
+  fontColor: "#333",
   minzoom: 0,
   maxzoom: 24,
 };
@@ -79,12 +84,13 @@ export class InspectControl implements IControl {
   private _button?: HTMLButtonElement;
   private _options: Required<InspectControlOptions>;
   private _state: InspectControlState;
-  private _eventHandlers: Map<InspectEvent, Set<InspectEventHandler>> = new Map();
+  private _eventHandlers: Map<InspectEvent, Set<InspectEventHandler>> =
+    new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
   private _popup?: Popup;
-  private _highlightSourceId: string = '';
+  private _highlightSourceId: string = "";
   private _highlightLayerIds: string[] = [];
 
   // Bound event handlers for proper cleanup
@@ -99,7 +105,10 @@ export class InspectControl implements IControl {
     this._options = {
       ...DEFAULT_OPTIONS,
       ...options,
-      highlightStyle: { ...DEFAULT_HIGHLIGHT_STYLE, ...options?.highlightStyle },
+      highlightStyle: {
+        ...DEFAULT_HIGHLIGHT_STYLE,
+        ...options?.highlightStyle,
+      },
     };
     this._state = {
       visible: this._options.visible,
@@ -123,7 +132,7 @@ export class InspectControl implements IControl {
 
     // Set up zoom listener
     this._handleZoom = () => this._checkZoomVisibility();
-    this._map.on('zoom', this._handleZoom);
+    this._map.on("zoom", this._handleZoom);
 
     // Check initial zoom
     this._checkZoomVisibility();
@@ -141,7 +150,7 @@ export class InspectControl implements IControl {
    */
   onRemove(): void {
     if (this._map && this._handleZoom) {
-      this._map.off('zoom', this._handleZoom);
+      this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
     }
     this._removeMapListeners();
@@ -163,7 +172,7 @@ export class InspectControl implements IControl {
       this._updateButtonState();
       this._setupMapListeners();
       this._updateCursor(true);
-      this._emit('enable');
+      this._emit("enable");
     }
   }
 
@@ -177,7 +186,7 @@ export class InspectControl implements IControl {
       this._removeMapListeners();
       this._updateCursor(false);
       this.clear();
-      this._emit('disable');
+      this._emit("disable");
     }
   }
 
@@ -206,7 +215,7 @@ export class InspectControl implements IControl {
     if (!this._state.visible) {
       this._state.visible = true;
       this._updateDisplayState();
-      this._emit('show');
+      this._emit("show");
     }
   }
 
@@ -217,7 +226,7 @@ export class InspectControl implements IControl {
     if (this._state.visible) {
       this._state.visible = true;
       this._updateDisplayState();
-      this._emit('hide');
+      this._emit("hide");
     }
   }
 
@@ -229,7 +238,7 @@ export class InspectControl implements IControl {
     this._state.selectedIndex = 0;
     this._removeHighlight();
     this._hidePopup();
-    this._emit('clear');
+    this._emit("clear");
   }
 
   /**
@@ -262,7 +271,7 @@ export class InspectControl implements IControl {
       const feature = this._state.inspectedFeatures[index];
       this._addHighlight(feature);
       this._updatePopupContent();
-      this._emit('featureselect', feature);
+      this._emit("featureselect", feature);
     }
   }
 
@@ -271,7 +280,8 @@ export class InspectControl implements IControl {
    */
   nextFeature(): void {
     if (this._state.inspectedFeatures.length > 1) {
-      const nextIndex = (this._state.selectedIndex + 1) % this._state.inspectedFeatures.length;
+      const nextIndex =
+        (this._state.selectedIndex + 1) % this._state.inspectedFeatures.length;
       this.selectFeature(nextIndex);
     }
   }
@@ -281,9 +291,10 @@ export class InspectControl implements IControl {
    */
   previousFeature(): void {
     if (this._state.inspectedFeatures.length > 1) {
-      const prevIndex = this._state.selectedIndex === 0
-        ? this._state.inspectedFeatures.length - 1
-        : this._state.selectedIndex - 1;
+      const prevIndex =
+        this._state.selectedIndex === 0
+          ? this._state.inspectedFeatures.length - 1
+          : this._state.selectedIndex - 1;
       this.selectFeature(prevIndex);
     }
   }
@@ -294,7 +305,10 @@ export class InspectControl implements IControl {
   update(options: Partial<InspectControlOptions>): void {
     Object.assign(this._options, options);
     if (options.highlightStyle) {
-      this._options.highlightStyle = { ...DEFAULT_HIGHLIGHT_STYLE, ...options.highlightStyle };
+      this._options.highlightStyle = {
+        ...DEFAULT_HIGHLIGHT_STYLE,
+        ...options.highlightStyle,
+      };
     }
     if (options.visible !== undefined) {
       this._state.visible = options.visible;
@@ -307,7 +321,7 @@ export class InspectControl implements IControl {
         this.disable();
       }
     }
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -339,7 +353,7 @@ export class InspectControl implements IControl {
           state: this.getState(),
           feature,
           features: this._state.inspectedFeatures,
-        })
+        }),
       );
     }
   }
@@ -348,8 +362,9 @@ export class InspectControl implements IControl {
    * Creates the control container.
    */
   private _createContainer(): HTMLElement {
-    const container = document.createElement('div');
-    container.className = `maplibregl-ctrl maplibregl-ctrl-group maplibre-gl-inspect ${this._options.className}`.trim();
+    const container = document.createElement("div");
+    container.className =
+      `maplibregl-ctrl maplibregl-ctrl-group maplibre-gl-inspect ${this._options.className}`.trim();
 
     // Apply custom styling
     if (this._options.backgroundColor) {
@@ -363,17 +378,17 @@ export class InspectControl implements IControl {
     }
 
     // Create button
-    this._button = document.createElement('button');
-    this._button.type = 'button';
-    this._button.className = 'maplibre-gl-inspect-button';
-    this._button.title = 'Inspect features';
+    this._button = document.createElement("button");
+    this._button.type = "button";
+    this._button.className = "maplibre-gl-inspect-button";
+    this._button.title = "Inspect features";
     this._button.innerHTML = INSPECT_ICON;
-    this._button.addEventListener('click', () => this.toggle());
+    this._button.addEventListener("click", () => this.toggle());
 
     container.appendChild(this._button);
 
     // Set initial display state
-    container.style.display = this._state.visible ? 'block' : 'none';
+    container.style.display = this._state.visible ? "block" : "none";
 
     return container;
   }
@@ -384,11 +399,11 @@ export class InspectControl implements IControl {
   private _updateButtonState(): void {
     if (this._button) {
       if (this._state.enabled) {
-        this._button.classList.add('maplibre-gl-inspect-button--active');
-        this._button.title = 'Disable inspect mode';
+        this._button.classList.add("maplibre-gl-inspect-button--active");
+        this._button.title = "Disable inspect mode";
       } else {
-        this._button.classList.remove('maplibre-gl-inspect-button--active');
-        this._button.title = 'Inspect features';
+        this._button.classList.remove("maplibre-gl-inspect-button--active");
+        this._button.title = "Inspect features";
       }
     }
   }
@@ -400,9 +415,9 @@ export class InspectControl implements IControl {
     if (this._map) {
       const canvas = this._map.getCanvas();
       if (inspectMode) {
-        canvas.style.cursor = 'crosshair';
+        canvas.style.cursor = "crosshair";
       } else {
-        canvas.style.cursor = '';
+        canvas.style.cursor = "";
       }
     }
   }
@@ -414,7 +429,7 @@ export class InspectControl implements IControl {
     if (!this._map || this._boundClickHandler) return;
 
     this._boundClickHandler = (e: MapMouseEvent) => this._handleMapClick(e);
-    this._map.on('click', this._boundClickHandler);
+    this._map.on("click", this._boundClickHandler);
   }
 
   /**
@@ -422,7 +437,7 @@ export class InspectControl implements IControl {
    */
   private _removeMapListeners(): void {
     if (this._map && this._boundClickHandler) {
-      this._map.off('click', this._boundClickHandler);
+      this._map.off("click", this._boundClickHandler);
       this._boundClickHandler = undefined;
     }
   }
@@ -450,7 +465,7 @@ export class InspectControl implements IControl {
       .map((f) => {
         const featureId = f.id;
         const feature: GeoJSON.Feature = {
-          type: 'Feature' as const,
+          type: "Feature" as const,
           geometry: f.geometry,
           properties: f.properties || {},
         };
@@ -459,10 +474,10 @@ export class InspectControl implements IControl {
         }
 
         return {
-          id: generateId('inspect'),
+          id: generateId("inspect"),
           feature,
-          layerId: f.layer?.id || 'unknown',
-          sourceId: f.source || 'unknown',
+          layerId: f.layer?.id || "unknown",
+          sourceId: f.source || "unknown",
           sourceLayer: f.sourceLayer,
           featureId: featureId === undefined ? undefined : featureId,
           lngLat,
@@ -475,13 +490,15 @@ export class InspectControl implements IControl {
     const selectedFeature = inspectedFeatures[0];
     this._addHighlight(selectedFeature);
     this._showPopup(selectedFeature, lngLat);
-    this._emit('featureselect', selectedFeature);
+    this._emit("featureselect", selectedFeature);
   }
 
   /**
    * Queries features at a point.
    */
-  private _queryFeatures(point: maplibregl.PointLike): maplibregl.MapGeoJSONFeature[] {
+  private _queryFeatures(
+    point: maplibregl.PointLike,
+  ): maplibregl.MapGeoJSONFeature[] {
     if (!this._map) return [];
 
     const queryOptions: { layers?: string[] } = {};
@@ -496,13 +513,13 @@ export class InspectControl implements IControl {
     // Filter out excluded layers
     if (this._options.excludeLayers.length > 0) {
       features = features.filter(
-        (f) => f.layer && !this._options.excludeLayers.includes(f.layer.id)
+        (f) => f.layer && !this._options.excludeLayers.includes(f.layer.id),
       );
     }
 
     // Filter out highlight layers
     features = features.filter(
-      (f) => f.layer && !f.layer.id.startsWith('inspect-highlight-')
+      (f) => f.layer && !f.layer.id.startsWith("inspect-highlight-"),
     );
 
     return features;
@@ -522,26 +539,27 @@ export class InspectControl implements IControl {
     const style = this._options.highlightStyle;
 
     const highlightTarget = this._getHighlightTarget(inspectedFeature);
-    const highlightSourceId = highlightTarget?.sourceId ?? this._highlightSourceId;
+    const highlightSourceId =
+      highlightTarget?.sourceId ?? this._highlightSourceId;
     const highlightSourceLayer = highlightTarget?.sourceLayer;
     const highlightFilter = highlightTarget?.filter;
 
     if (!highlightTarget) {
       // Add source only when we can't use the original source for highlighting.
       this._map.addSource(this._highlightSourceId, {
-        type: 'geojson',
+        type: "geojson",
         data: feature,
       });
     }
 
     const layerBase: {
       source: string;
-      'source-layer'?: string;
+      "source-layer"?: string;
       filter?: maplibregl.FilterSpecification;
     } = { source: highlightSourceId };
 
     if (highlightSourceLayer) {
-      layerBase['source-layer'] = highlightSourceLayer;
+      layerBase["source-layer"] = highlightSourceLayer;
     }
 
     if (highlightFilter) {
@@ -549,44 +567,47 @@ export class InspectControl implements IControl {
     }
 
     // Add appropriate layer(s) based on geometry type
-    if (geometryType === 'Point' || geometryType === 'MultiPoint') {
+    if (geometryType === "Point" || geometryType === "MultiPoint") {
       const layerId = `${this._highlightSourceId}-circle`;
       this._map.addLayer({
         id: layerId,
-        type: 'circle',
+        type: "circle",
         ...layerBase,
         paint: {
-          'circle-radius': style.circleRadius,
-          'circle-color': style.fillColor,
-          'circle-opacity': style.fillOpacity,
-          'circle-stroke-color': style.strokeColor,
-          'circle-stroke-width': style.circleStrokeWidth,
+          "circle-radius": style.circleRadius,
+          "circle-color": style.fillColor,
+          "circle-opacity": style.fillOpacity,
+          "circle-stroke-color": style.strokeColor,
+          "circle-stroke-width": style.circleStrokeWidth,
         },
       });
       this._highlightLayerIds.push(layerId);
-    } else if (geometryType === 'LineString' || geometryType === 'MultiLineString') {
+    } else if (
+      geometryType === "LineString" ||
+      geometryType === "MultiLineString"
+    ) {
       const layerId = `${this._highlightSourceId}-line`;
       this._map.addLayer({
         id: layerId,
-        type: 'line',
+        type: "line",
         ...layerBase,
         paint: {
-          'line-color': style.strokeColor,
-          'line-width': style.strokeWidth,
-          'line-opacity': 1,
+          "line-color": style.strokeColor,
+          "line-width": style.strokeWidth,
+          "line-opacity": 1,
         },
       });
       this._highlightLayerIds.push(layerId);
-    } else if (geometryType === 'Polygon' || geometryType === 'MultiPolygon') {
+    } else if (geometryType === "Polygon" || geometryType === "MultiPolygon") {
       // Fill layer
       const fillLayerId = `${this._highlightSourceId}-fill`;
       this._map.addLayer({
         id: fillLayerId,
-        type: 'fill',
+        type: "fill",
         ...layerBase,
         paint: {
-          'fill-color': style.fillColor,
-          'fill-opacity': style.fillOpacity,
+          "fill-color": style.fillColor,
+          "fill-opacity": style.fillOpacity,
         },
       });
       this._highlightLayerIds.push(fillLayerId);
@@ -595,11 +616,11 @@ export class InspectControl implements IControl {
       const lineLayerId = `${this._highlightSourceId}-outline`;
       this._map.addLayer({
         id: lineLayerId,
-        type: 'line',
+        type: "line",
         ...layerBase,
         paint: {
-          'line-color': style.strokeColor,
-          'line-width': style.strokeWidth,
+          "line-color": style.strokeColor,
+          "line-width": style.strokeWidth,
         },
       });
       this._highlightLayerIds.push(lineLayerId);
@@ -610,23 +631,29 @@ export class InspectControl implements IControl {
    * Determines if highlight can use the original source to avoid tile clipping.
    */
   private _getHighlightTarget(
-    inspectedFeature: InspectedFeature
-  ): { sourceId: string; sourceLayer?: string; filter: maplibregl.FilterSpecification } | null {
+    inspectedFeature: InspectedFeature,
+  ): {
+    sourceId: string;
+    sourceLayer?: string;
+    filter: maplibregl.FilterSpecification;
+  } | null {
     if (!this._map) return null;
 
     const { sourceId, sourceLayer, featureId, layerId } = inspectedFeature;
-    if (!sourceId || sourceId === 'unknown') return null;
+    if (!sourceId || sourceId === "unknown") return null;
     if (featureId === null || featureId === undefined) return null;
 
-    const source = this._map.getSource(sourceId) as maplibregl.Source | undefined;
+    const source = this._map.getSource(sourceId) as
+      | maplibregl.Source
+      | undefined;
     if (!source) return null;
 
-    if (source.type === 'vector' && !sourceLayer) return null;
+    if (source.type === "vector" && !sourceLayer) return null;
 
-    const idFilter: maplibregl.FilterSpecification = ['==', ['id'], featureId];
+    const idFilter: maplibregl.FilterSpecification = ["==", ["id"], featureId];
     const layerFilter = this._map.getLayer(layerId)?.filter;
     const combinedFilter = layerFilter
-      ? (['all', idFilter, layerFilter] as maplibregl.FilterSpecification)
+      ? (["all", idFilter, layerFilter] as maplibregl.FilterSpecification)
       : idFilter;
 
     return { sourceId, sourceLayer, filter: combinedFilter };
@@ -655,7 +682,10 @@ export class InspectControl implements IControl {
   /**
    * Shows the popup with feature properties.
    */
-  private _showPopup(_inspectedFeature: InspectedFeature, lngLat: [number, number]): void {
+  private _showPopup(
+    _inspectedFeature: InspectedFeature,
+    lngLat: [number, number],
+  ): void {
     if (!this._map) return;
 
     // Remove existing popup
@@ -667,7 +697,7 @@ export class InspectControl implements IControl {
       closeButton: true,
       closeOnClick: false,
       maxWidth: `${this._options.maxWidth}px`,
-      className: 'maplibre-gl-inspect-popup',
+      className: "maplibre-gl-inspect-popup",
     })
       .setLngLat(lngLat)
       .setHTML(html)
@@ -710,8 +740,12 @@ export class InspectControl implements IControl {
     const popupEl = this._popup.getElement();
     if (!popupEl) return;
 
-    const prevBtn = popupEl.querySelector('.maplibre-gl-inspect-nav-prev') as HTMLButtonElement;
-    const nextBtn = popupEl.querySelector('.maplibre-gl-inspect-nav-next') as HTMLButtonElement;
+    const prevBtn = popupEl.querySelector(
+      ".maplibre-gl-inspect-nav-prev",
+    ) as HTMLButtonElement;
+    const nextBtn = popupEl.querySelector(
+      ".maplibre-gl-inspect-nav-next",
+    ) as HTMLButtonElement;
 
     if (prevBtn) {
       // Use onclick to replace any existing handler
@@ -761,8 +795,8 @@ export class InspectControl implements IControl {
 
     // Navigation (if multiple features)
     if (features.length > 1) {
-      const prevDisabled = features.length <= 1 ? 'disabled' : '';
-      const nextDisabled = features.length <= 1 ? 'disabled' : '';
+      const prevDisabled = features.length <= 1 ? "disabled" : "";
+      const nextDisabled = features.length <= 1 ? "disabled" : "";
       html += `
         <span class="maplibre-gl-inspect-nav">
           <button class="maplibre-gl-inspect-nav-prev" ${prevDisabled} title="Previous feature">&lt;</button>
@@ -772,13 +806,13 @@ export class InspectControl implements IControl {
       `;
     }
 
-    html += '</div>';
+    html += "</div>";
 
     // Properties table
     html += `<div class="maplibre-gl-inspect-content" style="max-height: ${this._options.maxHeight}px;">`;
 
     const propertyKeys = Object.keys(properties).filter(
-      (key) => !this._options.excludeProperties.includes(key)
+      (key) => !this._options.excludeProperties.includes(key),
     );
 
     if (propertyKeys.length === 0) {
@@ -788,7 +822,8 @@ export class InspectControl implements IControl {
       for (const key of propertyKeys) {
         const value = properties[key];
         const formattedValue = this._formatPropertyValue(value);
-        const valueClass = value === null || value === undefined ? 'value null' : 'value';
+        const valueClass =
+          value === null || value === undefined ? "value null" : "value";
         html += `
           <tr>
             <td class="key">${this._escapeHtml(key)}</td>
@@ -796,10 +831,10 @@ export class InspectControl implements IControl {
           </tr>
         `;
       }
-      html += '</table>';
+      html += "</table>";
     }
 
-    html += '</div>';
+    html += "</div>";
 
     return html;
   }
@@ -809,7 +844,7 @@ export class InspectControl implements IControl {
    */
   private _formatGeometryType(type: string): string {
     // Remove "Multi" prefix for cleaner display
-    return type.replace('Multi', '');
+    return type.replace("Multi", "");
   }
 
   /**
@@ -817,14 +852,14 @@ export class InspectControl implements IControl {
    */
   private _formatPropertyValue(value: unknown): string {
     if (value === null || value === undefined) {
-      return '<em>N/A</em>';
+      return "<em>N/A</em>";
     }
 
-    if (typeof value === 'boolean') {
-      return value ? 'Yes' : 'No';
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No";
     }
 
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       // Format numbers with appropriate precision
       if (Number.isInteger(value)) {
         return this._escapeHtml(value.toLocaleString());
@@ -832,7 +867,7 @@ export class InspectControl implements IControl {
       return this._escapeHtml(value.toFixed(4));
     }
 
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       // Check if it looks like a date
       if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
         try {
@@ -847,13 +882,13 @@ export class InspectControl implements IControl {
 
       // Truncate long strings
       if (value.length > 100) {
-        return this._escapeHtml(value.substring(0, 100)) + '...';
+        return this._escapeHtml(value.substring(0, 100)) + "...";
       }
 
       return this._escapeHtml(value);
     }
 
-    if (typeof value === 'object') {
+    if (typeof value === "object") {
       // For arrays and objects, show JSON
       try {
         const json = JSON.stringify(value, null, 2);
@@ -862,7 +897,7 @@ export class InspectControl implements IControl {
         }
         return `<pre>${this._escapeHtml(json)}</pre>`;
       } catch {
-        return '[Object]';
+        return "[Object]";
       }
     }
 
@@ -873,7 +908,7 @@ export class InspectControl implements IControl {
    * Escapes HTML special characters.
    */
   private _escapeHtml(str: string): string {
-    const div = document.createElement('div');
+    const div = document.createElement("div");
     div.textContent = str;
     return div.innerHTML;
   }
@@ -899,6 +934,6 @@ export class InspectControl implements IControl {
   private _updateDisplayState(): void {
     if (!this._container) return;
     const shouldShow = this._state.visible && this._zoomVisible;
-    this._container.style.display = shouldShow ? 'block' : 'none';
+    this._container.style.display = shouldShow ? "block" : "none";
   }
 }

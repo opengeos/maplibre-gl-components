@@ -66,7 +66,7 @@
 }
 
 /* Number inputs in header */
-.maplibre-gl-control-grid input[type='number'] {
+.maplibre-gl-control-grid input[type="number"] {
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 2px;
   font-size: inherit;
@@ -74,7 +74,7 @@
   color: #1a1a1a;
 }
 
-.maplibre-gl-control-grid input[type='number']:focus {
+.maplibre-gl-control-grid input[type="number"]:focus {
   outline: none;
   border-color: #0078d7;
 }
@@ -86,7 +86,7 @@
     color: #e0e0e0;
   }
 
-  .maplibre-gl-control-grid input[type='number'] {
+  .maplibre-gl-control-grid input[type="number"] {
     border-color: rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.1);
     color: #e0e0e0;

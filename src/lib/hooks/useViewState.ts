@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import type { ViewStateControlState } from '../core/types';
+import { useState, useCallback } from "react";
+import type { ViewStateControlState } from "../core/types";
 
 const DEFAULT_STATE: ViewStateControlState = {
   visible: true,
@@ -69,9 +69,12 @@ export function useViewState(initialState?: Partial<ViewStateControlState>) {
     setState((prev) => ({ ...prev, drawingBBox }));
   }, []);
 
-  const setDrawnBBox = useCallback((drawnBBox: [number, number, number, number] | null) => {
-    setState((prev) => ({ ...prev, drawnBBox }));
-  }, []);
+  const setDrawnBBox = useCallback(
+    (drawnBBox: [number, number, number, number] | null) => {
+      setState((prev) => ({ ...prev, drawnBBox }));
+    },
+    [],
+  );
 
   const clearBBox = useCallback(() => {
     setState((prev) => ({ ...prev, drawnBBox: null, drawingBBox: false }));

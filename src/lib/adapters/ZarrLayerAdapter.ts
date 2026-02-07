@@ -5,8 +5,8 @@
  * allowing Zarr layers managed by ZarrLayerControl to appear in the layer control.
  */
 
-import type { ZarrLayerControl } from '../core/ZarrLayer';
-import type { CustomLayerAdapter, LayerState } from './CogLayerAdapter';
+import type { ZarrLayerControl } from "../core/ZarrLayer";
+import type { CustomLayerAdapter, LayerState } from "./CogLayerAdapter";
 
 /**
  * Internal layer info stored per Zarr layer.
@@ -36,17 +36,19 @@ interface ZarrLayerInfo {
  * ```
  */
 export class ZarrLayerAdapter implements CustomLayerAdapter {
-  readonly type = 'zarr';
+  readonly type = "zarr";
 
   private zarrControl: ZarrLayerControl;
   private layerInfoMap: Map<string, ZarrLayerInfo> = new Map();
-  private changeCallbacks: Array<(event: 'add' | 'remove', layerId: string) => void> = [];
+  private changeCallbacks: Array<
+    (event: "add" | "remove", layerId: string) => void
+  > = [];
 
   constructor(zarrControl: ZarrLayerControl) {
     this.zarrControl = zarrControl;
 
     // Listen for layer add/remove events from ZarrLayerControl
-    this.zarrControl.on('layeradd', (event) => {
+    this.zarrControl.on("layeradd", (event) => {
       const layerId = event.layerId;
       if (layerId) {
         // Extract name from URL and variable
@@ -54,10 +56,11 @@ export class ZarrLayerAdapter implements CustomLayerAdapter {
         if (event.url) {
           try {
             const urlObj = new URL(event.url);
-            const filename = urlObj.pathname.split('/').pop() || '';
+            const filename = urlObj.pathname.split("/").pop() || "";
             // Get variable from state
             const state = this.zarrControl.getState();
-            const variable = state.layers.find(l => l.id === layerId)?.variable || '';
+            const variable =
+              state.layers.find((l) => l.id === layerId)?.variable || "";
             displayName = variable ? `${filename} / ${variable}` : filename;
           } catch {
             displayName = event.url;
@@ -75,7 +78,7 @@ export class ZarrLayerAdapter implements CustomLayerAdapter {
       }
     });
 
-    this.zarrControl.on('layerremove', (event) => {
+    this.zarrControl.on("layerremove", (event) => {
       const layerId = event.layerId;
       if (layerId) {
         this.layerInfoMap.delete(layerId);
@@ -99,8 +102,10 @@ export class ZarrLayerAdapter implements CustomLayerAdapter {
         if (layer.url) {
           try {
             const urlObj = new URL(layer.url);
-            const filename = urlObj.pathname.split('/').pop() || '';
-            displayName = layer.variable ? `${filename} / ${layer.variable}` : filename;
+            const filename = urlObj.pathname.split("/").pop() || "";
+            displayName = layer.variable
+              ? `${filename} / ${layer.variable}`
+              : filename;
           } catch {
             displayName = layer.url;
           }
@@ -177,7 +182,7 @@ export class ZarrLayerAdapter implements CustomLayerAdapter {
    * Get the symbol type for Zarr layers.
    */
   getSymbolType(_layerId: string): string {
-    return 'raster';
+    return "raster";
   }
 
   /**
@@ -191,20 +196,22 @@ export class ZarrLayerAdapter implements CustomLayerAdapter {
    * Notify that a layer was added.
    */
   private notifyLayerAdded(layerId: string): void {
-    this.changeCallbacks.forEach((cb) => cb('add', layerId));
+    this.changeCallbacks.forEach((cb) => cb("add", layerId));
   }
 
   /**
    * Notify that a layer was removed.
    */
   private notifyLayerRemoved(layerId: string): void {
-    this.changeCallbacks.forEach((cb) => cb('remove', layerId));
+    this.changeCallbacks.forEach((cb) => cb("remove", layerId));
   }
 
   /**
    * Subscribe to layer changes.
    */
-  onLayerChange(callback: (event: 'add' | 'remove', layerId: string) => void): () => void {
+  onLayerChange(
+    callback: (event: "add" | "remove", layerId: string) => void,
+  ): () => void {
     this.changeCallbacks.push(callback);
     return () => {
       const idx = this.changeCallbacks.indexOf(callback);

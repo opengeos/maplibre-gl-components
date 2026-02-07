@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import type { ControlGridState } from '../core/types';
+import { useState, useCallback } from "react";
+import type { ControlGridState } from "../core/types";
 
 const DEFAULT_STATE: ControlGridState = {
   visible: true,
@@ -48,7 +48,10 @@ export function useControlGrid(initialState?: Partial<ControlGridState>) {
   }, []);
 
   const setRows = useCallback((rows: number) => {
-    setState((prev) => ({ ...prev, rows: Math.max(1, Math.min(12, Math.round(rows))) }));
+    setState((prev) => ({
+      ...prev,
+      rows: Math.max(1, Math.min(12, Math.round(rows))),
+    }));
   }, []);
 
   const setColumns = useCallback((columns: number) => {

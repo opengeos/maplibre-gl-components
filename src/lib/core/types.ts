@@ -1,43 +1,47 @@
-import type { IControl, Map } from 'maplibre-gl';
+import type { IControl, Map } from "maplibre-gl";
 
 /**
  * Position options for legend controls.
  */
-export type ControlPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+export type ControlPosition =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
 
 /**
  * Orientation for colorbar display.
  */
-export type ColorbarOrientation = 'horizontal' | 'vertical';
+export type ColorbarOrientation = "horizontal" | "vertical";
 
 /**
  * Built-in colormap names (matplotlib-compatible).
  */
 export type ColormapName =
   // Sequential
-  | 'viridis'
-  | 'plasma'
-  | 'inferno'
-  | 'magma'
-  | 'cividis'
+  | "viridis"
+  | "plasma"
+  | "inferno"
+  | "magma"
+  | "cividis"
   // Diverging
-  | 'coolwarm'
-  | 'bwr'
-  | 'seismic'
-  | 'RdBu'
-  | 'RdYlBu'
-  | 'RdYlGn'
-  | 'spectral'
+  | "coolwarm"
+  | "bwr"
+  | "seismic"
+  | "RdBu"
+  | "RdYlBu"
+  | "RdYlGn"
+  | "spectral"
   // Miscellaneous
-  | 'jet'
-  | 'rainbow'
-  | 'turbo'
-  | 'terrain'
-  | 'ocean'
-  | 'hot'
-  | 'cool'
-  | 'gray'
-  | 'bone';
+  | "jet"
+  | "rainbow"
+  | "turbo"
+  | "terrain"
+  | "ocean"
+  | "hot"
+  | "cool"
+  | "gray"
+  | "bone";
 
 /**
  * Color stop definition for custom gradients.
@@ -146,7 +150,7 @@ export interface LegendItem {
   /** Optional outline/stroke color. */
   strokeColor?: string;
   /** Shape of the swatch. */
-  shape?: 'square' | 'circle' | 'line';
+  shape?: "square" | "circle" | "line";
   /** Optional icon URL to display instead of color swatch. */
   icon?: string;
 }
@@ -282,12 +286,15 @@ export interface HtmlControlReactProps extends HtmlControlOptions {
 /**
  * Event types emitted by legend/colorbar controls.
  */
-export type ComponentEvent = 'show' | 'hide' | 'update' | 'collapse' | 'expand';
+export type ComponentEvent = "show" | "hide" | "update" | "collapse" | "expand";
 
 /**
  * Event handler function type.
  */
-export type ComponentEventHandler<T> = (event: { type: ComponentEvent; state: T }) => void;
+export type ComponentEventHandler<T> = (event: {
+  type: ComponentEvent;
+  state: T;
+}) => void;
 
 /**
  * Colormap definition with color stops.
@@ -302,7 +309,7 @@ export interface ColormapDefinition {
 /**
  * Display mode for the basemap control.
  */
-export type BasemapDisplayMode = 'dropdown' | 'gallery' | 'list';
+export type BasemapDisplayMode = "dropdown" | "gallery" | "list";
 
 /**
  * Basemap item definition.
@@ -427,12 +434,12 @@ export interface BasemapControlReactProps extends BasemapControlOptions {
 /**
  * Basemap-specific event types.
  */
-export type BasemapEvent = ComponentEvent | 'basemapchange';
+export type BasemapEvent = ComponentEvent | "basemapchange";
 
 /**
  * Terrain encoding format.
  */
-export type TerrainEncoding = 'terrarium' | 'mapbox';
+export type TerrainEncoding = "terrarium" | "mapbox";
 
 /**
  * Options for configuring the TerrainControl.
@@ -503,12 +510,15 @@ export interface TerrainControlReactProps extends TerrainControlOptions {
 /**
  * Terrain-specific event types.
  */
-export type TerrainEvent = ComponentEvent | 'terrainchange';
+export type TerrainEvent = ComponentEvent | "terrainchange";
 
 /**
  * Terrain event handler function type.
  */
-export type TerrainEventHandler = (event: { type: TerrainEvent; state: TerrainControlState }) => void;
+export type TerrainEventHandler = (event: {
+  type: TerrainEvent;
+  state: TerrainControlState;
+}) => void;
 
 /**
  * Search result item from geocoding service.
@@ -617,12 +627,16 @@ export interface SearchControlReactProps extends SearchControlOptions {
 /**
  * Search-specific event types.
  */
-export type SearchEvent = ComponentEvent | 'resultselect' | 'search' | 'clear';
+export type SearchEvent = ComponentEvent | "resultselect" | "search" | "clear";
 
 /**
  * Search event handler function type.
  */
-export type SearchEventHandler = (event: { type: SearchEvent; state: SearchControlState; result?: SearchResult }) => void;
+export type SearchEventHandler = (event: {
+  type: SearchEvent;
+  state: SearchControlState;
+  result?: SearchResult;
+}) => void;
 
 /**
  * Supported vector file formats.
@@ -631,27 +645,27 @@ export type SearchEventHandler = (event: { type: SearchEvent; state: SearchContr
  * for many common geospatial formats via ST_Read().
  */
 export type VectorFormat =
-  | 'geojson'
-  | 'shapefile'
-  | 'geopackage'
-  | 'geoparquet'
-  | 'kml'
-  | 'kmz'
-  | 'gpx'
-  | 'flatgeobuf'
-  | 'gml'
-  | 'topojson'
-  | 'csv'
-  | 'xlsx'
-  | 'dxf'
-  | 'unknown';
+  | "geojson"
+  | "shapefile"
+  | "geopackage"
+  | "geoparquet"
+  | "kml"
+  | "kmz"
+  | "gpx"
+  | "flatgeobuf"
+  | "gml"
+  | "topojson"
+  | "csv"
+  | "xlsx"
+  | "dxf"
+  | "unknown";
 
 /**
  * Progress information for file conversion operations.
  */
 export interface ConversionProgress {
   /** Current stage of the conversion. */
-  stage: 'loading' | 'initializing' | 'converting' | 'complete' | 'error';
+  stage: "loading" | "initializing" | "converting" | "complete" | "error";
   /** Progress percentage (0-100). */
   percent?: number;
   /** Human-readable progress message. */
@@ -678,7 +692,14 @@ export interface LoadedDataset {
   /** GeoJSON feature count. */
   featureCount: number;
   /** Geometry types present in the dataset. */
-  geometryTypes: ('Point' | 'LineString' | 'Polygon' | 'MultiPoint' | 'MultiLineString' | 'MultiPolygon')[];
+  geometryTypes: (
+    | "Point"
+    | "LineString"
+    | "Polygon"
+    | "MultiPoint"
+    | "MultiLineString"
+    | "MultiPolygon"
+  )[];
   /** Timestamp when loaded. */
   loadedAt: Date;
   /** Original file format (geojson, shapefile, geopackage). */
@@ -794,7 +815,12 @@ export interface VectorDatasetControlReactProps extends VectorDatasetControlOpti
 /**
  * VectorDataset-specific event types.
  */
-export type VectorDatasetEvent = ComponentEvent | 'load' | 'error' | 'dragenter' | 'dragleave';
+export type VectorDatasetEvent =
+  | ComponentEvent
+  | "load"
+  | "error"
+  | "dragenter"
+  | "dragleave";
 
 /**
  * VectorDataset event handler function type.
@@ -926,7 +952,12 @@ export interface InspectControlReactProps extends InspectControlOptions {
 /**
  * Inspect-specific event types.
  */
-export type InspectEvent = ComponentEvent | 'enable' | 'disable' | 'featureselect' | 'clear';
+export type InspectEvent =
+  | ComponentEvent
+  | "enable"
+  | "disable"
+  | "featureselect"
+  | "clear";
 
 /**
  * Inspect event handler function type.
@@ -1029,7 +1060,13 @@ export interface ViewStateControlReactProps extends ViewStateControlOptions {
 /**
  * ViewState-specific event types.
  */
-export type ViewStateEvent = ComponentEvent | 'viewchange' | 'bboxdraw' | 'bboxclear' | 'drawstart' | 'drawend';
+export type ViewStateEvent =
+  | ComponentEvent
+  | "viewchange"
+  | "bboxdraw"
+  | "bboxclear"
+  | "drawstart"
+  | "drawend";
 
 /**
  * ViewState event handler function type.
@@ -1044,14 +1081,14 @@ export type ViewStateEventHandler = (event: {
  * Names of built-in controls that can be added to a ControlGrid via `defaultControls`.
  */
 export type DefaultControlName =
-  | 'globe'
-  | 'terrain'
-  | 'search'
-  | 'viewState'
-  | 'inspect'
-  | 'vectorDataset'
-  | 'basemap'
-  | 'cogLayer';
+  | "globe"
+  | "terrain"
+  | "search"
+  | "viewState"
+  | "inspect"
+  | "vectorDataset"
+  | "basemap"
+  | "cogLayer";
 
 /**
  * Options for configuring the ControlGrid.
@@ -1122,7 +1159,7 @@ export interface ControlGridReactProps extends ControlGridOptions {
 /**
  * ControlGrid-specific event types.
  */
-export type ControlGridEvent = ComponentEvent | 'controladd' | 'controlremove';
+export type ControlGridEvent = ComponentEvent | "controladd" | "controlremove";
 
 /**
  * ControlGrid event handler function type.
@@ -1144,7 +1181,7 @@ export interface CogLayerInfo {
   /** Bands string. */
   bands: string;
   /** Colormap name. */
-  colormap: ColormapName | 'none';
+  colormap: ColormapName | "none";
   /** Rescale minimum. */
   rescaleMin: number;
   /** Rescale maximum. */
@@ -1174,7 +1211,7 @@ export interface CogLayerControlOptions {
   /** Default bands (comma-separated, e.g. '1' or '1,2,3'). Default: '1'. */
   defaultBands?: string;
   /** Default colormap name. Default: 'viridis'. */
-  defaultColormap?: ColormapName | 'none';
+  defaultColormap?: ColormapName | "none";
   /** Default rescale minimum. Default: 0. */
   defaultRescaleMin?: number;
   /** Default rescale maximum. Default: 255. */
@@ -1214,7 +1251,7 @@ export interface CogLayerControlState {
   /** Current bands. */
   bands: string;
   /** Current colormap. */
-  colormap: ColormapName | 'none';
+  colormap: ColormapName | "none";
   /** Current rescale min. */
   rescaleMin: number;
   /** Current rescale max. */
@@ -1258,7 +1295,12 @@ export interface CogLayerControlReactProps extends CogLayerControlOptions {
 /**
  * CogLayer-specific event types.
  */
-export type CogLayerEvent = ComponentEvent | 'layeradd' | 'layerremove' | 'layerupdate' | 'error';
+export type CogLayerEvent =
+  | ComponentEvent
+  | "layeradd"
+  | "layerremove"
+  | "layerupdate"
+  | "error";
 
 /**
  * CogLayer event handler function type.
@@ -1394,7 +1436,12 @@ export interface ZarrLayerControlReactProps extends ZarrLayerControlOptions {
 /**
  * ZarrLayer-specific event types.
  */
-export type ZarrLayerEvent = ComponentEvent | 'layeradd' | 'layerremove' | 'layerupdate' | 'error';
+export type ZarrLayerEvent =
+  | ComponentEvent
+  | "layeradd"
+  | "layerremove"
+  | "layerupdate"
+  | "error";
 
 /**
  * ZarrLayer event handler function type.

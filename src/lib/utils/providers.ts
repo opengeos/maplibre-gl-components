@@ -1,10 +1,10 @@
-import type { BasemapItem } from '../core/types';
+import type { BasemapItem } from "../core/types";
 
 /**
  * Default URL for xyzservices providers.json.
  */
 export const XYZSERVICES_URL =
-  'https://raw.githubusercontent.com/geopandas/xyzservices/main/xyzservices/data/providers.json';
+  "https://raw.githubusercontent.com/geopandas/xyzservices/main/xyzservices/data/providers.json";
 
 /**
  * XYZservices provider structure from providers.json.
@@ -44,7 +44,12 @@ interface ParseOptions {
  * Check if an object is an XYZ provider (has url field).
  */
 function isXYZProvider(obj: unknown): obj is XYZProvider {
-  return typeof obj === 'object' && obj !== null && 'url' in obj && typeof (obj as XYZProvider).url === 'string';
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "url" in obj &&
+    typeof (obj as XYZProvider).url === "string"
+  );
 }
 
 /**
@@ -52,30 +57,30 @@ function isXYZProvider(obj: unknown): obj is XYZProvider {
  * Replaces placeholders like {s}, {r}, {variant}, {ext}.
  */
 export function buildTileUrl(basemap: BasemapItem): string {
-  let url = basemap.url || '';
+  let url = basemap.url || "";
 
   // Replace subdomains placeholder with 'a' (first subdomain)
-  url = url.replace('{s}', 'a');
+  url = url.replace("{s}", "a");
 
   // Replace retina placeholder
-  url = url.replace('{r}', '');
+  url = url.replace("{r}", "");
 
   // Replace variant placeholder (e.g., CartoDB uses {variant} for 'light_all', 'dark_all', etc.)
   if (basemap.variant) {
-    url = url.replace('{variant}', basemap.variant);
+    url = url.replace("{variant}", basemap.variant);
   }
 
   // Replace file extension placeholder (e.g., some providers use {ext} for 'png', 'jpg')
   if (basemap.ext) {
-    url = url.replace('{ext}', basemap.ext);
+    url = url.replace("{ext}", basemap.ext);
   }
 
   // Handle API key placeholders
   if (basemap.apiKey) {
-    url = url.replace('{apikey}', basemap.apiKey);
-    url = url.replace('{accessToken}', basemap.apiKey);
-    url = url.replace('<insert your api key here>', basemap.apiKey);
-    url = url.replace('<insert your access token here>', basemap.apiKey);
+    url = url.replace("{apikey}", basemap.apiKey);
+    url = url.replace("{accessToken}", basemap.apiKey);
+    url = url.replace("<insert your api key here>", basemap.apiKey);
+    url = url.replace("<insert your access token here>", basemap.apiKey);
   }
 
   return url;
@@ -93,25 +98,32 @@ export function generateThumbnailUrl(basemap: BasemapItem): string {
   if (basemap.url) {
     let url = buildTileUrl(basemap);
     // Generate thumbnail at zoom 3, tile 4/2 (roughly centered on Europe)
-    url = url.replace('{z}', '3');
-    url = url.replace('{x}', '4');
-    url = url.replace('{y}', '2');
+    url = url.replace("{z}", "3");
+    url = url.replace("{x}", "4");
+    url = url.replace("{y}", "2");
     return url;
   }
 
-  return '';
+  return "";
 }
 
 /**
  * Parse xyzservices providers.json data into BasemapItem array.
  */
-export function parseProviders(data: Record<string, unknown>, options: ParseOptions = {}): BasemapItem[] {
+export function parseProviders(
+  data: Record<string, unknown>,
+  options: ParseOptions = {},
+): BasemapItem[] {
   const { filterGroups, excludeGroups, excludeBroken = true } = options;
   const basemaps: BasemapItem[] = [];
 
-  function processProvider(provider: XYZProvider, groupName: string, providerName: string): void {
+  function processProvider(
+    provider: XYZProvider,
+    groupName: string,
+    providerName: string,
+  ): void {
     // Skip broken providers
-    if (excludeBroken && provider.status === 'broken') {
+    if (excludeBroken && provider.status === "broken") {
       return;
     }
 
@@ -122,9 +134,9 @@ export function parseProviders(data: Record<string, unknown>, options: ParseOpti
 
     // Check if requires API key
     const requiresApiKey =
-      provider.accessToken?.includes('insert your') ||
-      provider.url.includes('{apikey}') ||
-      provider.url.includes('{accessToken}');
+      provider.accessToken?.includes("insert your") ||
+      provider.url.includes("{apikey}") ||
+      provider.url.includes("{accessToken}");
 
     basemaps.push({
       id: provider.name || `${groupName}.${providerName}`,
@@ -161,7 +173,7 @@ export function parseProviders(data: Record<string, unknown>, options: ParseOpti
     if (isXYZProvider(groupValue)) {
       // Direct provider (like OpenSeaMap)
       processProvider(groupValue, groupName, groupName);
-    } else if (typeof groupValue === 'object' && groupValue !== null) {
+    } else if (typeof groupValue === "object" && groupValue !== null) {
       // Group of providers (like OpenStreetMap with Mapnik, HOT, etc.)
       processGroup(groupValue as ProviderGroup, groupName);
     }
@@ -175,7 +187,7 @@ export function parseProviders(data: Record<string, unknown>, options: ParseOpti
  */
 export async function fetchProviders(
   url: string = XYZSERVICES_URL,
-  options: ParseOptions = {}
+  options: ParseOptions = {},
 ): Promise<BasemapItem[]> {
   const response = await fetch(url);
   if (!response.ok) {
@@ -188,11 +200,13 @@ export async function fetchProviders(
 /**
  * Group basemaps by their group property.
  */
-export function groupBasemaps(basemaps: BasemapItem[]): Map<string, BasemapItem[]> {
+export function groupBasemaps(
+  basemaps: BasemapItem[],
+): Map<string, BasemapItem[]> {
   const groups = new Map<string, BasemapItem[]>();
 
   for (const basemap of basemaps) {
-    const groupName = basemap.group || 'Other';
+    const groupName = basemap.group || "Other";
     const existing = groups.get(groupName) || [];
     existing.push(basemap);
     groups.set(groupName, existing);
@@ -204,7 +218,10 @@ export function groupBasemaps(basemaps: BasemapItem[]): Map<string, BasemapItem[
 /**
  * Filter basemaps by search text.
  */
-export function filterBasemaps(basemaps: BasemapItem[], searchText: string): BasemapItem[] {
+export function filterBasemaps(
+  basemaps: BasemapItem[],
+  searchText: string,
+): BasemapItem[] {
   if (!searchText.trim()) {
     return basemaps;
   }
@@ -214,7 +231,7 @@ export function filterBasemaps(basemaps: BasemapItem[], searchText: string): Bas
     (b) =>
       b.name.toLowerCase().includes(search) ||
       b.id.toLowerCase().includes(search) ||
-      b.group?.toLowerCase().includes(search)
+      b.group?.toLowerCase().includes(search),
   );
 }
 
@@ -224,35 +241,35 @@ export function filterBasemaps(basemaps: BasemapItem[], searchText: string): Bas
  */
 export const GOOGLE_BASEMAPS: BasemapItem[] = [
   {
-    id: 'Google.Roadmap',
-    name: 'Roadmap',
-    group: 'Google',
-    url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google Maps',
+    id: "Google.Roadmap",
+    name: "Roadmap",
+    group: "Google",
+    url: "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+    attribution: "&copy; Google Maps",
     maxZoom: 22,
   },
   {
-    id: 'Google.Satellite',
-    name: 'Satellite',
-    group: 'Google',
-    url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google Maps',
+    id: "Google.Satellite",
+    name: "Satellite",
+    group: "Google",
+    url: "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+    attribution: "&copy; Google Maps",
     maxZoom: 22,
   },
   {
-    id: 'Google.Terrain',
-    name: 'Terrain',
-    group: 'Google',
-    url: 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google Maps',
+    id: "Google.Terrain",
+    name: "Terrain",
+    group: "Google",
+    url: "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
+    attribution: "&copy; Google Maps",
     maxZoom: 22,
   },
   {
-    id: 'Google.Hybrid',
-    name: 'Hybrid',
-    group: 'Google',
-    url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google Maps',
+    id: "Google.Hybrid",
+    name: "Hybrid",
+    group: "Google",
+    url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+    attribution: "&copy; Google Maps",
     maxZoom: 22,
   },
 ];

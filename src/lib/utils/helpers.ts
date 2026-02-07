@@ -35,7 +35,7 @@ export function formatNumericValue(value: number, range: number): string {
  * @param prefix - Optional prefix for the ID.
  * @returns A unique ID string.
  */
-export function generateId(prefix = 'mlgl'): string {
+export function generateId(prefix = "mlgl"): string {
   return `${prefix}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
@@ -48,7 +48,7 @@ export function generateId(prefix = 'mlgl'): string {
  */
 export function debounce<T extends (...args: unknown[]) => void>(
   fn: T,
-  delay: number
+  delay: number,
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
@@ -66,7 +66,7 @@ export function debounce<T extends (...args: unknown[]) => void>(
  */
 export function throttle<T extends (...args: unknown[]) => void>(
   fn: T,
-  limit: number
+  limit: number,
 ): (...args: Parameters<T>) => void {
   let inThrottle = false;
   return (...args: Parameters<T>) => {
@@ -84,6 +84,8 @@ export function throttle<T extends (...args: unknown[]) => void>(
  * @param classes - Class names to join.
  * @returns Joined class string.
  */
-export function classNames(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(' ');
+export function classNames(
+  ...classes: (string | undefined | null | false)[]
+): string {
+  return classes.filter(Boolean).join(" ");
 }

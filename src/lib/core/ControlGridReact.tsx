@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { ControlGrid } from './ControlGrid';
-import type { ControlGridReactProps, ControlGridState } from './types';
+import { useEffect, useRef } from "react";
+import { ControlGrid } from "./ControlGrid";
+import type { ControlGridReactProps, ControlGridState } from "./types";
 
 /**
  * React wrapper component for ControlGrid.
@@ -34,7 +34,7 @@ import type { ControlGridReactProps, ControlGridState } from './types';
 export function ControlGridReact({
   map,
   onStateChange,
-  position = 'top-right',
+  position = "top-right",
   controls: controlsProp = [],
   ...options
 }: ControlGridReactProps): null {
@@ -54,11 +54,11 @@ export function ControlGridReact({
       const handleChange = (event: { state: ControlGridState }) => {
         onStateChange(event.state);
       };
-      grid.on('update', handleChange);
-      grid.on('show', handleChange);
-      grid.on('hide', handleChange);
-      grid.on('expand', handleChange);
-      grid.on('collapse', handleChange);
+      grid.on("update", handleChange);
+      grid.on("show", handleChange);
+      grid.on("hide", handleChange);
+      grid.on("expand", handleChange);
+      grid.on("collapse", handleChange);
     }
 
     map.addControl(grid, position);
@@ -104,10 +104,13 @@ export function ControlGridReact({
     if (options.columns !== undefined) updates.columns = options.columns;
     if (options.showRowColumnControls !== undefined)
       updates.showRowColumnControls = options.showRowColumnControls;
-    if (options.collapsible !== undefined) updates.collapsible = options.collapsible;
-    if (options.backgroundColor !== undefined) updates.backgroundColor = options.backgroundColor;
+    if (options.collapsible !== undefined)
+      updates.collapsible = options.collapsible;
+    if (options.backgroundColor !== undefined)
+      updates.backgroundColor = options.backgroundColor;
     if (options.padding !== undefined) updates.padding = options.padding;
-    if (options.borderRadius !== undefined) updates.borderRadius = options.borderRadius;
+    if (options.borderRadius !== undefined)
+      updates.borderRadius = options.borderRadius;
     if (options.opacity !== undefined) updates.opacity = options.opacity;
     if (options.gap !== undefined) updates.gap = options.gap;
     if (options.minzoom !== undefined) updates.minzoom = options.minzoom;

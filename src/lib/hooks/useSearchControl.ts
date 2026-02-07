@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react';
-import type { SearchControlState, SearchResult } from '../core/types';
+import { useState, useCallback } from "react";
+import type { SearchControlState, SearchResult } from "../core/types";
 
 const DEFAULT_STATE: SearchControlState = {
   visible: true,
   collapsed: true,
-  query: '',
+  query: "",
   results: [],
   loading: false,
   selectedResult: null,
@@ -98,7 +98,7 @@ export function useSearchControl(initialState?: Partial<SearchControlState>) {
   const clear = useCallback(() => {
     setState((prev) => ({
       ...prev,
-      query: '',
+      query: "",
       results: [],
       selectedResult: null,
       error: null,

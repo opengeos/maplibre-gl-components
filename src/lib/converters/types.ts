@@ -33,7 +33,7 @@ export interface ConversionMetadata {
  */
 export interface ConversionProgress {
   /** Current stage of the conversion. */
-  stage: 'loading' | 'initializing' | 'converting' | 'complete' | 'error';
+  stage: "loading" | "initializing" | "converting" | "complete" | "error";
   /** Progress percentage (0-100). */
   percent?: number;
   /** Human-readable progress message. */
@@ -60,7 +60,7 @@ export interface VectorConverter {
   convert(
     buffer: ArrayBuffer,
     filename: string,
-    onProgress?: ConversionProgressCallback
+    onProgress?: ConversionProgressCallback,
   ): Promise<ConversionResult>;
 
   /**

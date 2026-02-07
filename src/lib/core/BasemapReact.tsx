@@ -1,6 +1,10 @@
-import { useEffect, useRef } from 'react';
-import { BasemapControl } from './Basemap';
-import type { BasemapControlReactProps, BasemapControlState, BasemapItem } from './types';
+import { useEffect, useRef } from "react";
+import { BasemapControl } from "./Basemap";
+import type {
+  BasemapControlReactProps,
+  BasemapControlState,
+  BasemapItem,
+} from "./types";
 
 /**
  * React wrapper component for BasemapControl.
@@ -35,7 +39,7 @@ export function BasemapReact({
   map,
   onBasemapChange,
   onStateChange,
-  position = 'top-right',
+  position = "top-right",
   ...options
 }: BasemapControlReactProps): null {
   const controlRef = useRef<BasemapControl | null>(null);
@@ -52,11 +56,11 @@ export function BasemapReact({
       const handleChange = (event: { state: BasemapControlState }) => {
         onStateChange(event.state);
       };
-      control.on('update', handleChange);
-      control.on('show', handleChange);
-      control.on('hide', handleChange);
-      control.on('collapse', handleChange);
-      control.on('expand', handleChange);
+      control.on("update", handleChange);
+      control.on("show", handleChange);
+      control.on("hide", handleChange);
+      control.on("collapse", handleChange);
+      control.on("expand", handleChange);
     }
 
     if (onBasemapChange) {
@@ -65,7 +69,7 @@ export function BasemapReact({
           onBasemapChange(event.basemap);
         }
       };
-      control.on('basemapchange', handleBasemapChange);
+      control.on("basemapchange", handleBasemapChange);
     }
 
     map.addControl(control, position);
@@ -83,7 +87,7 @@ export function BasemapReact({
     if (controlRef.current) {
       // Filter out undefined values to avoid overwriting defaults
       const updates = Object.fromEntries(
-        Object.entries(options).filter(([, value]) => value !== undefined)
+        Object.entries(options).filter(([, value]) => value !== undefined),
       );
       if (Object.keys(updates).length > 0) {
         controlRef.current.update(updates);

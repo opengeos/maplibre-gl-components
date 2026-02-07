@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { Legend } from './Legend';
-import type { LegendReactProps, LegendState } from './types';
+import { useEffect, useRef } from "react";
+import { Legend } from "./Legend";
+import type { LegendReactProps, LegendState } from "./types";
 
 /**
  * React wrapper component for Legend.
@@ -36,7 +36,7 @@ import type { LegendReactProps, LegendState } from './types';
 export function LegendReact({
   map,
   onStateChange,
-  position = 'bottom-left',
+  position = "bottom-left",
   ...options
 }: LegendReactProps): null {
   const controlRef = useRef<Legend | null>(null);
@@ -52,11 +52,11 @@ export function LegendReact({
       const handleChange = (event: { state: LegendState }) => {
         onStateChange(event.state);
       };
-      control.on('update', handleChange);
-      control.on('show', handleChange);
-      control.on('hide', handleChange);
-      control.on('collapse', handleChange);
-      control.on('expand', handleChange);
+      control.on("update", handleChange);
+      control.on("show", handleChange);
+      control.on("hide", handleChange);
+      control.on("collapse", handleChange);
+      control.on("expand", handleChange);
     }
 
     map.addControl(control, position);
@@ -74,7 +74,7 @@ export function LegendReact({
     if (controlRef.current) {
       // Filter out undefined values to avoid overwriting defaults
       const updates = Object.fromEntries(
-        Object.entries(options).filter(([, value]) => value !== undefined)
+        Object.entries(options).filter(([, value]) => value !== undefined),
       );
       if (Object.keys(updates).length > 0) {
         controlRef.current.update(updates);

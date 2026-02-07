@@ -1,6 +1,10 @@
-import { useEffect, useRef } from 'react';
-import { SearchControl } from './SearchControl';
-import type { SearchControlReactProps, SearchControlState, SearchResult } from './types';
+import { useEffect, useRef } from "react";
+import { SearchControl } from "./SearchControl";
+import type {
+  SearchControlReactProps,
+  SearchControlState,
+  SearchResult,
+} from "./types";
 
 /**
  * React wrapper component for SearchControl.
@@ -35,7 +39,7 @@ export function SearchControlReact({
   map,
   onResultSelect,
   onStateChange,
-  position = 'top-right',
+  position = "top-right",
   ...options
 }: SearchControlReactProps): null {
   const controlRef = useRef<SearchControl | null>(null);
@@ -51,17 +55,17 @@ export function SearchControlReact({
       const handleChange = (event: { state: SearchControlState }) => {
         onStateChange(event.state);
       };
-      control.on('update', handleChange);
-      control.on('show', handleChange);
-      control.on('hide', handleChange);
-      control.on('expand', handleChange);
-      control.on('collapse', handleChange);
-      control.on('search', handleChange);
-      control.on('clear', handleChange);
+      control.on("update", handleChange);
+      control.on("show", handleChange);
+      control.on("hide", handleChange);
+      control.on("expand", handleChange);
+      control.on("collapse", handleChange);
+      control.on("search", handleChange);
+      control.on("clear", handleChange);
     }
 
     if (onResultSelect) {
-      control.on('resultselect', (event: { result?: SearchResult }) => {
+      control.on("resultselect", (event: { result?: SearchResult }) => {
         if (event.result) {
           onResultSelect(event.result);
         }
@@ -83,18 +87,27 @@ export function SearchControlReact({
     if (controlRef.current) {
       const updates: Partial<typeof options> = {};
       if (options.visible !== undefined) updates.visible = options.visible;
-      if (options.collapsed !== undefined) updates.collapsed = options.collapsed;
-      if (options.placeholder !== undefined) updates.placeholder = options.placeholder;
-      if (options.maxResults !== undefined) updates.maxResults = options.maxResults;
-      if (options.flyToZoom !== undefined) updates.flyToZoom = options.flyToZoom;
-      if (options.showMarker !== undefined) updates.showMarker = options.showMarker;
-      if (options.markerColor !== undefined) updates.markerColor = options.markerColor;
-      if (options.backgroundColor !== undefined) updates.backgroundColor = options.backgroundColor;
-      if (options.borderRadius !== undefined) updates.borderRadius = options.borderRadius;
+      if (options.collapsed !== undefined)
+        updates.collapsed = options.collapsed;
+      if (options.placeholder !== undefined)
+        updates.placeholder = options.placeholder;
+      if (options.maxResults !== undefined)
+        updates.maxResults = options.maxResults;
+      if (options.flyToZoom !== undefined)
+        updates.flyToZoom = options.flyToZoom;
+      if (options.showMarker !== undefined)
+        updates.showMarker = options.showMarker;
+      if (options.markerColor !== undefined)
+        updates.markerColor = options.markerColor;
+      if (options.backgroundColor !== undefined)
+        updates.backgroundColor = options.backgroundColor;
+      if (options.borderRadius !== undefined)
+        updates.borderRadius = options.borderRadius;
       if (options.opacity !== undefined) updates.opacity = options.opacity;
       if (options.width !== undefined) updates.width = options.width;
       if (options.fontSize !== undefined) updates.fontSize = options.fontSize;
-      if (options.fontColor !== undefined) updates.fontColor = options.fontColor;
+      if (options.fontColor !== undefined)
+        updates.fontColor = options.fontColor;
       if (options.minzoom !== undefined) updates.minzoom = options.minzoom;
       if (options.maxzoom !== undefined) updates.maxzoom = options.maxzoom;
 

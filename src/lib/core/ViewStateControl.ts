@@ -1,20 +1,25 @@
-import '../styles/common.css';
-import '../styles/view-state.css';
-import type { IControl, Map as MapLibreMap, MapMouseEvent, GeoJSONSource } from 'maplibre-gl';
+import "../styles/common.css";
+import "../styles/view-state.css";
+import type {
+  IControl,
+  Map as MapLibreMap,
+  MapMouseEvent,
+  GeoJSONSource,
+} from "maplibre-gl";
 import type {
   ViewStateControlOptions,
   ViewStateControlState,
   ViewStateEvent,
   ViewStateEventHandler,
-} from './types';
-import { generateId } from '../utils/helpers';
+} from "./types";
+import { generateId } from "../utils/helpers";
 
 /**
  * Default options for the ViewStateControl.
  */
 const DEFAULT_OPTIONS: Required<ViewStateControlOptions> = {
-  position: 'bottom-left',
-  className: '',
+  position: "bottom-left",
+  className: "",
   visible: true,
   collapsed: true,
   precision: 4,
@@ -24,15 +29,15 @@ const DEFAULT_OPTIONS: Required<ViewStateControlOptions> = {
   showPitch: true,
   showBearing: true,
   enableBBox: false,
-  bboxFillColor: 'rgba(0, 120, 215, 0.1)',
-  bboxStrokeColor: '#0078d7',
+  bboxFillColor: "rgba(0, 120, 215, 0.1)",
+  bboxStrokeColor: "#0078d7",
   bboxStrokeWidth: 2,
   panelWidth: 280,
-  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+  backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
   opacity: 1,
   fontSize: 12,
-  fontColor: '#333',
+  fontColor: "#333",
   minzoom: 0,
   maxzoom: 24,
 };
@@ -81,7 +86,8 @@ export class ViewStateControl implements IControl {
   private _panel?: HTMLElement;
   private _options: Required<ViewStateControlOptions>;
   private _state: ViewStateControlState;
-  private _eventHandlers: Map<ViewStateEvent, Set<ViewStateEventHandler>> = new Map();
+  private _eventHandlers: Map<ViewStateEvent, Set<ViewStateEventHandler>> =
+    new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
@@ -97,9 +103,9 @@ export class ViewStateControl implements IControl {
   private _boundMoveHandler?: () => void;
 
   // BBox drawing state
-  private _bboxSourceId: string = '';
-  private _bboxLayerFillId: string = '';
-  private _bboxLayerLineId: string = '';
+  private _bboxSourceId: string = "";
+  private _bboxLayerFillId: string = "";
+  private _bboxLayerLineId: string = "";
   private _bboxDrawStart?: { lng: number; lat: number };
   private _boundBBoxMouseDown?: (e: MapMouseEvent) => void;
   private _boundBBoxMouseMove?: (e: MouseEvent) => void;
@@ -126,7 +132,7 @@ export class ViewStateControl implements IControl {
       drawingBBox: false,
       drawnBBox: null,
     };
-    const uid = generateId('viewstate');
+    const uid = generateId("viewstate");
     this._bboxSourceId = `${uid}-bbox-src`;
     this._bboxLayerFillId = `${uid}-bbox-fill`;
     this._bboxLayerLineId = `${uid}-bbox-line`;
@@ -145,12 +151,12 @@ export class ViewStateControl implements IControl {
 
     // Set up zoom listener
     this._handleZoom = () => this._checkZoomVisibility();
-    this._map.on('zoom', this._handleZoom);
+    this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
 
     // Set up move listener for live updates
     this._boundMoveHandler = () => this._onMapMove();
-    this._map.on('move', this._boundMoveHandler);
+    this._map.on("move", this._boundMoveHandler);
 
     return this._container;
   }
@@ -161,11 +167,11 @@ export class ViewStateControl implements IControl {
   onRemove(): void {
     if (this._map) {
       if (this._handleZoom) {
-        this._map.off('zoom', this._handleZoom);
+        this._map.off("zoom", this._handleZoom);
         this._handleZoom = undefined;
       }
       if (this._boundMoveHandler) {
-        this._map.off('move', this._boundMoveHandler);
+        this._map.off("move", this._boundMoveHandler);
         this._boundMoveHandler = undefined;
       }
       if (this._state.drawingBBox) {
@@ -196,7 +202,7 @@ export class ViewStateControl implements IControl {
       this._state.collapsed = false;
       this._updatePanelVisibility();
       this._updateButtonState();
-      this._emit('expand');
+      this._emit("expand");
     }
   }
 
@@ -208,7 +214,7 @@ export class ViewStateControl implements IControl {
       this._state.collapsed = true;
       this._updatePanelVisibility();
       this._updateButtonState();
-      this._emit('collapse');
+      this._emit("collapse");
     }
   }
 
@@ -237,7 +243,7 @@ export class ViewStateControl implements IControl {
     if (!this._state.visible) {
       this._state.visible = true;
       this._updateDisplayState();
-      this._emit('show');
+      this._emit("show");
     }
   }
 
@@ -248,7 +254,7 @@ export class ViewStateControl implements IControl {
     if (this._state.visible) {
       this._state.visible = false;
       this._updateDisplayState();
-      this._emit('hide');
+      this._emit("hide");
     }
   }
 
@@ -267,7 +273,7 @@ export class ViewStateControl implements IControl {
     this._state.drawingBBox = true;
     this._setupBBoxListeners();
     this._updateBBoxToggleState();
-    this._emit('drawstart');
+    this._emit("drawstart");
   }
 
   /**
@@ -276,7 +282,7 @@ export class ViewStateControl implements IControl {
   stopBBoxDraw(): void {
     if (!this._state.drawingBBox) return;
     this._stopBBoxDrawing();
-    this._emit('drawend');
+    this._emit("drawend");
   }
 
   /**
@@ -286,7 +292,7 @@ export class ViewStateControl implements IControl {
     this._state.drawnBBox = null;
     this._removeBBoxLayers();
     this._updateBBoxResult();
-    this._emit('bboxclear');
+    this._emit("bboxclear");
   }
 
   /**
@@ -306,7 +312,7 @@ export class ViewStateControl implements IControl {
     if (options.panelWidth !== undefined && this._panel) {
       this._panel.style.width = `${options.panelWidth}px`;
     }
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -329,7 +335,10 @@ export class ViewStateControl implements IControl {
   /**
    * Emits an event to all registered handlers.
    */
-  private _emit(event: ViewStateEvent, bbox?: [number, number, number, number]): void {
+  private _emit(
+    event: ViewStateEvent,
+    bbox?: [number, number, number, number],
+  ): void {
     const handlers = this._eventHandlers.get(event);
     if (handlers) {
       handlers.forEach((handler) =>
@@ -337,7 +346,7 @@ export class ViewStateControl implements IControl {
           type: event,
           state: this.getState(),
           bbox,
-        })
+        }),
       );
     }
   }
@@ -367,7 +376,7 @@ export class ViewStateControl implements IControl {
   private _onMapMove(): void {
     this._readMapState();
     this._updateValues();
-    this._emit('viewchange');
+    this._emit("viewchange");
   }
 
   /**
@@ -397,8 +406,9 @@ export class ViewStateControl implements IControl {
    * Creates the control container with button and panel.
    */
   private _createContainer(): HTMLElement {
-    const container = document.createElement('div');
-    container.className = `maplibregl-ctrl maplibregl-ctrl-group maplibre-gl-view-state ${this._options.className}`.trim();
+    const container = document.createElement("div");
+    container.className =
+      `maplibregl-ctrl maplibregl-ctrl-group maplibre-gl-view-state ${this._options.className}`.trim();
 
     if (this._options.backgroundColor) {
       container.style.backgroundColor = this._options.backgroundColor;
@@ -411,12 +421,12 @@ export class ViewStateControl implements IControl {
     }
 
     // Create button
-    this._button = document.createElement('button');
-    this._button.type = 'button';
-    this._button.className = 'maplibre-gl-view-state-button';
-    this._button.title = 'View map state';
+    this._button = document.createElement("button");
+    this._button.type = "button";
+    this._button.className = "maplibre-gl-view-state-button";
+    this._button.title = "View map state";
     this._button.innerHTML = VIEWSTATE_ICON;
-    this._button.addEventListener('click', () => this.toggle());
+    this._button.addEventListener("click", () => this.toggle());
     container.appendChild(this._button);
 
     // Create panel
@@ -424,7 +434,7 @@ export class ViewStateControl implements IControl {
     container.appendChild(this._panel);
 
     // Set initial states
-    container.style.display = this._state.visible ? 'block' : 'none';
+    container.style.display = this._state.visible ? "block" : "none";
     this._updatePanelVisibility();
     this._updateButtonState();
 
@@ -435,8 +445,8 @@ export class ViewStateControl implements IControl {
    * Creates the expandable info panel.
    */
   private _createPanel(): HTMLElement {
-    const panel = document.createElement('div');
-    panel.className = 'maplibre-gl-view-state-panel';
+    const panel = document.createElement("div");
+    panel.className = "maplibre-gl-view-state-panel";
     panel.style.width = `${this._options.panelWidth}px`;
 
     if (this._options.fontSize) {
@@ -447,9 +457,9 @@ export class ViewStateControl implements IControl {
     }
 
     // Header
-    const header = document.createElement('div');
-    header.className = 'maplibre-gl-view-state-header';
-    header.textContent = 'View State';
+    const header = document.createElement("div");
+    header.className = "maplibre-gl-view-state-header";
+    header.textContent = "View State";
     panel.appendChild(header);
 
     const p = this._options.precision;
@@ -457,7 +467,7 @@ export class ViewStateControl implements IControl {
     // Center row
     if (this._options.showCenter) {
       const { row, valueEl } = this._createRow(
-        'Center',
+        "Center",
         `${this._state.center[0].toFixed(p)}, ${this._state.center[1].toFixed(p)}`,
       );
       this._centerValueEl = valueEl;
@@ -468,7 +478,7 @@ export class ViewStateControl implements IControl {
     if (this._options.showBounds) {
       const b = this._state.bounds;
       const { row, valueEl } = this._createRow(
-        'Bounds',
+        "Bounds",
         `${b[0].toFixed(p)}, ${b[1].toFixed(p)}, ${b[2].toFixed(p)}, ${b[3].toFixed(p)}`,
       );
       this._boundsValueEl = valueEl;
@@ -477,21 +487,30 @@ export class ViewStateControl implements IControl {
 
     // Zoom row
     if (this._options.showZoom) {
-      const { row, valueEl } = this._createRow('Zoom', this._state.zoom.toFixed(2));
+      const { row, valueEl } = this._createRow(
+        "Zoom",
+        this._state.zoom.toFixed(2),
+      );
       this._zoomValueEl = valueEl;
       panel.appendChild(row);
     }
 
     // Pitch row
     if (this._options.showPitch) {
-      const { row, valueEl } = this._createRow('Pitch', `${this._state.pitch.toFixed(1)}°`);
+      const { row, valueEl } = this._createRow(
+        "Pitch",
+        `${this._state.pitch.toFixed(1)}°`,
+      );
       this._pitchValueEl = valueEl;
       panel.appendChild(row);
     }
 
     // Bearing row
     if (this._options.showBearing) {
-      const { row, valueEl } = this._createRow('Bearing', `${this._state.bearing.toFixed(1)}°`);
+      const { row, valueEl } = this._createRow(
+        "Bearing",
+        `${this._state.bearing.toFixed(1)}°`,
+      );
       this._bearingValueEl = valueEl;
       panel.appendChild(row);
     }
@@ -507,26 +526,29 @@ export class ViewStateControl implements IControl {
   /**
    * Creates a labeled data row with a copy button.
    */
-  private _createRow(label: string, value: string): { row: HTMLElement; valueEl: HTMLElement } {
-    const row = document.createElement('div');
-    row.className = 'maplibre-gl-view-state-row';
+  private _createRow(
+    label: string,
+    value: string,
+  ): { row: HTMLElement; valueEl: HTMLElement } {
+    const row = document.createElement("div");
+    row.className = "maplibre-gl-view-state-row";
 
-    const labelEl = document.createElement('span');
-    labelEl.className = 'maplibre-gl-view-state-label';
+    const labelEl = document.createElement("span");
+    labelEl.className = "maplibre-gl-view-state-label";
     labelEl.textContent = label;
 
-    const valueEl = document.createElement('span');
-    valueEl.className = 'maplibre-gl-view-state-value';
+    const valueEl = document.createElement("span");
+    valueEl.className = "maplibre-gl-view-state-value";
     valueEl.textContent = value;
 
-    const copyBtn = document.createElement('button');
-    copyBtn.type = 'button';
-    copyBtn.className = 'maplibre-gl-view-state-copy';
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "maplibre-gl-view-state-copy";
     copyBtn.title = `Copy ${label.toLowerCase()}`;
     copyBtn.innerHTML = COPY_ICON;
-    copyBtn.addEventListener('click', (e) => {
+    copyBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      this._copyToClipboard(valueEl.textContent || '', copyBtn);
+      this._copyToClipboard(valueEl.textContent || "", copyBtn);
     });
 
     row.appendChild(labelEl);
@@ -540,15 +562,15 @@ export class ViewStateControl implements IControl {
    * Creates the bounding box drawing section.
    */
   private _createBBoxSection(): HTMLElement {
-    const section = document.createElement('div');
-    section.className = 'maplibre-gl-view-state-bbox-section';
+    const section = document.createElement("div");
+    section.className = "maplibre-gl-view-state-bbox-section";
 
     // Draw toggle button
-    this._bboxToggleBtn = document.createElement('button');
-    this._bboxToggleBtn.type = 'button';
-    this._bboxToggleBtn.className = 'maplibre-gl-view-state-bbox-toggle';
+    this._bboxToggleBtn = document.createElement("button");
+    this._bboxToggleBtn.type = "button";
+    this._bboxToggleBtn.className = "maplibre-gl-view-state-bbox-toggle";
     this._bboxToggleBtn.innerHTML = `${BBOX_ICON} Draw BBox`;
-    this._bboxToggleBtn.addEventListener('click', () => {
+    this._bboxToggleBtn.addEventListener("click", () => {
       if (this._state.drawingBBox) {
         this.stopBBoxDraw();
       } else {
@@ -558,9 +580,9 @@ export class ViewStateControl implements IControl {
     section.appendChild(this._bboxToggleBtn);
 
     // Result container (initially hidden)
-    this._bboxResultEl = document.createElement('div');
-    this._bboxResultEl.className = 'maplibre-gl-view-state-bbox-result';
-    this._bboxResultEl.style.display = 'none';
+    this._bboxResultEl = document.createElement("div");
+    this._bboxResultEl.className = "maplibre-gl-view-state-bbox-result";
+    this._bboxResultEl.style.display = "none";
     section.appendChild(this._bboxResultEl);
 
     return section;
@@ -573,41 +595,42 @@ export class ViewStateControl implements IControl {
     if (!this._bboxResultEl) return;
 
     if (!this._state.drawnBBox) {
-      this._bboxResultEl.style.display = 'none';
+      this._bboxResultEl.style.display = "none";
       return;
     }
 
-    this._bboxResultEl.style.display = 'block';
+    this._bboxResultEl.style.display = "block";
     const b = this._state.drawnBBox;
     const p = this._options.precision;
     const bboxStr = `${b[0].toFixed(p)}, ${b[1].toFixed(p)}, ${b[2].toFixed(p)}, ${b[3].toFixed(p)}`;
 
-    this._bboxResultEl.innerHTML = '';
+    this._bboxResultEl.innerHTML = "";
 
-    const valueDiv = document.createElement('div');
-    valueDiv.className = 'maplibre-gl-view-state-bbox-value';
+    const valueDiv = document.createElement("div");
+    valueDiv.className = "maplibre-gl-view-state-bbox-value";
     valueDiv.textContent = bboxStr;
     this._bboxResultEl.appendChild(valueDiv);
 
-    const actionsDiv = document.createElement('div');
-    actionsDiv.className = 'maplibre-gl-view-state-bbox-actions';
+    const actionsDiv = document.createElement("div");
+    actionsDiv.className = "maplibre-gl-view-state-bbox-actions";
 
     // Copy button
-    const copyBtn = document.createElement('button');
-    copyBtn.type = 'button';
-    copyBtn.className = 'maplibre-gl-view-state-bbox-action';
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "maplibre-gl-view-state-bbox-action";
     copyBtn.innerHTML = `${COPY_ICON} Copy`;
-    copyBtn.addEventListener('click', () => {
+    copyBtn.addEventListener("click", () => {
       this._copyToClipboard(bboxStr, copyBtn);
     });
     actionsDiv.appendChild(copyBtn);
 
     // Clear button
-    const clearBtn = document.createElement('button');
-    clearBtn.type = 'button';
-    clearBtn.className = 'maplibre-gl-view-state-bbox-action maplibre-gl-view-state-bbox-action--clear';
-    clearBtn.textContent = 'Clear';
-    clearBtn.addEventListener('click', () => this.clearBBox());
+    const clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.className =
+      "maplibre-gl-view-state-bbox-action maplibre-gl-view-state-bbox-action--clear";
+    clearBtn.textContent = "Clear";
+    clearBtn.addEventListener("click", () => this.clearBBox());
     actionsDiv.appendChild(clearBtn);
 
     this._bboxResultEl.appendChild(actionsDiv);
@@ -617,15 +640,18 @@ export class ViewStateControl implements IControl {
    * Copies text to clipboard and shows feedback on the button.
    */
   private _copyToClipboard(text: string, btn: HTMLButtonElement): void {
-    navigator.clipboard.writeText(text).then(() => {
-      const originalHtml = btn.innerHTML;
-      btn.innerHTML = CHECK_ICON;
-      setTimeout(() => {
-        btn.innerHTML = originalHtml;
-      }, 1000);
-    }).catch(() => {
-      // Fallback: select the text
-    });
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = CHECK_ICON;
+        setTimeout(() => {
+          btn.innerHTML = originalHtml;
+        }, 1000);
+      })
+      .catch(() => {
+        // Fallback: select the text
+      });
   }
 
   /**
@@ -634,9 +660,9 @@ export class ViewStateControl implements IControl {
   private _updatePanelVisibility(): void {
     if (this._panel) {
       if (this._state.collapsed) {
-        this._panel.classList.remove('maplibre-gl-view-state-panel--visible');
+        this._panel.classList.remove("maplibre-gl-view-state-panel--visible");
       } else {
-        this._panel.classList.add('maplibre-gl-view-state-panel--visible');
+        this._panel.classList.add("maplibre-gl-view-state-panel--visible");
       }
     }
   }
@@ -647,11 +673,11 @@ export class ViewStateControl implements IControl {
   private _updateButtonState(): void {
     if (this._button) {
       if (!this._state.collapsed) {
-        this._button.classList.add('maplibre-gl-view-state-button--active');
-        this._button.title = 'Hide view state';
+        this._button.classList.add("maplibre-gl-view-state-button--active");
+        this._button.title = "Hide view state";
       } else {
-        this._button.classList.remove('maplibre-gl-view-state-button--active');
-        this._button.title = 'View map state';
+        this._button.classList.remove("maplibre-gl-view-state-button--active");
+        this._button.title = "View map state";
       }
     }
   }
@@ -662,10 +688,14 @@ export class ViewStateControl implements IControl {
   private _updateBBoxToggleState(): void {
     if (this._bboxToggleBtn) {
       if (this._state.drawingBBox) {
-        this._bboxToggleBtn.classList.add('maplibre-gl-view-state-bbox-toggle--active');
+        this._bboxToggleBtn.classList.add(
+          "maplibre-gl-view-state-bbox-toggle--active",
+        );
         this._bboxToggleBtn.innerHTML = `${BBOX_ICON} Cancel Draw`;
       } else {
-        this._bboxToggleBtn.classList.remove('maplibre-gl-view-state-bbox-toggle--active');
+        this._bboxToggleBtn.classList.remove(
+          "maplibre-gl-view-state-bbox-toggle--active",
+        );
         this._bboxToggleBtn.innerHTML = `${BBOX_ICON} Draw BBox`;
       }
     }
@@ -690,16 +720,16 @@ export class ViewStateControl implements IControl {
     if (!this._map) return;
 
     const canvas = this._map.getCanvas();
-    canvas.style.cursor = 'crosshair';
+    canvas.style.cursor = "crosshair";
     this._map.dragPan.disable();
     this._map.boxZoom.disable();
 
     this._boundBBoxMouseDown = (e: MapMouseEvent) => this._onBBoxMouseDown(e);
-    this._map.on('mousedown', this._boundBBoxMouseDown);
+    this._map.on("mousedown", this._boundBBoxMouseDown);
 
     // Prevent native drag behavior on the canvas, which can swallow mousemove/mouseup events.
     this._boundBBoxDragStart = (e: DragEvent) => e.preventDefault();
-    canvas.addEventListener('dragstart', this._boundBBoxDragStart);
+    canvas.addEventListener("dragstart", this._boundBBoxDragStart);
   }
 
   /**
@@ -709,24 +739,24 @@ export class ViewStateControl implements IControl {
     if (!this._map) return;
 
     const canvas = this._map.getCanvas();
-    canvas.style.cursor = '';
+    canvas.style.cursor = "";
     this._map.dragPan.enable();
     this._map.boxZoom.enable();
 
     if (this._boundBBoxMouseDown) {
-      this._map.off('mousedown', this._boundBBoxMouseDown);
+      this._map.off("mousedown", this._boundBBoxMouseDown);
       this._boundBBoxMouseDown = undefined;
     }
     if (this._boundBBoxMouseMove) {
-      document.removeEventListener('mousemove', this._boundBBoxMouseMove);
+      document.removeEventListener("mousemove", this._boundBBoxMouseMove);
       this._boundBBoxMouseMove = undefined;
     }
     if (this._boundBBoxMouseUp) {
-      document.removeEventListener('mouseup', this._boundBBoxMouseUp);
+      document.removeEventListener("mouseup", this._boundBBoxMouseUp);
       this._boundBBoxMouseUp = undefined;
     }
     if (this._boundBBoxDragStart) {
-      canvas.removeEventListener('dragstart', this._boundBBoxDragStart);
+      canvas.removeEventListener("dragstart", this._boundBBoxDragStart);
       this._boundBBoxDragStart = undefined;
     }
 
@@ -754,31 +784,31 @@ export class ViewStateControl implements IControl {
     // Initialize source with a degenerate polygon at the click point
     const pt: [number, number] = [lng, lat];
     this._map.addSource(this._bboxSourceId, {
-      type: 'geojson',
+      type: "geojson",
       data: {
-        type: 'Feature',
-        geometry: { type: 'Polygon', coordinates: [[pt, pt, pt, pt, pt]] },
+        type: "Feature",
+        geometry: { type: "Polygon", coordinates: [[pt, pt, pt, pt, pt]] },
         properties: {},
       },
     });
 
     this._map.addLayer({
       id: this._bboxLayerFillId,
-      type: 'fill',
+      type: "fill",
       source: this._bboxSourceId,
       paint: {
-        'fill-color': this._options.bboxFillColor,
-        'fill-opacity': 1,
+        "fill-color": this._options.bboxFillColor,
+        "fill-opacity": 1,
       },
     });
 
     this._map.addLayer({
       id: this._bboxLayerLineId,
-      type: 'line',
+      type: "line",
       source: this._bboxSourceId,
       paint: {
-        'line-color': this._options.bboxStrokeColor,
-        'line-width': this._options.bboxStrokeWidth,
+        "line-color": this._options.bboxStrokeColor,
+        "line-width": this._options.bboxStrokeWidth,
       },
     });
 
@@ -787,8 +817,8 @@ export class ViewStateControl implements IControl {
     // is disabled, because the browser may initiate a native drag on the canvas.
     this._boundBBoxMouseMove = (ev: MouseEvent) => this._onBBoxMouseMove(ev);
     this._boundBBoxMouseUp = (ev: MouseEvent) => this._onBBoxMouseUp(ev);
-    document.addEventListener('mousemove', this._boundBBoxMouseMove);
-    document.addEventListener('mouseup', this._boundBBoxMouseUp);
+    document.addEventListener("mousemove", this._boundBBoxMouseMove);
+    document.addEventListener("mouseup", this._boundBBoxMouseUp);
   }
 
   /**
@@ -807,11 +837,13 @@ export class ViewStateControl implements IControl {
       [start.lng, start.lat],
     ];
 
-    const source = this._map.getSource(this._bboxSourceId) as GeoJSONSource | undefined;
+    const source = this._map.getSource(this._bboxSourceId) as
+      | GeoJSONSource
+      | undefined;
     if (source) {
       source.setData({
-        type: 'Feature',
-        geometry: { type: 'Polygon', coordinates: [coords] },
+        type: "Feature",
+        geometry: { type: "Polygon", coordinates: [coords] },
         properties: {},
       });
     }
@@ -843,11 +875,13 @@ export class ViewStateControl implements IControl {
       [west, north],
       [west, south],
     ];
-    const source = this._map.getSource(this._bboxSourceId) as GeoJSONSource | undefined;
+    const source = this._map.getSource(this._bboxSourceId) as
+      | GeoJSONSource
+      | undefined;
     if (source) {
       source.setData({
-        type: 'Feature',
-        geometry: { type: 'Polygon', coordinates: [coords] },
+        type: "Feature",
+        geometry: { type: "Polygon", coordinates: [coords] },
         properties: {},
       });
     }
@@ -855,8 +889,8 @@ export class ViewStateControl implements IControl {
     // Stop drawing mode
     this._stopBBoxDrawing();
 
-    this._emit('bboxdraw', this._state.drawnBBox);
-    this._emit('drawend');
+    this._emit("bboxdraw", this._state.drawnBBox);
+    this._emit("drawend");
   }
 
   /**
@@ -897,6 +931,6 @@ export class ViewStateControl implements IControl {
   private _updateDisplayState(): void {
     if (!this._container) return;
     const shouldShow = this._state.visible && this._zoomVisible;
-    this._container.style.display = shouldShow ? 'block' : 'none';
+    this._container.style.display = shouldShow ? "block" : "none";
   }
 }

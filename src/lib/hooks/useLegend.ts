@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import type { LegendState, LegendItem } from '../core/types';
+import { useState, useCallback } from "react";
+import type { LegendState, LegendItem } from "../core/types";
 
 const DEFAULT_STATE: LegendState = {
   visible: true,
@@ -58,12 +58,17 @@ export function useLegend(initialState?: Partial<LegendState>) {
     }));
   }, []);
 
-  const updateItem = useCallback((label: string, updates: Partial<LegendItem>) => {
-    setState((prev) => ({
-      ...prev,
-      items: prev.items.map((item) => (item.label === label ? { ...item, ...updates } : item)),
-    }));
-  }, []);
+  const updateItem = useCallback(
+    (label: string, updates: Partial<LegendItem>) => {
+      setState((prev) => ({
+        ...prev,
+        items: prev.items.map((item) =>
+          item.label === label ? { ...item, ...updates } : item,
+        ),
+      }));
+    },
+    [],
+  );
 
   const show = useCallback(() => {
     setState((prev) => ({ ...prev, visible: true }));

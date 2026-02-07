@@ -4,7 +4,8 @@
 
 /* Base terrain control styling */
 .maplibre-gl-terrain {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   box-sizing: border-box;
   pointer-events: auto;
 }
@@ -25,7 +26,9 @@
   background: transparent;
   cursor: pointer;
   color: #333;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
   border-radius: 4px;
 }
 

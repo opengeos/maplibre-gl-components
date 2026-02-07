@@ -1,15 +1,15 @@
 // React entry point
-export { ColorbarReact } from './lib/core/ColorbarReact';
-export { LegendReact } from './lib/core/LegendReact';
-export { HtmlControlReact } from './lib/core/HtmlControlReact';
-export { BasemapReact } from './lib/core/BasemapReact';
-export { TerrainReact } from './lib/core/TerrainReact';
-export { SearchControlReact } from './lib/core/SearchControlReact';
-export { VectorDatasetReact } from './lib/core/VectorDatasetReact';
-export { InspectControlReact } from './lib/core/InspectControlReact';
-export { ViewStateControlReact } from './lib/core/ViewStateControlReact';
-export { ControlGridReact } from './lib/core/ControlGridReact';
-export { CogLayerReact } from './lib/core/CogLayerReact';
+export { ColorbarReact } from "./lib/core/ColorbarReact";
+export { LegendReact } from "./lib/core/LegendReact";
+export { HtmlControlReact } from "./lib/core/HtmlControlReact";
+export { BasemapReact } from "./lib/core/BasemapReact";
+export { TerrainReact } from "./lib/core/TerrainReact";
+export { SearchControlReact } from "./lib/core/SearchControlReact";
+export { VectorDatasetReact } from "./lib/core/VectorDatasetReact";
+export { InspectControlReact } from "./lib/core/InspectControlReact";
+export { ViewStateControlReact } from "./lib/core/ViewStateControlReact";
+export { ControlGridReact } from "./lib/core/ControlGridReact";
+export { CogLayerReact } from "./lib/core/CogLayerReact";
 
 // React hooks
 export {
@@ -24,7 +24,7 @@ export {
   useViewState,
   useControlGrid,
   useCogLayer,
-} from './lib/hooks';
+} from "./lib/hooks";
 
 // Re-export types for React consumers
 export type {
@@ -91,4 +91,4 @@ export type {
   ColorbarOrientation,
   ComponentEvent,
   ComponentEventHandler,
-} from './lib/core/types';
+} from "./lib/core/types";

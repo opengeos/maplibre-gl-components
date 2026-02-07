@@ -1,13 +1,13 @@
-import '../styles/common.css';
-import '../styles/basemap.css';
-import type { IControl, Map as MapLibreMap } from 'maplibre-gl';
+import "../styles/common.css";
+import "../styles/basemap.css";
+import type { IControl, Map as MapLibreMap } from "maplibre-gl";
 import type {
   BasemapControlOptions,
   BasemapControlState,
   BasemapItem,
   BasemapEvent,
   ComponentEvent,
-} from './types';
+} from "./types";
 import {
   XYZSERVICES_URL,
   parseProviders,
@@ -15,17 +15,26 @@ import {
   groupBasemaps,
   filterBasemaps,
   GOOGLE_BASEMAPS,
-} from '../utils/providers';
+} from "../utils/providers";
 
 /**
  * Event handler type for basemap events.
  */
-type BasemapEventHandler = (event: { type: BasemapEvent; state: BasemapControlState; basemap?: BasemapItem }) => void;
+type BasemapEventHandler = (event: {
+  type: BasemapEvent;
+  state: BasemapControlState;
+  basemap?: BasemapItem;
+}) => void;
 
 /**
  * Default options for the BasemapControl.
  */
-const DEFAULT_OPTIONS: Required<Omit<BasemapControlOptions, 'basemaps' | 'filterGroups' | 'excludeGroups' | 'beforeId'>> & {
+const DEFAULT_OPTIONS: Required<
+  Omit<
+    BasemapControlOptions,
+    "basemaps" | "filterGroups" | "excludeGroups" | "beforeId"
+  >
+> & {
   basemaps: BasemapItem[];
   filterGroups: string[] | undefined;
   excludeGroups: string[] | undefined;
@@ -33,25 +42,25 @@ const DEFAULT_OPTIONS: Required<Omit<BasemapControlOptions, 'basemaps' | 'filter
 } = {
   basemaps: [],
   providersUrl: XYZSERVICES_URL,
-  defaultBasemap: '',
-  position: 'top-right',
-  className: '',
+  defaultBasemap: "",
+  position: "top-right",
+  className: "",
   visible: true,
   collapsible: true,
   collapsed: true,
-  displayMode: 'dropdown',
+  displayMode: "dropdown",
   showSearch: true,
   filterGroups: undefined,
   excludeGroups: undefined,
   excludeBroken: true,
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  backgroundColor: "rgba(255, 255, 255, 0.9)",
   padding: 10,
   borderRadius: 4,
   opacity: 1,
   maxWidth: 250,
   maxHeight: 300,
   fontSize: 12,
-  fontColor: '#333',
+  fontColor: "#333",
   minzoom: 0,
   maxzoom: 24,
   beforeId: undefined,
@@ -61,8 +70,8 @@ const DEFAULT_OPTIONS: Required<Omit<BasemapControlOptions, 'basemaps' | 'filter
 /**
  * Source and layer IDs for the basemap raster layer.
  */
-const BASEMAP_SOURCE_ID = 'basemap-raster-source';
-const BASEMAP_LAYER_ID = 'basemap-raster-layer';
+const BASEMAP_SOURCE_ID = "basemap-raster-source";
+const BASEMAP_LAYER_ID = "basemap-raster-layer";
 
 /**
  * A basemap switcher control for MapLibre GL maps.
@@ -85,7 +94,8 @@ export class BasemapControl implements IControl {
   private _options: typeof DEFAULT_OPTIONS;
   private _state: BasemapControlState;
   private _basemaps: BasemapItem[] = [];
-  private _eventHandlers: Map<BasemapEvent, Set<BasemapEventHandler>> = new Map();
+  private _eventHandlers: Map<BasemapEvent, Set<BasemapEventHandler>> =
+    new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
@@ -101,7 +111,7 @@ export class BasemapControl implements IControl {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
       selectedBasemap: this._options.defaultBasemap || null,
-      searchText: '',
+      searchText: "",
       loading: false,
       error: null,
       belowLabels: this._options.belowLabels,
@@ -130,7 +140,9 @@ export class BasemapControl implements IControl {
       this._render();
       // Apply initial basemap if specified
       if (this._state.selectedBasemap) {
-        const basemap = this._basemaps.find((b) => b.id === this._state.selectedBasemap);
+        const basemap = this._basemaps.find(
+          (b) => b.id === this._state.selectedBasemap,
+        );
         if (basemap) {
           this._applyBasemap(basemap);
         }
@@ -139,7 +151,7 @@ export class BasemapControl implements IControl {
 
     // Set up zoom listener
     this._handleZoom = () => this._checkZoomVisibility();
-    this._map.on('zoom', this._handleZoom);
+    this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
 
     return this._container;
@@ -150,7 +162,7 @@ export class BasemapControl implements IControl {
    */
   onRemove(): void {
     if (this._map && this._handleZoom) {
-      this._map.off('zoom', this._handleZoom);
+      this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
     }
 
@@ -170,7 +182,7 @@ export class BasemapControl implements IControl {
     if (!this._state.visible) {
       this._state.visible = true;
       this._updateDisplayState();
-      this._emit('show');
+      this._emit("show");
     }
   }
 
@@ -181,7 +193,7 @@ export class BasemapControl implements IControl {
     if (this._state.visible) {
       this._state.visible = false;
       this._updateDisplayState();
-      this._emit('hide');
+      this._emit("hide");
     }
   }
 
@@ -192,7 +204,7 @@ export class BasemapControl implements IControl {
     if (this._state.collapsed) {
       this._state.collapsed = false;
       this._render();
-      this._emit('expand');
+      this._emit("expand");
     }
   }
 
@@ -203,7 +215,7 @@ export class BasemapControl implements IControl {
     if (!this._state.collapsed) {
       this._state.collapsed = true;
       this._render();
-      this._emit('collapse');
+      this._emit("collapse");
     }
   }
 
@@ -229,8 +241,8 @@ export class BasemapControl implements IControl {
       this._state.selectedBasemap = basemapId;
       this._applyBasemap(basemap);
       this._render();
-      this._emit('basemapchange', basemap);
-      this._emit('update');
+      this._emit("basemapchange", basemap);
+      this._emit("update");
     }
   }
 
@@ -288,9 +300,10 @@ export class BasemapControl implements IControl {
       this._basemaps = [...options.basemaps];
     }
     if (options.visible !== undefined) this._state.visible = options.visible;
-    if (options.collapsed !== undefined) this._state.collapsed = options.collapsed;
+    if (options.collapsed !== undefined)
+      this._state.collapsed = options.collapsed;
     this._render();
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -309,7 +322,9 @@ export class BasemapControl implements IControl {
    */
   getSelectedBasemap(): BasemapItem | null {
     if (!this._state.selectedBasemap) return null;
-    return this._basemaps.find((b) => b.id === this._state.selectedBasemap) || null;
+    return (
+      this._basemaps.find((b) => b.id === this._state.selectedBasemap) || null
+    );
   }
 
   /**
@@ -338,7 +353,10 @@ export class BasemapControl implements IControl {
   /**
    * Emits an event to all registered handlers.
    */
-  private _emit(event: ComponentEvent | 'basemapchange', basemap?: BasemapItem): void {
+  private _emit(
+    event: ComponentEvent | "basemapchange",
+    basemap?: BasemapItem,
+  ): void {
     const handlers = this._eventHandlers.get(event);
     if (handlers) {
       const eventData = { type: event, state: this.getState(), basemap };
@@ -369,8 +387,9 @@ export class BasemapControl implements IControl {
 
       // Add Google basemaps if not excluded
       const shouldIncludeGoogle =
-        !this._options.excludeGroups?.includes('Google') &&
-        (!this._options.filterGroups?.length || this._options.filterGroups.includes('Google'));
+        !this._options.excludeGroups?.includes("Google") &&
+        (!this._options.filterGroups?.length ||
+          this._options.filterGroups.includes("Google"));
 
       if (shouldIncludeGoogle) {
         this._basemaps = [...this._basemaps, ...GOOGLE_BASEMAPS];
@@ -381,15 +400,18 @@ export class BasemapControl implements IControl {
 
       // Apply initial basemap if specified
       if (this._state.selectedBasemap) {
-        const basemap = this._basemaps.find((b) => b.id === this._state.selectedBasemap);
+        const basemap = this._basemaps.find(
+          (b) => b.id === this._state.selectedBasemap,
+        );
         if (basemap) {
           this._applyBasemap(basemap);
         }
       }
     } catch (error) {
       this._state.loading = false;
-      this._state.error = error instanceof Error ? error.message : 'Failed to load providers';
-      console.error('BasemapControl: Failed to fetch providers', error);
+      this._state.error =
+        error instanceof Error ? error.message : "Failed to load providers";
+      console.error("BasemapControl: Failed to fetch providers", error);
     }
 
     this._render();
@@ -403,7 +425,9 @@ export class BasemapControl implements IControl {
 
     // Check if basemap requires API key
     if (basemap.requiresApiKey && !basemap.apiKey) {
-      console.warn(`BasemapControl: Basemap "${basemap.name}" requires an API key`);
+      console.warn(
+        `BasemapControl: Basemap "${basemap.name}" requires an API key`,
+      );
       return;
     }
 
@@ -430,7 +454,7 @@ export class BasemapControl implements IControl {
 
     // Add raster source
     this._map.addSource(BASEMAP_SOURCE_ID, {
-      type: 'raster',
+      type: "raster",
       tiles: [tileUrl],
       tileSize: 256,
       attribution: basemap.attribution,
@@ -445,7 +469,7 @@ export class BasemapControl implements IControl {
       const layers = this._map.getStyle()?.layers;
       if (layers) {
         for (const layer of layers) {
-          if (layer.type === 'symbol') {
+          if (layer.type === "symbol") {
             beforeLayerId = layer.id;
             break;
           }
@@ -457,10 +481,10 @@ export class BasemapControl implements IControl {
     this._map.addLayer(
       {
         id: BASEMAP_LAYER_ID,
-        type: 'raster',
+        type: "raster",
         source: BASEMAP_SOURCE_ID,
       },
-      beforeLayerId
+      beforeLayerId,
     );
   }
 
@@ -514,21 +538,21 @@ export class BasemapControl implements IControl {
   private _updateDisplayState(): void {
     if (!this._container) return;
     const shouldShow = this._state.visible && this._zoomVisible;
-    this._container.style.display = shouldShow ? 'block' : 'none';
+    this._container.style.display = shouldShow ? "block" : "none";
   }
 
   /**
    * Creates the main container element.
    */
   private _createContainer(): HTMLElement {
-    const container = document.createElement('div');
+    const container = document.createElement("div");
     container.className = `maplibregl-ctrl maplibre-gl-basemap${
-      this._options.className ? ` ${this._options.className}` : ''
+      this._options.className ? ` ${this._options.className}` : ""
     }`;
 
     const shouldShow = this._state.visible && this._zoomVisible;
     if (!shouldShow) {
-      container.style.display = 'none';
+      container.style.display = "none";
     }
 
     return container;
@@ -555,11 +579,13 @@ export class BasemapControl implements IControl {
     } = this._options;
 
     // Save scroll position before clearing content
-    const contentEl = this._container.querySelector('.maplibre-gl-basemap-content');
+    const contentEl = this._container.querySelector(
+      ".maplibre-gl-basemap-content",
+    );
     const scrollTop = contentEl ? contentEl.scrollTop : 0;
 
     // Clear existing content
-    this._container.innerHTML = '';
+    this._container.innerHTML = "";
 
     const shouldShow = this._state.visible && this._zoomVisible;
 
@@ -569,10 +595,10 @@ export class BasemapControl implements IControl {
         backgroundColor,
         opacity: opacity.toString(),
         borderRadius: `${borderRadius}px`,
-        boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.1)',
-        display: shouldShow ? 'block' : 'none',
-        padding: '0',
-        maxWidth: 'none',
+        boxShadow: "0 0 0 2px rgba(0, 0, 0, 0.1)",
+        display: shouldShow ? "block" : "none",
+        padding: "0",
+        maxWidth: "none",
       });
 
       const iconButton = this._createIconButton();
@@ -588,11 +614,12 @@ export class BasemapControl implements IControl {
       fontSize: `${fontSize}px`,
       color: fontColor,
       maxWidth: `${maxWidth}px`,
-      boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.1)',
-      display: shouldShow ? 'block' : 'none',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      position: 'relative',
-      padding: '0',
+      boxShadow: "0 0 0 2px rgba(0, 0, 0, 0.1)",
+      display: shouldShow ? "block" : "none",
+      fontFamily:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      position: "relative",
+      padding: "0",
     });
 
     // Header with close button
@@ -602,35 +629,35 @@ export class BasemapControl implements IControl {
     }
 
     // Content
-    const content = document.createElement('div');
-    content.className = 'maplibre-gl-basemap-content';
+    const content = document.createElement("div");
+    content.className = "maplibre-gl-basemap-content";
     Object.assign(content.style, {
       padding: `0 ${padding}px ${padding}px ${padding}px`,
       maxHeight: `${maxHeight}px`,
-      overflowY: 'auto',
+      overflowY: "auto",
     });
 
     // Loading state
     if (this._state.loading) {
-      const loading = document.createElement('div');
-      loading.className = 'maplibre-gl-basemap-loading';
-      loading.textContent = 'Loading basemaps...';
+      const loading = document.createElement("div");
+      loading.className = "maplibre-gl-basemap-loading";
+      loading.textContent = "Loading basemaps...";
       Object.assign(loading.style, {
-        padding: '20px',
-        textAlign: 'center',
-        color: '#666',
+        padding: "20px",
+        textAlign: "center",
+        color: "#666",
       });
       content.appendChild(loading);
     }
     // Error state
     else if (this._state.error) {
-      const error = document.createElement('div');
-      error.className = 'maplibre-gl-basemap-error';
+      const error = document.createElement("div");
+      error.className = "maplibre-gl-basemap-error";
       error.textContent = this._state.error;
       Object.assign(error.style, {
-        padding: '10px',
-        color: '#d32f2f',
-        fontSize: '0.9em',
+        padding: "10px",
+        color: "#d32f2f",
+        fontSize: "0.9em",
       });
       content.appendChild(error);
     }
@@ -648,9 +675,12 @@ export class BasemapControl implements IControl {
 
       // Basemap list - always use list mode when panel is expanded
       // (dropdown mode only affects collapsed icon behavior)
-      const filteredBasemaps = filterBasemaps(this._basemaps, this._state.searchText);
+      const filteredBasemaps = filterBasemaps(
+        this._basemaps,
+        this._state.searchText,
+      );
 
-      if (displayMode === 'gallery') {
+      if (displayMode === "gallery") {
         const gallery = this._renderGallery(filteredBasemaps);
         content.appendChild(gallery);
       } else {
@@ -672,9 +702,9 @@ export class BasemapControl implements IControl {
    * Creates the icon button for collapsed state.
    */
   private _createIconButton(): HTMLElement {
-    const button = document.createElement('button');
-    button.className = 'maplibre-gl-basemap-icon-button';
-    button.title = 'Basemaps';
+    const button = document.createElement("button");
+    button.className = "maplibre-gl-basemap-icon-button";
+    button.title = "Basemaps";
 
     // Map icon SVG (folded map with pin)
     button.innerHTML = `
@@ -686,29 +716,29 @@ export class BasemapControl implements IControl {
     `;
 
     Object.assign(button.style, {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '29px',
-      height: '29px',
-      padding: '0',
-      border: 'none',
-      background: 'transparent',
-      cursor: 'pointer',
-      color: '#333',
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "29px",
+      height: "29px",
+      padding: "0",
+      border: "none",
+      background: "transparent",
+      cursor: "pointer",
+      color: "#333",
     });
 
-    button.addEventListener('click', (e) => {
+    button.addEventListener("click", (e) => {
       e.stopPropagation();
       this.expand();
     });
 
-    button.addEventListener('mouseenter', () => {
-      button.style.color = '#0078d7';
+    button.addEventListener("mouseenter", () => {
+      button.style.color = "#0078d7";
     });
 
-    button.addEventListener('mouseleave', () => {
-      button.style.color = '#333';
+    button.addEventListener("mouseleave", () => {
+      button.style.color = "#333";
     });
 
     return button;
@@ -720,26 +750,26 @@ export class BasemapControl implements IControl {
   private _createHeader(): HTMLElement {
     const { padding } = this._options;
 
-    const header = document.createElement('div');
-    header.className = 'maplibre-gl-basemap-header';
+    const header = document.createElement("div");
+    header.className = "maplibre-gl-basemap-header";
     Object.assign(header.style, {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
       padding: `${padding}px`,
-      borderBottom: '1px solid rgba(0,0,0,0.1)',
+      borderBottom: "1px solid rgba(0,0,0,0.1)",
     });
 
-    const title = document.createElement('span');
-    title.className = 'maplibre-gl-basemap-title';
-    title.textContent = 'Basemaps';
-    title.style.fontWeight = '600';
+    const title = document.createElement("span");
+    title.className = "maplibre-gl-basemap-title";
+    title.textContent = "Basemaps";
+    title.style.fontWeight = "600";
     header.appendChild(title);
 
     // Close button
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'maplibre-gl-basemap-close';
-    closeBtn.title = 'Close';
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "maplibre-gl-basemap-close";
+    closeBtn.title = "Close";
     closeBtn.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -747,32 +777,32 @@ export class BasemapControl implements IControl {
       </svg>
     `;
     Object.assign(closeBtn.style, {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '24px',
-      height: '24px',
-      padding: '0',
-      border: 'none',
-      background: 'transparent',
-      cursor: 'pointer',
-      color: '#666',
-      borderRadius: '4px',
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "24px",
+      height: "24px",
+      padding: "0",
+      border: "none",
+      background: "transparent",
+      cursor: "pointer",
+      color: "#666",
+      borderRadius: "4px",
     });
 
-    closeBtn.addEventListener('click', (e) => {
+    closeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       this.collapse();
     });
 
-    closeBtn.addEventListener('mouseenter', () => {
-      closeBtn.style.background = 'rgba(0,0,0,0.1)';
-      closeBtn.style.color = '#333';
+    closeBtn.addEventListener("mouseenter", () => {
+      closeBtn.style.background = "rgba(0,0,0,0.1)";
+      closeBtn.style.color = "#333";
     });
 
-    closeBtn.addEventListener('mouseleave', () => {
-      closeBtn.style.background = 'transparent';
-      closeBtn.style.color = '#666';
+    closeBtn.addEventListener("mouseleave", () => {
+      closeBtn.style.background = "transparent";
+      closeBtn.style.color = "#666";
     });
 
     header.appendChild(closeBtn);
@@ -784,29 +814,29 @@ export class BasemapControl implements IControl {
    * Creates the search input element.
    */
   private _createSearchInput(): HTMLElement {
-    const container = document.createElement('div');
-    container.style.marginBottom = '8px';
+    const container = document.createElement("div");
+    container.style.marginBottom = "8px";
 
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = 'Search basemaps...';
-    input.className = 'maplibre-gl-basemap-search';
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Search basemaps...";
+    input.className = "maplibre-gl-basemap-search";
     input.value = this._state.searchText;
     Object.assign(input.style, {
-      width: '100%',
-      padding: '6px 10px',
-      border: '1px solid #ddd',
-      borderRadius: '4px',
-      fontSize: 'inherit',
-      boxSizing: 'border-box',
+      width: "100%",
+      padding: "6px 10px",
+      border: "1px solid #ddd",
+      borderRadius: "4px",
+      fontSize: "inherit",
+      boxSizing: "border-box",
     });
 
-    input.addEventListener('input', (e) => {
+    input.addEventListener("input", (e) => {
       this._state.searchText = (e.target as HTMLInputElement).value;
       this._render();
     });
 
-    input.addEventListener('click', (e) => {
+    input.addEventListener("click", (e) => {
       e.stopPropagation();
     });
 
@@ -818,44 +848,46 @@ export class BasemapControl implements IControl {
    * Creates the below labels checkbox element.
    */
   private _createBelowLabelsCheckbox(): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'maplibre-gl-basemap-checkbox';
+    const container = document.createElement("div");
+    container.className = "maplibre-gl-basemap-checkbox";
     Object.assign(container.style, {
-      display: 'flex',
-      alignItems: 'center',
-      marginBottom: '8px',
-      padding: '4px 0',
-      borderBottom: '1px solid #eee',
+      display: "flex",
+      alignItems: "center",
+      marginBottom: "8px",
+      padding: "4px 0",
+      borderBottom: "1px solid #eee",
     });
 
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = 'basemap-below-labels';
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.id = "basemap-below-labels";
     checkbox.checked = this._state.belowLabels;
     Object.assign(checkbox.style, {
-      marginRight: '8px',
-      cursor: 'pointer',
+      marginRight: "8px",
+      cursor: "pointer",
     });
 
-    checkbox.addEventListener('change', (e) => {
+    checkbox.addEventListener("change", (e) => {
       e.stopPropagation();
       this._state.belowLabels = (e.target as HTMLInputElement).checked;
       // Re-apply current basemap with new layer ordering
       if (this._state.selectedBasemap) {
-        const basemap = this._basemaps.find((b) => b.id === this._state.selectedBasemap);
+        const basemap = this._basemaps.find(
+          (b) => b.id === this._state.selectedBasemap,
+        );
         if (basemap) {
           this._applyBasemap(basemap);
         }
       }
     });
 
-    const label = document.createElement('label');
-    label.htmlFor = 'basemap-below-labels';
-    label.textContent = 'Below labels';
+    const label = document.createElement("label");
+    label.htmlFor = "basemap-below-labels";
+    label.textContent = "Below labels";
     Object.assign(label.style, {
-      cursor: 'pointer',
-      fontSize: '0.9em',
-      color: '#666',
+      cursor: "pointer",
+      fontSize: "0.9em",
+      color: "#666",
     });
 
     container.appendChild(checkbox);
@@ -867,22 +899,22 @@ export class BasemapControl implements IControl {
    * Renders the list mode.
    */
   private _renderList(basemaps: BasemapItem[]): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'maplibre-gl-basemap-list';
+    const container = document.createElement("div");
+    container.className = "maplibre-gl-basemap-list";
 
     // Group basemaps
     const groups = groupBasemaps(basemaps);
 
     groups.forEach((items, groupName) => {
       // Group header
-      const groupHeader = document.createElement('div');
-      groupHeader.className = 'maplibre-gl-basemap-group';
+      const groupHeader = document.createElement("div");
+      groupHeader.className = "maplibre-gl-basemap-group";
       groupHeader.textContent = groupName;
       Object.assign(groupHeader.style, {
-        fontWeight: '600',
-        padding: '8px 0 4px',
-        color: '#666',
-        fontSize: '0.9em',
+        fontWeight: "600",
+        padding: "8px 0 4px",
+        color: "#666",
+        fontSize: "0.9em",
       });
       container.appendChild(groupHeader);
 
@@ -900,43 +932,48 @@ export class BasemapControl implements IControl {
    * Renders the gallery mode.
    */
   private _renderGallery(basemaps: BasemapItem[]): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'maplibre-gl-basemap-gallery';
+    const container = document.createElement("div");
+    container.className = "maplibre-gl-basemap-gallery";
     Object.assign(container.style, {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))',
-      gap: '8px',
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill, minmax(70px, 1fr))",
+      gap: "8px",
       maxHeight: `${this._options.maxHeight}px`,
-      overflowY: 'auto',
+      overflowY: "auto",
     });
 
     basemaps.forEach((basemap) => {
-      const item = document.createElement('div');
+      const item = document.createElement("div");
       item.className = `maplibre-gl-basemap-gallery-item${
-        basemap.id === this._state.selectedBasemap ? ' maplibre-gl-basemap-gallery-item--selected' : ''
+        basemap.id === this._state.selectedBasemap
+          ? " maplibre-gl-basemap-gallery-item--selected"
+          : ""
       }`;
       Object.assign(item.style, {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        cursor: 'pointer',
-        padding: '4px',
-        borderRadius: '4px',
-        transition: 'background-color 0.15s',
-        outline: basemap.id === this._state.selectedBasemap ? '2px solid #0078d7' : 'none',
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        cursor: "pointer",
+        padding: "4px",
+        borderRadius: "4px",
+        transition: "background-color 0.15s",
+        outline:
+          basemap.id === this._state.selectedBasemap
+            ? "2px solid #0078d7"
+            : "none",
       });
 
       // Thumbnail
-      const thumbnail = document.createElement('div');
-      thumbnail.className = 'maplibre-gl-basemap-thumbnail';
+      const thumbnail = document.createElement("div");
+      thumbnail.className = "maplibre-gl-basemap-thumbnail";
       Object.assign(thumbnail.style, {
-        width: '60px',
-        height: '60px',
-        borderRadius: '4px',
-        border: '1px solid rgba(0, 0, 0, 0.1)',
-        backgroundColor: '#f0f0f0',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        width: "60px",
+        height: "60px",
+        borderRadius: "4px",
+        border: "1px solid rgba(0, 0, 0, 0.1)",
+        backgroundColor: "#f0f0f0",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
       });
 
       // Generate thumbnail URL
@@ -944,9 +981,9 @@ export class BasemapControl implements IControl {
         let thumbUrl = basemap.thumbnail;
         if (!thumbUrl && basemap.url) {
           thumbUrl = buildTileUrl(basemap)
-            .replace('{z}', '3')
-            .replace('{x}', '4')
-            .replace('{y}', '2');
+            .replace("{z}", "3")
+            .replace("{x}", "4")
+            .replace("{y}", "2");
         }
         if (thumbUrl) {
           thumbnail.style.backgroundImage = `url(${thumbUrl})`;
@@ -954,35 +991,35 @@ export class BasemapControl implements IControl {
       }
 
       // Name
-      const name = document.createElement('div');
-      name.className = 'maplibre-gl-basemap-name';
+      const name = document.createElement("div");
+      name.className = "maplibre-gl-basemap-name";
       name.textContent = basemap.name;
       Object.assign(name.style, {
-        marginTop: '4px',
-        fontSize: '0.75em',
-        textAlign: 'center',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        maxWidth: '70px',
+        marginTop: "4px",
+        fontSize: "0.75em",
+        textAlign: "center",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        maxWidth: "70px",
       });
 
       item.appendChild(thumbnail);
       item.appendChild(name);
 
-      item.addEventListener('click', (e) => {
+      item.addEventListener("click", (e) => {
         e.stopPropagation();
         this.setBasemap(basemap.id);
       });
 
-      item.addEventListener('mouseenter', () => {
+      item.addEventListener("mouseenter", () => {
         if (basemap.id !== this._state.selectedBasemap) {
-          item.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+          item.style.backgroundColor = "rgba(0, 0, 0, 0.05)";
         }
       });
 
-      item.addEventListener('mouseleave', () => {
-        item.style.backgroundColor = '';
+      item.addEventListener("mouseleave", () => {
+        item.style.backgroundColor = "";
       });
 
       container.appendChild(item);
@@ -994,72 +1031,82 @@ export class BasemapControl implements IControl {
   /**
    * Creates a basemap item element.
    */
-  private _createBasemapItem(basemap: BasemapItem, showRadio = false): HTMLElement {
-    const item = document.createElement('div');
+  private _createBasemapItem(
+    basemap: BasemapItem,
+    showRadio = false,
+  ): HTMLElement {
+    const item = document.createElement("div");
     item.className = `maplibre-gl-basemap-item${
-      basemap.id === this._state.selectedBasemap ? ' maplibre-gl-basemap-item--selected' : ''
+      basemap.id === this._state.selectedBasemap
+        ? " maplibre-gl-basemap-item--selected"
+        : ""
     }`;
     Object.assign(item.style, {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '6px 12px',
-      cursor: 'pointer',
-      borderRadius: '4px',
-      transition: 'background-color 0.15s',
-      backgroundColor: basemap.id === this._state.selectedBasemap ? 'rgba(0, 120, 215, 0.1)' : '',
+      display: "flex",
+      alignItems: "center",
+      padding: "6px 12px",
+      cursor: "pointer",
+      borderRadius: "4px",
+      transition: "background-color 0.15s",
+      backgroundColor:
+        basemap.id === this._state.selectedBasemap
+          ? "rgba(0, 120, 215, 0.1)"
+          : "",
     });
 
     if (showRadio) {
-      const radio = document.createElement('input');
-      radio.type = 'radio';
-      radio.name = 'basemap';
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "basemap";
       radio.checked = basemap.id === this._state.selectedBasemap;
-      radio.className = 'maplibre-gl-basemap-item-radio';
-      radio.style.marginRight = '8px';
+      radio.className = "maplibre-gl-basemap-item-radio";
+      radio.style.marginRight = "8px";
       item.appendChild(radio);
     }
 
-    const label = document.createElement('span');
+    const label = document.createElement("span");
     label.textContent = basemap.name;
-    label.style.flex = '1';
-    label.style.overflow = 'hidden';
-    label.style.textOverflow = 'ellipsis';
-    label.style.whiteSpace = 'nowrap';
+    label.style.flex = "1";
+    label.style.overflow = "hidden";
+    label.style.textOverflow = "ellipsis";
+    label.style.whiteSpace = "nowrap";
     item.appendChild(label);
 
     // API key badge
     if (basemap.requiresApiKey && !basemap.apiKey) {
-      const badge = document.createElement('span');
-      badge.className = 'maplibre-gl-basemap-apikey-badge';
-      badge.textContent = 'API';
+      const badge = document.createElement("span");
+      badge.className = "maplibre-gl-basemap-apikey-badge";
+      badge.textContent = "API";
       Object.assign(badge.style, {
-        fontSize: '0.7em',
-        background: '#ff9800',
-        color: 'white',
-        padding: '2px 6px',
-        borderRadius: '3px',
-        marginLeft: '4px',
-        flexShrink: '0',
+        fontSize: "0.7em",
+        background: "#ff9800",
+        color: "white",
+        padding: "2px 6px",
+        borderRadius: "3px",
+        marginLeft: "4px",
+        flexShrink: "0",
       });
       item.appendChild(badge);
     }
 
-    item.addEventListener('click', (e) => {
+    item.addEventListener("click", (e) => {
       e.stopPropagation();
       if (!basemap.requiresApiKey || basemap.apiKey) {
         this.setBasemap(basemap.id);
       }
     });
 
-    item.addEventListener('mouseenter', () => {
+    item.addEventListener("mouseenter", () => {
       if (basemap.id !== this._state.selectedBasemap) {
-        item.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+        item.style.backgroundColor = "rgba(0, 0, 0, 0.05)";
       }
     });
 
-    item.addEventListener('mouseleave', () => {
+    item.addEventListener("mouseleave", () => {
       item.style.backgroundColor =
-        basemap.id === this._state.selectedBasemap ? 'rgba(0, 120, 215, 0.1)' : '';
+        basemap.id === this._state.selectedBasemap
+          ? "rgba(0, 120, 215, 0.1)"
+          : "";
     });
 
     return item;

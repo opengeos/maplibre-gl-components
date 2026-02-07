@@ -1,12 +1,12 @@
-import { useState, useCallback } from 'react';
-import type { CogLayerControlState, ColormapName } from '../core/types';
+import { useState, useCallback } from "react";
+import type { CogLayerControlState, ColormapName } from "../core/types";
 
 const DEFAULT_STATE: CogLayerControlState = {
   visible: true,
   collapsed: true,
-  url: '',
-  bands: '1',
-  colormap: 'viridis',
+  url: "",
+  bands: "1",
+  colormap: "viridis",
   rescaleMin: 0,
   rescaleMax: 255,
   nodata: 0,
@@ -63,7 +63,7 @@ export function useCogLayer(initialState?: Partial<CogLayerControlState>) {
     setState((prev) => ({ ...prev, bands }));
   }, []);
 
-  const setColormap = useCallback((colormap: ColormapName | 'none') => {
+  const setColormap = useCallback((colormap: ColormapName | "none") => {
     setState((prev) => ({ ...prev, colormap }));
   }, []);
 

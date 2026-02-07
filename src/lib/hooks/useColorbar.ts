@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
-import type { ColorbarState, ColormapName } from '../core/types';
+import { useState, useCallback } from "react";
+import type { ColorbarState, ColormapName } from "../core/types";
 
 const DEFAULT_STATE: ColorbarState = {
   visible: true,
   vmin: 0,
   vmax: 1,
-  colormap: 'viridis',
+  colormap: "viridis",
 };
 
 /**

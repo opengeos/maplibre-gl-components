@@ -2,7 +2,7 @@
  * Type declarations for shpjs module.
  * shpjs converts zipped shapefiles to GeoJSON.
  */
-declare module 'shpjs' {
+declare module "shpjs" {
   /**
    * Parses a zipped shapefile and returns GeoJSON.
    *
@@ -10,7 +10,7 @@ declare module 'shpjs' {
    * @returns Promise resolving to GeoJSON FeatureCollection or array of FeatureCollections
    */
   function shp(
-    buffer: ArrayBuffer | string
+    buffer: ArrayBuffer | string,
   ): Promise<GeoJSON.FeatureCollection | GeoJSON.FeatureCollection[]>;
 
   export = shp;

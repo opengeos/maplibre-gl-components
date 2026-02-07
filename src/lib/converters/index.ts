@@ -9,7 +9,10 @@ export type {
   ConversionProgress,
   ConversionProgressCallback,
   VectorConverter,
-} from './types';
+} from "./types";
 
-export { DuckDBConverter, getDuckDBConverter } from './DuckDBConverter';
-export { ShapefileConverter, getShapefileConverter } from './ShapefileConverter';
+export { DuckDBConverter, getDuckDBConverter } from "./DuckDBConverter";
+export {
+  ShapefileConverter,
+  getShapefileConverter,
+} from "./ShapefileConverter";

@@ -1,31 +1,31 @@
-import '../styles/common.css';
-import '../styles/legend.css';
-import type { IControl, Map as MapLibreMap } from 'maplibre-gl';
+import "../styles/common.css";
+import "../styles/legend.css";
+import type { IControl, Map as MapLibreMap } from "maplibre-gl";
 import type {
   LegendOptions,
   LegendState,
   LegendItem,
   ComponentEvent,
   ComponentEventHandler,
-} from './types';
+} from "./types";
 
 /**
  * Default options for the Legend control.
  */
 const DEFAULT_OPTIONS: Required<LegendOptions> = {
-  title: '',
+  title: "",
   items: [],
-  position: 'bottom-left',
-  className: '',
+  position: "bottom-left",
+  className: "",
   visible: true,
   collapsible: false,
   collapsed: false,
   width: 200,
   maxHeight: 300,
   opacity: 1,
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  backgroundColor: "rgba(255, 255, 255, 0.9)",
   fontSize: 12,
-  fontColor: '#333',
+  fontColor: "#333",
   swatchSize: 16,
   borderRadius: 4,
   padding: 10,
@@ -55,7 +55,10 @@ export class Legend implements IControl {
   private _container?: HTMLElement;
   private _options: Required<LegendOptions>;
   private _state: LegendState;
-  private _eventHandlers: Map<ComponentEvent, Set<ComponentEventHandler<LegendState>>> = new Map();
+  private _eventHandlers: Map<
+    ComponentEvent,
+    Set<ComponentEventHandler<LegendState>>
+  > = new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
@@ -87,7 +90,7 @@ export class Legend implements IControl {
 
     // Set up zoom listener
     this._handleZoom = () => this._checkZoomVisibility();
-    this._map.on('zoom', this._handleZoom);
+    this._map.on("zoom", this._handleZoom);
 
     // Check initial zoom
     this._checkZoomVisibility();
@@ -100,7 +103,7 @@ export class Legend implements IControl {
    */
   onRemove(): void {
     if (this._map && this._handleZoom) {
-      this._map.off('zoom', this._handleZoom);
+      this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
     }
     this._map = undefined;
@@ -116,7 +119,7 @@ export class Legend implements IControl {
     if (!this._state.visible) {
       this._state.visible = true;
       this._updateDisplayState();
-      this._emit('show');
+      this._emit("show");
     }
   }
 
@@ -127,7 +130,7 @@ export class Legend implements IControl {
     if (this._state.visible) {
       this._state.visible = false;
       this._updateDisplayState();
-      this._emit('hide');
+      this._emit("hide");
     }
   }
 
@@ -138,7 +141,7 @@ export class Legend implements IControl {
     if (this._state.collapsed) {
       this._state.collapsed = false;
       this._render();
-      this._emit('expand');
+      this._emit("expand");
     }
   }
 
@@ -149,7 +152,7 @@ export class Legend implements IControl {
     if (!this._state.collapsed) {
       this._state.collapsed = true;
       this._render();
-      this._emit('collapse');
+      this._emit("collapse");
     }
   }
 
@@ -173,7 +176,7 @@ export class Legend implements IControl {
     this._state.items = [...items];
     this._options.items = [...items];
     this._render();
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -185,7 +188,7 @@ export class Legend implements IControl {
     this._state.items.push(item);
     this._options.items.push(item);
     this._render();
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -194,10 +197,12 @@ export class Legend implements IControl {
    * @param label - Label of the item to remove.
    */
   removeItem(label: string): void {
-    this._state.items = this._state.items.filter((item) => item.label !== label);
+    this._state.items = this._state.items.filter(
+      (item) => item.label !== label,
+    );
     this._options.items = [...this._state.items];
     this._render();
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -209,9 +214,10 @@ export class Legend implements IControl {
     this._options = { ...this._options, ...options };
     if (options.items) this._state.items = [...options.items];
     if (options.visible !== undefined) this._state.visible = options.visible;
-    if (options.collapsed !== undefined) this._state.collapsed = options.collapsed;
+    if (options.collapsed !== undefined)
+      this._state.collapsed = options.collapsed;
     this._render();
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -242,7 +248,10 @@ export class Legend implements IControl {
    * @param event - The event type.
    * @param handler - The callback function to remove.
    */
-  off(event: ComponentEvent, handler: ComponentEventHandler<LegendState>): void {
+  off(
+    event: ComponentEvent,
+    handler: ComponentEventHandler<LegendState>,
+  ): void {
     this._eventHandlers.get(event)?.delete(handler);
   }
 
@@ -281,7 +290,7 @@ export class Legend implements IControl {
   private _updateDisplayState(): void {
     if (!this._container) return;
     const shouldShow = this._state.visible && this._zoomVisible;
-    this._container.style.display = shouldShow ? 'block' : 'none';
+    this._container.style.display = shouldShow ? "block" : "none";
   }
 
   /**
@@ -290,14 +299,14 @@ export class Legend implements IControl {
    * @returns The container element.
    */
   private _createContainer(): HTMLElement {
-    const container = document.createElement('div');
+    const container = document.createElement("div");
     container.className = `maplibregl-ctrl maplibre-gl-legend${
-      this._options.className ? ` ${this._options.className}` : ''
+      this._options.className ? ` ${this._options.className}` : ""
     }`;
 
     const shouldShow = this._state.visible && this._zoomVisible;
     if (!shouldShow) {
-      container.style.display = 'none';
+      container.style.display = "none";
     }
 
     return container;
@@ -311,36 +320,38 @@ export class Legend implements IControl {
    */
   private _createSwatch(item: LegendItem): HTMLElement {
     const { swatchSize = 16 } = this._options;
-    const shape = item.shape || 'square';
-    const swatch = document.createElement('span');
+    const shape = item.shape || "square";
+    const swatch = document.createElement("span");
     swatch.className = `maplibre-gl-legend-swatch maplibre-gl-legend-swatch-${shape}`;
 
     // Base styles
     const baseStyles: Record<string, string> = {
-      flexShrink: '0',
-      display: 'inline-block',
+      flexShrink: "0",
+      display: "inline-block",
     };
 
-    if (shape === 'line') {
+    if (shape === "line") {
       // Line shape: horizontal line with rounded ends
       Object.assign(swatch.style, {
         ...baseStyles,
         width: `${swatchSize}px`,
-        height: '4px',
+        height: "4px",
         backgroundColor: item.color,
-        borderRadius: '2px',
-        border: 'none',
-        alignSelf: 'center',
+        borderRadius: "2px",
+        border: "none",
+        alignSelf: "center",
       });
-    } else if (shape === 'circle') {
+    } else if (shape === "circle") {
       // Circle shape
       Object.assign(swatch.style, {
         ...baseStyles,
         width: `${swatchSize}px`,
         height: `${swatchSize}px`,
         backgroundColor: item.color,
-        borderRadius: '50%',
-        border: item.strokeColor ? `2px solid ${item.strokeColor}` : '1px solid rgba(0,0,0,0.1)',
+        borderRadius: "50%",
+        border: item.strokeColor
+          ? `2px solid ${item.strokeColor}`
+          : "1px solid rgba(0,0,0,0.1)",
       });
     } else {
       // Square shape (default)
@@ -349,8 +360,10 @@ export class Legend implements IControl {
         width: `${swatchSize}px`,
         height: `${swatchSize}px`,
         backgroundColor: item.color,
-        borderRadius: '2px',
-        border: item.strokeColor ? `2px solid ${item.strokeColor}` : '1px solid rgba(0,0,0,0.1)',
+        borderRadius: "2px",
+        border: item.strokeColor
+          ? `2px solid ${item.strokeColor}`
+          : "1px solid rgba(0,0,0,0.1)",
       });
     }
 
@@ -358,11 +371,11 @@ export class Legend implements IControl {
     if (item.icon) {
       Object.assign(swatch.style, {
         backgroundImage: `url(${item.icon})`,
-        backgroundSize: 'contain',
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center',
-        backgroundColor: 'transparent',
-        border: 'none',
+        backgroundSize: "contain",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+        backgroundColor: "transparent",
+        border: "none",
         width: `${swatchSize}px`,
         height: `${swatchSize}px`,
       });
@@ -391,11 +404,12 @@ export class Legend implements IControl {
     } = this._options;
 
     // Clear existing content
-    this._container.innerHTML = '';
+    this._container.innerHTML = "";
 
     // Apply container styles
     // When collapsed with header, use minimal vertical padding to match HtmlControl
-    const isCollapsedWithHeader = this._state.collapsed && (title || collapsible);
+    const isCollapsedWithHeader =
+      this._state.collapsed && (title || collapsible);
     const vertPadding = isCollapsedWithHeader ? 4 : padding;
     const shouldShow = this._state.visible && this._zoomVisible;
     Object.assign(this._container.style, {
@@ -405,68 +419,69 @@ export class Legend implements IControl {
       padding: `${vertPadding}px ${padding}px`,
       fontSize: `${fontSize}px`,
       color: fontColor,
-      width: isCollapsedWithHeader ? 'auto' : `${width}px`,
+      width: isCollapsedWithHeader ? "auto" : `${width}px`,
       maxWidth: `${width}px`,
-      boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.1)',
-      display: shouldShow ? 'block' : 'none',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      boxShadow: "0 0 0 2px rgba(0, 0, 0, 0.1)",
+      display: shouldShow ? "block" : "none",
+      fontFamily:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     });
 
     // Add title/header
     if (title || collapsible) {
-      const header = document.createElement('div');
-      header.className = 'maplibre-gl-legend-header';
+      const header = document.createElement("div");
+      header.className = "maplibre-gl-legend-header";
       Object.assign(header.style, {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingBottom: this._state.collapsed ? '0' : '4px',
-        cursor: collapsible ? 'pointer' : 'default',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingBottom: this._state.collapsed ? "0" : "4px",
+        cursor: collapsible ? "pointer" : "default",
       });
 
       if (title) {
-        const titleEl = document.createElement('span');
-        titleEl.className = 'maplibre-gl-legend-title';
+        const titleEl = document.createElement("span");
+        titleEl.className = "maplibre-gl-legend-title";
         titleEl.textContent = title;
-        titleEl.style.fontWeight = '600';
+        titleEl.style.fontWeight = "600";
         header.appendChild(titleEl);
       }
 
       if (collapsible) {
-        const toggleBtn = document.createElement('span');
-        toggleBtn.className = 'maplibre-gl-legend-toggle';
-        toggleBtn.innerHTML = this._state.collapsed ? '&#9654;' : '&#9660;';
-        toggleBtn.style.marginLeft = '8px';
+        const toggleBtn = document.createElement("span");
+        toggleBtn.className = "maplibre-gl-legend-toggle";
+        toggleBtn.innerHTML = this._state.collapsed ? "&#9654;" : "&#9660;";
+        toggleBtn.style.marginLeft = "8px";
         header.appendChild(toggleBtn);
-        header.addEventListener('click', () => this.toggle());
+        header.addEventListener("click", () => this.toggle());
       }
 
       this._container.appendChild(header);
     }
 
     // Content area
-    const content = document.createElement('div');
-    content.className = 'maplibre-gl-legend-content';
+    const content = document.createElement("div");
+    content.className = "maplibre-gl-legend-content";
     Object.assign(content.style, {
       maxHeight: `${maxHeight}px`,
-      overflowY: 'auto',
-      display: this._state.collapsed ? 'none' : 'block',
+      overflowY: "auto",
+      display: this._state.collapsed ? "none" : "block",
     });
 
     // Render legend items
     this._state.items.forEach((item) => {
-      const row = document.createElement('div');
-      row.className = 'maplibre-gl-legend-item';
+      const row = document.createElement("div");
+      row.className = "maplibre-gl-legend-item";
       Object.assign(row.style, {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '4px 0',
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        padding: "4px 0",
       });
 
       const swatch = this._createSwatch(item);
-      const label = document.createElement('span');
-      label.className = 'maplibre-gl-legend-label';
+      const label = document.createElement("span");
+      label.className = "maplibre-gl-legend-label";
       label.textContent = item.label;
 
       row.appendChild(swatch);

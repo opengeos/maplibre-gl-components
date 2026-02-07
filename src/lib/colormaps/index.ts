@@ -1,7 +1,25 @@
-import type { ColorStop, ColormapName } from '../core/types';
-import { viridis, plasma, inferno, magma, cividis } from './sequential';
-import { coolwarm, bwr, seismic, RdBu, RdYlBu, RdYlGn, spectral } from './diverging';
-import { jet, rainbow, turbo, terrain, ocean, hot, cool, gray, bone } from './misc';
+import type { ColorStop, ColormapName } from "../core/types";
+import { viridis, plasma, inferno, magma, cividis } from "./sequential";
+import {
+  coolwarm,
+  bwr,
+  seismic,
+  RdBu,
+  RdYlBu,
+  RdYlGn,
+  spectral,
+} from "./diverging";
+import {
+  jet,
+  rainbow,
+  turbo,
+  terrain,
+  ocean,
+  hot,
+  cool,
+  gray,
+  bone,
+} from "./misc";
 
 /**
  * Map of all built-in colormaps.

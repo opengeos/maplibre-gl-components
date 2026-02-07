@@ -1,6 +1,6 @@
-import '../styles/common.css';
-import '../styles/cog-layer.css';
-import type { IControl, Map as MapLibreMap } from 'maplibre-gl';
+import "../styles/common.css";
+import "../styles/cog-layer.css";
+import type { IControl, Map as MapLibreMap } from "maplibre-gl";
 import type {
   CogLayerControlOptions,
   CogLayerControlState,
@@ -9,8 +9,8 @@ import type {
   CogLayerInfo,
   ColorStop,
   ColormapName,
-} from './types';
-import { getColormap } from '../colormaps';
+} from "./types";
+import { getColormap } from "../colormaps";
 
 /**
  * Shader module that rescales float raster values to [0,1] for visualization.
@@ -18,7 +18,7 @@ import { getColormap } from '../colormaps';
  * Multi-band: rescales each channel independently.
  */
 const RescaleFloat = {
-  name: 'rescaleFloat',
+  name: "rescaleFloat",
   fs: `\
 uniform rescaleFloatUniforms {
   float minVal;
@@ -27,7 +27,7 @@ uniform rescaleFloatUniforms {
 } rescaleFloat;
 `,
   inject: {
-    'fs:DECKGL_FILTER_COLOR': /* glsl */ `
+    "fs:DECKGL_FILTER_COLOR": /* glsl */ `
     float range = rescaleFloat.maxVal - rescaleFloat.minVal;
     if (range > 0.0) {
       if (rescaleFloat.isSingleBand > 0.5) {
@@ -42,9 +42,9 @@ uniform rescaleFloatUniforms {
     `,
   },
   uniformTypes: {
-    minVal: 'f32' as const,
-    maxVal: 'f32' as const,
-    isSingleBand: 'f32' as const,
+    minVal: "f32" as const,
+    maxVal: "f32" as const,
+    isSingleBand: "f32" as const,
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getUniforms: (props: any) => ({
@@ -66,7 +66,7 @@ function applyOpacity(layers: any, opacity: number): any {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return layers.map((layer: any) => applyOpacity(layer, opacity));
   }
-  if (typeof layers.clone === 'function') {
+  if (typeof layers.clone === "function") {
     return layers.clone({ opacity });
   }
   return layers;
@@ -76,9 +76,13 @@ function applyOpacity(layers: any, opacity: number): any {
  * Parse a CSS hex color (#RGB or #RRGGBB) to [r, g, b] values (0-255).
  */
 function parseHexColor(hex: string): [number, number, number] {
-  let h = hex.replace('#', '');
+  let h = hex.replace("#", "");
   if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
-  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
 }
 
 /**
@@ -88,11 +92,15 @@ function parseHexColor(hex: string): [number, number, number] {
 function colormapToImageData(stops: ColorStop[]): ImageData {
   const size = 256;
   const rgba = new Uint8ClampedArray(size * 4);
-  const parsed = stops.map(s => ({ pos: s.position, rgb: parseHexColor(s.color) }));
+  const parsed = stops.map((s) => ({
+    pos: s.position,
+    rgb: parseHexColor(s.color),
+  }));
   for (let i = 0; i < size; i++) {
     const t = i / (size - 1);
     // Find surrounding stops
-    let lo = parsed[0], hi = parsed[parsed.length - 1];
+    let lo = parsed[0],
+      hi = parsed[parsed.length - 1];
     for (let j = 0; j < parsed.length - 1; j++) {
       if (t >= parsed[j].pos && t <= parsed[j + 1].pos) {
         lo = parsed[j];
@@ -113,30 +121,30 @@ function colormapToImageData(stops: ColorStop[]): ImageData {
 /**
  * All available colormap names for the dropdown (sorted alphabetically, 'none' first).
  */
-const COLORMAP_NAMES: (ColormapName | 'none')[] = [
-  'none',
+const COLORMAP_NAMES: (ColormapName | "none")[] = [
+  "none",
   ...([
-    'bone',
-    'bwr',
-    'cividis',
-    'cool',
-    'coolwarm',
-    'gray',
-    'hot',
-    'inferno',
-    'jet',
-    'magma',
-    'ocean',
-    'plasma',
-    'rainbow',
-    'RdBu',
-    'RdYlBu',
-    'RdYlGn',
-    'seismic',
-    'spectral',
-    'terrain',
-    'turbo',
-    'viridis',
+    "bone",
+    "bwr",
+    "cividis",
+    "cool",
+    "coolwarm",
+    "gray",
+    "hot",
+    "inferno",
+    "jet",
+    "magma",
+    "ocean",
+    "plasma",
+    "rainbow",
+    "RdBu",
+    "RdYlBu",
+    "RdYlGn",
+    "seismic",
+    "spectral",
+    "terrain",
+    "turbo",
+    "viridis",
   ] as ColormapName[]),
 ];
 
@@ -144,24 +152,24 @@ const COLORMAP_NAMES: (ColormapName | 'none')[] = [
  * Default options for the CogLayerControl.
  */
 const DEFAULT_OPTIONS: Required<CogLayerControlOptions> = {
-  position: 'top-right',
-  className: '',
+  position: "top-right",
+  className: "",
   visible: true,
   collapsed: true,
-  beforeId: '',
-  defaultUrl: '',
-  defaultBands: '1',
-  defaultColormap: 'none',
+  beforeId: "",
+  defaultUrl: "",
+  defaultBands: "1",
+  defaultColormap: "none",
   defaultRescaleMin: 0,
   defaultRescaleMax: 255,
   defaultNodata: 0,
   defaultOpacity: 1,
   panelWidth: 300,
-  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+  backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
   opacity: 1,
   fontSize: 13,
-  fontColor: '#333',
+  fontColor: "#333",
   minzoom: 0,
   maxzoom: 24,
 };
@@ -196,7 +204,8 @@ export class CogLayerControl implements IControl {
   private _panel?: HTMLElement;
   private _options: Required<CogLayerControlOptions>;
   private _state: CogLayerControlState;
-  private _eventHandlers: Map<CogLayerEvent, Set<CogLayerEventHandler>> = new Map();
+  private _eventHandlers: Map<CogLayerEvent, Set<CogLayerEventHandler>> =
+    new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
@@ -235,7 +244,7 @@ export class CogLayerControl implements IControl {
     this._render();
 
     this._handleZoom = () => this._checkZoomVisibility();
-    this._map.on('zoom', this._handleZoom);
+    this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
 
     return this._container;
@@ -245,13 +254,15 @@ export class CogLayerControl implements IControl {
     this._removeLayer(); // Remove all layers on cleanup
 
     if (this._map && this._handleZoom) {
-      this._map.off('zoom', this._handleZoom);
+      this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
     }
 
     if (this._deckOverlay && this._map) {
       try {
-        (this._map as unknown as { removeControl(c: IControl): void }).removeControl(this._deckOverlay);
+        (
+          this._map as unknown as { removeControl(c: IControl): void }
+        ).removeControl(this._deckOverlay);
       } catch {
         // overlay may already be removed
       }
@@ -270,7 +281,7 @@ export class CogLayerControl implements IControl {
     if (!this._state.visible) {
       this._state.visible = true;
       this._updateDisplayState();
-      this._emit('show');
+      this._emit("show");
     }
   }
 
@@ -278,7 +289,7 @@ export class CogLayerControl implements IControl {
     if (this._state.visible) {
       this._state.visible = false;
       this._updateDisplayState();
-      this._emit('hide');
+      this._emit("hide");
     }
   }
 
@@ -286,7 +297,7 @@ export class CogLayerControl implements IControl {
     if (this._state.collapsed) {
       this._state.collapsed = false;
       this._render();
-      this._emit('expand');
+      this._emit("expand");
     }
   }
 
@@ -294,7 +305,7 @@ export class CogLayerControl implements IControl {
     if (!this._state.collapsed) {
       this._state.collapsed = true;
       this._render();
-      this._emit('collapse');
+      this._emit("collapse");
     }
   }
 
@@ -310,9 +321,10 @@ export class CogLayerControl implements IControl {
   update(options: Partial<CogLayerControlOptions>): void {
     this._options = { ...this._options, ...options };
     if (options.visible !== undefined) this._state.visible = options.visible;
-    if (options.collapsed !== undefined) this._state.collapsed = options.collapsed;
+    if (options.collapsed !== undefined)
+      this._state.collapsed = options.collapsed;
     this._render();
-    this._emit('update');
+    this._emit("update");
   }
 
   on(event: CogLayerEvent, handler: CogLayerEventHandler): void {
@@ -368,14 +380,16 @@ export class CogLayerControl implements IControl {
    */
   setLayerOpacity(layerId: string, opacity: number): void {
     const layer = this._cogLayers.get(layerId);
-    if (!layer || typeof layer.clone !== 'function') return;
+    if (!layer || typeof layer.clone !== "function") return;
 
     const clampedOpacity = Math.max(0, Math.min(1, opacity));
     const updatedLayer = layer.clone({ opacity: clampedOpacity });
     this._cogLayers.set(layerId, updatedLayer);
 
     if (this._deckOverlay) {
-      this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
+      this._deckOverlay.setProps({
+        layers: Array.from(this._cogLayers.values()),
+      });
     }
 
     if (this._map) {
@@ -401,7 +415,11 @@ export class CogLayerControl implements IControl {
    * @param visible Whether the layer should be visible
    * @param storedOpacity Optional opacity to restore when making visible (defaults to 1)
    */
-  setLayerVisibility(layerId: string, visible: boolean, storedOpacity: number = 1): void {
+  setLayerVisibility(
+    layerId: string,
+    visible: boolean,
+    storedOpacity: number = 1,
+  ): void {
     if (visible) {
       this.setLayerOpacity(layerId, storedOpacity);
     } else {
@@ -416,10 +434,13 @@ export class CogLayerControl implements IControl {
    */
   getLayerUrl(layerId: string): string | null {
     const props = this._cogLayerPropsMap.get(layerId);
-    return props?.geotiff as string ?? null;
+    return (props?.geotiff as string) ?? null;
   }
 
-  private _emit(event: CogLayerEvent, extra?: { url?: string; error?: string; layerId?: string }): void {
+  private _emit(
+    event: CogLayerEvent,
+    extra?: { url?: string; error?: string; layerId?: string },
+  ): void {
     const handlers = this._eventHandlers.get(event);
     if (handlers) {
       const payload = { type: event, state: this.getState(), ...extra };
@@ -441,22 +462,22 @@ export class CogLayerControl implements IControl {
   private _updateDisplayState(): void {
     if (!this._container) return;
     const shouldShow = this._state.visible && this._zoomVisible;
-    this._container.style.display = shouldShow ? 'block' : 'none';
+    this._container.style.display = shouldShow ? "block" : "none";
   }
 
   private _createContainer(): HTMLElement {
-    const container = document.createElement('div');
+    const container = document.createElement("div");
     container.className = `maplibregl-ctrl maplibre-gl-cog-layer${
-      this._options.className ? ` ${this._options.className}` : ''
+      this._options.className ? ` ${this._options.className}` : ""
     }`;
 
     const shouldShow = this._state.visible && this._zoomVisible;
-    if (!shouldShow) container.style.display = 'none';
+    if (!shouldShow) container.style.display = "none";
 
     Object.assign(container.style, {
       backgroundColor: this._options.backgroundColor,
       borderRadius: `${this._options.borderRadius}px`,
-      boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.1)',
+      boxShadow: "0 0 0 2px rgba(0, 0, 0, 0.1)",
     });
     if (this._options.opacity !== 1) {
       container.style.opacity = String(this._options.opacity);
@@ -467,7 +488,7 @@ export class CogLayerControl implements IControl {
 
   private _render(): void {
     if (!this._container) return;
-    this._container.innerHTML = '';
+    this._container.innerHTML = "";
 
     if (this._state.collapsed) {
       this._renderCollapsed();
@@ -481,13 +502,13 @@ export class CogLayerControl implements IControl {
   private _renderCollapsed(): void {
     if (!this._container) return;
 
-    this._button = document.createElement('button');
-    this._button.type = 'button';
-    this._button.className = `maplibre-gl-cog-layer-button${this._state.hasLayer ? ' maplibre-gl-cog-layer-button--active' : ''}`;
-    this._button.title = 'COG Layer';
-    this._button.setAttribute('aria-label', 'COG Layer');
+    this._button = document.createElement("button");
+    this._button.type = "button";
+    this._button.className = `maplibre-gl-cog-layer-button${this._state.hasLayer ? " maplibre-gl-cog-layer-button--active" : ""}`;
+    this._button.title = "COG Layer";
+    this._button.setAttribute("aria-label", "COG Layer");
     this._button.innerHTML = COG_ICON;
-    this._button.addEventListener('click', () => this.expand());
+    this._button.addEventListener("click", () => this.expand());
 
     this._container.appendChild(this._button);
     this._panel = undefined;
@@ -496,92 +517,99 @@ export class CogLayerControl implements IControl {
   private _renderExpanded(): void {
     if (!this._container) return;
 
-    const panel = document.createElement('div');
-    panel.className = 'maplibre-gl-cog-layer-panel';
+    const panel = document.createElement("div");
+    panel.className = "maplibre-gl-cog-layer-panel";
     panel.style.width = `${this._options.panelWidth}px`;
     this._panel = panel;
 
     // Header
-    const header = document.createElement('div');
-    header.className = 'maplibre-gl-cog-layer-header';
-    const title = document.createElement('span');
-    title.className = 'maplibre-gl-cog-layer-title';
-    title.textContent = 'COG Layer';
+    const header = document.createElement("div");
+    header.className = "maplibre-gl-cog-layer-header";
+    const title = document.createElement("span");
+    title.className = "maplibre-gl-cog-layer-title";
+    title.textContent = "COG Layer";
     header.appendChild(title);
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'maplibre-gl-cog-layer-close';
-    closeBtn.innerHTML = '&times;';
-    closeBtn.title = 'Close';
-    closeBtn.addEventListener('click', () => this.collapse());
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "maplibre-gl-cog-layer-close";
+    closeBtn.innerHTML = "&times;";
+    closeBtn.title = "Close";
+    closeBtn.addEventListener("click", () => this.collapse());
     header.appendChild(closeBtn);
     panel.appendChild(header);
 
     // URL input
-    const urlGroup = this._createFormGroup('COG URL', 'url');
-    const urlInput = document.createElement('input');
-    urlInput.type = 'text';
-    urlInput.className = 'maplibre-gl-cog-layer-input';
-    urlInput.placeholder = 'https://example.com/cog.tif';
+    const urlGroup = this._createFormGroup("COG URL", "url");
+    const urlInput = document.createElement("input");
+    urlInput.type = "text";
+    urlInput.className = "maplibre-gl-cog-layer-input";
+    urlInput.placeholder = "https://example.com/cog.tif";
     urlInput.value = this._state.url;
-    urlInput.addEventListener('input', () => { this._state.url = urlInput.value; });
+    urlInput.addEventListener("input", () => {
+      this._state.url = urlInput.value;
+    });
     urlGroup.appendChild(urlInput);
     panel.appendChild(urlGroup);
 
     // Bands input
-    const bandsGroup = this._createFormGroup('Bands (comma-separated)', 'bands');
-    const bandsInput = document.createElement('input');
-    bandsInput.type = 'text';
-    bandsInput.className = 'maplibre-gl-cog-layer-input';
-    bandsInput.placeholder = '1 or 1,2,3';
+    const bandsGroup = this._createFormGroup(
+      "Bands (comma-separated)",
+      "bands",
+    );
+    const bandsInput = document.createElement("input");
+    bandsInput.type = "text";
+    bandsInput.className = "maplibre-gl-cog-layer-input";
+    bandsInput.placeholder = "1 or 1,2,3";
     bandsInput.value = this._state.bands;
-    bandsInput.addEventListener('input', () => { this._state.bands = bandsInput.value; });
+    bandsInput.addEventListener("input", () => {
+      this._state.bands = bandsInput.value;
+    });
     bandsGroup.appendChild(bandsInput);
     panel.appendChild(bandsGroup);
 
     // Colormap dropdown
-    const cmGroup = this._createFormGroup('Colormap', 'colormap');
-    const cmSelect = document.createElement('select');
-    cmSelect.className = 'maplibre-gl-cog-layer-select';
+    const cmGroup = this._createFormGroup("Colormap", "colormap");
+    const cmSelect = document.createElement("select");
+    cmSelect.className = "maplibre-gl-cog-layer-select";
     for (const name of COLORMAP_NAMES) {
-      const opt = document.createElement('option');
+      const opt = document.createElement("option");
       opt.value = name;
       opt.textContent = name;
       if (name === this._state.colormap) opt.selected = true;
       cmSelect.appendChild(opt);
     }
-    cmSelect.addEventListener('change', () => {
-      this._state.colormap = cmSelect.value as ColormapName | 'none';
+    cmSelect.addEventListener("change", () => {
+      this._state.colormap = cmSelect.value as ColormapName | "none";
       this._updateColormapPreview();
     });
     cmGroup.appendChild(cmSelect);
 
     // Colormap preview
-    const cmPreview = document.createElement('div');
-    cmPreview.className = 'maplibre-gl-cog-layer-colormap-preview';
-    cmPreview.id = 'cog-colormap-preview';
+    const cmPreview = document.createElement("div");
+    cmPreview.className = "maplibre-gl-cog-layer-colormap-preview";
+    cmPreview.id = "cog-colormap-preview";
     this._updateColormapPreviewElement(cmPreview);
     cmGroup.appendChild(cmPreview);
     panel.appendChild(cmGroup);
 
     // Rescale min/max row
-    const rescaleRow = document.createElement('div');
-    rescaleRow.className = 'maplibre-gl-cog-layer-row';
-    const minGroup = this._createFormGroup('Rescale Min', 'rescale-min');
-    const minInput = document.createElement('input');
-    minInput.type = 'number';
-    minInput.className = 'maplibre-gl-cog-layer-input';
+    const rescaleRow = document.createElement("div");
+    rescaleRow.className = "maplibre-gl-cog-layer-row";
+    const minGroup = this._createFormGroup("Rescale Min", "rescale-min");
+    const minInput = document.createElement("input");
+    minInput.type = "number";
+    minInput.className = "maplibre-gl-cog-layer-input";
     minInput.value = String(this._state.rescaleMin);
-    minInput.addEventListener('input', () => {
+    minInput.addEventListener("input", () => {
       this._state.rescaleMin = Number(minInput.value) || 0;
     });
     minGroup.appendChild(minInput);
     rescaleRow.appendChild(minGroup);
-    const maxGroup = this._createFormGroup('Rescale Max', 'rescale-max');
-    const maxInput = document.createElement('input');
-    maxInput.type = 'number';
-    maxInput.className = 'maplibre-gl-cog-layer-input';
+    const maxGroup = this._createFormGroup("Rescale Max", "rescale-max");
+    const maxInput = document.createElement("input");
+    maxInput.type = "number";
+    maxInput.className = "maplibre-gl-cog-layer-input";
     maxInput.value = String(this._state.rescaleMax);
-    maxInput.addEventListener('input', () => {
+    maxInput.addEventListener("input", () => {
       this._state.rescaleMax = Number(maxInput.value) || 0;
     });
     maxGroup.appendChild(maxInput);
@@ -589,32 +617,34 @@ export class CogLayerControl implements IControl {
     panel.appendChild(rescaleRow);
 
     // Nodata
-    const nodataGroup = this._createFormGroup('Nodata', 'nodata');
-    const nodataInput = document.createElement('input');
-    nodataInput.type = 'number';
-    nodataInput.className = 'maplibre-gl-cog-layer-input';
-    nodataInput.placeholder = 'e.g. 0 or -9999';
-    nodataInput.value = this._state.nodata !== undefined ? String(this._state.nodata) : '';
-    nodataInput.addEventListener('input', () => {
-      this._state.nodata = nodataInput.value !== '' ? Number(nodataInput.value) : undefined;
+    const nodataGroup = this._createFormGroup("Nodata", "nodata");
+    const nodataInput = document.createElement("input");
+    nodataInput.type = "number";
+    nodataInput.className = "maplibre-gl-cog-layer-input";
+    nodataInput.placeholder = "e.g. 0 or -9999";
+    nodataInput.value =
+      this._state.nodata !== undefined ? String(this._state.nodata) : "";
+    nodataInput.addEventListener("input", () => {
+      this._state.nodata =
+        nodataInput.value !== "" ? Number(nodataInput.value) : undefined;
     });
     nodataGroup.appendChild(nodataInput);
     panel.appendChild(nodataGroup);
 
     // Opacity slider
-    const opacityGroup = this._createFormGroup('Opacity', 'opacity');
-    const sliderRow = document.createElement('div');
-    sliderRow.className = 'maplibre-gl-cog-layer-slider-row';
-    const slider = document.createElement('input');
-    slider.type = 'range';
-    slider.className = 'maplibre-gl-cog-layer-slider';
-    slider.min = '0';
-    slider.max = '100';
+    const opacityGroup = this._createFormGroup("Opacity", "opacity");
+    const sliderRow = document.createElement("div");
+    sliderRow.className = "maplibre-gl-cog-layer-slider-row";
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.className = "maplibre-gl-cog-layer-slider";
+    slider.min = "0";
+    slider.max = "100";
     slider.value = String(Math.round(this._state.layerOpacity * 100));
-    const sliderValue = document.createElement('span');
-    sliderValue.className = 'maplibre-gl-cog-layer-slider-value';
+    const sliderValue = document.createElement("span");
+    sliderValue.className = "maplibre-gl-cog-layer-slider-value";
     sliderValue.textContent = `${Math.round(this._state.layerOpacity * 100)}%`;
-    slider.addEventListener('input', () => {
+    slider.addEventListener("input", () => {
       const pct = Number(slider.value);
       this._state.layerOpacity = pct / 100;
       sliderValue.textContent = `${pct}%`;
@@ -626,65 +656,69 @@ export class CogLayerControl implements IControl {
     panel.appendChild(opacityGroup);
 
     // Before ID input (for layer ordering)
-    const beforeIdGroup = this._createFormGroup('Before Layer ID (optional)', 'before-id');
-    const beforeIdInput = document.createElement('input');
-    beforeIdInput.type = 'text';
-    beforeIdInput.className = 'maplibre-gl-cog-layer-input';
-    beforeIdInput.placeholder = 'e.g. labels or water';
-    beforeIdInput.value = this._options.beforeId || '';
-    beforeIdInput.addEventListener('input', () => {
-      this._options.beforeId = beforeIdInput.value || '';
+    const beforeIdGroup = this._createFormGroup(
+      "Before Layer ID (optional)",
+      "before-id",
+    );
+    const beforeIdInput = document.createElement("input");
+    beforeIdInput.type = "text";
+    beforeIdInput.className = "maplibre-gl-cog-layer-input";
+    beforeIdInput.placeholder = "e.g. labels or water";
+    beforeIdInput.value = this._options.beforeId || "";
+    beforeIdInput.addEventListener("input", () => {
+      this._options.beforeId = beforeIdInput.value || "";
     });
     beforeIdGroup.appendChild(beforeIdInput);
     panel.appendChild(beforeIdGroup);
 
     // Buttons — always show Add Layer
-    const btns = document.createElement('div');
-    btns.className = 'maplibre-gl-cog-layer-buttons';
+    const btns = document.createElement("div");
+    btns.className = "maplibre-gl-cog-layer-buttons";
 
-    const addBtn = document.createElement('button');
-    addBtn.className = 'maplibre-gl-cog-layer-btn maplibre-gl-cog-layer-btn--primary';
-    addBtn.textContent = 'Add Layer';
+    const addBtn = document.createElement("button");
+    addBtn.className =
+      "maplibre-gl-cog-layer-btn maplibre-gl-cog-layer-btn--primary";
+    addBtn.textContent = "Add Layer";
     addBtn.disabled = this._state.loading;
-    addBtn.addEventListener('click', () => this._addLayer());
+    addBtn.addEventListener("click", () => this._addLayer());
     btns.appendChild(addBtn);
 
     panel.appendChild(btns);
 
     // Status/error area
     if (this._state.loading) {
-      this._appendStatus('Loading COG...', 'info');
+      this._appendStatus("Loading COG...", "info");
     } else if (this._state.error) {
-      this._appendStatus(this._state.error, 'error');
+      this._appendStatus(this._state.error, "error");
     } else if (this._state.status) {
-      this._appendStatus(this._state.status, 'success');
+      this._appendStatus(this._state.status, "success");
     }
 
     // Layer list
     if (this._cogLayers.size > 0) {
-      const listContainer = document.createElement('div');
-      listContainer.className = 'maplibre-gl-cog-layer-list';
+      const listContainer = document.createElement("div");
+      listContainer.className = "maplibre-gl-cog-layer-list";
 
-      const listHeader = document.createElement('div');
-      listHeader.className = 'maplibre-gl-cog-layer-list-header';
+      const listHeader = document.createElement("div");
+      listHeader.className = "maplibre-gl-cog-layer-list-header";
       listHeader.textContent = `Layers (${this._cogLayers.size})`;
       listContainer.appendChild(listHeader);
 
-      for (const [layerId, ] of this._cogLayers) {
+      for (const [layerId] of this._cogLayers) {
         const props = this._cogLayerPropsMap.get(layerId);
         if (!props) continue;
 
-        const item = document.createElement('div');
-        item.className = 'maplibre-gl-cog-layer-list-item';
+        const item = document.createElement("div");
+        item.className = "maplibre-gl-cog-layer-list-item";
 
-        const label = document.createElement('span');
-        label.className = 'maplibre-gl-cog-layer-list-label';
+        const label = document.createElement("span");
+        label.className = "maplibre-gl-cog-layer-list-label";
         // Extract filename from URL for display
         const url = props.geotiff as string;
         let displayName: string;
         try {
           const urlObj = new URL(url);
-          displayName = urlObj.pathname.split('/').pop() || url;
+          displayName = urlObj.pathname.split("/").pop() || url;
         } catch {
           displayName = url;
         }
@@ -692,11 +726,11 @@ export class CogLayerControl implements IControl {
         label.title = url;
         item.appendChild(label);
 
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'maplibre-gl-cog-layer-list-remove';
-        removeBtn.innerHTML = '&times;';
-        removeBtn.title = 'Remove layer';
-        removeBtn.addEventListener('click', () => {
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "maplibre-gl-cog-layer-list-remove";
+        removeBtn.innerHTML = "&times;";
+        removeBtn.title = "Remove layer";
+        removeBtn.addEventListener("click", () => {
           this._removeLayer(layerId);
           this._render();
         });
@@ -713,39 +747,42 @@ export class CogLayerControl implements IControl {
   }
 
   private _createFormGroup(labelText: string, id: string): HTMLElement {
-    const group = document.createElement('div');
-    group.className = 'maplibre-gl-cog-layer-form-group';
-    const label = document.createElement('label');
+    const group = document.createElement("div");
+    group.className = "maplibre-gl-cog-layer-form-group";
+    const label = document.createElement("label");
     label.textContent = labelText;
     label.htmlFor = `cog-layer-${id}`;
     group.appendChild(label);
     return group;
   }
 
-  private _appendStatus(message: string, type: 'info' | 'error' | 'success'): void {
+  private _appendStatus(
+    message: string,
+    type: "info" | "error" | "success",
+  ): void {
     if (!this._panel) return;
-    const status = document.createElement('div');
+    const status = document.createElement("div");
     status.className = `maplibre-gl-cog-layer-status maplibre-gl-cog-layer-status--${type}`;
     status.textContent = message;
     this._panel.appendChild(status);
   }
 
   private _updateColormapPreview(): void {
-    const preview = document.getElementById('cog-colormap-preview');
+    const preview = document.getElementById("cog-colormap-preview");
     if (preview) {
       this._updateColormapPreviewElement(preview);
     }
   }
 
   private _updateColormapPreviewElement(element: HTMLElement): void {
-    if (this._state.colormap === 'none') {
-      element.style.background = 'linear-gradient(to right, #888, #888)';
-      element.style.display = 'none';
+    if (this._state.colormap === "none") {
+      element.style.background = "linear-gradient(to right, #888, #888)";
+      element.style.display = "none";
     } else {
       const stops = getColormap(this._state.colormap);
-      const colors = stops.map(s => s.color).join(', ');
+      const colors = stops.map((s) => s.color).join(", ");
       element.style.background = `linear-gradient(to right, ${colors})`;
-      element.style.display = 'block';
+      element.style.display = "block";
     }
   }
 
@@ -753,14 +790,16 @@ export class CogLayerControl implements IControl {
     if (this._deckOverlay) return;
     if (!this._map) return;
 
-    const { MapboxOverlay } = await import('@deck.gl/mapbox');
+    const { MapboxOverlay } = await import("@deck.gl/mapbox");
     // Only use interleaved mode if beforeId is specified (for layer ordering)
     // interleaved: false is much faster for opacity updates
     this._deckOverlay = new MapboxOverlay({
       interleaved: !!this._options.beforeId,
       layers: [],
     });
-    (this._map as unknown as { addControl(c: IControl): void }).addControl(this._deckOverlay);
+    (this._map as unknown as { addControl(c: IControl): void }).addControl(
+      this._deckOverlay,
+    );
   }
 
   /**
@@ -769,19 +808,31 @@ export class CogLayerControl implements IControl {
    * with @developmentseed/deck.gl-geotiff.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _buildGeoKeysParser(geoKeysToProj4: any): ((geoKeys: Record<string, unknown>) => Promise<{ def: string; parsed: Record<string, unknown>; coordinatesUnits: string } | null>) {
+  private _buildGeoKeysParser(
+    geoKeysToProj4: any,
+  ): (
+    geoKeys: Record<string, unknown>,
+  ) => Promise<{
+    def: string;
+    parsed: Record<string, unknown>;
+    coordinatesUnits: string;
+  } | null> {
     return async (geoKeys: Record<string, unknown>) => {
       try {
         const result = geoKeysToProj4.toProj4(geoKeys);
         if (result && result.proj4) {
           // Dynamically import proj4 for parsing
-          const proj4Module = await import('proj4');
+          const proj4Module = await import("proj4");
           const proj4Fn = proj4Module.default || proj4Module;
           let parsed: Record<string, unknown> = {};
-          if (typeof proj4Fn === 'function') {
+          if (typeof proj4Fn === "function") {
             try {
-              proj4Fn.defs('custom', result.proj4);
-              parsed = proj4Fn.defs('custom') as unknown as Record<string, unknown> || {};
+              proj4Fn.defs("custom", result.proj4);
+              parsed =
+                (proj4Fn.defs("custom") as unknown as Record<
+                  string,
+                  unknown
+                >) || {};
             } catch {
               // ignore proj4 parsing errors
             }
@@ -789,7 +840,7 @@ export class CogLayerControl implements IControl {
           return {
             def: result.proj4 as string,
             parsed,
-            coordinatesUnits: (result.coordinatesUnits as string) || 'metre',
+            coordinatesUnits: (result.coordinatesUnits as string) || "metre",
           };
         }
       } catch {
@@ -818,27 +869,26 @@ export class CogLayerControl implements IControl {
         await originalParseGeoTIFF.call(this);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        if (!msg.includes('non-unsigned integers not yet supported')) {
+        if (!msg.includes("non-unsigned integers not yet supported")) {
           throw err;
         }
 
         // Float fallback: re-do the GeoTIFF parsing with a custom pipeline.
         // We use the public exports from the library plus `geotiff` (transitive dep).
-        const { fromUrl } = await import('geotiff');
-        const { parseCOGTileMatrixSet, texture } = await import(
-          '@developmentseed/deck.gl-geotiff'
-        );
-        const { CreateTexture, FilterNoDataVal } = await import(
-          '@developmentseed/deck.gl-raster/gpu-modules'
-        );
-        const proj4Module = await import('proj4');
+        const { fromUrl } = await import("geotiff");
+        const { parseCOGTileMatrixSet, texture } =
+          await import("@developmentseed/deck.gl-geotiff");
+        const { CreateTexture, FilterNoDataVal } =
+          await import("@developmentseed/deck.gl-raster/gpu-modules");
+        const proj4Module = await import("proj4");
         const proj4Fn = proj4Module.default || proj4Module;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const geotiffInput = (this as any).props.geotiff;
-        const geotiff = typeof geotiffInput === 'string'
-          ? await fromUrl(geotiffInput)
-          : geotiffInput;
+        const geotiff =
+          typeof geotiffInput === "string"
+            ? await fromUrl(geotiffInput)
+            : geotiffInput;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const geoKeysParser = (this as any).props.geoKeysParser;
         const metadata = await parseCOGTileMatrixSet(geotiff, geoKeysParser);
@@ -853,13 +903,17 @@ export class CogLayerControl implements IControl {
 
         const sourceProjection = await geoKeysParser(image.getGeoKeys());
         if (!sourceProjection) {
-          throw new Error('Could not determine source projection from GeoTIFF geo keys');
+          throw new Error(
+            "Could not determine source projection from GeoTIFF geo keys",
+          );
         }
-        const converter = proj4Fn(sourceProjection.def, 'EPSG:4326');
+        const converter = proj4Fn(sourceProjection.def, "EPSG:4326");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const forwardReproject = (x: number, y: number) => converter.forward([x, y], false as any);
+        const forwardReproject = (x: number, y: number) =>
+          converter.forward([x, y], false as any);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const inverseReproject = (x: number, y: number) => converter.inverse([x, y], false as any);
+        const inverseReproject = (x: number, y: number) =>
+          converter.inverse([x, y], false as any);
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((this as any).props.onGeoTIFFLoad) {
@@ -888,14 +942,16 @@ export class CogLayerControl implements IControl {
 
         // Build float-compatible getTileData and renderTile
         const ifd = image.getFileDirectory();
-        const { BitsPerSample, SampleFormat, SamplesPerPixel, GDAL_NODATA } = ifd;
+        const { BitsPerSample, SampleFormat, SamplesPerPixel, GDAL_NODATA } =
+          ifd;
 
         // Parse GDAL_NODATA tag (inline, since it's not publicly exported)
         let noDataVal: number | null = null;
         if (GDAL_NODATA) {
-          const ndStr = GDAL_NODATA[GDAL_NODATA.length - 1] === '\x00'
-            ? GDAL_NODATA.slice(0, -1)
-            : GDAL_NODATA;
+          const ndStr =
+            GDAL_NODATA[GDAL_NODATA.length - 1] === "\x00"
+              ? GDAL_NODATA.slice(0, -1)
+              : GDAL_NODATA;
           if (ndStr.length > 0) noDataVal = parseFloat(ndStr);
         }
 
@@ -922,18 +978,24 @@ export class CogLayerControl implements IControl {
             }
             data = rgba;
             // Preserve dimensions for texture creation
-            (data as { width?: number; height?: number }).width = rasterData.width;
-            (data as { width?: number; height?: number }).height = rasterData.height;
+            (data as { width?: number; height?: number }).width =
+              rasterData.width;
+            (data as { width?: number; height?: number }).height =
+              rasterData.height;
             numSamples = 4;
           }
 
-          const textureFormat = texture.inferTextureFormat(numSamples, BitsPerSample, SampleFormat);
+          const textureFormat = texture.inferTextureFormat(
+            numSamples,
+            BitsPerSample,
+            SampleFormat,
+          );
           const tex = device.createTexture({
             data,
             format: textureFormat,
             width: rasterData.width,
             height: rasterData.height,
-            sampler: { magFilter: 'nearest', minFilter: 'nearest' },
+            sampler: { magFilter: "nearest", minFilter: "nearest" },
           });
 
           return {
@@ -951,7 +1013,8 @@ export class CogLayerControl implements IControl {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let cachedCmapTexture: any = null;
 
-        const { Colormap } = await import('@developmentseed/deck.gl-raster/gpu-modules');
+        const { Colormap } =
+          await import("@developmentseed/deck.gl-raster/gpu-modules");
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const defaultRenderTile = (tileData: any) => {
@@ -985,20 +1048,20 @@ export class CogLayerControl implements IControl {
 
           // Apply colormap if selected
           const cmapName = self.props._colormap;
-          if (cmapName && cmapName !== 'none') {
+          if (cmapName && cmapName !== "none") {
             if (cmapName !== cachedCmapName) {
               const stops = getColormap(cmapName);
               const imageData = colormapToImageData(stops);
               cachedCmapTexture = self.context.device.createTexture({
                 data: imageData.data,
-                format: 'rgba8unorm',
+                format: "rgba8unorm",
                 width: imageData.width,
                 height: imageData.height,
                 sampler: {
-                  minFilter: 'linear',
-                  magFilter: 'linear',
-                  addressModeU: 'clamp-to-edge',
-                  addressModeV: 'clamp-to-edge',
+                  minFilter: "linear",
+                  magFilter: "linear",
+                  addressModeU: "clamp-to-edge",
+                  addressModeV: "clamp-to-edge",
                 },
               });
               cachedCmapName = cmapName;
@@ -1049,7 +1112,7 @@ export class CogLayerControl implements IControl {
 
   private async _addLayer(): Promise<void> {
     if (!this._map || !this._state.url) {
-      this._state.error = 'Please enter a COG URL.';
+      this._state.error = "Please enter a COG URL.";
       this._render();
       return;
     }
@@ -1062,7 +1125,7 @@ export class CogLayerControl implements IControl {
     try {
       await this._ensureOverlay();
 
-      const { COGLayer } = await import('@developmentseed/deck.gl-geotiff');
+      const { COGLayer } = await import("@developmentseed/deck.gl-geotiff");
 
       // Patch COGLayer to support floating-point GeoTIFFs and opacity
       this._patchCOGLayerForFloat(COGLayer);
@@ -1078,24 +1141,29 @@ export class CogLayerControl implements IControl {
         _rescaleMax: this._state.rescaleMax,
         _colormap: this._state.colormap,
         // Add beforeId for layer ordering (only if specified and layer exists)
-        ...((() => {
+        ...(() => {
           if (this._options.beforeId) {
             if (map.getLayer(this._options.beforeId)) {
               return { beforeId: this._options.beforeId };
             } else {
-              console.warn(`[CogLayerControl] beforeId "${this._options.beforeId}" not found in map layers, adding layer on top`);
+              console.warn(
+                `[CogLayerControl] beforeId "${this._options.beforeId}" not found in map layers, adding layer on top`,
+              );
             }
           }
           return {};
-        })()),
+        })(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onGeoTIFFLoad: (_geotiff: any, options: any) => {
           try {
             if (options && options.geographicBounds) {
               const { west, south, east, north } = options.geographicBounds;
               map.fitBounds(
-                [[west, south], [east, north]],
-                { padding: 50, duration: 1000 }
+                [
+                  [west, south],
+                  [east, north],
+                ],
+                { padding: 50, duration: 1000 },
               );
             }
           } catch {
@@ -1106,9 +1174,9 @@ export class CogLayerControl implements IControl {
 
       // Try to use geotiff-geokeys-to-proj4 for better projection support
       try {
-        const geokeysModule = await import('geotiff-geokeys-to-proj4');
+        const geokeysModule = await import("geotiff-geokeys-to-proj4");
         const geoKeysToProj4 = geokeysModule.default || geokeysModule;
-        if (geoKeysToProj4 && typeof geoKeysToProj4.toProj4 === 'function') {
+        if (geoKeysToProj4 && typeof geoKeysToProj4.toProj4 === "function") {
           layerProps.geoKeysParser = this._buildGeoKeysParser(geoKeysToProj4);
         }
       } catch {
@@ -1122,20 +1190,22 @@ export class CogLayerControl implements IControl {
       this._cogLayerPropsMap.set(layerId, layerProps);
       const newLayer = new COGLayer(layerProps);
       this._cogLayers.set(layerId, newLayer);
-      this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
+      this._deckOverlay.setProps({
+        layers: Array.from(this._cogLayers.values()),
+      });
 
       this._state.hasLayer = this._cogLayers.size > 0;
       this._state.layerCount = this._cogLayers.size;
       this._state.layers = this._buildLayerInfoList();
       this._state.loading = false;
-      this._state.status = 'COG layer added successfully.';
+      this._state.status = "COG layer added successfully.";
       this._render();
-      this._emit('layeradd', { url: this._state.url, layerId });
+      this._emit("layeradd", { url: this._state.url, layerId });
     } catch (err) {
       this._state.loading = false;
       this._state.error = `Failed to load COG: ${err instanceof Error ? err.message : String(err)}`;
       this._render();
-      this._emit('error', { error: this._state.error });
+      this._emit("error", { error: this._state.error });
     }
   }
 
@@ -1145,14 +1215,16 @@ export class CogLayerControl implements IControl {
       this._cogLayers.delete(id);
       this._cogLayerPropsMap.delete(id);
       if (this._deckOverlay) {
-        this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
+        this._deckOverlay.setProps({
+          layers: Array.from(this._cogLayers.values()),
+        });
       }
       this._state.hasLayer = this._cogLayers.size > 0;
       this._state.layerCount = this._cogLayers.size;
       this._state.layers = this._buildLayerInfoList();
       this._state.status = null;
       this._state.error = null;
-      this._emit('layerremove', { layerId: id });
+      this._emit("layerremove", { layerId: id });
     } else {
       // Remove all layers (cleanup)
       if (this._deckOverlay) {
@@ -1165,7 +1237,7 @@ export class CogLayerControl implements IControl {
       this._state.layers = [];
       this._state.status = null;
       this._state.error = null;
-      this._emit('layerremove');
+      this._emit("layerremove");
     }
   }
 
@@ -1174,11 +1246,13 @@ export class CogLayerControl implements IControl {
     const opacity = this._state.layerOpacity;
     // deck.gl layers are immutable; clone each with the new opacity
     for (const [id, layer] of this._cogLayers) {
-      if (typeof layer.clone === 'function') {
+      if (typeof layer.clone === "function") {
         this._cogLayers.set(id, layer.clone({ opacity }));
       }
     }
-    this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
+    this._deckOverlay.setProps({
+      layers: Array.from(this._cogLayers.values()),
+    });
     if (this._map) {
       this._map.triggerRepaint();
     }
@@ -1190,8 +1264,8 @@ export class CogLayerControl implements IControl {
       list.push({
         id: layerId,
         url: props.geotiff as string,
-        bands: '1', // bands are baked into COGLayer at creation
-        colormap: (props._colormap as ColormapName | 'none') || 'none',
+        bands: "1", // bands are baked into COGLayer at creation
+        colormap: (props._colormap as ColormapName | "none") || "none",
         rescaleMin: (props._rescaleMin as number) ?? 0,
         rescaleMax: (props._rescaleMax as number) ?? 255,
         nodata: undefined,

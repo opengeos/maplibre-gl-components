@@ -4,7 +4,8 @@
 
 /* Base control styling */
 .maplibre-gl-view-state {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   box-sizing: border-box;
   pointer-events: auto;
   position: relative;
@@ -26,7 +27,9 @@
   background: transparent;
   cursor: pointer;
   color: #333;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
   border-radius: 4px;
 }
 
@@ -137,7 +140,7 @@
 }
 
 .maplibre-gl-view-state-value {
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 11px;
   color: #333;
   flex: 1;
@@ -160,7 +163,9 @@
   border-radius: 3px;
   flex-shrink: 0;
   margin-left: 4px;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .maplibre-gl-view-state-copy:hover {
@@ -196,7 +201,9 @@
   cursor: pointer;
   font-size: 11px;
   font-weight: 500;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .maplibre-gl-view-state-bbox-toggle:hover {
@@ -220,7 +227,7 @@
 }
 
 .maplibre-gl-view-state-bbox-value {
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 10px;
   color: #333;
   background: rgba(0, 0, 0, 0.04);
@@ -248,7 +255,9 @@
   color: #666;
   cursor: pointer;
   font-size: 10px;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .maplibre-gl-view-state-bbox-action:hover {

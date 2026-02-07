@@ -51,6 +51,7 @@ export default defineConfig({
         controlGrid: resolve(__dirname, 'examples/control-grid/index.html'),
         controlGridReact: resolve(__dirname, 'examples/control-grid-react/index.html'),
         cogLayer: resolve(__dirname, 'examples/cog-layer/index.html'),
+        zarrLayer: resolve(__dirname, 'examples/zarr-layer/index.html'),
       },
     },
   },

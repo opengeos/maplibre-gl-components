@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import type { VectorDatasetControlState, LoadedDataset } from '../core/types';
+import { useState, useCallback } from "react";
+import type { VectorDatasetControlState, LoadedDataset } from "../core/types";
 
 const DEFAULT_STATE: VectorDatasetControlState = {
   visible: true,
@@ -28,7 +28,9 @@ const DEFAULT_STATE: VectorDatasetControlState = {
  * );
  * ```
  */
-export function useVectorDataset(initialState?: Partial<VectorDatasetControlState>) {
+export function useVectorDataset(
+  initialState?: Partial<VectorDatasetControlState>,
+) {
   const [state, setState] = useState<VectorDatasetControlState>({
     ...DEFAULT_STATE,
     ...initialState,

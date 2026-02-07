@@ -1,30 +1,34 @@
-import '../styles/common.css';
-import '../styles/control-grid.css';
-import { GlobeControl, type IControl, type Map as MapLibreMap } from 'maplibre-gl';
+import "../styles/common.css";
+import "../styles/control-grid.css";
+import {
+  GlobeControl,
+  type IControl,
+  type Map as MapLibreMap,
+} from "maplibre-gl";
 import type {
   ControlGridOptions,
   ControlGridState,
   ControlGridEvent,
   ControlGridEventHandler,
   DefaultControlName,
-} from './types';
-import { TerrainControl } from './Terrain';
-import { SearchControl } from './SearchControl';
-import { ViewStateControl } from './ViewStateControl';
-import { InspectControl } from './InspectControl';
-import { VectorDatasetControl } from './VectorDataset';
-import { BasemapControl } from './Basemap';
-import { CogLayerControl } from './CogLayer';
+} from "./types";
+import { TerrainControl } from "./Terrain";
+import { SearchControl } from "./SearchControl";
+import { ViewStateControl } from "./ViewStateControl";
+import { InspectControl } from "./InspectControl";
+import { VectorDatasetControl } from "./VectorDataset";
+import { BasemapControl } from "./Basemap";
+import { CogLayerControl } from "./CogLayer";
 
 /**
  * Default options for the ControlGrid.
  */
 const DEFAULT_OPTIONS: Required<
-  Omit<ControlGridOptions, 'controls' | 'defaultControls'>
+  Omit<ControlGridOptions, "controls" | "defaultControls">
 > & { controls?: IControl[]; defaultControls?: DefaultControlName[] } = {
-  title: '',
-  position: 'top-right',
-  className: '',
+  title: "",
+  position: "top-right",
+  className: "",
   visible: true,
   collapsible: true,
   collapsed: true,
@@ -32,7 +36,7 @@ const DEFAULT_OPTIONS: Required<
   columns: 3,
   showRowColumnControls: true,
   controls: [],
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  backgroundColor: "rgba(255, 255, 255, 0.9)",
   padding: 10,
   borderRadius: 4,
   opacity: 1,
@@ -71,10 +75,13 @@ interface ChildEntry {
 export class ControlGrid implements IControl {
   private _container?: HTMLElement;
   private _gridEl?: HTMLElement;
-  private _options: Required<Omit<ControlGridOptions, 'controls' | 'defaultControls'>> & { controls?: IControl[]; defaultControls?: DefaultControlName[] };
+  private _options: Required<
+    Omit<ControlGridOptions, "controls" | "defaultControls">
+  > & { controls?: IControl[]; defaultControls?: DefaultControlName[] };
   private _state: ControlGridState;
   private _children: ChildEntry[] = [];
-  private _eventHandlers: Map<ControlGridEvent, Set<ControlGridEventHandler>> = new Map();
+  private _eventHandlers: Map<ControlGridEvent, Set<ControlGridEventHandler>> =
+    new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
@@ -100,17 +107,28 @@ export class ControlGrid implements IControl {
     this._autoGrowRows();
   }
 
-  private static _createDefaultControl(name: DefaultControlName): IControl | null {
+  private static _createDefaultControl(
+    name: DefaultControlName,
+  ): IControl | null {
     switch (name) {
-      case 'globe': return new GlobeControl();
-      case 'terrain': return new TerrainControl({ hillshade: true });
-      case 'search': return new SearchControl({ collapsed: true });
-      case 'viewState': return new ViewStateControl({ collapsed: true });
-      case 'inspect': return new InspectControl();
-      case 'vectorDataset': return new VectorDatasetControl();
-      case 'basemap': return new BasemapControl({ collapsed: true });
-      case 'cogLayer': return new CogLayerControl({ collapsed: true });
-      default: return null;
+      case "globe":
+        return new GlobeControl();
+      case "terrain":
+        return new TerrainControl({ hillshade: true });
+      case "search":
+        return new SearchControl({ collapsed: true });
+      case "viewState":
+        return new ViewStateControl({ collapsed: true });
+      case "inspect":
+        return new InspectControl();
+      case "vectorDataset":
+        return new VectorDatasetControl();
+      case "basemap":
+        return new BasemapControl({ collapsed: true });
+      case "cogLayer":
+        return new CogLayerControl({ collapsed: true });
+      default:
+        return null;
     }
   }
 
@@ -119,7 +137,7 @@ export class ControlGrid implements IControl {
     this._container = this._createContainer();
 
     this._handleZoom = () => this._checkZoomVisibility();
-    this._map.on('zoom', this._handleZoom);
+    this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
 
     this._render();
@@ -130,7 +148,7 @@ export class ControlGrid implements IControl {
 
   onRemove(): void {
     if (this._map && this._handleZoom) {
-      this._map.off('zoom', this._handleZoom);
+      this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
     }
     this._unmountChildren();
@@ -154,7 +172,7 @@ export class ControlGrid implements IControl {
       entry.element = control.onAdd(this._map);
       this._gridEl.appendChild(entry.element);
     }
-    this._emit('controladd', control);
+    this._emit("controladd", control);
   }
 
   /**
@@ -169,7 +187,7 @@ export class ControlGrid implements IControl {
     }
     if (this._map) control.onRemove(this._map);
     this._children.splice(index, 1);
-    this._emit('controlremove', control);
+    this._emit("controlremove", control);
   }
 
   /**
@@ -180,7 +198,7 @@ export class ControlGrid implements IControl {
     if (this._state.rows === n) return;
     this._state.rows = n;
     this._applyGridStyle();
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -191,7 +209,7 @@ export class ControlGrid implements IControl {
     if (this._state.columns === n) return;
     this._state.columns = n;
     this._applyGridStyle();
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -205,7 +223,7 @@ export class ControlGrid implements IControl {
     if (!this._state.visible) {
       this._state.visible = true;
       this._updateDisplayState();
-      this._emit('show');
+      this._emit("show");
     }
   }
 
@@ -213,7 +231,7 @@ export class ControlGrid implements IControl {
     if (this._state.visible) {
       this._state.visible = false;
       this._updateDisplayState();
-      this._emit('hide');
+      this._emit("hide");
     }
   }
 
@@ -221,7 +239,7 @@ export class ControlGrid implements IControl {
     if (this._state.collapsed) {
       this._state.collapsed = false;
       this._render();
-      this._emit('expand');
+      this._emit("expand");
     }
   }
 
@@ -229,7 +247,7 @@ export class ControlGrid implements IControl {
     if (!this._state.collapsed) {
       this._state.collapsed = true;
       this._render();
-      this._emit('collapse');
+      this._emit("collapse");
     }
   }
 
@@ -245,12 +263,14 @@ export class ControlGrid implements IControl {
   update(options: Partial<ControlGridOptions>): void {
     this._options = { ...this._options, ...options };
     if (options.visible !== undefined) this._state.visible = options.visible;
-    if (options.collapsed !== undefined) this._state.collapsed = options.collapsed;
-    if (options.rows !== undefined) this._state.rows = Math.max(1, Math.min(12, options.rows));
+    if (options.collapsed !== undefined)
+      this._state.collapsed = options.collapsed;
+    if (options.rows !== undefined)
+      this._state.rows = Math.max(1, Math.min(12, options.rows));
     if (options.columns !== undefined)
       this._state.columns = Math.max(1, Math.min(12, options.columns));
     this._render();
-    this._emit('update');
+    this._emit("update");
   }
 
   on(event: ControlGridEvent, handler: ControlGridEventHandler): void {
@@ -286,16 +306,16 @@ export class ControlGrid implements IControl {
   private _updateDisplayState(): void {
     if (!this._container) return;
     const shouldShow = this._state.visible && this._zoomVisible;
-    this._container.style.display = shouldShow ? 'block' : 'none';
+    this._container.style.display = shouldShow ? "block" : "none";
   }
 
   private _createContainer(): HTMLElement {
-    const container = document.createElement('div');
+    const container = document.createElement("div");
     container.className = `maplibregl-ctrl maplibre-gl-control-grid${
-      this._options.className ? ` ${this._options.className}` : ''
+      this._options.className ? ` ${this._options.className}` : ""
     }`;
     const shouldShow = this._state.visible && this._zoomVisible;
-    if (!shouldShow) container.style.display = 'none';
+    if (!shouldShow) container.style.display = "none";
     return container;
   }
 
@@ -310,20 +330,20 @@ export class ControlGrid implements IControl {
   private _applyGridStyle(): void {
     if (!this._gridEl) return;
     if (this._state.collapsed) {
-      this._gridEl.style.display = 'none';
+      this._gridEl.style.display = "none";
       return;
     }
     const gap = this._options.gap;
-    this._gridEl.style.display = 'grid';
+    this._gridEl.style.display = "grid";
     this._gridEl.style.gridTemplateColumns = `repeat(${this._state.columns}, auto)`;
     this._gridEl.style.gridTemplateRows = `repeat(${this._state.rows}, auto)`;
     this._gridEl.style.gap = `${gap}px`;
     // Center grid tracks and controls to balance left/right padding when the header is wider.
-    this._gridEl.style.width = '100%';
-    this._gridEl.style.justifyContent = 'center';
-    this._gridEl.style.alignContent = 'center';
-    this._gridEl.style.justifyItems = 'center';
-    this._gridEl.style.alignItems = 'center';
+    this._gridEl.style.width = "100%";
+    this._gridEl.style.justifyContent = "center";
+    this._gridEl.style.alignContent = "center";
+    this._gridEl.style.justifyItems = "center";
+    this._gridEl.style.alignItems = "center";
   }
 
   private _mountChildren(): void {
@@ -348,7 +368,10 @@ export class ControlGrid implements IControl {
       }
       if (map) entry.control.onRemove(map);
     });
-    this._children = this._children.map((e) => ({ control: e.control, element: null }));
+    this._children = this._children.map((e) => ({
+      control: e.control,
+      element: null,
+    }));
   }
 
   private _render(): void {
@@ -364,15 +387,16 @@ export class ControlGrid implements IControl {
       showRowColumnControls,
     } = this._options;
 
-    this._container.innerHTML = '';
+    this._container.innerHTML = "";
 
     if (this._state.collapsed) {
-      this._container.classList.add('maplibre-gl-control-grid--collapsed');
+      this._container.classList.add("maplibre-gl-control-grid--collapsed");
     } else {
-      this._container.classList.remove('maplibre-gl-control-grid--collapsed');
+      this._container.classList.remove("maplibre-gl-control-grid--collapsed");
     }
 
-    const isCollapsedWithHeader = this._state.collapsed && (title || collapsible);
+    const isCollapsedWithHeader =
+      this._state.collapsed && (title || collapsible);
     const vertPadding = isCollapsedWithHeader ? 0 : padding;
     const leftPadding = isCollapsedWithHeader ? 0 : padding;
     const rightPadding = isCollapsedWithHeader ? 0 : Math.max(0, padding - 4);
@@ -383,97 +407,102 @@ export class ControlGrid implements IControl {
       opacity: String(opacity),
       borderRadius: `${borderRadius}px`,
       padding: `${vertPadding}px ${rightPadding}px ${vertPadding}px ${leftPadding}px`,
-      boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.1)',
-      display: shouldShow ? 'block' : 'none',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      color: '#1a1a1a',
+      boxShadow: "0 0 0 2px rgba(0, 0, 0, 0.1)",
+      display: shouldShow ? "block" : "none",
+      fontFamily:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      color: "#1a1a1a",
     });
 
     if (collapsible || title) {
-      const header = document.createElement('div');
-      header.className = 'maplibre-gl-control-grid-header';
+      const header = document.createElement("div");
+      header.className = "maplibre-gl-control-grid-header";
       Object.assign(header.style, {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: this._state.collapsed ? 'center' : 'space-between',
-        flexWrap: 'wrap',
-        gap: '6px',
-        paddingBottom: this._state.collapsed ? '0' : '0',
-        cursor: collapsible ? 'pointer' : 'default',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: this._state.collapsed ? "center" : "space-between",
+        flexWrap: "wrap",
+        gap: "6px",
+        paddingBottom: this._state.collapsed ? "0" : "0",
+        cursor: collapsible ? "pointer" : "default",
       });
 
       if (this._state.collapsed && collapsible) {
         // Collapsed: show only a square wrench icon (no grid, no title)
-        const iconWrap = document.createElement('span');
-        iconWrap.className = 'maplibre-gl-control-grid-wrench';
+        const iconWrap = document.createElement("span");
+        iconWrap.className = "maplibre-gl-control-grid-wrench";
         iconWrap.innerHTML = WRENCH_ICON;
         Object.assign(iconWrap.style, {
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '29px',
-          height: '29px',
-          lineHeight: '0',
-          boxSizing: 'border-box',
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "29px",
+          height: "29px",
+          lineHeight: "0",
+          boxSizing: "border-box",
         });
-        iconWrap.setAttribute('aria-label', 'Map tools');
+        iconWrap.setAttribute("aria-label", "Map tools");
         header.appendChild(iconWrap);
-        header.addEventListener('click', () => this.toggle());
+        header.addEventListener("click", () => this.toggle());
       } else {
         // Expanded: title, row/column inputs, toggle arrow
-        const left = document.createElement('div');
-        left.style.display = 'flex';
-        left.style.alignItems = 'center';
-        left.style.gap = '6px';
+        const left = document.createElement("div");
+        left.style.display = "flex";
+        left.style.alignItems = "center";
+        left.style.gap = "6px";
 
         if (title) {
-          const titleEl = document.createElement('span');
-          titleEl.className = 'maplibre-gl-control-grid-title';
+          const titleEl = document.createElement("span");
+          titleEl.className = "maplibre-gl-control-grid-title";
           titleEl.textContent = title;
-          titleEl.style.fontWeight = '600';
-          titleEl.style.color = '#333';
+          titleEl.style.fontWeight = "600";
+          titleEl.style.color = "#333";
           left.appendChild(titleEl);
         }
 
         if (showRowColumnControls && !this._state.collapsed) {
-          const rowLabel = document.createElement('label');
-          rowLabel.style.display = 'inline-flex';
-          rowLabel.style.alignItems = 'center';
-          rowLabel.style.gap = '2px';
-          rowLabel.style.fontSize = '11px';
-          rowLabel.style.color = '#333';
-          rowLabel.innerHTML = 'R:';
-          const rowInput = document.createElement('input');
-          rowInput.type = 'number';
-          rowInput.min = '1';
-          rowInput.max = '12';
+          const rowLabel = document.createElement("label");
+          rowLabel.style.display = "inline-flex";
+          rowLabel.style.alignItems = "center";
+          rowLabel.style.gap = "2px";
+          rowLabel.style.fontSize = "11px";
+          rowLabel.style.color = "#333";
+          rowLabel.innerHTML = "R:";
+          const rowInput = document.createElement("input");
+          rowInput.type = "number";
+          rowInput.min = "1";
+          rowInput.max = "12";
           rowInput.value = String(this._state.rows);
-          rowInput.style.width = '40px';
-          rowInput.style.padding = '2px 2px';
-          rowInput.style.boxSizing = 'border-box';
-          rowInput.style.textAlign = 'center';
-          rowInput.style.color = '#333';
-          rowInput.addEventListener('change', () => this.setRows(Number(rowInput.value) || 1));
+          rowInput.style.width = "40px";
+          rowInput.style.padding = "2px 2px";
+          rowInput.style.boxSizing = "border-box";
+          rowInput.style.textAlign = "center";
+          rowInput.style.color = "#333";
+          rowInput.addEventListener("change", () =>
+            this.setRows(Number(rowInput.value) || 1),
+          );
           rowLabel.appendChild(rowInput);
 
-          const colLabel = document.createElement('label');
-          colLabel.style.display = 'inline-flex';
-          colLabel.style.alignItems = 'center';
-          colLabel.style.gap = '2px';
-          colLabel.style.fontSize = '11px';
-          colLabel.style.color = '#333';
-          colLabel.innerHTML = 'C:';
-          const colInput = document.createElement('input');
-          colInput.type = 'number';
-          colInput.min = '1';
-          colInput.max = '12';
+          const colLabel = document.createElement("label");
+          colLabel.style.display = "inline-flex";
+          colLabel.style.alignItems = "center";
+          colLabel.style.gap = "2px";
+          colLabel.style.fontSize = "11px";
+          colLabel.style.color = "#333";
+          colLabel.innerHTML = "C:";
+          const colInput = document.createElement("input");
+          colInput.type = "number";
+          colInput.min = "1";
+          colInput.max = "12";
           colInput.value = String(this._state.columns);
-          colInput.style.width = '40px';
-          colInput.style.padding = '2px 2px';
-          colInput.style.boxSizing = 'border-box';
-          colInput.style.textAlign = 'center';
-          colInput.style.color = '#333';
-          colInput.addEventListener('change', () => this.setColumns(Number(colInput.value) || 1));
+          colInput.style.width = "40px";
+          colInput.style.padding = "2px 2px";
+          colInput.style.boxSizing = "border-box";
+          colInput.style.textAlign = "center";
+          colInput.style.color = "#333";
+          colInput.addEventListener("change", () =>
+            this.setColumns(Number(colInput.value) || 1),
+          );
           colLabel.appendChild(colInput);
 
           left.appendChild(rowLabel);
@@ -483,13 +512,18 @@ export class ControlGrid implements IControl {
         header.appendChild(left);
 
         if (collapsible) {
-          const toggleBtn = document.createElement('span');
-          toggleBtn.className = 'maplibre-gl-control-grid-toggle';
-          toggleBtn.innerHTML = '&#9660;';
-          Object.assign(toggleBtn.style, { fontSize: '10px', userSelect: 'none', color: '#333' });
+          const toggleBtn = document.createElement("span");
+          toggleBtn.className = "maplibre-gl-control-grid-toggle";
+          toggleBtn.innerHTML = "&#9660;";
+          Object.assign(toggleBtn.style, {
+            fontSize: "10px",
+            userSelect: "none",
+            color: "#333",
+          });
           header.appendChild(toggleBtn);
-          header.addEventListener('click', (ev) => {
-            if (!showRowColumnControls || !left.contains(ev.target as Node)) this.toggle();
+          header.addEventListener("click", (ev) => {
+            if (!showRowColumnControls || !left.contains(ev.target as Node))
+              this.toggle();
           });
         }
       }
@@ -497,10 +531,10 @@ export class ControlGrid implements IControl {
       this._container.appendChild(header);
     }
 
-    const content = document.createElement('div');
-    content.className = 'maplibre-gl-control-grid-content';
+    const content = document.createElement("div");
+    content.className = "maplibre-gl-control-grid-content";
     Object.assign(content.style, {
-      display: this._state.collapsed ? 'none' : 'block',
+      display: this._state.collapsed ? "none" : "block",
     });
     this._gridEl = content;
     this._applyGridStyle();

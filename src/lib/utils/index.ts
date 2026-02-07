@@ -5,7 +5,7 @@ export {
   debounce,
   throttle,
   classNames,
-} from './helpers';
+} from "./helpers";
 
 export {
   hexToRgb,
@@ -13,7 +13,7 @@ export {
   interpolateColor,
   getColorAtPosition,
   generateGradientCSS,
-} from './color';
+} from "./color";
 
 export {
   XYZSERVICES_URL,
@@ -23,4 +23,4 @@ export {
   fetchProviders,
   groupBasemaps,
   filterBasemaps,
-} from './providers';
+} from "./providers";

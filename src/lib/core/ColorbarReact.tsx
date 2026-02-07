@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { Colorbar } from './Colorbar';
-import type { ColorbarReactProps, ColorbarState } from './types';
+import { useEffect, useRef } from "react";
+import { Colorbar } from "./Colorbar";
+import type { ColorbarReactProps, ColorbarState } from "./types";
 
 /**
  * React wrapper component for Colorbar.
@@ -36,7 +36,7 @@ import type { ColorbarReactProps, ColorbarState } from './types';
 export function ColorbarReact({
   map,
   onStateChange,
-  position = 'bottom-right',
+  position = "bottom-right",
   ...options
 }: ColorbarReactProps): null {
   const controlRef = useRef<Colorbar | null>(null);
@@ -49,13 +49,13 @@ export function ColorbarReact({
     controlRef.current = control;
 
     if (onStateChange) {
-      control.on('update', (event) => {
+      control.on("update", (event) => {
         onStateChange(event.state as ColorbarState);
       });
-      control.on('show', (event) => {
+      control.on("show", (event) => {
         onStateChange(event.state as ColorbarState);
       });
-      control.on('hide', (event) => {
+      control.on("hide", (event) => {
         onStateChange(event.state as ColorbarState);
       });
     }
@@ -75,7 +75,7 @@ export function ColorbarReact({
     if (controlRef.current) {
       // Filter out undefined values to avoid overwriting defaults
       const updates = Object.fromEntries(
-        Object.entries(options).filter(([, value]) => value !== undefined)
+        Object.entries(options).filter(([, value]) => value !== undefined),
       );
       if (Object.keys(updates).length > 0) {
         controlRef.current.update(updates);

@@ -1,6 +1,10 @@
-import { useEffect, useRef } from 'react';
-import { InspectControl } from './InspectControl';
-import type { InspectControlReactProps, InspectControlState, InspectedFeature } from './types';
+import { useEffect, useRef } from "react";
+import { InspectControl } from "./InspectControl";
+import type {
+  InspectControlReactProps,
+  InspectControlState,
+  InspectedFeature,
+} from "./types";
 
 /**
  * React wrapper component for InspectControl.
@@ -37,7 +41,7 @@ export function InspectControlReact({
   onInspect,
   onToggle,
   onStateChange,
-  position = 'top-right',
+  position = "top-right",
   ...options
 }: InspectControlReactProps): null {
   const controlRef = useRef<InspectControl | null>(null);
@@ -53,31 +57,34 @@ export function InspectControlReact({
       const handleChange = (event: { state: InspectControlState }) => {
         onStateChange(event.state);
       };
-      control.on('update', handleChange);
-      control.on('show', handleChange);
-      control.on('hide', handleChange);
-      control.on('enable', handleChange);
-      control.on('disable', handleChange);
-      control.on('clear', handleChange);
+      control.on("update", handleChange);
+      control.on("show", handleChange);
+      control.on("hide", handleChange);
+      control.on("enable", handleChange);
+      control.on("disable", handleChange);
+      control.on("clear", handleChange);
     }
 
     if (onFeatureSelect) {
-      control.on('featureselect', (event: { feature?: InspectedFeature }) => {
+      control.on("featureselect", (event: { feature?: InspectedFeature }) => {
         onFeatureSelect(event.feature || null);
       });
     }
 
     if (onInspect) {
-      control.on('featureselect', (event: { features?: InspectedFeature[] }) => {
-        if (event.features) {
-          onInspect(event.features);
-        }
-      });
+      control.on(
+        "featureselect",
+        (event: { features?: InspectedFeature[] }) => {
+          if (event.features) {
+            onInspect(event.features);
+          }
+        },
+      );
     }
 
     if (onToggle) {
-      control.on('enable', () => onToggle(true));
-      control.on('disable', () => onToggle(false));
+      control.on("enable", () => onToggle(true));
+      control.on("disable", () => onToggle(false));
     }
 
     map.addControl(control, position);
@@ -96,16 +103,23 @@ export function InspectControlReact({
       const updates: Partial<typeof options> = {};
       if (options.visible !== undefined) updates.visible = options.visible;
       if (options.enabled !== undefined) updates.enabled = options.enabled;
-      if (options.maxFeatures !== undefined) updates.maxFeatures = options.maxFeatures;
-      if (options.showGeometryType !== undefined) updates.showGeometryType = options.showGeometryType;
-      if (options.showLayerName !== undefined) updates.showLayerName = options.showLayerName;
+      if (options.maxFeatures !== undefined)
+        updates.maxFeatures = options.maxFeatures;
+      if (options.showGeometryType !== undefined)
+        updates.showGeometryType = options.showGeometryType;
+      if (options.showLayerName !== undefined)
+        updates.showLayerName = options.showLayerName;
       if (options.maxWidth !== undefined) updates.maxWidth = options.maxWidth;
-      if (options.maxHeight !== undefined) updates.maxHeight = options.maxHeight;
-      if (options.backgroundColor !== undefined) updates.backgroundColor = options.backgroundColor;
-      if (options.borderRadius !== undefined) updates.borderRadius = options.borderRadius;
+      if (options.maxHeight !== undefined)
+        updates.maxHeight = options.maxHeight;
+      if (options.backgroundColor !== undefined)
+        updates.backgroundColor = options.backgroundColor;
+      if (options.borderRadius !== undefined)
+        updates.borderRadius = options.borderRadius;
       if (options.opacity !== undefined) updates.opacity = options.opacity;
       if (options.fontSize !== undefined) updates.fontSize = options.fontSize;
-      if (options.fontColor !== undefined) updates.fontColor = options.fontColor;
+      if (options.fontColor !== undefined)
+        updates.fontColor = options.fontColor;
       if (options.minzoom !== undefined) updates.minzoom = options.minzoom;
       if (options.maxzoom !== undefined) updates.maxzoom = options.maxzoom;
 

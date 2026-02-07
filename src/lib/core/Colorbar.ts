@@ -1,37 +1,39 @@
-import '../styles/common.css';
-import '../styles/colorbar.css';
-import type { IControl, Map as MapLibreMap } from 'maplibre-gl';
+import "../styles/common.css";
+import "../styles/colorbar.css";
+import type { IControl, Map as MapLibreMap } from "maplibre-gl";
 import type {
   ColorbarOptions,
   ColorbarState,
   ComponentEvent,
   ComponentEventHandler,
   ColorStop,
-} from './types';
-import { getColormap, isValidColormap } from '../colormaps';
-import { formatNumericValue } from '../utils';
+} from "./types";
+import { getColormap, isValidColormap } from "../colormaps";
+import { formatNumericValue } from "../utils";
 
 /**
  * Default options for the Colorbar control.
  */
-const DEFAULT_OPTIONS: Required<Omit<ColorbarOptions, 'colorStops'>> & { colorStops: ColorStop[] } = {
-  colormap: 'viridis',
+const DEFAULT_OPTIONS: Required<Omit<ColorbarOptions, "colorStops">> & {
+  colorStops: ColorStop[];
+} = {
+  colormap: "viridis",
   colorStops: [],
   vmin: 0,
   vmax: 1,
-  label: '',
-  units: '',
-  orientation: 'vertical',
-  position: 'bottom-right',
+  label: "",
+  units: "",
+  orientation: "vertical",
+  position: "bottom-right",
   barThickness: 20,
   barLength: 200,
   ticks: { count: 5 },
-  className: '',
+  className: "",
   visible: true,
   opacity: 1,
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  backgroundColor: "rgba(255, 255, 255, 0.9)",
   fontSize: 11,
-  fontColor: '#333',
+  fontColor: "#333",
   borderRadius: 4,
   padding: 8,
   minzoom: 0,
@@ -59,10 +61,14 @@ const DEFAULT_OPTIONS: Required<Omit<ColorbarOptions, 'colorStops'>> & { colorSt
  */
 export class Colorbar implements IControl {
   private _container?: HTMLElement;
-  private _options: Required<Omit<ColorbarOptions, 'colorStops'>> & { colorStops: ColorStop[] };
+  private _options: Required<Omit<ColorbarOptions, "colorStops">> & {
+    colorStops: ColorStop[];
+  };
   private _state: ColorbarState;
-  private _eventHandlers: Map<ComponentEvent, Set<ComponentEventHandler<ColorbarState>>> =
-    new Map();
+  private _eventHandlers: Map<
+    ComponentEvent,
+    Set<ComponentEventHandler<ColorbarState>>
+  > = new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
@@ -96,7 +102,7 @@ export class Colorbar implements IControl {
 
     // Set up zoom listener
     this._handleZoom = () => this._checkZoomVisibility();
-    this._map.on('zoom', this._handleZoom);
+    this._map.on("zoom", this._handleZoom);
 
     // Check initial zoom
     this._checkZoomVisibility();
@@ -110,7 +116,7 @@ export class Colorbar implements IControl {
    */
   onRemove(): void {
     if (this._map && this._handleZoom) {
-      this._map.off('zoom', this._handleZoom);
+      this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
     }
     this._map = undefined;
@@ -126,7 +132,7 @@ export class Colorbar implements IControl {
     if (!this._state.visible) {
       this._state.visible = true;
       this._updateDisplayState();
-      this._emit('show');
+      this._emit("show");
     }
   }
 
@@ -137,7 +143,7 @@ export class Colorbar implements IControl {
     if (this._state.visible) {
       this._state.visible = false;
       this._updateDisplayState();
-      this._emit('hide');
+      this._emit("hide");
     }
   }
 
@@ -153,7 +159,7 @@ export class Colorbar implements IControl {
     if (options.colormap !== undefined) this._state.colormap = options.colormap;
     if (options.visible !== undefined) this._state.visible = options.visible;
     this._render();
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -171,7 +177,10 @@ export class Colorbar implements IControl {
    * @param event - The event type to listen for.
    * @param handler - The callback function.
    */
-  on(event: ComponentEvent, handler: ComponentEventHandler<ColorbarState>): void {
+  on(
+    event: ComponentEvent,
+    handler: ComponentEventHandler<ColorbarState>,
+  ): void {
     if (!this._eventHandlers.has(event)) {
       this._eventHandlers.set(event, new Set());
     }
@@ -184,7 +193,10 @@ export class Colorbar implements IControl {
    * @param event - The event type.
    * @param handler - The callback function to remove.
    */
-  off(event: ComponentEvent, handler: ComponentEventHandler<ColorbarState>): void {
+  off(
+    event: ComponentEvent,
+    handler: ComponentEventHandler<ColorbarState>,
+  ): void {
     this._eventHandlers.get(event)?.delete(handler);
   }
 
@@ -210,12 +222,12 @@ export class Colorbar implements IControl {
     }
 
     // If colormap is a name, get the built-in colormap
-    if (typeof colormap === 'string' && isValidColormap(colormap)) {
+    if (typeof colormap === "string" && isValidColormap(colormap)) {
       return getColormap(colormap);
     }
 
     // Default to viridis
-    return getColormap('viridis');
+    return getColormap("viridis");
   }
 
   /**
@@ -225,8 +237,11 @@ export class Colorbar implements IControl {
    */
   private _generateGradient(): string {
     const stops = this._getColorStops();
-    const direction = this._options.orientation === 'horizontal' ? 'to right' : 'to top';
-    const colorStops = stops.map((stop) => `${stop.color} ${stop.position * 100}%`).join(', ');
+    const direction =
+      this._options.orientation === "horizontal" ? "to right" : "to top";
+    const colorStops = stops
+      .map((stop) => `${stop.color} ${stop.position * 100}%`)
+      .join(", ");
     return `linear-gradient(${direction}, ${colorStops})`;
   }
 
@@ -302,7 +317,7 @@ export class Colorbar implements IControl {
   private _updateDisplayState(): void {
     if (!this._container) return;
     const shouldShow = this._state.visible && this._zoomVisible;
-    this._container.style.display = shouldShow ? 'flex' : 'none';
+    this._container.style.display = shouldShow ? "flex" : "none";
   }
 
   /**
@@ -311,14 +326,14 @@ export class Colorbar implements IControl {
    * @returns The container element.
    */
   private _createContainer(): HTMLElement {
-    const container = document.createElement('div');
+    const container = document.createElement("div");
     container.className = `maplibregl-ctrl maplibre-gl-colorbar${
-      this._options.className ? ` ${this._options.className}` : ''
+      this._options.className ? ` ${this._options.className}` : ""
     }`;
 
     const shouldShow = this._state.visible && this._zoomVisible;
     if (!shouldShow) {
-      container.style.display = 'none';
+      container.style.display = "none";
     }
 
     return container;
@@ -342,11 +357,11 @@ export class Colorbar implements IControl {
       borderRadius,
       padding,
     } = this._options;
-    const isVertical = orientation === 'vertical';
+    const isVertical = orientation === "vertical";
     const ticks = this._generateTicks();
 
     // Clear existing content
-    this._container.innerHTML = '';
+    this._container.innerHTML = "";
 
     // Apply container styles
     const shouldShow = this._state.visible && this._zoomVisible;
@@ -357,65 +372,66 @@ export class Colorbar implements IControl {
       padding: `${padding}px`,
       fontSize: `${fontSize}px`,
       color: fontColor,
-      display: shouldShow ? 'flex' : 'none',
-      flexDirection: isVertical ? 'row' : 'column',
-      alignItems: 'stretch',
-      gap: '6px',
-      boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.1)',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      display: shouldShow ? "flex" : "none",
+      flexDirection: isVertical ? "row" : "column",
+      alignItems: "stretch",
+      gap: "6px",
+      boxShadow: "0 0 0 2px rgba(0, 0, 0, 0.1)",
+      fontFamily:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     });
 
     // Add label if provided
     if (label) {
-      const labelEl = document.createElement('div');
-      labelEl.className = 'maplibre-gl-colorbar-label';
+      const labelEl = document.createElement("div");
+      labelEl.className = "maplibre-gl-colorbar-label";
       labelEl.textContent = label;
       Object.assign(labelEl.style, {
-        fontWeight: '600',
-        textAlign: 'center',
-        marginBottom: isVertical ? '0' : '4px',
-        writingMode: isVertical ? 'vertical-rl' : 'horizontal-tb',
-        transform: isVertical ? 'rotate(180deg)' : 'none',
+        fontWeight: "600",
+        textAlign: "center",
+        marginBottom: isVertical ? "0" : "4px",
+        writingMode: isVertical ? "vertical-rl" : "horizontal-tb",
+        transform: isVertical ? "rotate(180deg)" : "none",
       });
       this._container.appendChild(labelEl);
     }
 
     // Create gradient bar with ticks
-    const barWrapper = document.createElement('div');
-    barWrapper.className = 'maplibre-gl-colorbar-bar-wrapper';
+    const barWrapper = document.createElement("div");
+    barWrapper.className = "maplibre-gl-colorbar-bar-wrapper";
     Object.assign(barWrapper.style, {
-      display: 'flex',
-      flexDirection: isVertical ? 'row' : 'column',
-      alignItems: 'stretch',
+      display: "flex",
+      flexDirection: isVertical ? "row" : "column",
+      alignItems: "stretch",
     });
 
     // Gradient bar
-    const bar = document.createElement('div');
-    bar.className = 'maplibre-gl-colorbar-bar';
+    const bar = document.createElement("div");
+    bar.className = "maplibre-gl-colorbar-bar";
     Object.assign(bar.style, {
       background: this._generateGradient(),
       width: isVertical ? `${barThickness}px` : `${barLength}px`,
       height: isVertical ? `${barLength}px` : `${barThickness}px`,
-      borderRadius: '2px',
-      border: '1px solid rgba(0, 0, 0, 0.2)',
+      borderRadius: "2px",
+      border: "1px solid rgba(0, 0, 0, 0.2)",
     });
 
     // Ticks container
-    const ticksContainer = document.createElement('div');
-    ticksContainer.className = 'maplibre-gl-colorbar-ticks';
+    const ticksContainer = document.createElement("div");
+    ticksContainer.className = "maplibre-gl-colorbar-ticks";
     Object.assign(ticksContainer.style, {
-      display: 'flex',
-      flexDirection: isVertical ? 'column-reverse' : 'row',
-      justifyContent: 'space-between',
-      width: isVertical ? 'auto' : `${barLength}px`,
-      height: isVertical ? `${barLength}px` : 'auto',
-      marginLeft: isVertical ? '4px' : '0',
-      marginTop: isVertical ? '0' : '4px',
+      display: "flex",
+      flexDirection: isVertical ? "column-reverse" : "row",
+      justifyContent: "space-between",
+      width: isVertical ? "auto" : `${barLength}px`,
+      height: isVertical ? `${barLength}px` : "auto",
+      marginLeft: isVertical ? "4px" : "0",
+      marginTop: isVertical ? "0" : "4px",
     });
 
     ticks.forEach((value) => {
-      const tick = document.createElement('span');
-      tick.className = 'maplibre-gl-colorbar-tick';
+      const tick = document.createElement("span");
+      tick.className = "maplibre-gl-colorbar-tick";
       tick.textContent = this._formatTick(value);
       tick.style.fontSize = `${fontSize - 1}px`;
       ticksContainer.appendChild(tick);

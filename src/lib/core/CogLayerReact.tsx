@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { CogLayerControl } from './CogLayer';
-import type { CogLayerControlReactProps, CogLayerControlState } from './types';
+import { useEffect, useRef } from "react";
+import { CogLayerControl } from "./CogLayer";
+import type { CogLayerControlReactProps, CogLayerControlState } from "./types";
 
 /**
  * React wrapper component for CogLayerControl.
@@ -38,7 +38,7 @@ export function CogLayerReact({
   onLayerUpdate,
   onError,
   onStateChange,
-  position = 'top-right',
+  position = "top-right",
   ...options
 }: CogLayerControlReactProps): null {
   const controlRef = useRef<CogLayerControl | null>(null);
@@ -54,33 +54,33 @@ export function CogLayerReact({
       const handleChange = (event: { state: CogLayerControlState }) => {
         onStateChange(event.state);
       };
-      control.on('update', handleChange);
-      control.on('show', handleChange);
-      control.on('hide', handleChange);
-      control.on('expand', handleChange);
-      control.on('collapse', handleChange);
+      control.on("update", handleChange);
+      control.on("show", handleChange);
+      control.on("hide", handleChange);
+      control.on("expand", handleChange);
+      control.on("collapse", handleChange);
     }
 
     if (onLayerAdd) {
-      control.on('layeradd', (event) => {
+      control.on("layeradd", (event) => {
         if (event.url) onLayerAdd(event.url);
       });
     }
 
     if (onLayerRemove) {
-      control.on('layerremove', () => {
+      control.on("layerremove", () => {
         onLayerRemove();
       });
     }
 
     if (onLayerUpdate) {
-      control.on('layerupdate', (event) => {
+      control.on("layerupdate", (event) => {
         if (event.url) onLayerUpdate(event.url);
       });
     }
 
     if (onError) {
-      control.on('error', (event) => {
+      control.on("error", (event) => {
         if (event.error) onError(event.error);
       });
     }
@@ -99,7 +99,7 @@ export function CogLayerReact({
   useEffect(() => {
     if (controlRef.current) {
       const updates = Object.fromEntries(
-        Object.entries(options).filter(([, value]) => value !== undefined)
+        Object.entries(options).filter(([, value]) => value !== undefined),
       );
       if (Object.keys(updates).length > 0) {
         controlRef.current.update(updates);

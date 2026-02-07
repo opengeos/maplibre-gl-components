@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react';
-import type { HtmlControlState } from '../core/types';
+import { useState, useCallback } from "react";
+import type { HtmlControlState } from "../core/types";
 
 const DEFAULT_STATE: HtmlControlState = {
   visible: true,
   collapsed: false,
-  html: '',
+  html: "",
 };
 
 /**

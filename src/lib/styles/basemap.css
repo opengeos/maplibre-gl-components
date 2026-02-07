@@ -50,7 +50,9 @@
   cursor: pointer;
   color: #666;
   border-radius: 4px;
-  transition: background-color 0.15s, color 0.15s;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
 }
 
 .maplibre-gl-basemap-close:hover {

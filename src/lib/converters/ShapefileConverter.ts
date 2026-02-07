@@ -3,7 +3,7 @@ import type {
   ConversionResult,
   ConversionProgressCallback,
   ConversionMetadata,
-} from './types';
+} from "./types";
 
 /**
  * A converter for Shapefile (ZIP) files to GeoJSON using shpjs.
@@ -47,24 +47,24 @@ export class ShapefileConverter implements VectorConverter {
     if (this._initialized) return;
 
     onProgress?.({
-      stage: 'initializing',
+      stage: "initializing",
       percent: 0,
-      message: 'Loading shapefile parser...',
+      message: "Loading shapefile parser...",
     });
 
     try {
       // Dynamically import shpjs
-      this._shpjs = await import(/* @vite-ignore */ 'shpjs');
+      this._shpjs = await import(/* @vite-ignore */ "shpjs");
       this._initialized = true;
 
       onProgress?.({
-        stage: 'initializing',
+        stage: "initializing",
         percent: 100,
-        message: 'Shapefile parser ready',
+        message: "Shapefile parser ready",
       });
     } catch {
       throw new Error(
-        'shpjs is not installed. Install it with: npm install shpjs'
+        "shpjs is not installed. Install it with: npm install shpjs",
       );
     }
   }
@@ -80,7 +80,7 @@ export class ShapefileConverter implements VectorConverter {
   async convert(
     buffer: ArrayBuffer,
     filename: string,
-    onProgress?: ConversionProgressCallback
+    onProgress?: ConversionProgressCallback,
   ): Promise<ConversionResult> {
     const startTime = performance.now();
 
@@ -90,16 +90,16 @@ export class ShapefileConverter implements VectorConverter {
     }
 
     onProgress?.({
-      stage: 'loading',
+      stage: "loading",
       percent: 10,
       message: `Loading ${filename}...`,
     });
 
     try {
       onProgress?.({
-        stage: 'converting',
+        stage: "converting",
         percent: 30,
-        message: 'Parsing shapefile...',
+        message: "Parsing shapefile...",
       });
 
       // shpjs can parse from ArrayBuffer directly
@@ -107,9 +107,9 @@ export class ShapefileConverter implements VectorConverter {
       const geojson = await shp(buffer);
 
       onProgress?.({
-        stage: 'converting',
+        stage: "converting",
         percent: 80,
-        message: 'Building feature collection...',
+        message: "Building feature collection...",
       });
 
       // shpjs can return a FeatureCollection or an array of FeatureCollections
@@ -119,23 +119,23 @@ export class ShapefileConverter implements VectorConverter {
       if (Array.isArray(geojson)) {
         // Multiple layers - merge them
         featureCollection = {
-          type: 'FeatureCollection',
+          type: "FeatureCollection",
           features: geojson.flatMap((fc) => fc.features || []),
         };
-      } else if (geojson.type === 'FeatureCollection') {
+      } else if (geojson.type === "FeatureCollection") {
         featureCollection = geojson as GeoJSON.FeatureCollection;
-      } else if (geojson.type === 'Feature') {
+      } else if (geojson.type === "Feature") {
         featureCollection = {
-          type: 'FeatureCollection',
+          type: "FeatureCollection",
           features: [geojson as GeoJSON.Feature],
         };
       } else {
         // Geometry object
         featureCollection = {
-          type: 'FeatureCollection',
+          type: "FeatureCollection",
           features: [
             {
-              type: 'Feature',
+              type: "Feature",
               properties: {},
               geometry: geojson as GeoJSON.Geometry,
             },
@@ -154,7 +154,7 @@ export class ShapefileConverter implements VectorConverter {
       const endTime = performance.now();
 
       const metadata: ConversionMetadata = {
-        originalFormat: 'shapefile',
+        originalFormat: "shapefile",
         featureCount: featureCollection.features.length,
         geometryTypes: Array.from(geometryTypes),
         fileSize: buffer.byteLength,
@@ -162,7 +162,7 @@ export class ShapefileConverter implements VectorConverter {
       };
 
       onProgress?.({
-        stage: 'complete',
+        stage: "complete",
         percent: 100,
         message: `Converted ${featureCollection.features.length} features`,
       });
@@ -174,8 +174,8 @@ export class ShapefileConverter implements VectorConverter {
       };
     } catch (error) {
       onProgress?.({
-        stage: 'error',
-        message: `Failed to parse shapefile: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        stage: "error",
+        message: `Failed to parse shapefile: ${error instanceof Error ? error.message : "Unknown error"}`,
       });
       throw error;
     }

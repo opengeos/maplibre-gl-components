@@ -5,94 +5,94 @@
  * for many common geospatial formats via ST_Read().
  */
 export type VectorFormat =
-  | 'geojson'
-  | 'shapefile'
-  | 'geopackage'
-  | 'geoparquet'
-  | 'kml'
-  | 'kmz'
-  | 'gpx'
-  | 'flatgeobuf'
-  | 'gml'
-  | 'topojson'
-  | 'csv'
-  | 'xlsx'
-  | 'dxf'
-  | 'unknown';
+  | "geojson"
+  | "shapefile"
+  | "geopackage"
+  | "geoparquet"
+  | "kml"
+  | "kmz"
+  | "gpx"
+  | "flatgeobuf"
+  | "gml"
+  | "topojson"
+  | "csv"
+  | "xlsx"
+  | "dxf"
+  | "unknown";
 
 /**
  * File extensions for GeoJSON files.
  */
-export const GEOJSON_EXTENSIONS = ['.geojson', '.json'];
+export const GEOJSON_EXTENSIONS = [".geojson", ".json"];
 
 /**
  * File extensions for Shapefile files.
  * Includes .zip for zipped shapefiles (most common distribution).
  */
-export const SHAPEFILE_EXTENSIONS = ['.shp', '.zip'];
+export const SHAPEFILE_EXTENSIONS = [".shp", ".zip"];
 
 /**
  * File extensions for GeoPackage files.
  */
-export const GEOPACKAGE_EXTENSIONS = ['.gpkg'];
+export const GEOPACKAGE_EXTENSIONS = [".gpkg"];
 
 /**
  * File extensions for GeoParquet files.
  */
-export const GEOPARQUET_EXTENSIONS = ['.parquet', '.geoparquet'];
+export const GEOPARQUET_EXTENSIONS = [".parquet", ".geoparquet"];
 
 /**
  * File extensions for KML (Keyhole Markup Language) files.
  * Used by Google Earth.
  */
-export const KML_EXTENSIONS = ['.kml'];
+export const KML_EXTENSIONS = [".kml"];
 
 /**
  * File extensions for KMZ (compressed KML) files.
  * KMZ is a zipped KML file used by Google Earth.
  */
-export const KMZ_EXTENSIONS = ['.kmz'];
+export const KMZ_EXTENSIONS = [".kmz"];
 
 /**
  * File extensions for GPX (GPS Exchange Format) files.
  * Common format for GPS tracks, waypoints, and routes.
  */
-export const GPX_EXTENSIONS = ['.gpx'];
+export const GPX_EXTENSIONS = [".gpx"];
 
 /**
  * File extensions for FlatGeobuf files.
  * A performant binary encoding for geographic data.
  */
-export const FLATGEOBUF_EXTENSIONS = ['.fgb'];
+export const FLATGEOBUF_EXTENSIONS = [".fgb"];
 
 /**
  * File extensions for GML (Geography Markup Language) files.
  * OGC standard XML-based format.
  */
-export const GML_EXTENSIONS = ['.gml'];
+export const GML_EXTENSIONS = [".gml"];
 
 /**
  * File extensions for TopoJSON files.
  * An extension of GeoJSON that encodes topology.
  */
-export const TOPOJSON_EXTENSIONS = ['.topojson'];
+export const TOPOJSON_EXTENSIONS = [".topojson"];
 
 /**
  * File extensions for CSV files with geometry.
  * Can contain WKT geometry or lat/lon columns.
  */
-export const CSV_EXTENSIONS = ['.csv'];
+export const CSV_EXTENSIONS = [".csv"];
 
 /**
  * File extensions for Excel files with geometry.
  * Can contain WKT geometry or lat/lon columns.
  */
-export const XLSX_EXTENSIONS = ['.xlsx', '.xls'];
+export const XLSX_EXTENSIONS = [".xlsx", ".xls"];
 
 /**
  * File extensions for DXF (AutoCAD Drawing Exchange Format) files.
  */
-export const DXF_EXTENSIONS = ['.dxf'];
+export const DXF_EXTENSIONS = [".dxf"];
 
 /**
  * Extensions processed via shpjs (Shapefile library).
@@ -147,58 +147,58 @@ export function detectFormat(filename: string): VectorFormat {
   const ext = getFileExtension(filename);
 
   if (GEOJSON_EXTENSIONS.includes(ext)) {
-    return 'geojson';
+    return "geojson";
   }
 
   if (SHAPEFILE_EXTENSIONS.includes(ext)) {
-    return 'shapefile';
+    return "shapefile";
   }
 
   if (GEOPACKAGE_EXTENSIONS.includes(ext)) {
-    return 'geopackage';
+    return "geopackage";
   }
 
   if (GEOPARQUET_EXTENSIONS.includes(ext)) {
-    return 'geoparquet';
+    return "geoparquet";
   }
 
   if (KML_EXTENSIONS.includes(ext)) {
-    return 'kml';
+    return "kml";
   }
 
   if (KMZ_EXTENSIONS.includes(ext)) {
-    return 'kmz';
+    return "kmz";
   }
 
   if (GPX_EXTENSIONS.includes(ext)) {
-    return 'gpx';
+    return "gpx";
   }
 
   if (FLATGEOBUF_EXTENSIONS.includes(ext)) {
-    return 'flatgeobuf';
+    return "flatgeobuf";
   }
 
   if (GML_EXTENSIONS.includes(ext)) {
-    return 'gml';
+    return "gml";
   }
 
   if (TOPOJSON_EXTENSIONS.includes(ext)) {
-    return 'topojson';
+    return "topojson";
   }
 
   if (CSV_EXTENSIONS.includes(ext)) {
-    return 'csv';
+    return "csv";
   }
 
   if (XLSX_EXTENSIONS.includes(ext)) {
-    return 'xlsx';
+    return "xlsx";
   }
 
   if (DXF_EXTENSIONS.includes(ext)) {
-    return 'dxf';
+    return "dxf";
   }
 
-  return 'unknown';
+  return "unknown";
 }
 
 /**
@@ -220,17 +220,17 @@ export function detectFormat(filename: string): VectorFormat {
  */
 export function requiresDuckDB(format: VectorFormat): boolean {
   return (
-    format === 'geopackage' ||
-    format === 'geoparquet' ||
-    format === 'kml' ||
-    format === 'kmz' ||
-    format === 'gpx' ||
-    format === 'flatgeobuf' ||
-    format === 'gml' ||
-    format === 'topojson' ||
-    format === 'csv' ||
-    format === 'xlsx' ||
-    format === 'dxf'
+    format === "geopackage" ||
+    format === "geoparquet" ||
+    format === "kml" ||
+    format === "kmz" ||
+    format === "gpx" ||
+    format === "flatgeobuf" ||
+    format === "gml" ||
+    format === "topojson" ||
+    format === "csv" ||
+    format === "xlsx" ||
+    format === "dxf"
   );
 }
 
@@ -241,7 +241,7 @@ export function requiresDuckDB(format: VectorFormat): boolean {
  * @returns True if the format requires conversion.
  */
 export function requiresConversion(format: VectorFormat): boolean {
-  return format !== 'geojson' && format !== 'unknown';
+  return format !== "geojson" && format !== "unknown";
 }
 
 /**
@@ -258,9 +258,9 @@ export function requiresConversion(format: VectorFormat): boolean {
  * ```
  */
 export function getFileExtension(filename: string): string {
-  const lastDot = filename.lastIndexOf('.');
+  const lastDot = filename.lastIndexOf(".");
   if (lastDot === -1 || lastDot === filename.length - 1) {
-    return '';
+    return "";
   }
   return filename.slice(lastDot).toLowerCase();
 }
@@ -316,7 +316,10 @@ export function getAcceptedExtensions(enableAdvanced: boolean): string[] {
  * isValidExtension('track.gpx', true); // true
  * ```
  */
-export function isValidExtension(filename: string, enableAdvanced: boolean): boolean {
+export function isValidExtension(
+  filename: string,
+  enableAdvanced: boolean,
+): boolean {
   const ext = getFileExtension(filename);
   const accepted = getAcceptedExtensions(enableAdvanced);
   return accepted.includes(ext);
@@ -338,34 +341,34 @@ export function isValidExtension(filename: string, enableAdvanced: boolean): boo
  */
 export function getFormatDisplayName(format: VectorFormat): string {
   switch (format) {
-    case 'geojson':
-      return 'GeoJSON';
-    case 'shapefile':
-      return 'Shapefile';
-    case 'geopackage':
-      return 'GeoPackage';
-    case 'geoparquet':
-      return 'GeoParquet';
-    case 'kml':
-      return 'KML';
-    case 'kmz':
-      return 'KMZ';
-    case 'gpx':
-      return 'GPX';
-    case 'flatgeobuf':
-      return 'FlatGeobuf';
-    case 'gml':
-      return 'GML';
-    case 'topojson':
-      return 'TopoJSON';
-    case 'csv':
-      return 'CSV';
-    case 'xlsx':
-      return 'Excel';
-    case 'dxf':
-      return 'DXF';
+    case "geojson":
+      return "GeoJSON";
+    case "shapefile":
+      return "Shapefile";
+    case "geopackage":
+      return "GeoPackage";
+    case "geoparquet":
+      return "GeoParquet";
+    case "kml":
+      return "KML";
+    case "kmz":
+      return "KMZ";
+    case "gpx":
+      return "GPX";
+    case "flatgeobuf":
+      return "FlatGeobuf";
+    case "gml":
+      return "GML";
+    case "topojson":
+      return "TopoJSON";
+    case "csv":
+      return "CSV";
+    case "xlsx":
+      return "Excel";
+    case "dxf":
+      return "DXF";
     default:
-      return 'Unknown';
+      return "Unknown";
   }
 }
 
@@ -377,33 +380,33 @@ export function getFormatDisplayName(format: VectorFormat): string {
  */
 export function getFormatDescription(format: VectorFormat): string {
   switch (format) {
-    case 'geojson':
-      return 'GeoJSON - Open standard format for geographic data';
-    case 'shapefile':
-      return 'Shapefile - Esri vector data format (.shp or .zip)';
-    case 'geopackage':
-      return 'GeoPackage - OGC standard SQLite-based format';
-    case 'geoparquet':
-      return 'GeoParquet - Columnar format for geospatial data';
-    case 'kml':
-      return 'KML - Keyhole Markup Language (Google Earth)';
-    case 'kmz':
-      return 'KMZ - Compressed KML (Google Earth)';
-    case 'gpx':
-      return 'GPX - GPS Exchange Format for tracks and waypoints';
-    case 'flatgeobuf':
-      return 'FlatGeobuf - Fast binary encoding for geographic data';
-    case 'gml':
-      return 'GML - Geography Markup Language (OGC standard)';
-    case 'topojson':
-      return 'TopoJSON - Topology-encoded GeoJSON extension';
-    case 'csv':
-      return 'CSV - Comma-separated values with geometry (WKT or lat/lon)';
-    case 'xlsx':
-      return 'Excel - Spreadsheet with geometry (WKT or lat/lon)';
-    case 'dxf':
-      return 'DXF - AutoCAD Drawing Exchange Format';
+    case "geojson":
+      return "GeoJSON - Open standard format for geographic data";
+    case "shapefile":
+      return "Shapefile - Esri vector data format (.shp or .zip)";
+    case "geopackage":
+      return "GeoPackage - OGC standard SQLite-based format";
+    case "geoparquet":
+      return "GeoParquet - Columnar format for geospatial data";
+    case "kml":
+      return "KML - Keyhole Markup Language (Google Earth)";
+    case "kmz":
+      return "KMZ - Compressed KML (Google Earth)";
+    case "gpx":
+      return "GPX - GPS Exchange Format for tracks and waypoints";
+    case "flatgeobuf":
+      return "FlatGeobuf - Fast binary encoding for geographic data";
+    case "gml":
+      return "GML - Geography Markup Language (OGC standard)";
+    case "topojson":
+      return "TopoJSON - Topology-encoded GeoJSON extension";
+    case "csv":
+      return "CSV - Comma-separated values with geometry (WKT or lat/lon)";
+    case "xlsx":
+      return "Excel - Spreadsheet with geometry (WKT or lat/lon)";
+    case "dxf":
+      return "DXF - AutoCAD Drawing Exchange Format";
     default:
-      return 'Unknown format';
+      return "Unknown format";
   }
 }

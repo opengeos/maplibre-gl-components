@@ -3,7 +3,7 @@ import type {
   ConversionResult,
   ConversionProgressCallback,
   ConversionMetadata,
-} from './types';
+} from "./types";
 
 /**
  * DuckDB WASM types (minimal interface for our needs).
@@ -101,9 +101,9 @@ export class DuckDBConverter implements VectorConverter {
 
     try {
       onProgress?.({
-        stage: 'initializing',
+        stage: "initializing",
         percent: 0,
-        message: 'Loading DuckDB WASM...',
+        message: "Loading DuckDB WASM...",
       });
 
       // Dynamically import duckdb-wasm
@@ -111,20 +111,20 @@ export class DuckDBConverter implements VectorConverter {
       let duckdb: any;
       try {
         // Use @vite-ignore to suppress dynamic import warning
-        const module = await import(/* @vite-ignore */ '@duckdb/duckdb-wasm');
+        const module = await import(/* @vite-ignore */ "@duckdb/duckdb-wasm");
         // Handle both ESM and CJS module formats
         duckdb = module.default || module;
       } catch (importError) {
         throw new Error(
-          `DuckDB WASM is not installed or failed to load. Install it with: npm install @duckdb/duckdb-wasm. Error: ${importError instanceof Error ? importError.message : 'Unknown error'}`
+          `DuckDB WASM is not installed or failed to load. Install it with: npm install @duckdb/duckdb-wasm. Error: ${importError instanceof Error ? importError.message : "Unknown error"}`,
         );
       }
       this._duckdb = duckdb as DuckDBModule;
 
       onProgress?.({
-        stage: 'initializing',
+        stage: "initializing",
         percent: 30,
-        message: 'Selecting DuckDB bundle...',
+        message: "Selecting DuckDB bundle...",
       });
 
       // Get the CDN bundles - use duckdb's built-in method if available
@@ -139,9 +139,9 @@ export class DuckDBConverter implements VectorConverter {
       }
 
       onProgress?.({
-        stage: 'initializing',
+        stage: "initializing",
         percent: 50,
-        message: 'Instantiating DuckDB...',
+        message: "Instantiating DuckDB...",
       });
 
       // Create worker and instantiate database
@@ -154,12 +154,16 @@ export class DuckDBConverter implements VectorConverter {
       try {
         // Create a blob URL that imports the worker script
         workerUrl = URL.createObjectURL(
-          new Blob([`importScripts("${bundle.mainWorker}");`], { type: 'text/javascript' })
+          new Blob([`importScripts("${bundle.mainWorker}");`], {
+            type: "text/javascript",
+          }),
         );
         worker = new Worker(workerUrl);
       } catch (workerError) {
         if (workerUrl) URL.revokeObjectURL(workerUrl);
-        throw new Error(`Failed to create DuckDB worker: ${workerError instanceof Error ? workerError.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to create DuckDB worker: ${workerError instanceof Error ? workerError.message : "Unknown error"}`,
+        );
       }
       this._worker = worker;
 
@@ -170,7 +174,9 @@ export class DuckDBConverter implements VectorConverter {
       try {
         await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
       } catch (instantiateError) {
-        throw new Error(`Failed to instantiate DuckDB: ${instantiateError instanceof Error ? instantiateError.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to instantiate DuckDB: ${instantiateError instanceof Error ? instantiateError.message : "Unknown error"}`,
+        );
       }
 
       // Clean up blob URL
@@ -179,9 +185,9 @@ export class DuckDBConverter implements VectorConverter {
       this._db = db;
 
       onProgress?.({
-        stage: 'initializing',
+        stage: "initializing",
         percent: 70,
-        message: 'Loading spatial extension...',
+        message: "Loading spatial extension...",
       });
 
       // Load the spatial extension
@@ -192,7 +198,10 @@ export class DuckDBConverter implements VectorConverter {
         await conn.query(`INSTALL spatial`);
         await conn.query(`LOAD spatial`);
       } catch (extError) {
-        console.warn('Failed to load spatial extension, some features may not work:', extError);
+        console.warn(
+          "Failed to load spatial extension, some features may not work:",
+          extError,
+        );
         // Continue anyway - some basic functionality might still work
       } finally {
         await conn.close();
@@ -201,14 +210,14 @@ export class DuckDBConverter implements VectorConverter {
       this._initialized = true;
 
       onProgress?.({
-        stage: 'initializing',
+        stage: "initializing",
         percent: 100,
-        message: 'DuckDB ready',
+        message: "DuckDB ready",
       });
     } catch (error) {
       onProgress?.({
-        stage: 'error',
-        message: `Failed to initialize DuckDB: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        stage: "error",
+        message: `Failed to initialize DuckDB: ${error instanceof Error ? error.message : "Unknown error"}`,
       });
       throw error;
     } finally {
@@ -221,7 +230,9 @@ export class DuckDBConverter implements VectorConverter {
    */
   private _getJsDelivrBundles(): Record<string, unknown> {
     // Use latest stable version
-    const baseUrl = this._bundleUrl || 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@latest/dist';
+    const baseUrl =
+      this._bundleUrl ||
+      "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@latest/dist";
 
     return {
       mvp: {
@@ -246,7 +257,7 @@ export class DuckDBConverter implements VectorConverter {
   async convert(
     buffer: ArrayBuffer,
     filename: string,
-    onProgress?: ConversionProgressCallback
+    onProgress?: ConversionProgressCallback,
   ): Promise<ConversionResult> {
     const startTime = performance.now();
     const format = this._detectFormat(filename);
@@ -257,11 +268,11 @@ export class DuckDBConverter implements VectorConverter {
     }
 
     if (!this._db) {
-      throw new Error('DuckDB not initialized');
+      throw new Error("DuckDB not initialized");
     }
 
     onProgress?.({
-      stage: 'loading',
+      stage: "loading",
       percent: 0,
       message: `Loading ${filename}...`,
     });
@@ -274,14 +285,14 @@ export class DuckDBConverter implements VectorConverter {
 
     try {
       onProgress?.({
-        stage: 'converting',
+        stage: "converting",
         percent: 30,
-        message: 'Reading spatial data...',
+        message: "Reading spatial data...",
       });
 
       // Determine how to read the file based on format
       let tableName: string;
-      if (format === 'geoparquet' || format === 'parquet') {
+      if (format === "geoparquet" || format === "parquet") {
         // For parquet files, use read_parquet
         tableName = `read_parquet('${filename}')`;
       } else {
@@ -290,39 +301,51 @@ export class DuckDBConverter implements VectorConverter {
       }
 
       // First, get the column info to find geometry column
-      const columnsResult = await conn.query<{ column_name: string; column_type: string }>(`
+      const columnsResult = await conn.query<{
+        column_name: string;
+        column_type: string;
+      }>(`
         DESCRIBE SELECT * FROM ${tableName}
       `);
       const columns = columnsResult.toArray();
 
       // Find geometry column - check for GEOMETRY type or common names
       let geomCol: string | null = null;
-      let geomColType: string = '';
+      let geomColType: string = "";
       let latCol: string | null = null;
       let lonCol: string | null = null;
       let wktCol: string | null = null;
       const propertyColumns: string[] = [];
 
       // Common lat/lon column names
-      const latNames = ['lat', 'latitude', 'y', 'lat_y', 'point_y'];
-      const lonNames = ['lon', 'lng', 'long', 'longitude', 'x', 'lon_x', 'long_x', 'point_x'];
-      const wktNames = ['wkt', 'wkt_geom', 'wkt_geometry', 'geometry_wkt'];
+      const latNames = ["lat", "latitude", "y", "lat_y", "point_y"];
+      const lonNames = [
+        "lon",
+        "lng",
+        "long",
+        "longitude",
+        "x",
+        "lon_x",
+        "long_x",
+        "point_x",
+      ];
+      const wktNames = ["wkt", "wkt_geom", "wkt_geometry", "geometry_wkt"];
 
       for (const col of columns) {
         const colName = col.column_name;
-        const colType = col.column_type?.toUpperCase() || '';
+        const colType = col.column_type?.toUpperCase() || "";
         const colNameLower = colName.toLowerCase();
 
         // Check if this is a geometry column
-        const isGeomByType = colType.includes('GEOMETRY');
+        const isGeomByType = colType.includes("GEOMETRY");
         const isGeomByName =
-          colNameLower === 'geom' ||
-          colNameLower === 'geometry' ||
-          colNameLower === 'wkb_geometry' ||
-          colNameLower === 'the_geom' ||
-          colNameLower === 'shape';
+          colNameLower === "geom" ||
+          colNameLower === "geometry" ||
+          colNameLower === "wkb_geometry" ||
+          colNameLower === "the_geom" ||
+          colNameLower === "shape";
         // BLOB type with geometry-like name might be WKB
-        const isWkbBlob = colType.includes('BLOB') && isGeomByName;
+        const isWkbBlob = colType.includes("BLOB") && isGeomByName;
 
         if (isGeomByType || isGeomByName || isWkbBlob) {
           if (!geomCol) {
@@ -359,20 +382,23 @@ export class DuckDBConverter implements VectorConverter {
           const lonIdx = propertyColumns.indexOf(lonCol);
           if (lonIdx > -1) propertyColumns.splice(lonIdx, 1);
         } else {
-          throw new Error('No geometry column found in the file. For CSV/Excel files, include a geometry column, WKT column, or lat/lon columns.');
+          throw new Error(
+            "No geometry column found in the file. For CSV/Excel files, include a geometry column, WKT column, or lat/lon columns.",
+          );
         }
       }
 
       onProgress?.({
-        stage: 'converting',
+        stage: "converting",
         percent: 50,
-        message: 'Converting to GeoJSON...',
+        message: "Converting to GeoJSON...",
       });
 
       // Build properties JSON object from non-geometry columns
-      const propsExpr = propertyColumns.length > 0
-        ? `json_object(${propertyColumns.map(c => `'${c}', "${c}"`).join(', ')})`
-        : `'{}'::JSON`;
+      const propsExpr =
+        propertyColumns.length > 0
+          ? `json_object(${propertyColumns.map((c) => `'${c}', "${c}"`).join(", ")})`
+          : `'{}'::JSON`;
 
       // Determine how to convert geometry to GeoJSON based on source type
       let geomExpr: string;
@@ -386,7 +412,7 @@ export class DuckDBConverter implements VectorConverter {
         // Parse WKT geometry
         geomExpr = `ST_AsGeoJSON(ST_GeomFromText("${wktCol}"))`;
         whereClause = `"${wktCol}" IS NOT NULL AND "${wktCol}" != ''`;
-      } else if (geomColType.includes('BLOB')) {
+      } else if (geomColType.includes("BLOB")) {
         // WKB stored as BLOB - need to convert from WKB first
         geomExpr = `ST_AsGeoJSON(ST_GeomFromWKB("${geomCol}"))`;
         whereClause = `"${geomCol}" IS NOT NULL`;
@@ -410,9 +436,9 @@ export class DuckDBConverter implements VectorConverter {
       const rows = result.toArray();
 
       onProgress?.({
-        stage: 'converting',
+        stage: "converting",
         percent: 80,
-        message: 'Building feature collection...',
+        message: "Building feature collection...",
       });
 
       // Parse features and collect geometry types
@@ -422,21 +448,22 @@ export class DuckDBConverter implements VectorConverter {
       for (const row of rows) {
         if (row.feature) {
           try {
-            const feature = typeof row.feature === 'string'
-              ? JSON.parse(row.feature)
-              : row.feature;
+            const feature =
+              typeof row.feature === "string"
+                ? JSON.parse(row.feature)
+                : row.feature;
             features.push(feature);
             if (feature.geometry?.type) {
               geometryTypes.add(feature.geometry.type);
             }
           } catch (e) {
-            console.warn('Failed to parse feature:', e);
+            console.warn("Failed to parse feature:", e);
           }
         }
       }
 
       const geojson: GeoJSON.FeatureCollection = {
-        type: 'FeatureCollection',
+        type: "FeatureCollection",
         features,
       };
 
@@ -451,7 +478,7 @@ export class DuckDBConverter implements VectorConverter {
       };
 
       onProgress?.({
-        stage: 'complete',
+        stage: "complete",
         percent: 100,
         message: `Converted ${features.length} features`,
       });
@@ -463,8 +490,8 @@ export class DuckDBConverter implements VectorConverter {
       };
     } catch (error) {
       onProgress?.({
-        stage: 'error',
-        message: `Failed to convert: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        stage: "error",
+        message: `Failed to convert: ${error instanceof Error ? error.message : "Unknown error"}`,
       });
       throw error;
     } finally {
@@ -485,39 +512,39 @@ export class DuckDBConverter implements VectorConverter {
    * @returns The detected format name.
    */
   private _detectFormat(filename: string): string {
-    const ext = filename.toLowerCase().split('.').pop();
+    const ext = filename.toLowerCase().split(".").pop();
     switch (ext) {
-      case 'gpkg':
-        return 'geopackage';
-      case 'parquet':
-      case 'geoparquet':
-        return 'geoparquet';
-      case 'shp':
-        return 'shapefile';
-      case 'geojson':
-      case 'json':
-        return 'geojson';
-      case 'kml':
-        return 'kml';
-      case 'kmz':
-        return 'kmz';
-      case 'gpx':
-        return 'gpx';
-      case 'fgb':
-        return 'flatgeobuf';
-      case 'gml':
-        return 'gml';
-      case 'topojson':
-        return 'topojson';
-      case 'csv':
-        return 'csv';
-      case 'xlsx':
-      case 'xls':
-        return 'xlsx';
-      case 'dxf':
-        return 'dxf';
+      case "gpkg":
+        return "geopackage";
+      case "parquet":
+      case "geoparquet":
+        return "geoparquet";
+      case "shp":
+        return "shapefile";
+      case "geojson":
+      case "json":
+        return "geojson";
+      case "kml":
+        return "kml";
+      case "kmz":
+        return "kmz";
+      case "gpx":
+        return "gpx";
+      case "fgb":
+        return "flatgeobuf";
+      case "gml":
+        return "gml";
+      case "topojson":
+        return "topojson";
+      case "csv":
+        return "csv";
+      case "xlsx":
+      case "xls":
+        return "xlsx";
+      case "dxf":
+        return "dxf";
       default:
-        return 'unknown';
+        return "unknown";
     }
   }
 

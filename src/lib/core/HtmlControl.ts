@@ -1,33 +1,35 @@
-import '../styles/common.css';
-import '../styles/html-control.css';
-import type { IControl, Map as MapLibreMap } from 'maplibre-gl';
+import "../styles/common.css";
+import "../styles/html-control.css";
+import type { IControl, Map as MapLibreMap } from "maplibre-gl";
 import type {
   HtmlControlOptions,
   HtmlControlState,
   ComponentEvent,
   ComponentEventHandler,
-} from './types';
+} from "./types";
 
 /**
  * Default options for the HtmlControl.
  */
-const DEFAULT_OPTIONS: Required<Omit<HtmlControlOptions, 'element'>> & { element?: HTMLElement } = {
-  html: '',
+const DEFAULT_OPTIONS: Required<Omit<HtmlControlOptions, "element">> & {
+  element?: HTMLElement;
+} = {
+  html: "",
   element: undefined,
-  title: '',
-  position: 'top-left',
-  className: '',
+  title: "",
+  position: "top-left",
+  className: "",
   visible: true,
   collapsible: false,
   collapsed: false,
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  backgroundColor: "rgba(255, 255, 255, 0.9)",
   padding: 10,
   borderRadius: 4,
   opacity: 1,
   maxWidth: 300,
   maxHeight: 400,
   fontSize: 12,
-  fontColor: '#333',
+  fontColor: "#333",
   minzoom: 0,
   maxzoom: 24,
 };
@@ -55,10 +57,14 @@ const DEFAULT_OPTIONS: Required<Omit<HtmlControlOptions, 'element'>> & { element
 export class HtmlControl implements IControl {
   private _container?: HTMLElement;
   private _contentEl?: HTMLElement;
-  private _options: Required<Omit<HtmlControlOptions, 'element'>> & { element?: HTMLElement };
+  private _options: Required<Omit<HtmlControlOptions, "element">> & {
+    element?: HTMLElement;
+  };
   private _state: HtmlControlState;
-  private _eventHandlers: Map<ComponentEvent, Set<ComponentEventHandler<HtmlControlState>>> =
-    new Map();
+  private _eventHandlers: Map<
+    ComponentEvent,
+    Set<ComponentEventHandler<HtmlControlState>>
+  > = new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
@@ -91,7 +97,7 @@ export class HtmlControl implements IControl {
 
     // Set up zoom listener
     this._handleZoom = () => this._checkZoomVisibility();
-    this._map.on('zoom', this._handleZoom);
+    this._map.on("zoom", this._handleZoom);
 
     // Check initial zoom
     this._checkZoomVisibility();
@@ -105,7 +111,7 @@ export class HtmlControl implements IControl {
    */
   onRemove(): void {
     if (this._map && this._handleZoom) {
-      this._map.off('zoom', this._handleZoom);
+      this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
     }
     this._map = undefined;
@@ -122,7 +128,7 @@ export class HtmlControl implements IControl {
     if (!this._state.visible) {
       this._state.visible = true;
       this._updateDisplayState();
-      this._emit('show');
+      this._emit("show");
     }
   }
 
@@ -133,7 +139,7 @@ export class HtmlControl implements IControl {
     if (this._state.visible) {
       this._state.visible = false;
       this._updateDisplayState();
-      this._emit('hide');
+      this._emit("hide");
     }
   }
 
@@ -144,7 +150,7 @@ export class HtmlControl implements IControl {
     if (this._state.collapsed) {
       this._state.collapsed = false;
       this._render();
-      this._emit('expand');
+      this._emit("expand");
     }
   }
 
@@ -155,7 +161,7 @@ export class HtmlControl implements IControl {
     if (!this._state.collapsed) {
       this._state.collapsed = true;
       this._render();
-      this._emit('collapse');
+      this._emit("collapse");
     }
   }
 
@@ -182,7 +188,7 @@ export class HtmlControl implements IControl {
     if (this._contentEl) {
       this._contentEl.innerHTML = html;
     }
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -192,13 +198,13 @@ export class HtmlControl implements IControl {
    */
   setElement(element: HTMLElement): void {
     this._options.element = element;
-    this._options.html = '';
-    this._state.html = '';
+    this._options.html = "";
+    this._state.html = "";
     if (this._contentEl) {
-      this._contentEl.innerHTML = '';
+      this._contentEl.innerHTML = "";
       this._contentEl.appendChild(element);
     }
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -219,9 +225,10 @@ export class HtmlControl implements IControl {
     this._options = { ...this._options, ...options };
     if (options.html !== undefined) this._state.html = options.html;
     if (options.visible !== undefined) this._state.visible = options.visible;
-    if (options.collapsed !== undefined) this._state.collapsed = options.collapsed;
+    if (options.collapsed !== undefined)
+      this._state.collapsed = options.collapsed;
     this._render();
-    this._emit('update');
+    this._emit("update");
   }
 
   /**
@@ -239,7 +246,10 @@ export class HtmlControl implements IControl {
    * @param event - The event type to listen for.
    * @param handler - The callback function.
    */
-  on(event: ComponentEvent, handler: ComponentEventHandler<HtmlControlState>): void {
+  on(
+    event: ComponentEvent,
+    handler: ComponentEventHandler<HtmlControlState>,
+  ): void {
     if (!this._eventHandlers.has(event)) {
       this._eventHandlers.set(event, new Set());
     }
@@ -252,7 +262,10 @@ export class HtmlControl implements IControl {
    * @param event - The event type.
    * @param handler - The callback function to remove.
    */
-  off(event: ComponentEvent, handler: ComponentEventHandler<HtmlControlState>): void {
+  off(
+    event: ComponentEvent,
+    handler: ComponentEventHandler<HtmlControlState>,
+  ): void {
     this._eventHandlers.get(event)?.delete(handler);
   }
 
@@ -291,7 +304,7 @@ export class HtmlControl implements IControl {
   private _updateDisplayState(): void {
     if (!this._container) return;
     const shouldShow = this._state.visible && this._zoomVisible;
-    this._container.style.display = shouldShow ? 'block' : 'none';
+    this._container.style.display = shouldShow ? "block" : "none";
   }
 
   /**
@@ -300,14 +313,14 @@ export class HtmlControl implements IControl {
    * @returns The container element.
    */
   private _createContainer(): HTMLElement {
-    const container = document.createElement('div');
+    const container = document.createElement("div");
     container.className = `maplibregl-ctrl maplibre-gl-html-control${
-      this._options.className ? ` ${this._options.className}` : ''
+      this._options.className ? ` ${this._options.className}` : ""
     }`;
 
     const shouldShow = this._state.visible && this._zoomVisible;
     if (!shouldShow) {
-      container.style.display = 'none';
+      container.style.display = "none";
     }
 
     return container;
@@ -320,24 +333,25 @@ export class HtmlControl implements IControl {
     if (!this._container) return;
 
     const {
-      title = '',
+      title = "",
       collapsible = false,
-      backgroundColor = 'rgba(255, 255, 255, 0.9)',
+      backgroundColor = "rgba(255, 255, 255, 0.9)",
       opacity = 1,
       borderRadius = 4,
       padding = 10,
       maxWidth = 300,
       maxHeight = 400,
       fontSize = 12,
-      fontColor = '#333',
+      fontColor = "#333",
     } = this._options;
 
     // Clear existing content
-    this._container.innerHTML = '';
+    this._container.innerHTML = "";
 
     // Apply container styles
     // When collapsed with header, use minimal vertical padding
-    const isCollapsedWithHeader = this._state.collapsed && (title || collapsible);
+    const isCollapsedWithHeader =
+      this._state.collapsed && (title || collapsible);
     const vertPadding = isCollapsedWithHeader ? 4 : padding;
     const shouldShow = this._state.visible && this._zoomVisible;
     Object.assign(this._container.style, {
@@ -348,54 +362,55 @@ export class HtmlControl implements IControl {
       maxWidth: `${maxWidth}px`,
       fontSize: `${fontSize}px`,
       color: fontColor,
-      boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.1)',
-      display: shouldShow ? 'block' : 'none',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      boxShadow: "0 0 0 2px rgba(0, 0, 0, 0.1)",
+      display: shouldShow ? "block" : "none",
+      fontFamily:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     });
 
     // Add header with toggle if collapsible
     if (collapsible || title) {
-      const header = document.createElement('div');
-      header.className = 'maplibre-gl-html-control-header';
+      const header = document.createElement("div");
+      header.className = "maplibre-gl-html-control-header";
       Object.assign(header.style, {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingBottom: this._state.collapsed ? '0' : '8px',
-        cursor: collapsible ? 'pointer' : 'default',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingBottom: this._state.collapsed ? "0" : "8px",
+        cursor: collapsible ? "pointer" : "default",
       });
 
       if (title) {
-        const titleEl = document.createElement('span');
-        titleEl.className = 'maplibre-gl-html-control-title';
+        const titleEl = document.createElement("span");
+        titleEl.className = "maplibre-gl-html-control-title";
         titleEl.textContent = title;
-        titleEl.style.fontWeight = '600';
+        titleEl.style.fontWeight = "600";
         header.appendChild(titleEl);
       }
 
       if (collapsible) {
-        const toggleBtn = document.createElement('span');
-        toggleBtn.className = 'maplibre-gl-html-control-toggle';
-        toggleBtn.innerHTML = this._state.collapsed ? '&#9654;' : '&#9660;';
+        const toggleBtn = document.createElement("span");
+        toggleBtn.className = "maplibre-gl-html-control-toggle";
+        toggleBtn.innerHTML = this._state.collapsed ? "&#9654;" : "&#9660;";
         Object.assign(toggleBtn.style, {
-          marginLeft: '8px',
-          fontSize: '10px',
-          userSelect: 'none',
+          marginLeft: "8px",
+          fontSize: "10px",
+          userSelect: "none",
         });
         header.appendChild(toggleBtn);
-        header.addEventListener('click', () => this.toggle());
+        header.addEventListener("click", () => this.toggle());
       }
 
       this._container.appendChild(header);
     }
 
     // Create content element
-    const content = document.createElement('div');
-    content.className = 'maplibre-gl-html-control-content';
+    const content = document.createElement("div");
+    content.className = "maplibre-gl-html-control-content";
     Object.assign(content.style, {
       maxHeight: `${maxHeight}px`,
-      overflowY: 'auto',
-      display: this._state.collapsed ? 'none' : 'block',
+      overflowY: "auto",
+      display: this._state.collapsed ? "none" : "block",
     });
     this._contentEl = content;
 

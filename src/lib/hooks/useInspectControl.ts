@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import type { InspectControlState, InspectedFeature } from '../core/types';
+import { useState, useCallback } from "react";
+import type { InspectControlState, InspectedFeature } from "../core/types";
 
 const DEFAULT_STATE: InspectControlState = {
   visible: true,
@@ -83,7 +83,10 @@ export function useInspectControl(initialState?: Partial<InspectControlState>) {
   const selectFeature = useCallback((index: number) => {
     setState((prev) => ({
       ...prev,
-      selectedIndex: Math.max(0, Math.min(index, prev.inspectedFeatures.length - 1)),
+      selectedIndex: Math.max(
+        0,
+        Math.min(index, prev.inspectedFeatures.length - 1),
+      ),
     }));
   }, []);
 
