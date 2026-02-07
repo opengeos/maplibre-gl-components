@@ -18,6 +18,8 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **InspectControl** - Click on features to view their properties/attributes
 - **ViewStateControl** - Display live map state (center, bounds, zoom, pitch, bearing) with optional bbox drawing
 - **HtmlControl** - Flexible HTML content control for custom info panels
+- **CogLayerControl** - Load and visualize Cloud Optimized GeoTIFF (COG) files with colormaps
+- **ZarrLayerControl** - Load and visualize multi-dimensional Zarr arrays with colormaps
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
 - **TypeScript** - Full type definitions included
@@ -35,7 +37,7 @@ npm install maplibre-gl-components
 
 ```typescript
 import maplibregl from 'maplibre-gl';
-import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl, VectorDatasetControl, ViewStateControl } from 'maplibre-gl-components';
+import { Colorbar, Legend, HtmlControl, BasemapControl, TerrainControl, SearchControl, VectorDatasetControl, ViewStateControl, CogLayerControl, ZarrLayerControl } from 'maplibre-gl-components';
 import 'maplibre-gl-components/style.css';
 
 const map = new maplibregl.Map({
@@ -121,6 +123,32 @@ map.addControl(htmlControl, 'top-left');
 
 // Update HTML dynamically
 htmlControl.setHtml('<div><strong>Stats:</strong> 5,678 features</div>');
+
+// Add a COG layer control
+const cogControl = new CogLayerControl({
+  defaultUrl: 'https://example.com/dem.tif',
+  defaultColormap: 'terrain',
+  defaultRescaleMin: 0,
+  defaultRescaleMax: 4000,
+});
+map.addControl(cogControl, 'top-right');
+
+cogControl.on('layeradd', (event) => {
+  console.log('COG layer added:', event.url);
+});
+
+// Add a Zarr layer control
+const zarrControl = new ZarrLayerControl({
+  defaultUrl: 'https://example.com/climate.zarr',
+  defaultVariable: 'temperature',
+  defaultColormap: ['#440154', '#21918c', '#fde725'],
+  defaultClim: [0, 30],
+});
+map.addControl(zarrControl, 'top-right');
+
+zarrControl.on('layeradd', (event) => {
+  console.log('Zarr layer added:', event.url);
+});
 ```
 
 ### React
@@ -730,6 +758,172 @@ viewStateControl.on('drawend', handler)     // Fired when drawing mode ends
 4. Click and drag on the map to draw a bounding box
 5. Copy coordinates using the copy button next to each value
 
+### CogLayerControl
+
+A control for adding Cloud Optimized GeoTIFF (COG) layers to the map. Uses deck.gl's COGLayer for efficient streaming and rendering.
+
+```typescript
+interface CogLayerControlOptions {
+  position?: ControlPosition;
+  className?: string;                  // Custom CSS class
+  visible?: boolean;                   // Default: true
+  collapsed?: boolean;                 // Start collapsed. Default: true
+  beforeId?: string;                   // Layer ID to insert before (for ordering)
+  defaultUrl?: string;                 // Initial COG URL
+  defaultBands?: string;               // Band selection (e.g., "1" or "1,2,3"). Default: "1"
+  defaultColormap?: ColormapName | 'none';  // Colormap name. Default: 'none'
+  defaultRescaleMin?: number;          // Min value for rescaling. Default: 0
+  defaultRescaleMax?: number;          // Max value for rescaling. Default: 255
+  defaultNodata?: number;              // Nodata value to mask
+  defaultOpacity?: number;             // Layer opacity. Default: 1
+  panelWidth?: number;                 // Panel width in pixels. Default: 300
+  backgroundColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  fontSize?: number;
+  fontColor?: string;
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+// Methods
+cogControl.show()
+cogControl.hide()
+cogControl.expand()
+cogControl.collapse()
+cogControl.toggle()
+cogControl.getState()
+cogControl.update(options)
+cogControl.addLayer(url?)              // Add a COG layer
+cogControl.removeLayer(id?)            // Remove layer by ID or all
+cogControl.getLayerIds()               // Get all layer IDs
+cogControl.getLayerOpacity(id)         // Get layer opacity
+cogControl.setLayerOpacity(id, opacity)  // Set layer opacity
+cogControl.getLayerVisibility(id)      // Check if layer is visible
+cogControl.setLayerVisibility(id, visible)  // Show/hide layer
+cogControl.getLayerUrl(id)             // Get COG URL for a layer
+cogControl.on('layeradd', handler)     // Fired when layer is added
+cogControl.on('layerremove', handler)  // Fired when layer is removed
+cogControl.on('error', handler)        // Fired on error
+```
+
+**Features:**
+- Supports single-band and multi-band GeoTIFFs
+- Automatic float/integer data type detection
+- 21 built-in colormaps with live preview
+- Rescale values for visualization
+- Nodata value masking
+- Opacity control
+- Layer ordering with `beforeId`
+- Multiple COG layers support
+
+### ZarrLayerControl
+
+A control for adding Zarr layers to the map. Uses @carbonplan/zarr-layer for rendering multi-dimensional Zarr data.
+
+```typescript
+interface ZarrLayerControlOptions {
+  position?: ControlPosition;
+  className?: string;                  // Custom CSS class
+  visible?: boolean;                   // Default: true
+  collapsed?: boolean;                 // Start collapsed. Default: true
+  beforeId?: string;                   // Layer ID to insert before (for ordering)
+  defaultUrl?: string;                 // Initial Zarr store URL
+  defaultVariable?: string;            // Variable/array name to visualize
+  defaultColormap?: string[];          // Array of hex colors. Default: viridis
+  defaultClim?: [number, number];      // Color limits [min, max]. Default: [0, 1]
+  defaultSelector?: Record<string, number | string>;  // Dimension selectors
+  defaultOpacity?: number;             // Layer opacity. Default: 1
+  panelWidth?: number;                 // Panel width in pixels. Default: 300
+  backgroundColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  fontSize?: number;
+  fontColor?: string;
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+// Methods
+zarrControl.show()
+zarrControl.hide()
+zarrControl.expand()
+zarrControl.collapse()
+zarrControl.toggle()
+zarrControl.getState()
+zarrControl.update(options)
+zarrControl.addLayer(url?, variable?)  // Add a Zarr layer
+zarrControl.removeLayer(id?)           // Remove layer by ID or all
+zarrControl.getLayerIds()              // Get all layer IDs
+zarrControl.getLayerOpacity(id)        // Get layer opacity
+zarrControl.setLayerOpacity(id, opacity)  // Set layer opacity
+zarrControl.getLayerVisibility(id)     // Check if layer is visible
+zarrControl.setLayerVisibility(id, visible)  // Show/hide layer
+zarrControl.getLayerUrl(id)            // Get Zarr URL for a layer
+zarrControl.fetchVariables()           // Fetch available variables from store
+zarrControl.on('layeradd', handler)    // Fired when layer is added
+zarrControl.on('layerremove', handler) // Fired when layer is removed
+zarrControl.on('error', handler)       // Fired on error
+```
+
+**Features:**
+- Multi-dimensional array support (time, band, etc.)
+- Automatic variable discovery from Zarr metadata
+- 21 built-in colormaps with live preview
+- Custom colormap support (array of hex colors)
+- Dimension selectors for slicing data
+- Smooth opacity control
+- Layer ordering with `beforeId`
+- Multiple Zarr layers support
+
+**Example with dimension selector:**
+```typescript
+const zarrControl = new ZarrLayerControl({
+  defaultUrl: 'https://example.com/climate.zarr',
+  defaultVariable: 'temperature',
+  defaultColormap: ['#0000ff', '#ffffff', '#ff0000'],  // Custom blue-white-red
+  defaultClim: [-20, 40],
+  defaultSelector: { time: 0, month: 'January' },  // Select first time step, January
+});
+```
+
+### Layer Control Adapters
+
+To integrate COG and Zarr layers with [maplibre-gl-layer-control](https://github.com/AJPNorthwest/maplibre-gl-layer-control), use the included adapters:
+
+```typescript
+import { LayerControl, CustomLayerAdapter } from 'maplibre-gl-layer-control';
+import { CogLayerControl, ZarrLayerControl, CogLayerAdapter, ZarrLayerAdapter } from 'maplibre-gl-components';
+
+// Create layer controls
+const cogControl = new CogLayerControl({ collapsed: true });
+const zarrControl = new ZarrLayerControl({ collapsed: true });
+
+map.addControl(cogControl);
+map.addControl(zarrControl);
+
+// Add layers
+await cogControl.addLayer('https://example.com/dem.tif');
+await zarrControl.addLayer('https://example.com/data.zarr', 'temperature');
+
+// Create layer control with adapters
+const layerControl = new LayerControl({
+  customLayers: [
+    new CogLayerAdapter(cogControl, { name: 'Elevation DEM' }),
+    new ZarrLayerAdapter(zarrControl, { name: 'Temperature Data' }),
+  ],
+});
+map.addControl(layerControl);
+```
+
+**Adapter Options:**
+```typescript
+interface AdapterOptions {
+  name?: string;           // Display name in layer control
+  defaultOpacity?: number; // Opacity when toggled on (default: 1)
+}
+```
+
 ## Built-in Colormaps
 
 ### Sequential
@@ -967,6 +1161,8 @@ See the [examples](./examples/) directory for complete working examples:
 - **Basic Example** - Vanilla TypeScript with all components
 - **React Example** - React with hooks and dynamic updates
 - **View State Example** - View state control with bounding box drawing
+- **COG Layer Example** - Cloud Optimized GeoTIFF visualization with colormaps
+- **Zarr Layer Example** - Multi-dimensional Zarr data visualization
 
 ## Development
 
