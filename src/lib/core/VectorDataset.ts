@@ -1,3 +1,5 @@
+import '../styles/common.css';
+import '../styles/vector-dataset.css';
 import type { IControl, Map as MapLibreMap } from 'maplibre-gl';
 import type {
   VectorDatasetControlOptions,

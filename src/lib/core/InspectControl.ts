@@ -1,3 +1,5 @@
+import '../styles/common.css';
+import '../styles/inspect-control.css';
 import maplibregl, { type IControl, type Map as MapLibreMap, type MapMouseEvent, Popup } from 'maplibre-gl';
 import type {
   InspectControlOptions,

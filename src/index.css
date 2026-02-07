@@ -7,3 +7,10 @@
 @import './lib/styles/colorbar.css';
 @import './lib/styles/legend.css';
 @import './lib/styles/html-control.css';
+@import './lib/styles/basemap.css';
+@import './lib/styles/terrain.css';
+@import './lib/styles/search-control.css';
+@import './lib/styles/vector-dataset.css';
+@import './lib/styles/inspect-control.css';
+@import './lib/styles/view-state.css';
+@import './lib/styles/control-grid.css';

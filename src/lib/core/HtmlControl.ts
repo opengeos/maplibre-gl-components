@@ -1,3 +1,5 @@
+import '../styles/common.css';
+import '../styles/html-control.css';
 import type { IControl, Map as MapLibreMap } from 'maplibre-gl';
 import type {
   HtmlControlOptions,

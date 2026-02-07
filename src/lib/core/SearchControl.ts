@@ -1,3 +1,5 @@
+import '../styles/common.css';
+import '../styles/search-control.css';
 import type { IControl, Map as MapLibreMap, Marker } from 'maplibre-gl';
 import type {
   SearchControlOptions,

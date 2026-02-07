@@ -1,3 +1,5 @@
+import '../styles/common.css';
+import '../styles/basemap.css';
 import type { IControl, Map as MapLibreMap } from 'maplibre-gl';
 import type {
   BasemapControlOptions,

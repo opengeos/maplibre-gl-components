@@ -1,3 +1,5 @@
+import '../styles/common.css';
+import '../styles/view-state.css';
 import type { IControl, Map as MapLibreMap, MapMouseEvent, GeoJSONSource } from 'maplibre-gl';
 import type {
   ViewStateControlOptions,

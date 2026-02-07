@@ -1,3 +1,5 @@
+import '../styles/common.css';
+import '../styles/control-grid.css';
 import { GlobeControl, type IControl, type Map as MapLibreMap } from 'maplibre-gl';
 import type {
   ControlGridOptions,
