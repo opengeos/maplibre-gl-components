@@ -894,6 +894,12 @@ export class CogLayerControl implements IControl {
         .setLngLat(lngLat)
         .setHTML(html)
         .addTo(map);
+
+      // Ensure popup is above deck.gl canvas
+      const popupEl = this._activePopup.getElement();
+      if (popupEl) {
+        popupEl.style.zIndex = "1000";
+      }
     };
     map.on("click", this._mapClickHandler);
   }
