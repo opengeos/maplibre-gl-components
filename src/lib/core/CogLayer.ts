@@ -148,6 +148,7 @@ const DEFAULT_OPTIONS: Required<CogLayerControlOptions> = {
   className: '',
   visible: true,
   collapsed: true,
+  beforeId: '',
   defaultUrl: '',
   defaultBands: '1',
   defaultColormap: 'none',
@@ -713,8 +714,9 @@ export class CogLayerControl implements IControl {
     if (!this._map) return;
 
     const { MapboxOverlay } = await import('@deck.gl/mapbox');
+    // Use interleaved: true to support beforeId for layer ordering
     this._deckOverlay = new MapboxOverlay({
-      interleaved: false,
+      interleaved: true,
       layers: [],
     });
     (this._map as unknown as { addControl(c: IControl): void }).addControl(this._deckOverlay);
@@ -1034,6 +1036,8 @@ export class CogLayerControl implements IControl {
         _rescaleMin: this._state.rescaleMin,
         _rescaleMax: this._state.rescaleMax,
         _colormap: this._state.colormap,
+        // Add beforeId for layer ordering (only if specified)
+        ...(this._options.beforeId ? { beforeId: this._options.beforeId } : {}),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onGeoTIFFLoad: (_geotiff: any, options: any) => {
           try {

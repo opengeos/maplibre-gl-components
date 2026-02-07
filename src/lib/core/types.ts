@@ -1167,6 +1167,8 @@ export interface CogLayerControlOptions {
   visible?: boolean;
   /** Whether the panel starts collapsed (button only). Default: true. */
   collapsed?: boolean;
+  /** Layer ID to insert COG layers before. If not specified, layers are added on top. */
+  beforeId?: string;
   /** Default COG URL to pre-fill. */
   defaultUrl?: string;
   /** Default bands (comma-separated, e.g. '1' or '1,2,3'). Default: '1'. */
@@ -1305,6 +1307,8 @@ export interface ZarrLayerControlOptions {
   visible?: boolean;
   /** Whether the panel starts collapsed (button only). Default: true. */
   collapsed?: boolean;
+  /** Layer ID to insert Zarr layers before. If not specified, layers are added on top. */
+  beforeId?: string;
   /** Default Zarr URL to pre-fill. */
   defaultUrl?: string;
   /** Default variable name. Default: ''. */

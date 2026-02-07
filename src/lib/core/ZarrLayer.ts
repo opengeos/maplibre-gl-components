@@ -39,6 +39,7 @@ const DEFAULT_OPTIONS: Required<ZarrLayerControlOptions> = {
   className: '',
   visible: true,
   collapsed: true,
+  beforeId: '',
   defaultUrl: '',
   defaultVariable: '',
   defaultColormap: COLORMAP_PRESETS.viridis,
@@ -633,7 +634,12 @@ export class ZarrLayerControl implements IControl {
 
       const newLayer = new ZarrLayer(layerOptions);
       this._zarrLayers.set(layerId, newLayer);
-      this._map.addLayer(newLayer);
+      // Add layer with optional beforeId for layer ordering
+      if (this._options.beforeId) {
+        this._map.addLayer(newLayer, this._options.beforeId);
+      } else {
+        this._map.addLayer(newLayer);
+      }
 
       this._state.hasLayer = this._zarrLayers.size > 0;
       this._state.layerCount = this._zarrLayers.size;
