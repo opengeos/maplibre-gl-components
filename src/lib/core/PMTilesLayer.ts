@@ -11,9 +11,9 @@ import type {
 } from "./types";
 
 /**
- * Map pin/marker icon - represents map tiles data.
+ * Database/archive icon - represents PMTiles archive format.
  */
-const PMTILES_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+const PMTILES_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`;
 
 /**
  * Default options for the PMTilesLayerControl.
@@ -431,23 +431,77 @@ export class PMTilesLayerControl implements IControl {
     opacityGroup.appendChild(sliderRow);
     panel.appendChild(opacityGroup);
 
-    // Source layers selection (for vector tiles)
+    // Source layers section with Fetch button
     const sourceLayersGroup = this._createFormGroup("Source Layers", "source-layers");
-    const sourceLayersRow = document.createElement("div");
-    sourceLayersRow.style.display = "flex";
-    sourceLayersRow.style.gap = "6px";
-    sourceLayersRow.style.flexWrap = "wrap";
-    sourceLayersRow.style.alignItems = "center";
+    
+    // Fetch button row
+    const fetchRow = document.createElement("div");
+    fetchRow.style.display = "flex";
+    fetchRow.style.gap = "6px";
+    fetchRow.style.alignItems = "center";
+    fetchRow.style.marginBottom = "6px";
+
+    const fetchBtn = document.createElement("button");
+    fetchBtn.className = "maplibre-gl-pmtiles-layer-btn";
+    fetchBtn.textContent = "Fetch Layers";
+    fetchBtn.style.padding = "4px 10px";
+    fetchBtn.style.fontSize = "11px";
+    fetchBtn.disabled = !this._state.url;
+    fetchBtn.addEventListener("click", () => this._fetchSourceLayers());
+    fetchRow.appendChild(fetchBtn);
 
     if (this._state.availableSourceLayers.length > 0) {
+      // All/None buttons
+      const allBtn = document.createElement("button");
+      allBtn.className = "maplibre-gl-pmtiles-layer-btn";
+      allBtn.textContent = "All";
+      allBtn.style.padding = "4px 8px";
+      allBtn.style.fontSize = "11px";
+      allBtn.addEventListener("click", () => {
+        this._state.selectedSourceLayers = [...this._state.availableSourceLayers];
+        this._render();
+      });
+      fetchRow.appendChild(allBtn);
+
+      const noneBtn = document.createElement("button");
+      noneBtn.className = "maplibre-gl-pmtiles-layer-btn";
+      noneBtn.textContent = "None";
+      noneBtn.style.padding = "4px 8px";
+      noneBtn.style.fontSize = "11px";
+      noneBtn.addEventListener("click", () => {
+        this._state.selectedSourceLayers = [];
+        this._render();
+      });
+      fetchRow.appendChild(noneBtn);
+
+      const countLabel = document.createElement("span");
+      countLabel.style.fontSize = "11px";
+      countLabel.style.color = "#666";
+      countLabel.textContent = `(${this._state.selectedSourceLayers.length}/${this._state.availableSourceLayers.length})`;
+      fetchRow.appendChild(countLabel);
+    }
+
+    sourceLayersGroup.appendChild(fetchRow);
+
+    if (this._state.availableSourceLayers.length > 0) {
+      // Collapsible panel for layer checkboxes
+      const layersPanel = document.createElement("div");
+      layersPanel.style.maxHeight = "120px";
+      layersPanel.style.overflowY = "auto";
+      layersPanel.style.border = "1px solid #ddd";
+      layersPanel.style.borderRadius = "3px";
+      layersPanel.style.padding = "6px";
+      layersPanel.style.background = "#fafafa";
+
       // Show checkboxes for each available layer
       for (const layerName of this._state.availableSourceLayers) {
         const label = document.createElement("label");
         label.style.display = "flex";
         label.style.alignItems = "center";
-        label.style.gap = "3px";
+        label.style.gap = "4px";
         label.style.fontSize = "11px";
         label.style.cursor = "pointer";
+        label.style.padding = "2px 0";
 
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
@@ -462,31 +516,22 @@ export class PMTilesLayerControl implements IControl {
               (l) => l !== layerName,
             );
           }
+          this._render();
         });
         label.appendChild(checkbox);
         label.appendChild(document.createTextNode(layerName));
-        sourceLayersRow.appendChild(label);
+        layersPanel.appendChild(label);
       }
-    } else {
+
+      sourceLayersGroup.appendChild(layersPanel);
+    } else if (!this._state.loading) {
       const hint = document.createElement("span");
       hint.style.fontSize = "11px";
       hint.style.color = "#888";
-      hint.textContent = "Enter URL and click Fetch to see available layers";
-      sourceLayersRow.appendChild(hint);
+      hint.textContent = "Click Fetch to discover available layers";
+      sourceLayersGroup.appendChild(hint);
     }
 
-    // Fetch button
-    const fetchBtn = document.createElement("button");
-    fetchBtn.className = "maplibre-gl-pmtiles-layer-btn";
-    fetchBtn.textContent = "Fetch";
-    fetchBtn.style.padding = "4px 8px";
-    fetchBtn.style.fontSize = "11px";
-    fetchBtn.style.flex = "0 0 auto";
-    fetchBtn.disabled = !this._state.url;
-    fetchBtn.addEventListener("click", () => this._fetchSourceLayers());
-    sourceLayersRow.appendChild(fetchBtn);
-
-    sourceLayersGroup.appendChild(sourceLayersRow);
     panel.appendChild(sourceLayersGroup);
 
     // Before ID input (for layer ordering)
@@ -573,17 +618,6 @@ export class PMTilesLayerControl implements IControl {
         item.appendChild(removeBtn);
 
         listContainer.appendChild(item);
-
-        // Show source layers for vector tiles
-        if (info.tileType === "vector" && info.sourceLayers.length > 0) {
-          const infoDiv = document.createElement("div");
-          infoDiv.className = "maplibre-gl-pmtiles-layer-info";
-          const sourceLayersText = document.createElement("div");
-          sourceLayersText.className = "maplibre-gl-pmtiles-layer-info-item";
-          sourceLayersText.textContent = `Source layers: ${info.sourceLayers.join(", ")}`;
-          infoDiv.appendChild(sourceLayersText);
-          listContainer.appendChild(infoDiv);
-        }
       }
 
       panel.appendChild(listContainer);
