@@ -903,6 +903,12 @@ export class StacLayerControl implements IControl {
           _isRgb: true,
         };
 
+        // Add custom geoKeysParser for better projection support
+        const geoKeysParser = await this._buildGeoKeysParser();
+        if (geoKeysParser) {
+          layerProps.geoKeysParser = geoKeysParser;
+        }
+
         this._cogLayerPropsMap.set(layerId, layerProps);
         const newLayer = new COGLayer(layerProps);
         this._cogLayers.set(layerId, newLayer);
@@ -973,6 +979,12 @@ export class StacLayerControl implements IControl {
         _rescaleMax: this._state.rescaleMax,
         _colormap: this._state.colormap,
       };
+
+      // Add custom geoKeysParser for better projection support
+      const geoKeysParser = await this._buildGeoKeysParser();
+      if (geoKeysParser) {
+        layerProps.geoKeysParser = geoKeysParser;
+      }
 
       this._cogLayerPropsMap.set(layerId, layerProps);
       const newLayer = new COGLayer(layerProps);
@@ -1047,6 +1059,57 @@ export class StacLayerControl implements IControl {
   private _removeAllLayers(): void {
     for (const [layerId] of this._cogLayers) {
       this._removeLayer(layerId);
+    }
+  }
+
+  /**
+   * Build a geoKeysParser function using geotiff-geokeys-to-proj4.
+   * This avoids CORS issues when looking up EPSG codes from epsg.io.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async _buildGeoKeysParser(): Promise<any> {
+    try {
+      const geokeysModule = await import("geotiff-geokeys-to-proj4");
+      const geoKeysToProj4 = geokeysModule.default || geokeysModule;
+
+      if (!geoKeysToProj4 || typeof geoKeysToProj4.toProj4 !== "function") {
+        return null;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return async (geoKeys: any) => {
+        try {
+          const result = geoKeysToProj4.toProj4(geoKeys);
+          if (result && result.proj4) {
+            const proj4Module = await import("proj4");
+            const proj4Fn = proj4Module.default || proj4Module;
+            let parsed: Record<string, unknown> = {};
+            if (typeof proj4Fn === "function") {
+              try {
+                proj4Fn.defs("custom", result.proj4);
+                parsed =
+                  (proj4Fn.defs("custom") as unknown as Record<
+                    string,
+                    unknown
+                  >) || {};
+              } catch {
+                // ignore proj4 parsing errors
+              }
+            }
+            return {
+              def: result.proj4 as string,
+              parsed,
+              coordinatesUnits: (result.coordinatesUnits as string) || "metre",
+            };
+          }
+        } catch {
+          // Fall back to default parser
+        }
+        return null;
+      };
+    } catch {
+      // geotiff-geokeys-to-proj4 not available
+      return null;
     }
   }
 }

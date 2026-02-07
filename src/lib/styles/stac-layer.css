@@ -208,14 +208,15 @@
 }
 
 .maplibre-gl-stac-layer-btn--primary {
-  background: #0078d7;
-  border-color: #0078d7;
-  color: white;
+  background: #0078d7 !important;
+  border-color: #0078d7 !important;
+  color: white !important;
 }
 
 .maplibre-gl-stac-layer-btn--primary:hover:not(:disabled) {
-  background: #006bc1;
-  border-color: #006bc1;
+  background: #006bc1 !important;
+  border-color: #006bc1 !important;
+  color: white !important;
 }
 
 .maplibre-gl-stac-layer-btn--secondary {
