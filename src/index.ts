@@ -12,6 +12,7 @@ import "./lib/styles/view-state.css";
 import "./lib/styles/control-grid.css";
 import "./lib/styles/cog-layer.css";
 import "./lib/styles/zarr-layer.css";
+import "./lib/styles/pmtiles-layer.css";
 
 // Main entry point - Core exports
 export { Colorbar } from "./lib/core/Colorbar";
@@ -26,9 +27,10 @@ export { ViewStateControl } from "./lib/core/ViewStateControl";
 export { ControlGrid } from "./lib/core/ControlGrid";
 export { CogLayerControl } from "./lib/core/CogLayer";
 export { ZarrLayerControl } from "./lib/core/ZarrLayer";
+export { PMTilesLayerControl } from "./lib/core/PMTilesLayer";
 
 // Adapters for layer control integration
-export { CogLayerAdapter, ZarrLayerAdapter } from "./lib/adapters";
+export { CogLayerAdapter, ZarrLayerAdapter, PMTilesLayerAdapter } from "./lib/adapters";
 export type { CustomLayerAdapter } from "./lib/adapters";
 
 // Provider utilities
@@ -185,6 +187,12 @@ export type {
   ZarrLayerEvent,
   ZarrLayerEventHandler,
   ZarrLayerInfo,
+  PMTilesLayerControlOptions,
+  PMTilesLayerControlState,
+  PMTilesLayerEvent,
+  PMTilesLayerEventHandler,
+  PMTilesLayerInfo,
+  PMTilesTileType,
   ColormapName,
   ColorStop,
   ControlPosition,
