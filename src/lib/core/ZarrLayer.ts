@@ -111,6 +111,7 @@ export class ZarrLayerControl implements IControl {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _zarrLayerPropsMap: Map<string, Record<string, any>> = new Map();
   private _layerCounter = 0;
+  private _colormapName: ColormapName = 'viridis';
 
   constructor(options?: ZarrLayerControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -429,15 +430,14 @@ export class ZarrLayerControl implements IControl {
       const opt = document.createElement('option');
       opt.value = name;
       opt.textContent = name;
-      // Check if current colormap matches this preset
-      const preset = getColormapColors(name);
-      if (JSON.stringify(preset) === JSON.stringify(this._state.colormap)) {
+      if (name === this._colormapName) {
         opt.selected = true;
       }
       cmSelect.appendChild(opt);
     }
     cmSelect.addEventListener('change', () => {
-      this._state.colormap = getColormapColors(cmSelect.value as ColormapName);
+      this._colormapName = cmSelect.value as ColormapName;
+      this._state.colormap = getColormapColors(this._colormapName);
       this._updateColormapPreview();
     });
     cmGroup.appendChild(cmSelect);
