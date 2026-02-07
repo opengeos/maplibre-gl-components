@@ -551,8 +551,16 @@ export class CogLayerControl implements IControl {
     }
     cmSelect.addEventListener('change', () => {
       this._state.colormap = cmSelect.value as ColormapName | 'none';
+      this._updateColormapPreview();
     });
     cmGroup.appendChild(cmSelect);
+
+    // Colormap preview
+    const cmPreview = document.createElement('div');
+    cmPreview.className = 'maplibre-gl-cog-layer-colormap-preview';
+    cmPreview.id = 'cog-colormap-preview';
+    this._updateColormapPreviewElement(cmPreview);
+    cmGroup.appendChild(cmPreview);
     panel.appendChild(cmGroup);
 
     // Rescale min/max row
@@ -707,6 +715,25 @@ export class CogLayerControl implements IControl {
     status.className = `maplibre-gl-cog-layer-status maplibre-gl-cog-layer-status--${type}`;
     status.textContent = message;
     this._panel.appendChild(status);
+  }
+
+  private _updateColormapPreview(): void {
+    const preview = document.getElementById('cog-colormap-preview');
+    if (preview) {
+      this._updateColormapPreviewElement(preview);
+    }
+  }
+
+  private _updateColormapPreviewElement(element: HTMLElement): void {
+    if (this._state.colormap === 'none') {
+      element.style.background = 'linear-gradient(to right, #888, #888)';
+      element.style.display = 'none';
+    } else {
+      const stops = getColormap(this._state.colormap);
+      const colors = stops.map(s => s.color).join(', ');
+      element.style.background = `linear-gradient(to right, ${colors})`;
+      element.style.display = 'block';
+    }
   }
 
   private async _ensureOverlay(): Promise<void> {

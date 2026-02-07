@@ -27,7 +27,6 @@ const zarrControl = new ZarrLayerControl({
   defaultOpacity: 0.8,
 });
 
-map.addControl(zarrControl, 'top-right');
 
 // Create an adapter to integrate Zarr layers with the layer control
 const zarrAdapter = new ZarrLayerAdapter(zarrControl);
@@ -44,6 +43,7 @@ const layerControl = new LayerControl({
 });
 
 map.addControl(layerControl, 'top-right');
+map.addControl(zarrControl, 'top-right');
 
 // Listen for layer events
 zarrControl.on('layeradd', (event) => {
