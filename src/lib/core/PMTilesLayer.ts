@@ -11,9 +11,9 @@ import type {
 } from "./types";
 
 /**
- * Database/archive icon - represents PMTiles archive format.
+ * Grid/tiles icon - represents tiled map data in PMTiles format.
  */
-const PMTILES_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`;
+const PMTILES_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>`;
 
 /**
  * Default options for the PMTilesLayerControl.
@@ -443,9 +443,10 @@ export class PMTilesLayerControl implements IControl {
 
     const fetchBtn = document.createElement("button");
     fetchBtn.className = "maplibre-gl-pmtiles-layer-btn";
-    fetchBtn.textContent = "Fetch Layers";
+    fetchBtn.textContent = "Fetch";
     fetchBtn.style.padding = "4px 10px";
     fetchBtn.style.fontSize = "11px";
+    fetchBtn.style.whiteSpace = "nowrap";
     fetchBtn.disabled = !this._state.url;
     fetchBtn.addEventListener("click", () => this._fetchSourceLayers());
     fetchRow.appendChild(fetchBtn);
