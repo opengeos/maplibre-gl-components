@@ -800,8 +800,22 @@ export class AddVectorControl implements IControl {
         throw new Error(`Unsupported format: ${format}`);
       }
 
-      // Generate unique IDs (use custom layer name if provided)
-      const layerId = this._state.layerName?.trim() || generateId("addvec");
+      // Generate layer ID: custom name > filename from URL > random ID
+      let layerId = this._state.layerName?.trim();
+      if (!layerId) {
+        // Try to extract filename without extension from URL
+        try {
+          const urlPath = new URL(this._state.url).pathname;
+          const filename = urlPath.split("/").pop() || "";
+          // Remove extension
+          layerId = filename.replace(/\.[^.]+$/, "");
+        } catch {
+          // URL parsing failed, use random ID
+        }
+      }
+      if (!layerId) {
+        layerId = generateId("addvec");
+      }
       const sourceId = `${layerId}-source`;
 
       // Analyze geometry types
