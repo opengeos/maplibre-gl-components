@@ -207,8 +207,6 @@ export class CogLayerControl implements IControl {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _cogLayerPropsMap: Map<string, Record<string, any>> = new Map();
   private _layerCounter = 0;
-  private _opacityUpdateFrame?: number;
-  private _pendingOpacity?: number;
 
   constructor(options?: CogLayerControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -245,12 +243,6 @@ export class CogLayerControl implements IControl {
 
   onRemove(): void {
     this._removeLayer(); // Remove all layers on cleanup
-
-    // Clear any pending opacity update
-    if (this._opacityUpdateFrame) {
-      cancelAnimationFrame(this._opacityUpdateFrame);
-      this._opacityUpdateFrame = undefined;
-    }
 
     if (this._map && this._handleZoom) {
       this._map.off('zoom', this._handleZoom);
@@ -382,19 +374,13 @@ export class CogLayerControl implements IControl {
     const updatedLayer = layer.clone({ opacity: clampedOpacity });
     this._cogLayers.set(layerId, updatedLayer);
 
-    // Use requestAnimationFrame for smoother updates
-    this._scheduleOverlayUpdate();
-  }
+    if (this._deckOverlay) {
+      this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
+    }
 
-  private _scheduleOverlayUpdate(): void {
-    if (this._opacityUpdateFrame) return; // Already scheduled
-    
-    this._opacityUpdateFrame = requestAnimationFrame(() => {
-      this._opacityUpdateFrame = undefined;
-      if (this._deckOverlay) {
-        this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
-      }
-    });
+    if (this._map) {
+      this._map.triggerRepaint();
+    }
   }
 
   /**
@@ -755,9 +741,10 @@ export class CogLayerControl implements IControl {
     if (!this._map) return;
 
     const { MapboxOverlay } = await import('@deck.gl/mapbox');
-    // Use interleaved: true to support beforeId for layer ordering
+    // Only use interleaved mode if beforeId is specified (for layer ordering)
+    // interleaved: false is much faster for opacity updates
     this._deckOverlay = new MapboxOverlay({
-      interleaved: true,
+      interleaved: !!this._options.beforeId,
       layers: [],
     });
     (this._map as unknown as { addControl(c: IControl): void }).addControl(this._deckOverlay);
@@ -1161,25 +1148,8 @@ export class CogLayerControl implements IControl {
   }
 
   private _updateOpacity(): void {
-    if (this._cogLayers.size === 0) return;
-    
-    // Store pending opacity and schedule update
-    this._pendingOpacity = this._state.layerOpacity;
-    
-    if (this._opacityUpdateFrame) return; // Already scheduled
-    
-    this._opacityUpdateFrame = requestAnimationFrame(() => {
-      this._opacityUpdateFrame = undefined;
-      this._applyPendingOpacity();
-    });
-  }
-
-  private _applyPendingOpacity(): void {
-    if (!this._deckOverlay || this._pendingOpacity === undefined) return;
-    
-    const opacity = this._pendingOpacity;
-    this._pendingOpacity = undefined;
-    
+    if (!this._deckOverlay || this._cogLayers.size === 0) return;
+    const opacity = this._state.layerOpacity;
     // deck.gl layers are immutable; clone each with the new opacity
     for (const [id, layer] of this._cogLayers) {
       if (typeof layer.clone === 'function') {
@@ -1187,6 +1157,9 @@ export class CogLayerControl implements IControl {
       }
     }
     this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
+    if (this._map) {
+      this._map.triggerRepaint();
+    }
   }
 
   private _buildLayerInfoList(): CogLayerInfo[] {
