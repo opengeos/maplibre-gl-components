@@ -709,8 +709,8 @@ export class ZarrLayerControl implements IControl {
       const newLayer = new ZarrLayer(layerOptions);
       this._zarrLayers.set(layerId, newLayer);
       // Add layer with optional beforeId for layer ordering (only if layer exists)
-      const beforeId = this._options.beforeId && this._map.getLayer(this._options.beforeId) 
-        ? this._options.beforeId 
+      const beforeId = this._options.beforeId && this._map.getLayer(this._options.beforeId)
+        ? this._options.beforeId
         : undefined;
       if (beforeId) {
         this._map.addLayer(newLayer, beforeId);
