@@ -888,6 +888,7 @@ export class StacLayerControl implements IControl {
         await this._ensureOverlay();
 
         const { COGLayer } = await import("@developmentseed/deck.gl-geotiff");
+        this._patchCOGLayer(COGLayer);
 
         // For RGB composite, we load each band separately and combine
         const layerId = `stac-${this._state.stacItem?.id || "layer"}-rgb-${this._layerCounter++}`;
@@ -966,6 +967,7 @@ export class StacLayerControl implements IControl {
       await this._ensureOverlay();
 
       const { COGLayer } = await import("@developmentseed/deck.gl-geotiff");
+      this._patchCOGLayer(COGLayer);
 
       const layerId = `stac-${this._state.stacItem?.id || "layer"}-${asset.key}-${this._layerCounter++}`;
 
@@ -1060,6 +1062,145 @@ export class StacLayerControl implements IControl {
     for (const [layerId] of this._cogLayers) {
       this._removeLayer(layerId);
     }
+  }
+
+  /**
+   * Patch COGLayer to handle grayscale and float GeoTIFFs.
+   * The upstream library has limited support for these formats.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _patchCOGLayer(COGLayerClass: any): void {
+    // Guard: only patch once
+    if (COGLayerClass.__stacPatched) return;
+    COGLayerClass.__stacPatched = true;
+
+    const originalParseGeoTIFF = COGLayerClass.prototype._parseGeoTIFF;
+
+    COGLayerClass.prototype._parseGeoTIFF = async function () {
+      try {
+        await originalParseGeoTIFF.call(this);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+
+        // Handle unsupported PhotometricInterpretation or float data
+        if (
+          !msg.includes("PhotometricInterpretation") &&
+          !msg.includes("non-unsigned integers")
+        ) {
+          throw err;
+        }
+
+        // Custom fallback for grayscale/float data
+        const { fromUrl } = await import("geotiff");
+        const { parseCOGTileMatrixSet, texture } =
+          await import("@developmentseed/deck.gl-geotiff");
+        const { CreateTexture } =
+          await import("@developmentseed/deck.gl-raster/gpu-modules");
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const geotiffInput = (this as any).props.geotiff;
+        const geotiff =
+          typeof geotiffInput === "string"
+            ? await fromUrl(geotiffInput)
+            : geotiffInput;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const geoKeysParser = (this as any).props.geoKeysParser;
+
+        let metadata;
+        try {
+          metadata = await parseCOGTileMatrixSet(geotiff, geoKeysParser);
+        } catch {
+          // If parsing fails, try with undefined geoKeysParser
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          metadata = await parseCOGTileMatrixSet(geotiff, undefined as any);
+        }
+
+        const image = await geotiff.getImage();
+        const imageCount = await geotiff.getImageCount();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const images: any[] = [];
+        for (let i = 0; i < imageCount; i++) {
+          images.push(await geotiff.getImage(i));
+        }
+
+        const SamplesPerPixel = image.getSamplesPerPixel();
+        const BitsPerSample = image.getBitsPerSample();
+        const SampleFormat = image.getSampleFormat();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const loadTile = async (options: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const device = (this as any).context.device;
+          const overviewIndex = options.overview ?? 0;
+          const geotiffImage = images[overviewIndex] ?? image;
+
+          const rasterData = await geotiffImage.readRasters({
+            ...options,
+            interleave: true,
+          });
+
+          let data = rasterData;
+          let numSamples = SamplesPerPixel;
+
+          // Expand single-band grayscale to RGBA
+          if (SamplesPerPixel === 1) {
+            const pixelCount = rasterData.width * rasterData.height;
+            const rgba = new Float32Array(pixelCount * 4);
+            for (let i = 0; i < pixelCount; i++) {
+              const val = rasterData[i];
+              rgba[i * 4] = val;
+              rgba[i * 4 + 1] = val;
+              rgba[i * 4 + 2] = val;
+              rgba[i * 4 + 3] = 1.0;
+            }
+            data = rgba;
+            (data as { width?: number; height?: number }).width = rasterData.width;
+            (data as { width?: number; height?: number }).height = rasterData.height;
+            numSamples = 4;
+          }
+
+          const textureFormat = texture.inferTextureFormat(
+            numSamples,
+            BitsPerSample,
+            SampleFormat,
+          );
+          const tex = device.createTexture({
+            data,
+            format: textureFormat,
+            width: rasterData.width,
+            height: rasterData.height,
+            sampler: { magFilter: "nearest", minFilter: "nearest" },
+          });
+
+          return {
+            texture: tex,
+            height: rasterData.height,
+            width: rasterData.width,
+          };
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const self = this as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const renderTile = (tileData: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pipeline: any[] = [
+            {
+              module: CreateTexture,
+              props: { textureName: tileData.texture },
+            },
+          ];
+          return pipeline;
+        };
+
+        self._cogState = {
+          geotiff,
+          metadata,
+          loadTile,
+          renderTile,
+        };
+      }
+    };
   }
 
   /**
