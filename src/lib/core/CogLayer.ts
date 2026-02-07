@@ -256,6 +256,9 @@ export class CogLayerControl implements IControl {
     this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
 
+    // Set up map click handler for pickable COG layers
+    this._setupClickHandler();
+
     // Auto-load default URL if specified
     if (this._options.loadDefaultUrl && this._options.defaultUrl) {
       const loadLayer = () => {
@@ -844,7 +847,6 @@ export class CogLayerControl implements IControl {
     if (!this._map) return;
 
     const { MapboxOverlay } = await import("@deck.gl/mapbox");
-    const map = this._map;
     // Only use interleaved mode if beforeId is specified (for layer ordering)
     // interleaved: false is much faster for opacity updates
     this._deckOverlay = new MapboxOverlay({
@@ -854,8 +856,12 @@ export class CogLayerControl implements IControl {
     (this._map as unknown as { addControl(c: IControl): void }).addControl(
       this._deckOverlay,
     );
+  }
 
-    // Set up map click handler for pickable COG layers
+  private _setupClickHandler(): void {
+    if (!this._map || this._mapClickHandler) return;
+    const map = this._map;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this._mapClickHandler = (e: any) => {
       if (!this._state.pickable || this._cogLayers.size === 0) return;
