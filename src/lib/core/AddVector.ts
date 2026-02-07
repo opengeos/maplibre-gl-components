@@ -14,7 +14,11 @@ import { generateId } from "../utils/helpers";
 /**
  * Vector/polygon icon for the control button.
  */
-const VECTOR_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg>`;
+const VECTOR_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <polygon points="3 7 10 3 17 7 17 14 10 18 3 14 3 7" fill="currentColor" fill-opacity="0.15"/>
+  <polyline points="17 14 22 11 22 5" stroke-width="2"/>
+  <circle cx="21" cy="19" r="2.5" fill="currentColor"/>
+</svg>`;
 
 /**
  * Default options for the AddVectorControl.
