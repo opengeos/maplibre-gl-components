@@ -1078,9 +1078,16 @@ export class CogLayerControl implements IControl {
         _rescaleMax: this._state.rescaleMax,
         _colormap: this._state.colormap,
         // Add beforeId for layer ordering (only if specified and layer exists)
-        ...(this._options.beforeId && map.getLayer(this._options.beforeId)
-          ? { beforeId: this._options.beforeId }
-          : {}),
+        ...((() => {
+          if (this._options.beforeId) {
+            if (map.getLayer(this._options.beforeId)) {
+              return { beforeId: this._options.beforeId };
+            } else {
+              console.warn(`[CogLayerControl] beforeId "${this._options.beforeId}" not found in map layers, adding layer on top`);
+            }
+          }
+          return {};
+        })()),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onGeoTIFFLoad: (_geotiff: any, options: any) => {
           try {
