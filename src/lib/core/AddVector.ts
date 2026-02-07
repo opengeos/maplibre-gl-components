@@ -777,7 +777,12 @@ export class AddVectorControl implements IControl {
 
       if (format === "geojson") {
         // Fetch GeoJSON directly
-        const response = await fetch(this._state.url);
+        let response: Response;
+        try {
+          response = await fetch(this._state.url);
+        } catch {
+          throw new Error(`CORS error: The server doesn't allow cross-origin requests. Try using a CORS-enabled URL.`);
+        }
         if (!response.ok) {
           throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
         }
@@ -1022,7 +1027,7 @@ export class AddVectorControl implements IControl {
     try {
       response = await fetch(url, { mode: "cors" });
     } catch (fetchError) {
-      throw new Error(`Network error fetching GeoParquet: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}. This may be a CORS issue.`);
+      throw new Error(`CORS error: The server doesn't allow cross-origin requests. Try hosting the file on a CORS-enabled server or CDN.`);
     }
 
     if (!response.ok) {
