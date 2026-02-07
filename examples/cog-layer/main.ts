@@ -1,5 +1,5 @@
 import maplibregl from 'maplibre-gl';
-import { CogLayerControl } from '../../src';
+import { CogLayerControl, CogLayerAdapter } from '../../src';
 import { LayerControl } from 'maplibre-gl-layer-control';
 import 'maplibre-gl-layer-control/style.css';
 
@@ -17,17 +17,6 @@ const map = new maplibregl.Map({
 map.addControl(new maplibregl.NavigationControl(), 'top-left');
 
 
-const layerControl = new LayerControl({
-  collapsed: true,
-  layers: [], // LayerControl auto-detects opacity, visibility, and generates friendly names
-  panelWidth: 340,
-  panelMinWidth: 240,
-  panelMaxWidth: 450,
-  basemapStyleUrl: BASEMAP_STYLE,
-});
-
-map.addControl(layerControl, 'top-right');
-
 // Add COG Layer control with a sample COG URL pre-filled
 const cogControl = new CogLayerControl({
   collapsed: false,
@@ -38,6 +27,23 @@ const cogControl = new CogLayerControl({
   defaultRescaleMax: 4000,
 });
 
+
+
+// Create an adapter to integrate COG layers with the layer control
+const cogAdapter = new CogLayerAdapter(cogControl);
+
+// Add layer control with the COG adapter
+const layerControl = new LayerControl({
+  collapsed: true,
+  layers: [], // LayerControl auto-detects opacity, visibility, and generates friendly names
+  panelWidth: 340,
+  panelMinWidth: 240,
+  panelMaxWidth: 450,
+  basemapStyleUrl: BASEMAP_STYLE,
+  customLayerAdapters: [cogAdapter], // Register the COG adapter
+});
+
+map.addControl(layerControl, 'top-right');
 map.addControl(cogControl, 'top-right');
 
 // Listen for layer events

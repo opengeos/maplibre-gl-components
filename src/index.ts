@@ -25,6 +25,10 @@ export { ViewStateControl } from './lib/core/ViewStateControl';
 export { ControlGrid } from './lib/core/ControlGrid';
 export { CogLayerControl } from './lib/core/CogLayer';
 
+// Adapters for layer control integration
+export { CogLayerAdapter } from './lib/adapters';
+export type { CustomLayerAdapter } from './lib/adapters';
+
 // Provider utilities
 export {
   XYZSERVICES_URL,

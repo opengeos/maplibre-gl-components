@@ -341,6 +341,83 @@ export class CogLayerControl implements IControl {
     this._render();
   }
 
+  /**
+   * Get all COG layer IDs.
+   * Useful for adapters and external integrations.
+   */
+  getLayerIds(): string[] {
+    return Array.from(this._cogLayers.keys());
+  }
+
+  /**
+   * Get the opacity of a specific COG layer.
+   * @param layerId The layer ID
+   * @returns The opacity value (0-1) or null if layer not found
+   */
+  getLayerOpacity(layerId: string): number | null {
+    const layer = this._cogLayers.get(layerId);
+    if (!layer || !layer.props) return null;
+    return layer.props.opacity ?? 1;
+  }
+
+  /**
+   * Set the opacity of a specific COG layer.
+   * @param layerId The layer ID
+   * @param opacity The opacity value (0-1)
+   */
+  setLayerOpacity(layerId: string, opacity: number): void {
+    const layer = this._cogLayers.get(layerId);
+    if (!layer || typeof layer.clone !== 'function') return;
+
+    const clampedOpacity = Math.max(0, Math.min(1, opacity));
+    const updatedLayer = layer.clone({ opacity: clampedOpacity });
+    this._cogLayers.set(layerId, updatedLayer);
+
+    if (this._deckOverlay) {
+      this._deckOverlay.setProps({ layers: Array.from(this._cogLayers.values()) });
+    }
+
+    if (this._map) {
+      this._map.triggerRepaint();
+    }
+  }
+
+  /**
+   * Get the visibility of a specific COG layer.
+   * Visibility is simulated via opacity (opacity > 0 = visible).
+   * @param layerId The layer ID
+   * @returns true if visible, false otherwise
+   */
+  getLayerVisibility(layerId: string): boolean {
+    const opacity = this.getLayerOpacity(layerId);
+    return opacity !== null && opacity > 0;
+  }
+
+  /**
+   * Set the visibility of a specific COG layer.
+   * Visibility is simulated by setting opacity to 0 (hidden) or restoring it (visible).
+   * @param layerId The layer ID
+   * @param visible Whether the layer should be visible
+   * @param storedOpacity Optional opacity to restore when making visible (defaults to 1)
+   */
+  setLayerVisibility(layerId: string, visible: boolean, storedOpacity: number = 1): void {
+    if (visible) {
+      this.setLayerOpacity(layerId, storedOpacity);
+    } else {
+      this.setLayerOpacity(layerId, 0);
+    }
+  }
+
+  /**
+   * Get the URL for a specific COG layer.
+   * @param layerId The layer ID
+   * @returns The COG URL or null if layer not found
+   */
+  getLayerUrl(layerId: string): string | null {
+    const props = this._cogLayerPropsMap.get(layerId);
+    return props?.geotiff as string ?? null;
+  }
+
   private _emit(event: CogLayerEvent, extra?: { url?: string; error?: string; layerId?: string }): void {
     const handlers = this._eventHandlers.get(event);
     if (handlers) {
