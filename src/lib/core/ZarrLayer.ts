@@ -420,7 +420,7 @@ export class ZarrLayerControl implements IControl {
       this._updateColormapPreview();
     });
     cmGroup.appendChild(cmSelect);
-    
+
     // Colormap preview
     const cmPreview = document.createElement('div');
     cmPreview.className = 'maplibre-gl-zarr-layer-colormap-preview';
