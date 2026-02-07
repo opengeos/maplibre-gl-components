@@ -1483,6 +1483,8 @@ export interface PMTilesLayerInfo {
   layerIds: string[];
   /** Layer opacity. */
   opacity: number;
+  /** Whether features are pickable (clickable). */
+  pickable: boolean;
 }
 
 /**
@@ -1511,6 +1513,8 @@ export interface PMTilesLayerControlOptions {
   defaultLineColor?: string;
   /** Default circle color for vector points. Default: 'steelblue'. */
   defaultCircleColor?: string;
+  /** Whether features are pickable (clickable) by default. Default: true. */
+  defaultPickable?: boolean;
   /** Width of the panel in pixels. Default: 300. */
   panelWidth?: number;
   /** Background color of the container. */
@@ -1545,6 +1549,8 @@ export interface PMTilesLayerControlState {
   availableSourceLayers: string[];
   /** Selected source layers to render. */
   selectedSourceLayers: string[];
+  /** Whether features are pickable (clickable). */
+  pickable: boolean;
   /** Whether any PMTiles layer is currently active. */
   hasLayer: boolean;
   /** Number of active PMTiles layers. */
