@@ -290,12 +290,23 @@ export class StacSearchControl implements IControl {
 
   private _render(): void {
     if (!this._container) return;
+
+    // Save scroll position before re-rendering
+    const panel = this._container.querySelector(".maplibre-gl-stac-search-panel");
+    const scrollTop = panel?.scrollTop ?? 0;
+
     this._container.innerHTML = "";
 
     if (this._state.collapsed) {
       this._renderCollapsed();
     } else {
       this._renderExpanded();
+      
+      // Restore scroll position after re-rendering
+      const newPanel = this._container.querySelector(".maplibre-gl-stac-search-panel");
+      if (newPanel && scrollTop > 0) {
+        newPanel.scrollTop = scrollTop;
+      }
     }
   }
 
