@@ -389,6 +389,7 @@
 
 .maplibre-gl-stac-layer-mode-btn:hover {
   background: #e8e8e8;
+  color: #333;
 }
 
 .maplibre-gl-stac-layer-mode-btn--active {
@@ -398,6 +399,7 @@
 
 .maplibre-gl-stac-layer-mode-btn--active:hover {
   background: #006bc1;
+  color: white;
 }
 
 /* RGB band selectors */
