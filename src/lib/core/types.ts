@@ -1616,7 +1616,11 @@ export type PMTilesLayerEventHandler = (event: {
 /**
  * Supported remote vector format types for AddVectorControl.
  */
-export type RemoteVectorFormat = "geojson" | "geoparquet" | "flatgeobuf" | "auto";
+export type RemoteVectorFormat =
+  | "geojson"
+  | "geoparquet"
+  | "flatgeobuf"
+  | "auto";
 
 /**
  * Information about a single added vector layer from URL.
@@ -2087,4 +2091,346 @@ export type StacSearchEventHandler = (event: {
   collection?: StacCollection;
   item?: StacSearchItem;
   error?: string;
+}) => void;
+
+// ============================================================================
+// MeasureControl Types
+// ============================================================================
+
+/**
+ * Measurement unit for distance.
+ */
+export type DistanceUnit =
+  | "meters"
+  | "kilometers"
+  | "miles"
+  | "feet"
+  | "yards"
+  | "nautical-miles";
+
+/**
+ * Measurement unit for area.
+ */
+export type AreaUnit =
+  | "square-meters"
+  | "square-kilometers"
+  | "square-miles"
+  | "hectares"
+  | "acres"
+  | "square-feet";
+
+/**
+ * Measurement mode.
+ */
+export type MeasureMode = "distance" | "area";
+
+/**
+ * Options for configuring the MeasureControl.
+ */
+export interface MeasureControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether to start collapsed. Default: true. */
+  collapsed?: boolean;
+  /** Default measurement mode. Default: 'distance'. */
+  defaultMode?: MeasureMode;
+  /** Default distance unit. Default: 'kilometers'. */
+  distanceUnit?: DistanceUnit;
+  /** Default area unit. Default: 'square-kilometers'. */
+  areaUnit?: AreaUnit;
+  /** Line color for distance measurements. Default: '#3b82f6'. */
+  lineColor?: string;
+  /** Line width for distance measurements. Default: 3. */
+  lineWidth?: number;
+  /** Fill color for area measurements. Default: 'rgba(59, 130, 246, 0.2)'. */
+  fillColor?: string;
+  /** Point color for vertices. Default: '#ef4444'. */
+  pointColor?: string;
+  /** Point radius for vertices. Default: 6. */
+  pointRadius?: number;
+  /** Whether to show segment distances. Default: true. */
+  showSegments?: boolean;
+  /** Whether to show total distance/area label. Default: true. */
+  showTotal?: boolean;
+  /** Number of decimal places for measurements. Default: 2. */
+  precision?: number;
+  /** Panel width in pixels. Default: 240. */
+  panelWidth?: number;
+  /** Background color of the panel. Default: 'rgba(255, 255, 255, 0.95)'. */
+  backgroundColor?: string;
+  /** Border radius in pixels. Default: 4. */
+  borderRadius?: number;
+  /** Opacity of the control (0-1). Default: 1. */
+  opacity?: number;
+  /** Font size in pixels. Default: 12. */
+  fontSize?: number;
+  /** Font color. Default: '#333'. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * A single measurement point.
+ */
+export interface MeasurePoint {
+  /** Longitude. */
+  lng: number;
+  /** Latitude. */
+  lat: number;
+}
+
+/**
+ * A completed measurement.
+ */
+export interface Measurement {
+  /** Unique identifier. */
+  id: string;
+  /** Measurement mode. */
+  mode: MeasureMode;
+  /** Points that define the measurement. */
+  points: MeasurePoint[];
+  /** Total distance in meters (for distance mode). */
+  distance?: number;
+  /** Total area in square meters (for area mode). */
+  area?: number;
+  /** Segment distances in meters. */
+  segments?: number[];
+}
+
+/**
+ * Internal state of the MeasureControl.
+ */
+export interface MeasureControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Current measurement mode. */
+  mode: MeasureMode;
+  /** Current distance unit. */
+  distanceUnit: DistanceUnit;
+  /** Current area unit. */
+  areaUnit: AreaUnit;
+  /** Whether currently drawing a measurement. */
+  isDrawing: boolean;
+  /** Current drawing points. */
+  currentPoints: MeasurePoint[];
+  /** Current measurement value (distance or area). */
+  currentValue: number;
+  /** Segment distances for current drawing. */
+  currentSegments: number[];
+  /** Completed measurements. */
+  measurements: Measurement[];
+}
+
+/**
+ * MeasureControl event types.
+ */
+export type MeasureEvent =
+  | ComponentEvent
+  | "modechange"
+  | "unitchange"
+  | "drawstart"
+  | "drawupdate"
+  | "drawend"
+  | "clear"
+  | "measurementadd"
+  | "measurementremove";
+
+/**
+ * MeasureControl event handler function type.
+ */
+export type MeasureEventHandler = (event: {
+  type: MeasureEvent;
+  state: MeasureControlState;
+  measurement?: Measurement;
+}) => void;
+
+// ============================================================================
+// SplitMapControl Types
+// ============================================================================
+
+/**
+ * Split orientation.
+ */
+export type SplitOrientation = "vertical" | "horizontal";
+
+/**
+ * Options for configuring the SplitMapControl.
+ */
+export interface SplitMapControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Split orientation. Default: 'vertical'. */
+  orientation?: SplitOrientation;
+  /** Initial split position (0-1). Default: 0.5. */
+  initialPosition?: number;
+  /** Left/top layer ID. */
+  leftLayer?: string;
+  /** Right/bottom layer ID. */
+  rightLayer?: string;
+  /** Swiper line color. Default: '#ffffff'. */
+  swiperColor?: string;
+  /** Swiper line width. Default: 4. */
+  swiperWidth?: number;
+  /** Swiper handle size. Default: 40. */
+  handleSize?: number;
+  /** Whether to show layer labels. Default: true. */
+  showLabels?: boolean;
+  /** Label for left/top layer. Default: 'Before'. */
+  leftLabel?: string;
+  /** Label for right/bottom layer. Default: 'After'. */
+  rightLabel?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the SplitMapControl.
+ */
+export interface SplitMapControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the split mode is active. */
+  active: boolean;
+  /** Current split position (0-1). */
+  position: number;
+  /** Split orientation. */
+  orientation: SplitOrientation;
+  /** Left layer ID. */
+  leftLayer: string | null;
+  /** Right layer ID. */
+  rightLayer: string | null;
+}
+
+/**
+ * SplitMapControl event types.
+ */
+export type SplitMapEvent =
+  | ComponentEvent
+  | "activate"
+  | "deactivate"
+  | "positionchange"
+  | "layerchange";
+
+/**
+ * SplitMapControl event handler function type.
+ */
+export type SplitMapEventHandler = (event: {
+  type: SplitMapEvent;
+  state: SplitMapControlState;
+}) => void;
+
+// ============================================================================
+// BookmarkControl Types
+// ============================================================================
+
+/**
+ * A saved map bookmark/view.
+ */
+export interface MapBookmark {
+  /** Unique identifier. */
+  id: string;
+  /** Bookmark name. */
+  name: string;
+  /** Center longitude. */
+  lng: number;
+  /** Center latitude. */
+  lat: number;
+  /** Zoom level. */
+  zoom: number;
+  /** Pitch (tilt). */
+  pitch: number;
+  /** Bearing (rotation). */
+  bearing: number;
+  /** Timestamp when created. */
+  createdAt: number;
+  /** Optional thumbnail data URL. */
+  thumbnail?: string;
+}
+
+/**
+ * Options for configuring the BookmarkControl.
+ */
+export interface BookmarkControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether to start collapsed. Default: true. */
+  collapsed?: boolean;
+  /** Initial bookmarks. Default: []. */
+  bookmarks?: MapBookmark[];
+  /** localStorage key for persistence. Default: null (no persistence). */
+  storageKey?: string;
+  /** Maximum number of bookmarks. Default: 20. */
+  maxBookmarks?: number;
+  /** Whether to generate thumbnails. Default: false. */
+  generateThumbnails?: boolean;
+  /** Fly-to animation duration in ms. Default: 1500. */
+  flyToDuration?: number;
+  /** Panel width in pixels. Default: 260. */
+  panelWidth?: number;
+  /** Background color. Default: 'rgba(255, 255, 255, 0.95)'. */
+  backgroundColor?: string;
+  /** Border radius in pixels. Default: 4. */
+  borderRadius?: number;
+  /** Font size in pixels. Default: 12. */
+  fontSize?: number;
+  /** Font color. Default: '#333'. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the BookmarkControl.
+ */
+export interface BookmarkControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Saved bookmarks. */
+  bookmarks: MapBookmark[];
+  /** Currently selected bookmark ID. */
+  selectedId: string | null;
+}
+
+/**
+ * BookmarkControl event types.
+ */
+export type BookmarkEvent =
+  | ComponentEvent
+  | "add"
+  | "remove"
+  | "select"
+  | "rename"
+  | "clear"
+  | "import";
+
+/**
+ * BookmarkControl event handler function type.
+ */
+export type BookmarkEventHandler = (event: {
+  type: BookmarkEvent;
+  state: BookmarkControlState;
+  bookmark?: MapBookmark;
 }) => void;

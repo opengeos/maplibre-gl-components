@@ -1,0 +1,388 @@
+/* MeasureControl styles */
+
+.maplibre-gl-measure-control {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+}
+
+.maplibre-gl-measure-control .measure-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.15s ease;
+}
+
+.maplibre-gl-measure-control .measure-button:hover {
+  background-color: #f3f4f6;
+}
+
+.maplibre-gl-measure-control .measure-button.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.maplibre-gl-measure-control .measure-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.maplibre-gl-measure-control .measure-panel {
+  position: absolute;
+  top: 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.maplibre-gl-measure-control .measure-panel.left {
+  right: calc(100% + 8px);
+}
+
+.maplibre-gl-measure-control .measure-panel.right {
+  left: calc(100% + 8px);
+}
+
+.maplibre-gl-measure-control .measure-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+}
+
+.maplibre-gl-measure-control .measure-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #6b7280;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-measure-control .measure-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.maplibre-gl-measure-control .measure-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.maplibre-gl-measure-control .measure-content {
+  padding: 10px;
+}
+
+.maplibre-gl-measure-control .measure-mode-toggle {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-measure-control .mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  color: #374151;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-measure-control .mode-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.maplibre-gl-measure-control .mode-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+.maplibre-gl-measure-control .mode-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.maplibre-gl-measure-control .measure-unit {
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-measure-control .measure-unit label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.maplibre-gl-measure-control .measure-unit select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-measure-control .measure-unit select:hover {
+  border-color: #d1d5db;
+}
+
+.maplibre-gl-measure-control .measure-unit select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-measure-control .measure-result {
+  padding: 10px;
+  background: #f9fafb;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-measure-control .result-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.maplibre-gl-measure-control .result-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.maplibre-gl-measure-control .result-unit {
+  font-size: 12px;
+  font-weight: 400;
+  color: #6b7280;
+  margin-left: 4px;
+}
+
+.maplibre-gl-measure-control .measure-segments {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.maplibre-gl-measure-control .segment-label {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.maplibre-gl-measure-control .segment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.maplibre-gl-measure-control .segment-item {
+  padding: 2px 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  font-size: 10px;
+  color: #4b5563;
+}
+
+.maplibre-gl-measure-control .measure-instructions {
+  padding: 8px 10px;
+  background: #fef3c7;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #92400e;
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-measure-control .measure-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.maplibre-gl-measure-control .action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  color: #374151;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-measure-control .action-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.maplibre-gl-measure-control .action-btn.primary {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+.maplibre-gl-measure-control .action-btn.primary:hover {
+  background: #2563eb;
+}
+
+.maplibre-gl-measure-control .action-btn.danger {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.maplibre-gl-measure-control .action-btn.danger:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.maplibre-gl-measure-control .action-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.maplibre-gl-measure-control .action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Measurement labels on map */
+.measure-label {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1f2937;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.measure-label.total {
+  background: #3b82f6;
+  color: white;
+  font-weight: 600;
+}
+
+.measure-label.segment {
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+/* Measurements list */
+.maplibre-gl-measure-control .measurements-list {
+  max-height: 150px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-measure-control .measurement-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  background: #f9fafb;
+  transition: background 0.15s ease;
+}
+
+.maplibre-gl-measure-control .measurement-item:hover {
+  background: #f3f4f6;
+}
+
+.maplibre-gl-measure-control .measurement-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.maplibre-gl-measure-control .measurement-icon {
+  color: #6b7280;
+}
+
+.maplibre-gl-measure-control .measurement-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.maplibre-gl-measure-control .measurement-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.maplibre-gl-measure-control .measurement-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #9ca3af;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-measure-control .measurement-delete:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.maplibre-gl-measure-control .measurement-delete svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Empty state */
+.maplibre-gl-measure-control .empty-state {
+  padding: 16px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 12px;
+}
