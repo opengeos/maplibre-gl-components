@@ -17,7 +17,6 @@ import "./lib/styles/add-vector.css";
 import "./lib/styles/stac-layer.css";
 import "./lib/styles/stac-search.css";
 import "./lib/styles/measure-control.css";
-import "./lib/styles/coordinate-control.css";
 import "./lib/styles/bookmark-control.css";
 
 // Main entry point - Core exports
@@ -38,11 +37,15 @@ export { AddVectorControl } from "./lib/core/AddVector";
 export { StacLayerControl } from "./lib/core/StacLayer";
 export { StacSearchControl } from "./lib/core/StacSearch";
 export { MeasureControl } from "./lib/core/MeasureControl";
-export { CoordinateControl } from "./lib/core/CoordinateControl";
 export { BookmarkControl } from "./lib/core/BookmarkControl";
 
 // Adapters for layer control integration
-export { CogLayerAdapter, ZarrLayerAdapter, PMTilesLayerAdapter, AddVectorAdapter } from "./lib/adapters";
+export {
+  CogLayerAdapter,
+  ZarrLayerAdapter,
+  PMTilesLayerAdapter,
+  AddVectorAdapter,
+} from "./lib/adapters";
 export type { CustomLayerAdapter } from "./lib/adapters";
 
 // Provider utilities
@@ -232,11 +235,6 @@ export type {
   Measurement,
   DistanceUnit,
   AreaUnit,
-  CoordinateControlOptions,
-  CoordinateControlState,
-  CoordinateEvent,
-  CoordinateEventHandler,
-  CoordinateFormat,
   BookmarkControlOptions,
   BookmarkControlState,
   BookmarkEvent,
