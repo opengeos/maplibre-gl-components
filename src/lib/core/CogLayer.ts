@@ -932,6 +932,22 @@ export class CogLayerControl implements IControl {
   }
 
   /**
+   * Register common projections that may not be included by default.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async _registerCommonProjections(proj4Fn: any): Promise<void> {
+    // Canadian projections
+    proj4Fn.defs(
+      "EPSG:3978",
+      "+proj=lcc +lat_0=49 +lon_0=-95 +lat_1=49 +lat_2=77 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +type=crs",
+    );
+    proj4Fn.defs(
+      "EPSG:3979",
+      "+proj=lcc +lat_0=49 +lon_0=-95 +lat_1=49 +lat_2=77 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=-0.991,1.9072,0.5129,-1.25033e-07,-4.6785e-08,-5.6529e-08,0 +units=m +no_defs +type=crs",
+    );
+  }
+
+  /**
    * Build a geoKeysParser function using geotiff-geokeys-to-proj4.
    * This converts GeoTIFF geokeys to a ProjectionInfo object compatible
    * with @developmentseed/deck.gl-geotiff.
@@ -946,34 +962,61 @@ export class CogLayerControl implements IControl {
     parsed: Record<string, unknown>;
     coordinatesUnits: string;
   } | null> {
+    // Pre-load proj4 and register common projections immediately
+    let proj4Fn: unknown = null;
+    import("proj4").then((module) => {
+      proj4Fn = module.default || module;
+      if (typeof proj4Fn === "function") {
+        this._registerCommonProjections(proj4Fn);
+      }
+    });
+
     return async (geoKeys: Record<string, unknown>) => {
       try {
+        console.log("COG geoKeysParser called with:", geoKeys);
         const result = geoKeysToProj4.toProj4(geoKeys);
+        console.log("COG geoKeysToProj4 result:", result);
+
         if (result && result.proj4) {
-          // Dynamically import proj4 for parsing
-          const proj4Module = await import("proj4");
-          const proj4Fn = proj4Module.default || proj4Module;
+          // Remove axis parameter which can cause issues with some projections
+          // The axis=ne parameter indicates northing-easting order which can
+          // confuse coordinate transformations
+          let proj4Str = result.proj4 as string;
+          proj4Str = proj4Str.replace(/\+axis=\w+\s*/g, "");
+          console.log("COG cleaned proj4 string:", proj4Str);
+
+          // Dynamically import proj4 for parsing if not already loaded
+          if (!proj4Fn) {
+            const proj4Module = await import("proj4");
+            proj4Fn = proj4Module.default || proj4Module;
+            if (typeof proj4Fn === "function") {
+              await this._registerCommonProjections(proj4Fn);
+            }
+          }
           let parsed: Record<string, unknown> = {};
           if (typeof proj4Fn === "function") {
             try {
-              proj4Fn.defs("custom", result.proj4);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (proj4Fn as any).defs("custom", proj4Str);
               parsed =
-                (proj4Fn.defs("custom") as unknown as Record<
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ((proj4Fn as any).defs("custom") as unknown as Record<
                   string,
                   unknown
                 >) || {};
-            } catch {
-              // ignore proj4 parsing errors
+              console.log("COG proj4 parsed definition:", parsed);
+            } catch (e) {
+              console.error("COG proj4 parsing error:", e);
             }
           }
           return {
-            def: result.proj4 as string,
+            def: proj4Str,
             parsed,
             coordinatesUnits: (result.coordinatesUnits as string) || "metre",
           };
         }
-      } catch {
-        // Fall back to default parser
+      } catch (e) {
+        console.error("COG geoKeysParser error:", e);
       }
       return null;
     };

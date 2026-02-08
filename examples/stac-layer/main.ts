@@ -21,7 +21,7 @@ map.addControl(new maplibregl.NavigationControl(), "top-left");
 const stacControl = new StacLayerControl({
   collapsed: false,
   defaultUrl:
-    "https://canada-spot-ortho.s3.amazonaws.com/canada_spot_orthoimages/canada_spot5_orthoimages/S5_2007/S5_11055_6057_20070622/S5_11055_6057_20070622.json",
+    "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_10SEG_20260207_0_L2A",
   loadDefaultUrl: true,
   defaultRescaleMin: 0,
   defaultRescaleMax: 255,

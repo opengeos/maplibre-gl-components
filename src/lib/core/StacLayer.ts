@@ -8,9 +8,114 @@ import type {
   StacLayerEventHandler,
   StacAssetInfo,
   ColormapName,
+  ColorStop,
   ControlPosition,
 } from "./types";
 import { getColormap } from "../colormaps";
+
+/**
+ * Shader module that rescales float raster values to [0,1] for visualization.
+ * Single-band: maps value from [minVal, maxVal] to grayscale.
+ * Multi-band: rescales each channel independently.
+ */
+const RescaleFloat = {
+  name: "rescaleFloat",
+  fs: `\
+uniform rescaleFloatUniforms {
+  float minVal;
+  float maxVal;
+  float isSingleBand;
+} rescaleFloat;
+`,
+  inject: {
+    "fs:DECKGL_FILTER_COLOR": /* glsl */ `
+    float range = rescaleFloat.maxVal - rescaleFloat.minVal;
+    if (range > 0.0) {
+      if (rescaleFloat.isSingleBand > 0.5) {
+        float val = clamp((color.r - rescaleFloat.minVal) / range, 0.0, 1.0);
+        color = vec4(val, val, val, 1.0);
+      } else {
+        color.r = clamp((color.r - rescaleFloat.minVal) / range, 0.0, 1.0);
+        color.g = clamp((color.g - rescaleFloat.minVal) / range, 0.0, 1.0);
+        color.b = clamp((color.b - rescaleFloat.minVal) / range, 0.0, 1.0);
+      }
+    }
+    `,
+  },
+  uniformTypes: {
+    minVal: "f32" as const,
+    maxVal: "f32" as const,
+    isSingleBand: "f32" as const,
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getUniforms: (props: any) => ({
+    minVal: props.minVal,
+    maxVal: props.maxVal,
+    isSingleBand: props.isSingleBand,
+  }),
+};
+
+/**
+ * Recursively apply opacity to deck.gl sublayers via clone().
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyOpacity(layers: any, opacity: number): any {
+  if (!layers) return layers;
+  if (Array.isArray(layers)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return layers.map((layer: any) => applyOpacity(layer, opacity));
+  }
+  if (typeof layers.clone === "function") {
+    return layers.clone({ opacity });
+  }
+  return layers;
+}
+
+/**
+ * Parse a CSS hex color (#RGB or #RRGGBB) to [r, g, b] values (0-255).
+ */
+function parseHexColor(hex: string): [number, number, number] {
+  let h = hex.replace("#", "");
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
+}
+
+/**
+ * Build a 256×1 RGBA ImageData from an array of ColorStops.
+ * Linearly interpolates between stops.
+ */
+function colormapToImageData(stops: ColorStop[]): ImageData {
+  const size = 256;
+  const rgba = new Uint8ClampedArray(size * 4);
+  const parsed = stops.map((s) => ({
+    pos: s.position,
+    rgb: parseHexColor(s.color),
+  }));
+  for (let i = 0; i < size; i++) {
+    const t = i / (size - 1);
+    // Find surrounding stops
+    let lo = parsed[0],
+      hi = parsed[parsed.length - 1];
+    for (let j = 0; j < parsed.length - 1; j++) {
+      if (t >= parsed[j].pos && t <= parsed[j + 1].pos) {
+        lo = parsed[j];
+        hi = parsed[j + 1];
+        break;
+      }
+    }
+    const range = hi.pos - lo.pos;
+    const f = range > 0 ? (t - lo.pos) / range : 0;
+    rgba[i * 4] = lo.rgb[0] + (hi.rgb[0] - lo.rgb[0]) * f;
+    rgba[i * 4 + 1] = lo.rgb[1] + (hi.rgb[1] - lo.rgb[1]) * f;
+    rgba[i * 4 + 2] = lo.rgb[2] + (hi.rgb[2] - lo.rgb[2]) * f;
+    rgba[i * 4 + 3] = 255;
+  }
+  return new ImageData(rgba, size, 1);
+}
 
 /**
  * All available colormap names.
@@ -446,13 +551,17 @@ export class StacLayerControl implements IControl {
         for (const asset of this._state.assets) {
           const option = document.createElement("option");
           option.value = asset.key;
-          option.textContent = asset.title || asset.key;
+          // Show data type in dropdown if available
+          const dataTypeLabel = asset.dataType ? ` (${asset.dataType})` : "";
+          option.textContent = (asset.title || asset.key) + dataTypeLabel;
           option.selected = this._state.selectedAsset === asset.key;
           assetSelect.appendChild(option);
         }
 
         assetSelect.addEventListener("change", () => {
           this._state.selectedAsset = assetSelect.value || null;
+          // Auto-set rescale based on data type
+          this._autoSetRescale();
           this._render();
         });
 
@@ -484,7 +593,8 @@ export class StacLayerControl implements IControl {
           for (const asset of this._state.assets) {
             const opt = document.createElement("option");
             opt.value = asset.key;
-            opt.textContent = asset.title || asset.key;
+            const dataTypeLabel = asset.dataType ? ` (${asset.dataType})` : "";
+            opt.textContent = (asset.title || asset.key) + dataTypeLabel;
             opt.selected = this._state.rgbAssets[i] === asset.key;
             select.appendChild(opt);
           }
@@ -492,6 +602,15 @@ export class StacLayerControl implements IControl {
           const idx = i;
           select.addEventListener("change", () => {
             this._state.rgbAssets[idx] = select.value || null;
+            // Auto-set rescale based on first selected RGB band
+            if (idx === 0 && select.value) {
+              const asset = this._state.assets.find((a) => a.key === select.value);
+              if (asset) {
+                this._state.selectedAsset = asset.key;
+                this._autoSetRescale();
+                this._state.selectedAsset = null;
+              }
+            }
             this._render();
           });
 
@@ -526,6 +645,7 @@ export class StacLayerControl implements IControl {
         colormapSelect.addEventListener("change", () => {
           this._state.colormap = colormapSelect.value as ColormapName | "none";
           this._updateColormapPreview();
+          this._updateRescaleAndColormap();
         });
 
         colormapGroup.appendChild(colormapSelect);
@@ -553,6 +673,9 @@ export class StacLayerControl implements IControl {
       minInput.addEventListener("input", () => {
         this._state.rescaleMin = Number(minInput.value) || 0;
       });
+      minInput.addEventListener("change", () => {
+        this._updateRescaleAndColormap();
+      });
 
       const maxInput = document.createElement("input");
       maxInput.type = "number";
@@ -561,6 +684,9 @@ export class StacLayerControl implements IControl {
       maxInput.value = String(this._state.rescaleMax);
       maxInput.addEventListener("input", () => {
         this._state.rescaleMax = Number(maxInput.value) || 255;
+      });
+      maxInput.addEventListener("change", () => {
+        this._updateRescaleAndColormap();
       });
 
       rescaleRow.appendChild(minInput);
@@ -715,6 +841,39 @@ export class StacLayerControl implements IControl {
     panel.appendChild(status);
   }
 
+  /**
+   * Auto-set rescale values based on the selected asset's data type.
+   */
+  private _autoSetRescale(): void {
+    if (!this._state.selectedAsset) return;
+
+    const asset = this._state.assets.find(
+      (a) => a.key === this._state.selectedAsset
+    );
+    if (!asset) return;
+
+    const dataType = asset.dataType?.toLowerCase();
+
+    if (dataType === "uint16") {
+      // Sentinel-2, Landsat, etc. - typical reflectance range 0-10000
+      this._state.rescaleMin = 0;
+      this._state.rescaleMax = 10000;
+    } else if (dataType === "int16") {
+      // Some elevation data, signed 16-bit
+      this._state.rescaleMin = -32768;
+      this._state.rescaleMax = 32767;
+    } else if (dataType === "float32" || dataType === "float64") {
+      // Float data - assume normalized 0-1 or use common ranges
+      this._state.rescaleMin = 0;
+      this._state.rescaleMax = 1;
+    } else if (dataType === "uint8") {
+      // Standard 8-bit imagery
+      this._state.rescaleMin = 0;
+      this._state.rescaleMax = 255;
+    }
+    // For unknown types, keep existing values
+  }
+
   private _updateColormapPreview(): void {
     const preview = this._colormapPreview;
     if (!preview) return;
@@ -724,9 +883,10 @@ export class StacLayerControl implements IControl {
       return;
     }
 
-    const colors = getColormap(this._state.colormap as ColormapName);
-    if (colors && colors.length > 0) {
-      const gradient = colors.join(", ");
+    const stops = getColormap(this._state.colormap as ColormapName);
+    if (stops && stops.length > 0) {
+      // Extract color values from ColorStop objects
+      const gradient = stops.map((s) => s.color).join(", ");
       preview.style.background = `linear-gradient(to right, ${gradient})`;
       preview.style.display = "block";
     } else {
@@ -767,7 +927,19 @@ export class StacLayerControl implements IControl {
       // Extract COG assets
       const assets: StacAssetInfo[] = [];
       for (const [key, asset] of Object.entries(stacItem.assets)) {
-        const assetObj = asset as { href: string; type?: string; title?: string };
+        const assetObj = asset as {
+          href: string;
+          type?: string;
+          title?: string;
+          data_type?: string;
+          nodata?: number;
+          "raster:bands"?: Array<{
+            data_type?: string;
+            nodata?: number;
+            scale?: number;
+            offset?: number;
+          }>;
+        };
         // Filter for COG/GeoTIFF assets
         if (
           assetObj.type?.includes("geotiff") ||
@@ -775,11 +947,17 @@ export class StacLayerControl implements IControl {
           assetObj.href?.endsWith(".tif") ||
           assetObj.href?.endsWith(".tiff")
         ) {
+          // Extract raster:bands metadata if available
+          const rasterBand = assetObj["raster:bands"]?.[0];
           assets.push({
             key,
             href: assetObj.href,
             type: assetObj.type || "image/tiff",
             title: assetObj.title || key,
+            dataType: rasterBand?.data_type || assetObj.data_type,
+            nodata: rasterBand?.nodata ?? assetObj.nodata,
+            scale: rasterBand?.scale,
+            offset: rasterBand?.offset,
           });
         }
       }
@@ -888,20 +1066,132 @@ export class StacLayerControl implements IControl {
         await this._ensureOverlay();
 
         const { COGLayer } = await import("@developmentseed/deck.gl-geotiff");
+        const { fromUrl } = await import("geotiff");
         this._patchCOGLayer(COGLayer);
 
-        // For RGB composite, we load each band separately and combine
+        // For RGB composite, we create a custom layer with multi-band getTileData
         const layerId = `stac-${this._state.stacItem?.id || "layer"}-rgb-${this._layerCounter++}`;
+
+        // Pre-load all 3 GeoTIFFs for band access
+        const [rTiff, gTiff, bTiff] = await Promise.all([
+          fromUrl(rAsset.href),
+          fromUrl(gAsset.href),
+          fromUrl(bAsset.href),
+        ]);
+
+        // Pre-load all images (overviews) from each TIFF
+        const rImageCount = await rTiff.getImageCount();
+        const gImageCount = await gTiff.getImageCount();
+        const bImageCount = await bTiff.getImageCount();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rImages: any[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const gImages: any[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const bImages: any[] = [];
+
+        for (let i = 0; i < rImageCount; i++) {
+          rImages.push(await rTiff.getImage(i));
+        }
+        for (let i = 0; i < gImageCount; i++) {
+          gImages.push(await gTiff.getImage(i));
+        }
+        for (let i = 0; i < bImageCount; i++) {
+          bImages.push(await bTiff.getImage(i));
+        }
+
+        const rescaleMin = this._state.rescaleMin;
+        const rescaleMax = this._state.rescaleMax;
+        const rescaleRange = rescaleMax - rescaleMin;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const layerProps: Record<string, any> = {
           id: layerId,
-          geotiff: [rAsset.href, gAsset.href, bAsset.href],
+          geotiff: rTiff, // Use red band as the primary for tile structure
           opacity: this._state.layerOpacity,
           pickable: this._state.pickable,
-          _rescaleMin: this._state.rescaleMin,
-          _rescaleMax: this._state.rescaleMax,
+          _rescaleMin: rescaleMin,
+          _rescaleMax: rescaleMax,
           _isRgb: true,
+          // Custom getTileData to load all 3 bands and combine into RGB
+          getTileData: async (
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            rImage: any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            options: any,
+          ) => {
+            const { window: tileWindow, pool } = options;
+
+            // Find matching overview images from G and B bands by dimensions
+            const rWidth = rImage.getWidth();
+            const rHeight = rImage.getHeight();
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let gImage: any = gImages[0];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let bImage: any = bImages[0];
+
+            // Find the image with matching dimensions for each band
+            for (const img of gImages) {
+              if (img.getWidth() === rWidth && img.getHeight() === rHeight) {
+                gImage = img;
+                break;
+              }
+            }
+            for (const img of bImages) {
+              if (img.getWidth() === rWidth && img.getHeight() === rHeight) {
+                bImage = img;
+                break;
+              }
+            }
+
+            const readOptions = {
+              window: tileWindow,
+              pool,
+              interleave: false,
+            };
+
+            const [rData, gData, bData] = await Promise.all([
+              rImage.readRasters(readOptions),
+              gImage.readRasters(readOptions),
+              bImage.readRasters(readOptions),
+            ]);
+
+            const width = rData.width;
+            const height = rData.height;
+            const rBand = rData[0] as Float32Array | Uint8Array | Uint16Array;
+            const gBand = gData[0] as Float32Array | Uint8Array | Uint16Array;
+            const bBand = bData[0] as Float32Array | Uint8Array | Uint16Array;
+
+            // Create RGBA ImageData
+            const rgbaData = new Uint8ClampedArray(width * height * 4);
+            for (let i = 0; i < width * height; i++) {
+              // Normalize values to 0-255 range using rescale params
+              const rVal = Math.max(
+                0,
+                Math.min(255, ((rBand[i] - rescaleMin) / rescaleRange) * 255),
+              );
+              const gVal = Math.max(
+                0,
+                Math.min(255, ((gBand[i] - rescaleMin) / rescaleRange) * 255),
+              );
+              const bVal = Math.max(
+                0,
+                Math.min(255, ((bBand[i] - rescaleMin) / rescaleRange) * 255),
+              );
+              rgbaData[i * 4] = rVal;
+              rgbaData[i * 4 + 1] = gVal;
+              rgbaData[i * 4 + 2] = bVal;
+              rgbaData[i * 4 + 3] = 255;
+            }
+
+            return {
+              width,
+              height,
+              texture: new ImageData(rgbaData, width, height),
+            };
+          },
         };
 
         // Add custom geoKeysParser for better projection support
@@ -916,6 +1206,8 @@ export class StacLayerControl implements IControl {
         this._deckOverlay.setProps({
           layers: Array.from(this._cogLayers.values()),
         });
+
+        console.log(`STAC RGB layer added: ${r},${g},${b} id: ${layerId}`);
 
         // Fit to bounds if available
         if (this._state.stacItem?.bbox) {
@@ -980,6 +1272,11 @@ export class StacLayerControl implements IControl {
         _rescaleMin: this._state.rescaleMin,
         _rescaleMax: this._state.rescaleMax,
         _colormap: this._state.colormap,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onGeoTIFFLoad: (geotiff: any, opts: any) => {
+          console.log(`STAC GeoTIFF loaded:`, geotiff, opts);
+          console.log(`STAC geographic bounds:`, opts.geographicBounds);
+        },
       };
 
       // Add custom geoKeysParser for better projection support
@@ -988,16 +1285,20 @@ export class StacLayerControl implements IControl {
         layerProps.geoKeysParser = geoKeysParser;
       }
 
+      console.log(`STAC single-band layer props:`, layerProps);
       this._cogLayerPropsMap.set(layerId, layerProps);
       const newLayer = new COGLayer(layerProps);
+      console.log(`STAC single-band layer created:`, newLayer);
       this._cogLayers.set(layerId, newLayer);
       this._deckOverlay.setProps({
         layers: Array.from(this._cogLayers.values()),
       });
+      console.log(`STAC overlay updated with ${this._cogLayers.size} layers`);
 
       // Fit to bounds if available
       if (this._state.stacItem?.bbox) {
         const [west, south, east, north] = this._state.stacItem.bbox;
+        console.log(`STAC fitting to bbox:`, [west, south, east, north]);
         this._map.fitBounds(
           [
             [west, south],
@@ -1012,6 +1313,7 @@ export class StacLayerControl implements IControl {
       this._state.loading = false;
       this._state.status = `Added layer: ${asset.title || asset.key}`;
       this._render();
+      console.log(`STAC layer added successfully: ${layerId}`);
       this._emit("layeradd", { layerId, assetKey: asset.key, url: asset.href });
     } catch (err) {
       this._state.loading = false;
@@ -1029,6 +1331,29 @@ export class StacLayerControl implements IControl {
     }
 
     // Rebuild layers with new opacity
+    const layers = Array.from(this._cogLayers.entries()).map(([id]) => {
+      const props = this._cogLayerPropsMap.get(id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const layer = this._cogLayers.get(id) as any;
+      return layer.clone(props);
+    });
+
+    this._deckOverlay.setProps({ layers });
+  }
+
+  private _updateRescaleAndColormap(): void {
+    if (!this._deckOverlay || this._cogLayers.size === 0) return;
+
+    // Update props for all layers
+    for (const [, props] of this._cogLayerPropsMap) {
+      // Skip RGB layers (they handle rescale differently)
+      if (props._isRgb) continue;
+      props._rescaleMin = this._state.rescaleMin;
+      props._rescaleMax = this._state.rescaleMax;
+      props._colormap = this._state.colormap;
+    }
+
+    // Rebuild layers with updated props
     const layers = Array.from(this._cogLayers.entries()).map(([id]) => {
       const props = this._cogLayerPropsMap.get(id);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1065,7 +1390,7 @@ export class StacLayerControl implements IControl {
   }
 
   /**
-   * Patch COGLayer to handle grayscale and float GeoTIFFs.
+   * Patch COGLayer to handle grayscale and float GeoTIFFs with colormap support.
    * The upstream library has limited support for these formats.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1074,28 +1399,28 @@ export class StacLayerControl implements IControl {
     if (COGLayerClass.__stacPatched) return;
     COGLayerClass.__stacPatched = true;
 
-    const originalParseGeoTIFF = COGLayerClass.prototype._parseGeoTIFF;
+    // Patch for opacity propagation to sublayers
+    const originalRenderSubLayers = COGLayerClass.prototype._renderSubLayers;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    COGLayerClass.prototype._renderSubLayers = function (...args: any[]) {
+      const layers = originalRenderSubLayers.apply(this, args);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const opacity = (this as any).props.opacity;
+      if (opacity === undefined || opacity === null) return layers;
+      return applyOpacity(layers, Math.max(0, Math.min(1, opacity)));
+    };
 
     COGLayerClass.prototype._parseGeoTIFF = async function () {
-      try {
-        await originalParseGeoTIFF.call(this);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-
-        // Handle unsupported PhotometricInterpretation or float data
-        if (
-          !msg.includes("PhotometricInterpretation") &&
-          !msg.includes("non-unsigned integers")
-        ) {
-          throw err;
-        }
-
-        // Custom fallback for grayscale/float data
+      // Always use custom handling to properly support uint16/float data
+      // The original library has issues with single-band uint16 textures
+      // Custom handling for grayscale/float/uint16 data
         const { fromUrl } = await import("geotiff");
         const { parseCOGTileMatrixSet, texture } =
           await import("@developmentseed/deck.gl-geotiff");
-        const { CreateTexture } =
+        const { CreateTexture, FilterNoDataVal, Colormap } =
           await import("@developmentseed/deck.gl-raster/gpu-modules");
+        const proj4Module = await import("proj4");
+        const proj4Fn = proj4Module.default || proj4Module;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const geotiffInput = (this as any).props.geotiff;
@@ -1123,49 +1448,152 @@ export class StacLayerControl implements IControl {
           images.push(await geotiff.getImage(i));
         }
 
-        const SamplesPerPixel = image.getSamplesPerPixel();
-        const BitsPerSample = image.getBitsPerSample();
-        const SampleFormat = image.getSampleFormat();
+        const sourceProjection = geoKeysParser ? await geoKeysParser(image.getGeoKeys()) : null;
+        let forwardReproject = null;
+        let inverseReproject = null;
+
+        if (sourceProjection && typeof proj4Fn === "function") {
+          const converter = proj4Fn(sourceProjection.def, "EPSG:4326");
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          forwardReproject = (x: number, y: number) => converter.forward([x, y], false as any);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          inverseReproject = (x: number, y: number) => converter.inverse([x, y], false as any);
+
+          // Compute geographic bounds for fitBounds callback
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((this as any).props.onGeoTIFFLoad) {
+            const bbox = image.getBoundingBox();
+            const corners = [
+              converter.forward([bbox[0], bbox[1]]),
+              converter.forward([bbox[2], bbox[1]]),
+              converter.forward([bbox[2], bbox[3]]),
+              converter.forward([bbox[0], bbox[3]]),
+            ];
+            const lons = corners.map((c: number[]) => c[0]);
+            const lats = corners.map((c: number[]) => c[1]);
+            const geographicBounds = {
+              west: Math.min(...lons),
+              south: Math.min(...lats),
+              east: Math.max(...lons),
+              north: Math.max(...lats),
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (this as any).props.onGeoTIFFLoad(geotiff, {
+              projection: sourceProjection,
+              geographicBounds,
+            });
+          }
+        }
+
+        const ifd = image.getFileDirectory();
+        const { BitsPerSample, SampleFormat, SamplesPerPixel, GDAL_NODATA } = ifd;
+
+        // Parse GDAL_NODATA tag
+        let noDataVal: number | null = null;
+        if (GDAL_NODATA) {
+          const ndStr =
+            GDAL_NODATA[GDAL_NODATA.length - 1] === "\x00"
+              ? GDAL_NODATA.slice(0, -1)
+              : GDAL_NODATA;
+          if (ndStr.length > 0) noDataVal = parseFloat(ndStr);
+        }
+
+        // Get rescale values from props
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const selfForTile = this as any;
+        const rescaleMin = selfForTile.props._rescaleMin ?? 0;
+        const rescaleMax = selfForTile.props._rescaleMax ?? 10000;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const loadTile = async (options: any) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const device = (this as any).context.device;
-          const overviewIndex = options.overview ?? 0;
-          const geotiffImage = images[overviewIndex] ?? image;
-
+        const defaultGetTileData = async (geotiffImage: any, options: any) => {
+          const { device } = options;
           const rasterData = await geotiffImage.readRasters({
             ...options,
             interleave: true,
           });
 
-          let data = rasterData;
-          let numSamples = SamplesPerPixel;
+          // Handle TypedArrays and regular arrays
+          const bitsPerSample =
+            typeof BitsPerSample === "object" && BitsPerSample?.[0] !== undefined
+              ? BitsPerSample[0]
+              : BitsPerSample;
+          const pixelCount = rasterData.width * rasterData.height;
 
-          // Expand single-band grayscale to RGBA
-          if (SamplesPerPixel === 1) {
-            const pixelCount = rasterData.width * rasterData.height;
-            const rgba = new Float32Array(pixelCount * 4);
+          // For single-band uint16 data, convert to RGBA8 with rescaling applied
+          // This ensures universal WebGL compatibility
+          if (SamplesPerPixel === 1 && bitsPerSample === 16) {
+            const rgba = new Uint8ClampedArray(pixelCount * 4);
+            const range = rescaleMax - rescaleMin;
+
             for (let i = 0; i < pixelCount; i++) {
-              const val = rasterData[i];
-              rgba[i * 4] = val;
-              rgba[i * 4 + 1] = val;
-              rgba[i * 4 + 2] = val;
-              rgba[i * 4 + 3] = 1.0;
+              const rawVal = rasterData[i];
+              // Handle nodata (typically 0 for Sentinel-2)
+              if (rawVal === 0 || rawVal === noDataVal) {
+                rgba[i * 4] = 0;
+                rgba[i * 4 + 1] = 0;
+                rgba[i * 4 + 2] = 0;
+                rgba[i * 4 + 3] = 0; // Transparent
+              } else {
+                // Rescale to 0-255
+                const normalized = Math.max(0, Math.min(255, ((rawVal - rescaleMin) / range) * 255));
+                rgba[i * 4] = normalized;
+                rgba[i * 4 + 1] = normalized;
+                rgba[i * 4 + 2] = normalized;
+                rgba[i * 4 + 3] = 255;
+              }
             }
-            data = rgba;
-            (data as { width?: number; height?: number }).width = rasterData.width;
-            (data as { width?: number; height?: number }).height = rasterData.height;
-            numSamples = 4;
+
+            const tex = device.createTexture({
+              data: rgba,
+              format: "rgba8unorm",
+              width: rasterData.width,
+              height: rasterData.height,
+              sampler: { magFilter: "nearest", minFilter: "nearest" },
+            });
+
+            return {
+              texture: tex,
+              height: rasterData.height,
+              width: rasterData.width,
+              _preRescaled: true, // Flag that rescaling was done in getTileData
+            };
           }
 
+          // For 3-band data, expand to RGBA
+          if (SamplesPerPixel === 3) {
+            const rgba = new Uint8ClampedArray(pixelCount * 4);
+            for (let i = 0; i < pixelCount; i++) {
+              rgba[i * 4] = rasterData[i * 3];
+              rgba[i * 4 + 1] = rasterData[i * 3 + 1];
+              rgba[i * 4 + 2] = rasterData[i * 3 + 2];
+              rgba[i * 4 + 3] = 255;
+            }
+
+            const tex = device.createTexture({
+              data: rgba,
+              format: "rgba8unorm",
+              width: rasterData.width,
+              height: rasterData.height,
+              sampler: { magFilter: "nearest", minFilter: "nearest" },
+            });
+
+            return {
+              texture: tex,
+              height: rasterData.height,
+              width: rasterData.width,
+              _preRescaled: true, // rgba8unorm is already normalized, skip RescaleFloat
+            };
+          }
+
+          // Default: use original texture format inference
           const textureFormat = texture.inferTextureFormat(
-            numSamples,
+            SamplesPerPixel,
             BitsPerSample,
             SampleFormat,
           );
+
           const tex = device.createTexture({
-            data,
+            data: rasterData,
             format: textureFormat,
             width: rasterData.width,
             height: rasterData.height,
@@ -1181,8 +1609,13 @@ export class StacLayerControl implements IControl {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const self = this as any;
+        // Cache colormap texture to avoid recreating per tile
+        let cachedCmapName: string | null = null;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const renderTile = (tileData: any) => {
+        let cachedCmapTexture: any = null;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const defaultRenderTile = (tileData: any) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const pipeline: any[] = [
             {
@@ -1190,17 +1623,84 @@ export class StacLayerControl implements IControl {
               props: { textureName: tileData.texture },
             },
           ];
+
+          // Skip nodata filter and rescaling if data was pre-processed in getTileData
+          if (!tileData._preRescaled) {
+            // Filter nodata pixels
+            if (noDataVal !== null) {
+              pipeline.push({
+                module: FilterNoDataVal,
+                props: { value: noDataVal },
+              });
+            }
+
+            // Rescale float values to [0,1] for visualization
+            const rescaleMin = self.props._rescaleMin ?? 0;
+            const rescaleMax = self.props._rescaleMax ?? 255;
+            pipeline.push({
+              module: RescaleFloat,
+              props: {
+                minVal: rescaleMin,
+                maxVal: rescaleMax,
+                isSingleBand: SamplesPerPixel === 1 ? 1.0 : 0.0,
+              },
+            });
+          }
+
+          // Apply colormap if selected (works on normalized 0-1 data)
+          const cmapName = self.props._colormap;
+          if (cmapName && cmapName !== "none") {
+            if (cmapName !== cachedCmapName) {
+              const stops = getColormap(cmapName);
+              const imageData = colormapToImageData(stops);
+              cachedCmapTexture = self.context.device.createTexture({
+                data: imageData.data,
+                format: "rgba8unorm",
+                width: imageData.width,
+                height: imageData.height,
+                sampler: {
+                  minFilter: "linear",
+                  magFilter: "linear",
+                  addressModeU: "clamp-to-edge",
+                  addressModeV: "clamp-to-edge",
+                },
+              });
+              cachedCmapName = cmapName;
+            }
+            pipeline.push({
+              module: Colormap,
+              props: { colormapTexture: cachedCmapTexture },
+            });
+          }
+
           return pipeline;
         };
 
-        self._cogState = {
-          geotiff,
+        self.setState({
           metadata,
-          loadTile,
-          renderTile,
-        };
-      }
+          forwardReproject,
+          inverseReproject,
+          images,
+          defaultGetTileData,
+          defaultRenderTile,
+        });
     };
+  }
+
+  /**
+   * Register common projections that may not be included by default.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async _registerCommonProjections(proj4Fn: any): Promise<void> {
+    // Canadian projections
+    proj4Fn.defs(
+      "EPSG:3978",
+      "+proj=lcc +lat_0=49 +lon_0=-95 +lat_1=49 +lat_2=77 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +type=crs",
+    );
+    proj4Fn.defs(
+      "EPSG:3979",
+      "+proj=lcc +lat_0=49 +lon_0=-95 +lat_1=49 +lat_2=77 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=-0.991,1.9072,0.5129,-1.25033e-07,-4.6785e-08,-5.6529e-08,0 +units=m +no_defs +type=crs",
+    );
   }
 
   /**
@@ -1214,42 +1714,59 @@ export class StacLayerControl implements IControl {
       const geoKeysToProj4 = geokeysModule.default || geokeysModule;
 
       if (!geoKeysToProj4 || typeof geoKeysToProj4.toProj4 !== "function") {
+        console.warn("geotiff-geokeys-to-proj4 not available or invalid");
         return null;
+      }
+
+      // Pre-load proj4 and register common projections
+      const proj4Module = await import("proj4");
+      const proj4Fn = proj4Module.default || proj4Module;
+      if (typeof proj4Fn === "function") {
+        await this._registerCommonProjections(proj4Fn);
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return async (geoKeys: any) => {
         try {
+          console.log("STAC geoKeysParser called with:", geoKeys);
           const result = geoKeysToProj4.toProj4(geoKeys);
+          console.log("STAC geoKeysToProj4 result:", result);
+
           if (result && result.proj4) {
-            const proj4Module = await import("proj4");
-            const proj4Fn = proj4Module.default || proj4Module;
+            // Remove axis parameter which can cause issues with some projections
+            // The axis=ne parameter indicates northing-easting order which can
+            // confuse coordinate transformations
+            let proj4Str = result.proj4 as string;
+            proj4Str = proj4Str.replace(/\+axis=\w+\s*/g, "");
+            console.log("STAC cleaned proj4 string:", proj4Str);
+
             let parsed: Record<string, unknown> = {};
             if (typeof proj4Fn === "function") {
               try {
-                proj4Fn.defs("custom", result.proj4);
+                proj4Fn.defs("custom", proj4Str);
                 parsed =
                   (proj4Fn.defs("custom") as unknown as Record<
                     string,
                     unknown
                   >) || {};
-              } catch {
-                // ignore proj4 parsing errors
+                console.log("STAC proj4 parsed definition:", parsed);
+              } catch (e) {
+                console.error("STAC proj4 parsing error:", e);
               }
             }
             return {
-              def: result.proj4 as string,
+              def: proj4Str,
               parsed,
               coordinatesUnits: (result.coordinatesUnits as string) || "metre",
             };
           }
-        } catch {
-          // Fall back to default parser
+        } catch (e) {
+          console.error("STAC geoKeysParser error:", e);
         }
         return null;
       };
-    } catch {
-      // geotiff-geokeys-to-proj4 not available
+    } catch (e) {
+      console.error("STAC _buildGeoKeysParser error:", e);
       return null;
     }
   }

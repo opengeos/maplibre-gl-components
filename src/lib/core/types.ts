@@ -1796,6 +1796,14 @@ export interface StacAssetInfo {
   type: string;
   /** Asset title. */
   title?: string;
+  /** Data type from raster:bands (e.g., 'uint8', 'uint16', 'float32'). */
+  dataType?: string;
+  /** Nodata value from raster:bands. */
+  nodata?: number;
+  /** Scale factor from raster:bands. */
+  scale?: number;
+  /** Offset from raster:bands. */
+  offset?: number;
 }
 
 /**
