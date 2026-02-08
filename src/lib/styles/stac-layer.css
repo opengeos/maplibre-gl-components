@@ -388,16 +388,18 @@
 }
 
 .maplibre-gl-stac-layer-mode-btn:hover {
-  background: #e8e8e8;
+  background: #e8e8e8 !important;
+  color: #333 !important;
 }
 
 .maplibre-gl-stac-layer-mode-btn--active {
-  background: #0078d7;
-  color: white;
+  background: #0078d7 !important;
+  color: white !important;
 }
 
 .maplibre-gl-stac-layer-mode-btn--active:hover {
-  background: #006bc1;
+  background: #006bc1 !important;
+  color: white !important;
 }
 
 /* RGB band selectors */

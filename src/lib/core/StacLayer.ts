@@ -1192,6 +1192,7 @@ export class StacLayerControl implements IControl {
           _rescaleMin: rescaleMin,
           _rescaleMax: rescaleMax,
           _isRgb: true,
+          _preRescaled: true, // Mark as pre-rescaled to skip shader processing
           // Custom getTileData to load all 3 bands and combine into RGB
           getTileData: async (
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1199,7 +1200,7 @@ export class StacLayerControl implements IControl {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             options: any,
           ) => {
-            const { window: tileWindow, pool } = options;
+            const { window: tileWindow, pool, device } = options;
 
             // Find matching overview images from G and B bands by dimensions
             const rWidth = rImage.getWidth();
@@ -1242,32 +1243,54 @@ export class StacLayerControl implements IControl {
             const gBand = gData[0] as Float32Array | Uint8Array | Uint16Array;
             const bBand = bData[0] as Float32Array | Uint8Array | Uint16Array;
 
-            // Create RGBA ImageData
+            // Create RGBA data with nodata handling
             const rgbaData = new Uint8ClampedArray(width * height * 4);
             for (let i = 0; i < width * height; i++) {
-              // Normalize values to 0-255 range using rescale params
-              const rVal = Math.max(
-                0,
-                Math.min(255, ((rBand[i] - rescaleMin) / rescaleRange) * 255),
-              );
-              const gVal = Math.max(
-                0,
-                Math.min(255, ((gBand[i] - rescaleMin) / rescaleRange) * 255),
-              );
-              const bVal = Math.max(
-                0,
-                Math.min(255, ((bBand[i] - rescaleMin) / rescaleRange) * 255),
-              );
-              rgbaData[i * 4] = rVal;
-              rgbaData[i * 4 + 1] = gVal;
-              rgbaData[i * 4 + 2] = bVal;
-              rgbaData[i * 4 + 3] = 255;
+              const rRaw = rBand[i];
+              const gRaw = gBand[i];
+              const bRaw = bBand[i];
+
+              // Handle nodata: if all bands are 0, treat as transparent
+              if (rRaw === 0 && gRaw === 0 && bRaw === 0) {
+                rgbaData[i * 4] = 0;
+                rgbaData[i * 4 + 1] = 0;
+                rgbaData[i * 4 + 2] = 0;
+                rgbaData[i * 4 + 3] = 0; // Transparent
+              } else {
+                // Normalize values to 0-255 range using rescale params
+                const rVal = Math.max(
+                  0,
+                  Math.min(255, ((rRaw - rescaleMin) / rescaleRange) * 255),
+                );
+                const gVal = Math.max(
+                  0,
+                  Math.min(255, ((gRaw - rescaleMin) / rescaleRange) * 255),
+                );
+                const bVal = Math.max(
+                  0,
+                  Math.min(255, ((bRaw - rescaleMin) / rescaleRange) * 255),
+                );
+                rgbaData[i * 4] = rVal;
+                rgbaData[i * 4 + 1] = gVal;
+                rgbaData[i * 4 + 2] = bVal;
+                rgbaData[i * 4 + 3] = 255;
+              }
             }
 
-            return {
+            // Create WebGL texture properly
+            const tex = device.createTexture({
+              data: rgbaData,
+              format: "rgba8unorm",
               width,
               height,
-              texture: new ImageData(rgbaData, width, height),
+              sampler: { magFilter: "nearest", minFilter: "nearest" },
+            });
+
+            return {
+              texture: tex,
+              width,
+              height,
+              _preRescaled: true,
             };
           },
         };
