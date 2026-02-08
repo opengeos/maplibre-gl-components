@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MeasureControl Example</title>
+  <link href="https://unpkg.com/maplibre-gl@5.5.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    .info-panel {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      max-width: 300px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      z-index: 1;
+    }
+    .info-panel h3 { margin: 0 0 10px 0; }
+    .info-panel p { margin: 0 0 8px 0; color: #666; }
+    .info-panel code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="info-panel">
+    <h3>📏 MeasureControl</h3>
+    <p>Click the ruler button to open the measure panel.</p>
+    <p><strong>Distance mode:</strong> Click points to measure distance. Double-click to finish.</p>
+    <p><strong>Area mode:</strong> Click vertices to draw a polygon. Double-click to close and calculate area.</p>
+    <p>Press <code>Escape</code> to cancel, <code>Enter</code> to finish.</p>
+  </div>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+/* CoordinateControl styles */
+
+.maplibre-gl-coordinate-control {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Fira Code", "Courier New", monospace;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  padding: 6px 10px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+  color: #333;
+  user-select: none;
+  cursor: default;
+  transition: background-color 0.15s ease;
+}
+
+.maplibre-gl-coordinate-control:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.maplibre-gl-coordinate-control.clickable {
+  cursor: pointer;
+}
+
+.maplibre-gl-coordinate-control.clickable:active {
+  background: rgba(240, 240, 240, 0.95);
+}
+
+.maplibre-gl-coordinate-control.copied {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.maplibre-gl-coordinate-control .coord-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.maplibre-gl-coordinate-control .coord-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.maplibre-gl-coordinate-control .coord-label {
+  font-weight: 500;
+  color: #6b7280;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.maplibre-gl-coordinate-control .coord-value {
+  font-weight: 500;
+  color: #1f2937;
+  font-family: "Fira Code", "SF Mono", "Consolas", monospace;
+}
+
+.maplibre-gl-coordinate-control .coord-separator {
+  color: #d1d5db;
+  font-weight: 300;
+}
+
+.maplibre-gl-coordinate-control .coord-zoom {
+  padding-left: 8px;
+  border-left: 1px solid #e5e7eb;
+}
+
+.maplibre-gl-coordinate-control .coord-elevation {
+  padding-left: 8px;
+  border-left: 1px solid #e5e7eb;
+}
+
+.maplibre-gl-coordinate-control .copy-hint {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-left: 8px;
+}
+
+.maplibre-gl-coordinate-control .copied-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #22c55e;
+  margin-left: 8px;
+}
+
+.maplibre-gl-coordinate-control .copied-feedback svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Compact mode */
+.maplibre-gl-coordinate-control.compact {
+  padding: 4px 8px;
+}
+
+.maplibre-gl-coordinate-control.compact .coord-container {
+  gap: 8px;
+}
+
+.maplibre-gl-coordinate-control.compact .coord-label {
+  display: none;
+}
+
+/* Format toggle button */
+.maplibre-gl-coordinate-control .format-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 8px;
+  padding: 0;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 3px;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 9px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-coordinate-control .format-toggle:hover {
+  background: #e5e7eb;
+  color: #374151;
+}

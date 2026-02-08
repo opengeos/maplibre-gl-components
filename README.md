@@ -1,6 +1,6 @@
 # maplibre-gl-components
 
-Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, feature inspector, and HTML control components for MapLibre GL JS maps.
+Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, feature inspector, measurement tools, coordinate display, bookmarks, and more for MapLibre GL JS maps.
 
 [![npm version](https://badge.fury.io/js/maplibre-gl-components.svg)](https://badge.fury.io/js/maplibre-gl-components)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -23,6 +23,9 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **ZarrLayerControl** - Load and visualize multi-dimensional Zarr arrays with colormaps
 - **StacLayerControl** - Load COG layers from STAC (SpatioTemporal Asset Catalog) items
 - **StacSearchControl** - Search and visualize STAC items from public catalogs (Earth Search, Planetary Computer)
+- **MeasureControl** - Measure distances and areas on the map with multiple unit options
+- **CoordinateControl** - Display cursor coordinates in real-time with format toggle (DD/DMS/DDM)
+- **BookmarkControl** - Save and restore map views with localStorage persistence
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
 - **TypeScript** - Full type definitions included
