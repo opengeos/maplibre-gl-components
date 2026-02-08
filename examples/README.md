@@ -46,6 +46,31 @@ A React example for **ControlGridReact** and **useControlGrid**:
 
 **Location:** `examples/control-grid-react/`
 
+### STAC Layer Example
+
+A vanilla TypeScript example showing the **StacLayerControl** component:
+
+- Load and visualize COG assets from STAC items
+- Single band and RGB composite modes
+- Colormap selection for single band visualization
+- Rescale range and opacity controls
+- Nodata handling with transparency
+
+**Location:** `examples/stac-layer/`
+
+### STAC Search Example
+
+A vanilla TypeScript example showing the **StacSearchControl** component:
+
+- Search STAC catalogs (Element84 Earth Search, Microsoft Planetary Computer)
+- Browse and select collections
+- Search for items within current map bounds
+- Date range filtering
+- Display search result footprints on map
+- Visualize selected STAC items
+
+**Location:** `examples/stac-search/`
+
 ## Running Examples Locally
 
 1. Install dependencies from the project root:
