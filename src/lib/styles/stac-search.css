@@ -222,11 +222,34 @@
   border-top: 1px solid #e0e0e0;
 }
 
+.maplibre-gl-stac-search-list-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
 .maplibre-gl-stac-search-list-header {
   font-size: 12px;
   font-weight: 600;
   color: #555;
-  margin-bottom: 8px;
+}
+
+.maplibre-gl-stac-search-btn-clear {
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 4px;
+  color: #c62828;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-stac-search-btn-clear:hover {
+  background: #ffcdd2;
+  border-color: #ef9a9a;
 }
 
 .maplibre-gl-stac-search-list-item {

@@ -576,10 +576,25 @@ export class StacSearchControl implements IControl {
       const listContainer = document.createElement("div");
       listContainer.className = "maplibre-gl-stac-search-list";
 
+      const listHeaderRow = document.createElement("div");
+      listHeaderRow.className = "maplibre-gl-stac-search-list-header-row";
+
       const listHeader = document.createElement("div");
       listHeader.className = "maplibre-gl-stac-search-list-header";
       listHeader.textContent = `Layers (${this._cogLayers.size})`;
-      listContainer.appendChild(listHeader);
+      listHeaderRow.appendChild(listHeader);
+
+      const clearAllBtn = document.createElement("button");
+      clearAllBtn.className = "maplibre-gl-stac-search-btn-clear";
+      clearAllBtn.textContent = "Clear All";
+      clearAllBtn.title = "Remove all layers";
+      clearAllBtn.addEventListener("click", () => {
+        this._removeAllLayers();
+        this._render();
+      });
+      listHeaderRow.appendChild(clearAllBtn);
+
+      listContainer.appendChild(listHeaderRow);
 
       for (const [layerId] of this._cogLayers) {
         const item = document.createElement("div");
