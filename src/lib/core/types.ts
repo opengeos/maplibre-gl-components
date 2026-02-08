@@ -1616,7 +1616,11 @@ export type PMTilesLayerEventHandler = (event: {
 /**
  * Supported remote vector format types for AddVectorControl.
  */
-export type RemoteVectorFormat = "geojson" | "geoparquet" | "flatgeobuf" | "auto";
+export type RemoteVectorFormat =
+  | "geojson"
+  | "geoparquet"
+  | "flatgeobuf"
+  | "auto";
 
 /**
  * Information about a single added vector layer from URL.
@@ -2096,12 +2100,24 @@ export type StacSearchEventHandler = (event: {
 /**
  * Measurement unit for distance.
  */
-export type DistanceUnit = "meters" | "kilometers" | "miles" | "feet" | "yards" | "nautical-miles";
+export type DistanceUnit =
+  | "meters"
+  | "kilometers"
+  | "miles"
+  | "feet"
+  | "yards"
+  | "nautical-miles";
 
 /**
  * Measurement unit for area.
  */
-export type AreaUnit = "square-meters" | "square-kilometers" | "square-miles" | "hectares" | "acres" | "square-feet";
+export type AreaUnit =
+  | "square-meters"
+  | "square-kilometers"
+  | "square-miles"
+  | "hectares"
+  | "acres"
+  | "square-feet";
 
 /**
  * Measurement mode.
@@ -2238,87 +2254,6 @@ export type MeasureEventHandler = (event: {
 }) => void;
 
 // ============================================================================
-// CoordinateControl Types
-// ============================================================================
-
-/**
- * Coordinate format for display.
- */
-export type CoordinateFormat = "decimal" | "dms" | "ddm";
-
-/**
- * Options for configuring the CoordinateControl.
- */
-export interface CoordinateControlOptions {
-  /** Position on the map. Default: 'bottom-left'. */
-  position?: ControlPosition;
-  /** Custom CSS class name. */
-  className?: string;
-  /** Whether the control is initially visible. Default: true. */
-  visible?: boolean;
-  /** Coordinate format. Default: 'decimal'. */
-  format?: CoordinateFormat;
-  /** Number of decimal places for decimal format. Default: 6. */
-  precision?: number;
-  /** Whether to show elevation (requires terrain). Default: false. */
-  showElevation?: boolean;
-  /** Whether to show zoom level. Default: false. */
-  showZoom?: boolean;
-  /** Label for longitude. Default: 'Lng'. */
-  lngLabel?: string;
-  /** Label for latitude. Default: 'Lat'. */
-  latLabel?: string;
-  /** Whether to enable click-to-copy. Default: true. */
-  copyOnClick?: boolean;
-  /** Background color. Default: 'rgba(255, 255, 255, 0.9)'. */
-  backgroundColor?: string;
-  /** Border radius in pixels. Default: 4. */
-  borderRadius?: number;
-  /** Font size in pixels. Default: 12. */
-  fontSize?: number;
-  /** Font color. Default: '#333'. */
-  fontColor?: string;
-  /** Padding in pixels. Default: 6. */
-  padding?: number;
-  /** Minimum zoom level at which the control is visible. */
-  minzoom?: number;
-  /** Maximum zoom level at which the control is visible. */
-  maxzoom?: number;
-}
-
-/**
- * Internal state of the CoordinateControl.
- */
-export interface CoordinateControlState {
-  /** Whether the control is visible. */
-  visible: boolean;
-  /** Current coordinate format. */
-  format: CoordinateFormat;
-  /** Current longitude. */
-  lng: number | null;
-  /** Current latitude. */
-  lat: number | null;
-  /** Current elevation (if available). */
-  elevation: number | null;
-  /** Current zoom level. */
-  zoom: number | null;
-}
-
-/**
- * CoordinateControl event types.
- */
-export type CoordinateEvent = ComponentEvent | "update" | "copy" | "formatchange";
-
-/**
- * CoordinateControl event handler function type.
- */
-export type CoordinateEventHandler = (event: {
-  type: CoordinateEvent;
-  state: CoordinateControlState;
-  coordinates?: { lng: number; lat: number };
-}) => void;
-
-// ============================================================================
 // SplitMapControl Types
 // ============================================================================
 
@@ -2384,7 +2319,12 @@ export interface SplitMapControlState {
 /**
  * SplitMapControl event types.
  */
-export type SplitMapEvent = ComponentEvent | "activate" | "deactivate" | "positionchange" | "layerchange";
+export type SplitMapEvent =
+  | ComponentEvent
+  | "activate"
+  | "deactivate"
+  | "positionchange"
+  | "layerchange";
 
 /**
  * SplitMapControl event handler function type.
@@ -2477,7 +2417,14 @@ export interface BookmarkControlState {
 /**
  * BookmarkControl event types.
  */
-export type BookmarkEvent = ComponentEvent | "add" | "remove" | "select" | "rename" | "clear";
+export type BookmarkEvent =
+  | ComponentEvent
+  | "add"
+  | "remove"
+  | "select"
+  | "rename"
+  | "clear"
+  | "import";
 
 /**
  * BookmarkControl event handler function type.

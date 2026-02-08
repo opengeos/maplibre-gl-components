@@ -67,6 +67,16 @@ const EDIT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" f
 const MAP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>`;
 
 /**
+ * SVG icon for download/export.
+ */
+const DOWNLOAD_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+
+/**
+ * SVG icon for upload/import.
+ */
+const UPLOAD_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
+
+/**
  * Format a date for display.
  */
 function formatDate(timestamp: number): string {
@@ -295,21 +305,41 @@ export class BookmarkControl implements IControl {
 
     panel.appendChild(content);
 
-    // Footer with clear button
-    if (this._state.bookmarks.length > 0) {
-      const footer = document.createElement("div");
-      footer.className = "bookmark-footer";
-      footer.innerHTML = `
+    // Footer with import/export and clear buttons
+    const footer = document.createElement("div");
+    footer.className = "bookmark-footer";
+    footer.innerHTML = `
+      <div class="bookmark-footer-actions">
+        <button type="button" class="bookmark-import-btn" title="Import bookmarks">
+          ${UPLOAD_ICON}
+          <span>Import</span>
+        </button>
+        <button type="button" class="bookmark-export-btn" title="Export bookmarks">
+          ${DOWNLOAD_ICON}
+          <span>Export</span>
+        </button>
+      </div>
+      ${
+        this._state.bookmarks.length > 0
+          ? `
         <button type="button" class="bookmark-clear-btn">
           ${TRASH_ICON}
           <span>Clear All</span>
         </button>
-      `;
-      footer
-        .querySelector(".bookmark-clear-btn")
-        ?.addEventListener("click", () => this._clearAll());
-      panel.appendChild(footer);
-    }
+      `
+          : ""
+      }
+    `;
+    footer
+      .querySelector(".bookmark-import-btn")
+      ?.addEventListener("click", () => this._importFromFile());
+    footer
+      .querySelector(".bookmark-export-btn")
+      ?.addEventListener("click", () => this._exportToFile());
+    footer
+      .querySelector(".bookmark-clear-btn")
+      ?.addEventListener("click", () => this._clearAll());
+    panel.appendChild(footer);
 
     return panel;
   }
@@ -572,28 +602,87 @@ export class BookmarkControl implements IControl {
   }
 
   /**
-   * Update the footer visibility.
+   * Update the footer (show/hide Clear All based on bookmark count).
    */
   private _updateFooter(): void {
     const footer = this._panel?.querySelector(".bookmark-footer");
-    if (footer) {
-      if (this._state.bookmarks.length === 0) {
-        footer.remove();
-      }
-    } else if (this._state.bookmarks.length > 0 && this._panel) {
-      const newFooter = document.createElement("div");
-      newFooter.className = "bookmark-footer";
-      newFooter.innerHTML = `
-        <button type="button" class="bookmark-clear-btn">
-          ${TRASH_ICON}
-          <span>Clear All</span>
-        </button>
-      `;
-      newFooter
-        .querySelector(".bookmark-clear-btn")
-        ?.addEventListener("click", () => this._clearAll());
-      this._panel.appendChild(newFooter);
+    if (!footer) return;
+
+    const existingClearBtn = footer.querySelector(".bookmark-clear-btn");
+    if (this._state.bookmarks.length > 0 && !existingClearBtn) {
+      const clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.className = "bookmark-clear-btn";
+      clearBtn.innerHTML = `${TRASH_ICON}<span>Clear All</span>`;
+      clearBtn.addEventListener("click", () => this._clearAll());
+      footer.appendChild(clearBtn);
+    } else if (this._state.bookmarks.length === 0 && existingClearBtn) {
+      existingClearBtn.remove();
     }
+  }
+
+  /**
+   * Export bookmarks to a JSON file download.
+   */
+  private _exportToFile(): void {
+    const json = this.exportBookmarks();
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "bookmarks.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Import bookmarks from a JSON file via file picker.
+   */
+  private _importFromFile(): void {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.style.display = "none";
+
+    input.addEventListener("change", () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result as string);
+          if (!Array.isArray(data)) {
+            console.warn("BookmarkControl: imported data is not an array");
+            return;
+          }
+          // Validate that items look like bookmarks
+          const valid = data.filter(
+            (b: MapBookmark) =>
+              b &&
+              typeof b.name === "string" &&
+              typeof b.lng === "number" &&
+              typeof b.lat === "number" &&
+              typeof b.zoom === "number",
+          ) as MapBookmark[];
+          if (valid.length === 0) {
+            console.warn("BookmarkControl: no valid bookmarks found in file");
+            return;
+          }
+          this.importBookmarks(valid);
+          this._emit("import");
+        } catch {
+          console.warn("BookmarkControl: failed to parse imported file");
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    document.body.appendChild(input);
+    input.click();
+    document.body.removeChild(input);
   }
 
   /**

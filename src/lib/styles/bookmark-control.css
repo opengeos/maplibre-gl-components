@@ -1,8 +1,9 @@
 /* BookmarkControl styles */
 
 .maplibre-gl-bookmark-control {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, sans-serif;
 }
 
 .maplibre-gl-bookmark-control .bookmark-button {
@@ -271,7 +272,40 @@
   padding: 8px 10px;
   border-top: 1px solid #e5e7eb;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.maplibre-gl-bookmark-control .bookmark-footer-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.maplibre-gl-bookmark-control .bookmark-import-btn,
+.maplibre-gl-bookmark-control .bookmark-export-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  color: #4b5563;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-bookmark-control .bookmark-import-btn:hover,
+.maplibre-gl-bookmark-control .bookmark-export-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.maplibre-gl-bookmark-control .bookmark-import-btn svg,
+.maplibre-gl-bookmark-control .bookmark-export-btn svg {
+  width: 12px;
+  height: 12px;
 }
 
 .maplibre-gl-bookmark-control .bookmark-clear-btn {
