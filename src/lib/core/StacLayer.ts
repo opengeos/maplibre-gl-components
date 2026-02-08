@@ -1646,14 +1646,25 @@ export class StacLayerControl implements IControl {
             };
           }
 
-          // For 3-band data, expand to RGBA
+          // For 3-band data, expand to RGBA with nodata handling
           if (SamplesPerPixel === 3) {
             const rgba = new Uint8ClampedArray(pixelCount * 4);
             for (let i = 0; i < pixelCount; i++) {
-              rgba[i * 4] = rasterData[i * 3];
-              rgba[i * 4 + 1] = rasterData[i * 3 + 1];
-              rgba[i * 4 + 2] = rasterData[i * 3 + 2];
-              rgba[i * 4 + 3] = 255;
+              const r = rasterData[i * 3];
+              const g = rasterData[i * 3 + 1];
+              const b = rasterData[i * 3 + 2];
+              // Handle nodata: if all bands are 0, treat as transparent
+              if (r === 0 && g === 0 && b === 0) {
+                rgba[i * 4] = 0;
+                rgba[i * 4 + 1] = 0;
+                rgba[i * 4 + 2] = 0;
+                rgba[i * 4 + 3] = 0; // Transparent
+              } else {
+                rgba[i * 4] = r;
+                rgba[i * 4 + 1] = g;
+                rgba[i * 4 + 2] = b;
+                rgba[i * 4 + 3] = 255;
+              }
             }
 
             const tex = device.createTexture({
