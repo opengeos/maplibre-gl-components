@@ -370,7 +370,19 @@ export class StacSearchControl implements IControl {
       catalogSelect.appendChild(option);
     }
 
+    // Add "Custom URL" option
+    const customOption = document.createElement("option");
+    customOption.value = "__custom__";
+    customOption.textContent = "── Custom URL ──";
+    customOption.selected = this._state.selectedCatalog?.name === "__custom__";
+    catalogSelect.appendChild(customOption);
+
     catalogSelect.addEventListener("change", () => {
+      if (catalogSelect.value === "__custom__") {
+        // Show custom URL input, don't change selected catalog yet
+        this._render();
+        return;
+      }
       const selected = this._state.catalogs.find((c) => c.url === catalogSelect.value);
       if (selected) {
         this._state.selectedCatalog = selected;
@@ -384,6 +396,41 @@ export class StacSearchControl implements IControl {
     });
 
     catalogGroup.appendChild(catalogSelect);
+
+    // Custom URL input (show if custom is selected or if current catalog is custom)
+    const isCustomSelected = catalogSelect.value === "__custom__" || this._state.selectedCatalog?.name === "__custom__";
+    if (isCustomSelected || this._state.selectedCatalog?.name === "__custom__") {
+      const customUrlRow = document.createElement("div");
+      customUrlRow.className = "maplibre-gl-stac-search-custom-url-row";
+
+      const customUrlInput = document.createElement("input");
+      customUrlInput.type = "text";
+      customUrlInput.id = "stac-search-custom-url";
+      customUrlInput.className = "maplibre-gl-stac-search-input";
+      customUrlInput.placeholder = "https://stac-api.example.com/v1";
+      customUrlInput.value = this._state.selectedCatalog?.name === "__custom__" ? this._state.selectedCatalog.url : "";
+
+      const addCustomBtn = document.createElement("button");
+      addCustomBtn.className = "maplibre-gl-stac-search-btn maplibre-gl-stac-search-btn--secondary";
+      addCustomBtn.textContent = "Use";
+      addCustomBtn.addEventListener("click", () => {
+        const url = customUrlInput.value.trim();
+        if (url) {
+          this._state.selectedCatalog = { name: "__custom__", url };
+          this._state.collections = [];
+          this._state.selectedCollection = null;
+          this._state.items = [];
+          this._state.selectedItem = null;
+          this._emit("catalogselect", { catalog: this._state.selectedCatalog });
+          this._render();
+        }
+      });
+
+      customUrlRow.appendChild(customUrlInput);
+      customUrlRow.appendChild(addCustomBtn);
+      catalogGroup.appendChild(customUrlRow);
+    }
+
     panel.appendChild(catalogGroup);
 
     // Collections button and selector

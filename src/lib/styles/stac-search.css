@@ -139,6 +139,20 @@
   align-items: center;
 }
 
+.maplibre-gl-stac-search-custom-url-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.maplibre-gl-stac-search-custom-url-row .maplibre-gl-stac-search-input {
+  flex: 1;
+}
+
+.maplibre-gl-stac-search-custom-url-row .maplibre-gl-stac-search-btn {
+  flex-shrink: 0;
+}
+
 .maplibre-gl-stac-search-date-row {
   display: flex;
   gap: 8px;
