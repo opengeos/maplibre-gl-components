@@ -301,7 +301,7 @@ export class StacSearchControl implements IControl {
       this._renderCollapsed();
     } else {
       this._renderExpanded();
-      
+
       // Restore scroll position after re-rendering
       const newPanel = this._container.querySelector(".maplibre-gl-stac-search-panel");
       if (newPanel && scrollTop > 0) {
@@ -1116,7 +1116,7 @@ export class StacSearchControl implements IControl {
 
   private _removeLayer(layerId: string): void {
     const layer = this._cogLayers.get(layerId);
-    
+
     if (layer && this._map) {
       // Check if it's a MapLibre raster layer (from Planetary Computer)
       if (layer.type === "raster" && layer.sourceId) {
