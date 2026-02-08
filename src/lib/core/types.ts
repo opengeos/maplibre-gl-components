@@ -1804,6 +1804,10 @@ export interface StacAssetInfo {
   scale?: number;
   /** Offset from raster:bands. */
   offset?: number;
+  /** Center wavelength in micrometers from eo:bands (for sorting). */
+  centerWavelength?: number;
+  /** Common band name from eo:bands (e.g., 'blue', 'green', 'red', 'nir'). */
+  commonName?: string;
 }
 
 /**

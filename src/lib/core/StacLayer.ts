@@ -993,6 +993,11 @@ export class StacLayerControl implements IControl {
             scale?: number;
             offset?: number;
           }>;
+          "eo:bands"?: Array<{
+            name?: string;
+            common_name?: string;
+            center_wavelength?: number;
+          }>;
         };
         // Filter for COG/GeoTIFF assets
         if (
@@ -1003,6 +1008,8 @@ export class StacLayerControl implements IControl {
         ) {
           // Extract raster:bands metadata if available
           const rasterBand = assetObj["raster:bands"]?.[0];
+          // Extract eo:bands metadata for wavelength-based sorting
+          const eoBand = assetObj["eo:bands"]?.[0];
           assets.push({
             key,
             href: assetObj.href,
@@ -1012,9 +1019,26 @@ export class StacLayerControl implements IControl {
             nodata: rasterBand?.nodata ?? assetObj.nodata,
             scale: rasterBand?.scale,
             offset: rasterBand?.offset,
+            centerWavelength: eoBand?.center_wavelength,
+            commonName: eoBand?.common_name,
           });
         }
       }
+
+      // Sort assets by center wavelength (spectral order) if available
+      // Assets without wavelength go to the end
+      assets.sort((a, b) => {
+        // Both have wavelength - sort by wavelength
+        if (a.centerWavelength !== undefined && b.centerWavelength !== undefined) {
+          return a.centerWavelength - b.centerWavelength;
+        }
+        // Only a has wavelength - a comes first
+        if (a.centerWavelength !== undefined) return -1;
+        // Only b has wavelength - b comes first
+        if (b.centerWavelength !== undefined) return 1;
+        // Neither has wavelength - keep original order (by key)
+        return 0;
+      });
 
       this._state.assets = assets;
       this._state.loading = false;
