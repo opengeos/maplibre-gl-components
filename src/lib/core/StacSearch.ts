@@ -87,6 +87,8 @@ export class StacSearchControl implements IControl {
   private _footprintSourceId: string = "stac-search-footprints";
   private _footprintLayerId: string = "stac-search-footprints-layer";
   private _footprintOutlineLayerId: string = "stac-search-footprints-outline";
+  private _footprintHighlightLayerId: string = "stac-search-footprints-highlight";
+  private _footprintHighlightOutlineLayerId: string = "stac-search-footprints-highlight-outline";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _deckOverlay?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -533,6 +535,7 @@ export class StacSearchControl implements IControl {
         const selected = this._state.items.find((i) => i.id === itemSelect.value);
         if (selected) {
           this._state.selectedItem = selected;
+          this._updateFootprintHighlight();
           this._emit("itemselect", { item: selected });
         }
       });
@@ -862,6 +865,33 @@ export class StacSearchControl implements IControl {
       },
     });
 
+    // Add highlight fill layer for selected item
+    this._map.addLayer({
+      id: this._footprintHighlightLayerId,
+      type: "fill",
+      source: this._footprintSourceId,
+      paint: {
+        "fill-color": "#ff6b00",
+        "fill-opacity": 0.3,
+      },
+      filter: ["==", ["get", "id"], ""],
+    });
+
+    // Add highlight outline layer for selected item
+    this._map.addLayer({
+      id: this._footprintHighlightOutlineLayerId,
+      type: "line",
+      source: this._footprintSourceId,
+      paint: {
+        "line-color": "#ff6b00",
+        "line-width": 3,
+      },
+      filter: ["==", ["get", "id"], ""],
+    });
+
+    // Update highlight if there's a selected item
+    this._updateFootprintHighlight();
+
     // Add click handler for footprints
     this._map.on("click", this._footprintLayerId, (e) => {
       if (e.features && e.features.length > 0) {
@@ -869,6 +899,7 @@ export class StacSearchControl implements IControl {
         const item = this._state.items.find((i) => i.id === clickedId);
         if (item) {
           this._state.selectedItem = item;
+          this._updateFootprintHighlight();
           this._emit("itemselect", { item });
           this._render();
         }
@@ -887,6 +918,12 @@ export class StacSearchControl implements IControl {
   private _removeFootprints(): void {
     if (!this._map) return;
 
+    if (this._map.getLayer(this._footprintHighlightOutlineLayerId)) {
+      this._map.removeLayer(this._footprintHighlightOutlineLayerId);
+    }
+    if (this._map.getLayer(this._footprintHighlightLayerId)) {
+      this._map.removeLayer(this._footprintHighlightLayerId);
+    }
     if (this._map.getLayer(this._footprintOutlineLayerId)) {
       this._map.removeLayer(this._footprintOutlineLayerId);
     }
@@ -895,6 +932,23 @@ export class StacSearchControl implements IControl {
     }
     if (this._map.getSource(this._footprintSourceId)) {
       this._map.removeSource(this._footprintSourceId);
+    }
+  }
+
+  /**
+   * Update the footprint highlight to show the selected item.
+   */
+  private _updateFootprintHighlight(): void {
+    if (!this._map) return;
+
+    const selectedId = this._state.selectedItem?.id || "";
+    const filter: ["==", ["get", string], string] = ["==", ["get", "id"], selectedId];
+
+    if (this._map.getLayer(this._footprintHighlightLayerId)) {
+      this._map.setFilter(this._footprintHighlightLayerId, filter);
+    }
+    if (this._map.getLayer(this._footprintHighlightOutlineLayerId)) {
+      this._map.setFilter(this._footprintHighlightOutlineLayerId, filter);
     }
   }
 
