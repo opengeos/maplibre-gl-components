@@ -486,10 +486,30 @@ export class StacSearchControl implements IControl {
     searchBtn.addEventListener("click", () => this._searchItems());
     searchGroup.appendChild(searchBtn);
 
+    const searchHintRow = document.createElement("div");
+    searchHintRow.className = "maplibre-gl-stac-search-hint-row";
+
     const searchHint = document.createElement("div");
     searchHint.className = "maplibre-gl-stac-search-hint";
     searchHint.textContent = "Uses current map bounds";
-    searchGroup.appendChild(searchHint);
+    searchHintRow.appendChild(searchHint);
+
+    // Add clear footprints button if there are items
+    if (this._state.items.length > 0) {
+      const clearFootprintsBtn = document.createElement("button");
+      clearFootprintsBtn.className = "maplibre-gl-stac-search-btn-clear-footprints";
+      clearFootprintsBtn.textContent = "Clear Footprints";
+      clearFootprintsBtn.title = "Remove footprints from map";
+      clearFootprintsBtn.addEventListener("click", () => {
+        this._removeFootprints();
+        this._state.items = [];
+        this._state.selectedItem = null;
+        this._render();
+      });
+      searchHintRow.appendChild(clearFootprintsBtn);
+    }
+
+    searchGroup.appendChild(searchHintRow);
 
     panel.appendChild(searchGroup);
 

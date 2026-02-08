@@ -187,11 +187,33 @@
   background: #e8e8e8;
 }
 
-.maplibre-gl-stac-search-hint {
+.maplibre-gl-stac-search-hint-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-top: 4px;
+}
+
+.maplibre-gl-stac-search-hint {
   font-size: 11px;
   color: #888;
-  text-align: center;
+}
+
+.maplibre-gl-stac-search-btn-clear-footprints {
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 500;
+  background: #fff3e0;
+  border: 1px solid #ffe0b2;
+  border-radius: 3px;
+  color: #e65100;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-stac-search-btn-clear-footprints:hover {
+  background: #ffe0b2;
+  border-color: #ffcc80;
 }
 
 .maplibre-gl-stac-search-status {
