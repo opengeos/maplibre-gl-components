@@ -2434,3 +2434,100 @@ export type BookmarkEventHandler = (event: {
   state: BookmarkControlState;
   bookmark?: MapBookmark;
 }) => void;
+
+// ============================================================================
+// PrintControl Types
+// ============================================================================
+
+/**
+ * Options for configuring the PrintControl.
+ */
+export interface PrintControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether to start collapsed. Default: true. */
+  collapsed?: boolean;
+  /** Default image format. Default: 'png'. */
+  format?: "png" | "jpeg";
+  /** JPEG quality (0-1). Default: 0.92. */
+  quality?: number;
+  /** Default filename (without extension). Default: 'map-export'. */
+  filename?: string;
+  /** Optional title text rendered on the exported image. */
+  title?: string;
+  /** Title font size in pixels. Default: 24. */
+  titleFontSize?: number;
+  /** Title font color. Default: '#333333'. */
+  titleFontColor?: string;
+  /** Title background. Default: 'rgba(255,255,255,0.8)'. */
+  titleBackground?: string;
+  /** Whether to show size options (Current/Custom). Default: false. */
+  showSizeOptions?: boolean;
+  /** Width override for export (pixels). If not set, uses current canvas size. */
+  width?: number;
+  /** Height override for export (pixels). If not set, uses current canvas size. */
+  height?: number;
+  /** Panel width in pixels. Default: 280. */
+  panelWidth?: number;
+  /** Background color of the panel. Default: 'rgba(255, 255, 255, 0.95)'. */
+  backgroundColor?: string;
+  /** Border radius in pixels. Default: 4. */
+  borderRadius?: number;
+  /** Opacity of the control (0-1). Default: 1. */
+  opacity?: number;
+  /** Font size in pixels. Default: 12. */
+  fontSize?: number;
+  /** Font color. Default: '#333'. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the PrintControl.
+ */
+export interface PrintControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Current image format. */
+  format: "png" | "jpeg";
+  /** JPEG quality (0-1). */
+  quality: number;
+  /** Current filename (without extension). */
+  filename: string;
+  /** Title text for export. */
+  title: string;
+  /** Whether an export is in progress. */
+  exporting: boolean;
+  /** Custom width (null = use current canvas size). */
+  width: number | null;
+  /** Custom height (null = use current canvas size). */
+  height: number | null;
+}
+
+/**
+ * PrintControl event types.
+ */
+export type PrintEvent =
+  | ComponentEvent
+  | "export"
+  | "copy"
+  | "error";
+
+/**
+ * PrintControl event handler function type.
+ */
+export type PrintEventHandler = (event: {
+  type: PrintEvent;
+  state: PrintControlState;
+  dataUrl?: string;
+  error?: string;
+}) => void;
