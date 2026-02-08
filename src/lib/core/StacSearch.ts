@@ -852,6 +852,13 @@ export class StacSearchControl implements IControl {
     }
   }
 
+  /**
+   * Check if a catalog URL is for Microsoft Planetary Computer.
+   */
+  private _isPlanetaryComputer(): boolean {
+    return this._state.selectedCatalog?.url?.includes("planetarycomputer.microsoft.com") ?? false;
+  }
+
   private async _displayItem(): Promise<void> {
     if (!this._state.selectedItem) {
       this._state.error = "Please select an item.";
@@ -871,7 +878,13 @@ export class StacSearchControl implements IControl {
     this._render();
 
     try {
-      // Get the item URL
+      // Check if this is Planetary Computer - use TiTiler endpoint
+      if (this._isPlanetaryComputer() && this._state.selectedCollection) {
+        await this._displayPlanetaryComputerItem();
+        return;
+      }
+
+      // Get the item URL for other catalogs
       let itemUrl = this._state.selectedItem.selfLink;
 
       if (!itemUrl && this._state.selectedCatalog && this._state.selectedCollection) {
@@ -961,6 +974,88 @@ export class StacSearchControl implements IControl {
     this._render();
   }
 
+  /**
+   * Display a Planetary Computer item using their TiTiler endpoint.
+   * PC requires signed URLs, so we use their tile service instead of direct COG access.
+   */
+  private async _displayPlanetaryComputerItem(): Promise<void> {
+    if (!this._map || !this._state.selectedItem || !this._state.selectedCollection) {
+      throw new Error("Missing required state for PC display");
+    }
+
+    const collection = this._state.selectedCollection.id;
+    const itemId = this._state.selectedItem.id;
+
+    // Planetary Computer TiTiler endpoint
+    const pcTiTilerBase = "https://planetarycomputer.microsoft.com/api/data/v1";
+
+    // Determine the best asset to display based on collection type
+    let assets = "data"; // Default for single-band collections like DEM
+    let rescale = `${this._state.rescaleMin},${this._state.rescaleMax}`;
+    let colormap = "";
+
+    // Collection-specific visualization parameters
+    if (collection.includes("sentinel-2")) {
+      assets = "visual";
+      rescale = "0,255";
+    } else if (collection.includes("landsat")) {
+      assets = "red,green,blue";
+      rescale = "0,10000";
+    } else if (collection.includes("dem") || collection.includes("elevation")) {
+      assets = "data";
+      colormap = "&colormap_name=terrain";
+      rescale = "0,4000";
+    } else if (collection.includes("naip")) {
+      assets = "image";
+      rescale = "0,255";
+    }
+
+    // Build tile URL
+    const tileUrl = `${pcTiTilerBase}/item/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?collection=${encodeURIComponent(collection)}&item=${encodeURIComponent(itemId)}&assets=${encodeURIComponent(assets)}&rescale=${encodeURIComponent(rescale)}${colormap}`;
+
+    const layerId = `stac-search-pc-${itemId}-${this._layerCounter++}`;
+    const sourceId = `${layerId}-source`;
+
+    // Add raster tile source
+    this._map.addSource(sourceId, {
+      type: "raster",
+      tiles: [tileUrl],
+      tileSize: 256,
+      attribution: "Microsoft Planetary Computer",
+    });
+
+    // Add raster layer
+    this._map.addLayer({
+      id: layerId,
+      type: "raster",
+      source: sourceId,
+      paint: {
+        "raster-opacity": 1,
+      },
+    });
+
+    // Track the layer for removal
+    this._cogLayers.set(layerId, { sourceId, layerId, type: "raster" });
+
+    // Fit to item bounds
+    if (this._state.selectedItem.bbox) {
+      const [west, south, east, north] = this._state.selectedItem.bbox;
+      this._map.fitBounds(
+        [
+          [west, south],
+          [east, north],
+        ],
+        { padding: 50, duration: 1000 }
+      );
+    }
+
+    this._state.hasLayer = this._cogLayers.size > 0;
+    this._state.loading = false;
+    this._state.status = `Displayed: ${this._state.selectedItem.id}`;
+    this._emit("display", { item: this._state.selectedItem });
+    this._render();
+  }
+
   private async _ensureOverlay(): Promise<void> {
     if (this._deckOverlay) return;
     if (!this._map) return;
@@ -994,11 +1089,29 @@ export class StacSearchControl implements IControl {
   }
 
   private _removeLayer(layerId: string): void {
+    const layer = this._cogLayers.get(layerId);
+    
+    if (layer && this._map) {
+      // Check if it's a MapLibre raster layer (from Planetary Computer)
+      if (layer.type === "raster" && layer.sourceId) {
+        if (this._map.getLayer(layer.layerId)) {
+          this._map.removeLayer(layer.layerId);
+        }
+        if (this._map.getSource(layer.sourceId)) {
+          this._map.removeSource(layer.sourceId);
+        }
+      }
+    }
+
     this._cogLayers.delete(layerId);
 
+    // Update deck.gl overlay with remaining COG layers
     if (this._deckOverlay) {
+      const deckLayers = Array.from(this._cogLayers.values()).filter(
+        (l) => l.type !== "raster"
+      );
       this._deckOverlay.setProps({
-        layers: Array.from(this._cogLayers.values()),
+        layers: deckLayers,
       });
     }
 
@@ -1006,7 +1119,8 @@ export class StacSearchControl implements IControl {
   }
 
   private _removeAllLayers(): void {
-    for (const [layerId] of this._cogLayers) {
+    const layerIds = Array.from(this._cogLayers.keys());
+    for (const layerId of layerIds) {
       this._removeLayer(layerId);
     }
   }
