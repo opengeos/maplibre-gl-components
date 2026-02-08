@@ -121,8 +121,6 @@ export class StacSearchControl implements IControl {
   private _footprintHighlightOutlineLayerId: string = "stac-search-footprints-highlight-outline";
   private _showCustomUrlInput: boolean = false;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _deckOverlay?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _cogLayers: Map<string, any> = new Map();
   private _layerCounter = 0;
 
@@ -174,17 +172,6 @@ export class StacSearchControl implements IControl {
     if (this._map && this._handleZoom) {
       this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
-    }
-
-    if (this._deckOverlay && this._map) {
-      try {
-        (this._map as unknown as { removeControl(c: IControl): void }).removeControl(
-          this._deckOverlay
-        );
-      } catch {
-        // overlay may already be removed
-      }
-      this._deckOverlay = undefined;
     }
 
     this._map = undefined;
@@ -1369,88 +1356,14 @@ export class StacSearchControl implements IControl {
     this._render();
 
     try {
-      // Check if this is Planetary Computer - use TiTiler endpoint
+      // Check if this is Planetary Computer - use their TiTiler endpoint
       if (this._isPlanetaryComputer() && this._state.selectedCollection) {
         await this._displayPlanetaryComputerItem();
         return;
       }
 
-      // Get the item URL for other catalogs
-      let itemUrl = this._state.selectedItem.selfLink;
-
-      if (!itemUrl && this._state.selectedCatalog && this._state.selectedCollection) {
-        // Construct URL from catalog/collection/item
-        itemUrl = `${this._state.selectedCatalog.url}/collections/${this._state.selectedCollection.id}/items/${this._state.selectedItem.id}`;
-      }
-
-      if (!itemUrl) {
-        throw new Error("Cannot determine item URL");
-      }
-
-      // Fetch the full item
-      const response = await fetch(itemUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch item: ${response.status}`);
-      }
-
-      const stacItem = await response.json();
-
-      // Find a suitable visual asset or the first COG asset
-      let assetKey: string | null = null;
-      let assetHref: string | null = null;
-
-      // Priority order for assets
-      const priorityKeys = ["visual", "true-color", "rgb", "thumbnail"];
-
-      for (const key of priorityKeys) {
-        if (stacItem.assets?.[key]) {
-          const asset = stacItem.assets[key];
-          if (
-            asset.type?.includes("geotiff") ||
-            asset.type?.includes("image/tiff") ||
-            asset.href?.endsWith(".tif")
-          ) {
-            assetKey = key;
-            assetHref = asset.href;
-            break;
-          }
-        }
-      }
-
-      // If no priority asset found, use first COG asset
-      if (!assetHref) {
-        for (const [key, asset] of Object.entries(stacItem.assets || {})) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const assetObj = asset as any;
-          if (
-            assetObj.type?.includes("geotiff") ||
-            assetObj.type?.includes("image/tiff") ||
-            assetObj.href?.endsWith(".tif")
-          ) {
-            assetKey = key;
-            assetHref = assetObj.href;
-            break;
-          }
-        }
-      }
-
-      if (!assetHref) {
-        throw new Error("No COG/GeoTIFF asset found in item");
-      }
-
-      await this._addCogLayer(assetHref, stacItem, assetKey || "default");
-
-      // Fit to item bounds
-      if (stacItem.bbox) {
-        const [west, south, east, north] = stacItem.bbox;
-        this._map.fitBounds(
-          [
-            [west, south],
-            [east, north],
-          ],
-          { padding: 50, duration: 1000 }
-        );
-      }
+      // For other catalogs, use the public TiTiler endpoint
+      await this._displayWithTiTiler();
 
       this._state.hasLayer = this._cogLayers.size > 0;
       this._state.loading = false;
@@ -1558,69 +1471,93 @@ export class StacSearchControl implements IControl {
     this._render();
   }
 
-  private async _ensureOverlay(): Promise<void> {
-    if (this._deckOverlay) return;
-    if (!this._map) return;
-
-    const { MapboxOverlay } = await import("@deck.gl/mapbox");
-    this._deckOverlay = new MapboxOverlay({
-      interleaved: false,
-      layers: [],
-    });
-    (this._map as unknown as { addControl(c: IControl): void }).addControl(this._deckOverlay);
-  }
-
   /**
-   * Convert S3 URLs to HTTPS URLs for browser access.
-   * Handles common S3 URL patterns from various providers.
+   * Display item using public TiTiler endpoint (for non-Planetary Computer catalogs).
    */
-  private _convertS3ToHttps(url: string): string {
-    if (!url.startsWith("s3://")) {
-      return url;
+  private async _displayWithTiTiler(): Promise<void> {
+    if (!this._map || !this._state.selectedItem) {
+      throw new Error("Missing required state for TiTiler display");
     }
 
-    // Parse s3://bucket-name/path format
-    const s3Match = url.match(/^s3:\/\/([^/]+)\/(.+)$/);
-    if (!s3Match) {
-      return url;
+    // Get the item URL
+    let itemUrl = this._state.selectedItem.selfLink;
+    if (!itemUrl && this._state.selectedCatalog && this._state.selectedCollection) {
+      itemUrl = `${this._state.selectedCatalog.url}/collections/${this._state.selectedCollection.id}/items/${this._state.selectedItem.id}`;
+    }
+    if (!itemUrl) {
+      throw new Error("Cannot determine item URL");
     }
 
-    const [, bucket, path] = s3Match;
+    // Public TiTiler endpoint
+    const titilerBase = "https://titiler.xyz";
 
-    // Map known buckets to their regions
-    const bucketRegions: Record<string, string> = {
-      "deafrica-sentinel-2": "af-south-1",
-      "deafrica-landsat": "af-south-1",
-      "deafrica-services": "af-south-1",
-      "dea-public-data": "ap-southeast-2",
-      "dea-public-data-dev": "ap-southeast-2",
-    };
+    // Build visualization parameters based on user selection
+    let assetsParam: string;
+    let rescaleParam: string;
+    let colormap = "";
 
-    const region = bucketRegions[bucket] || "us-east-1";
-    return `https://${bucket}.s3.${region}.amazonaws.com/${path}`;
-  }
+    if (this._state.isRgbMode) {
+      // RGB mode
+      const { r, g, b } = this._state.rgbBands;
+      if (r && g && b) {
+        assetsParam = `assets=${r}&assets=${g}&assets=${b}`;
+        const rescaleVal = `${this._state.rescaleMin},${this._state.rescaleMax}`;
+        rescaleParam = `rescale=${rescaleVal}&rescale=${rescaleVal}&rescale=${rescaleVal}`;
+      } else {
+        // Fallback to common defaults
+        assetsParam = "assets=red&assets=green&assets=blue";
+        rescaleParam = "rescale=0,3000&rescale=0,3000&rescale=0,3000";
+      }
+    } else {
+      // Single band mode
+      const band = this._state.selectedBand || "visual";
+      assetsParam = `assets=${band}`;
+      rescaleParam = `rescale=${this._state.rescaleMin},${this._state.rescaleMax}`;
+      if (this._state.colormap && this._state.colormap !== "none") {
+        colormap = `&colormap_name=${this._state.colormap}`;
+      }
+    }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async _addCogLayer(href: string, stacItem: any, assetKey: string): Promise<void> {
-    await this._ensureOverlay();
+    // Build tile URL using TiTiler's STAC endpoint
+    const encodedUrl = encodeURIComponent(itemUrl);
+    const tileUrl = `${titilerBase}/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodedUrl}&${assetsParam}&${rescaleParam}${colormap}`;
 
-    // Convert S3 URLs to HTTPS for browser access
-    const httpUrl = this._convertS3ToHttps(href);
+    const itemId = this._state.selectedItem.id;
+    const layerId = `stac-search-titiler-${itemId}-${this._layerCounter++}`;
+    const sourceId = `${layerId}-source`;
 
-    const { COGLayer } = await import("@developmentseed/deck.gl-geotiff");
+    // Add raster tile source
+    this._map.addSource(sourceId, {
+      type: "raster",
+      tiles: [tileUrl],
+      tileSize: 256,
+      attribution: "TiTiler",
+    });
 
-    const layerId = `stac-search-${stacItem.id}-${assetKey}-${this._layerCounter++}`;
-
-    const newLayer = new COGLayer({
+    // Add raster layer
+    this._map.addLayer({
       id: layerId,
-      geotiff: httpUrl,
-      opacity: 1,
+      type: "raster",
+      source: sourceId,
+      paint: {
+        "raster-opacity": 1,
+      },
     });
 
-    this._cogLayers.set(layerId, newLayer);
-    this._deckOverlay.setProps({
-      layers: Array.from(this._cogLayers.values()),
-    });
+    // Track the layer for removal
+    this._cogLayers.set(layerId, { sourceId, layerId, type: "raster" });
+
+    // Fit to item bounds
+    if (this._state.selectedItem.bbox) {
+      const [west, south, east, north] = this._state.selectedItem.bbox;
+      this._map.fitBounds(
+        [
+          [west, south],
+          [east, north],
+        ],
+        { padding: 50, duration: 1000 }
+      );
+    }
   }
 
   private _removeLayer(layerId: string): void {
@@ -1639,17 +1576,6 @@ export class StacSearchControl implements IControl {
     }
 
     this._cogLayers.delete(layerId);
-
-    // Update deck.gl overlay with remaining COG layers
-    if (this._deckOverlay) {
-      const deckLayers = Array.from(this._cogLayers.values()).filter(
-        (l) => l.type !== "raster"
-      );
-      this._deckOverlay.setProps({
-        layers: deckLayers,
-      });
-    }
-
     this._state.hasLayer = this._cogLayers.size > 0;
 
     // Clear status message if no layers remain
