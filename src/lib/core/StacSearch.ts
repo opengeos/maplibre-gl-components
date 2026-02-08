@@ -1093,25 +1093,36 @@ export class StacSearchControl implements IControl {
     let assets = "data"; // Default for single-band collections like DEM
     let rescale = `${this._state.rescaleMin},${this._state.rescaleMax}`;
     let colormap = "";
+    let assetBidx = ""; // For multi-band assets
 
     // Collection-specific visualization parameters
     if (collection.includes("sentinel-2")) {
-      assets = "visual";
-      rescale = "0,255";
+      // Sentinel-2 uses B04 (red), B03 (green), B02 (blue) for true color
+      assets = "B04,B03,B02";
+      rescale = "0,3000&rescale=0,3000&rescale=0,3000";
     } else if (collection.includes("landsat")) {
+      // Landsat uses red, green, blue band names
       assets = "red,green,blue";
-      rescale = "0,10000";
-    } else if (collection.includes("dem") || collection.includes("elevation")) {
+      rescale = "0,20000&rescale=0,20000&rescale=0,20000";
+    } else if (collection.includes("dem") || collection.includes("elevation") || collection.includes("cop-dem")) {
       assets = "data";
       colormap = "&colormap_name=terrain";
       rescale = "0,4000";
     } else if (collection.includes("naip")) {
       assets = "image";
+      assetBidx = "&asset_bidx=image|1,2,3";
+      rescale = "0,255&rescale=0,255&rescale=0,255";
+    } else if (collection.includes("aster")) {
+      assets = "VNIR";
+      assetBidx = "&asset_bidx=VNIR|1,2,3";
+      rescale = "0,255&rescale=0,255&rescale=0,255";
+    } else if (collection.includes("modis")) {
+      assets = "data";
       rescale = "0,255";
     }
 
     // Build tile URL
-    const tileUrl = `${pcTiTilerBase}/item/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?collection=${encodeURIComponent(collection)}&item=${encodeURIComponent(itemId)}&assets=${encodeURIComponent(assets)}&rescale=${encodeURIComponent(rescale)}${colormap}`;
+    const tileUrl = `${pcTiTilerBase}/item/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?collection=${encodeURIComponent(collection)}&item=${encodeURIComponent(itemId)}&assets=${assets}&rescale=${rescale}${colormap}${assetBidx}`;
 
     const layerId = `stac-search-pc-${itemId}-${this._layerCounter++}`;
     const sourceId = `${layerId}-source`;
