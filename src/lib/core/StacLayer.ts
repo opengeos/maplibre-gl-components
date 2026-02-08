@@ -1240,7 +1240,6 @@ export class StacLayerControl implements IControl {
           layers: Array.from(this._cogLayers.values()),
         });
 
-        console.log(`STAC RGB layer added: ${r},${g},${b} id: ${layerId}`);
 
         // Fit to bounds if available
         if (this._state.stacItem?.bbox) {
@@ -1305,11 +1304,6 @@ export class StacLayerControl implements IControl {
         _rescaleMin: this._state.rescaleMin,
         _rescaleMax: this._state.rescaleMax,
         _colormap: this._state.colormap,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        onGeoTIFFLoad: (geotiff: any, opts: any) => {
-          console.log(`STAC GeoTIFF loaded:`, geotiff, opts);
-          console.log(`STAC geographic bounds:`, opts.geographicBounds);
-        },
       };
 
       // Add custom geoKeysParser for better projection support
@@ -1318,20 +1312,16 @@ export class StacLayerControl implements IControl {
         layerProps.geoKeysParser = geoKeysParser;
       }
 
-      console.log(`STAC single-band layer props:`, layerProps);
       this._cogLayerPropsMap.set(layerId, layerProps);
       const newLayer = new COGLayer(layerProps);
-      console.log(`STAC single-band layer created:`, newLayer);
       this._cogLayers.set(layerId, newLayer);
       this._deckOverlay.setProps({
         layers: Array.from(this._cogLayers.values()),
       });
-      console.log(`STAC overlay updated with ${this._cogLayers.size} layers`);
 
       // Fit to bounds if available
       if (this._state.stacItem?.bbox) {
         const [west, south, east, north] = this._state.stacItem.bbox;
-        console.log(`STAC fitting to bbox:`, [west, south, east, north]);
         this._map.fitBounds(
           [
             [west, south],
@@ -1346,7 +1336,6 @@ export class StacLayerControl implements IControl {
       this._state.loading = false;
       this._state.status = `Added layer: ${asset.title || asset.key}`;
       this._render();
-      console.log(`STAC layer added successfully: ${layerId}`);
       this._emit("layeradd", { layerId, assetKey: asset.key, url: asset.href });
     } catch (err) {
       this._state.loading = false;
@@ -1782,9 +1771,7 @@ export class StacLayerControl implements IControl {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return async (geoKeys: any) => {
         try {
-          console.log("STAC geoKeysParser called with:", geoKeys);
           const result = geoKeysToProj4.toProj4(geoKeys);
-          console.log("STAC geoKeysToProj4 result:", result);
 
           if (result && result.proj4) {
             // Remove axis parameter which can cause issues with some projections
@@ -1792,7 +1779,6 @@ export class StacLayerControl implements IControl {
             // confuse coordinate transformations
             let proj4Str = result.proj4 as string;
             proj4Str = proj4Str.replace(/\+axis=\w+\s*/g, "");
-            console.log("STAC cleaned proj4 string:", proj4Str);
 
             let parsed: Record<string, unknown> = {};
             if (typeof proj4Fn === "function") {
@@ -1803,7 +1789,6 @@ export class StacLayerControl implements IControl {
                     string,
                     unknown
                   >) || {};
-                console.log("STAC proj4 parsed definition:", parsed);
               } catch (e) {
                 console.error("STAC proj4 parsing error:", e);
               }
