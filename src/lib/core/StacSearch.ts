@@ -108,6 +108,7 @@ export class StacSearchControl implements IControl {
       startDate: null,
       endDate: null,
       maxItems: this._options.maxItems,
+      queryFilter: "",
       items: [],
       selectedItem: null,
       rescaleMin: this._options.defaultRescaleMin,
@@ -527,6 +528,26 @@ export class StacSearchControl implements IControl {
     maxItemsGroup.appendChild(maxItemsInput);
     panel.appendChild(maxItemsGroup);
 
+    // Query filter
+    const queryGroup = this._createFormGroup("Query Filter (optional)", "query");
+    const queryInput = document.createElement("input");
+    queryInput.type = "text";
+    queryInput.id = "stac-search-query";
+    queryInput.className = "maplibre-gl-stac-search-input";
+    queryInput.placeholder = '{"eo:cloud_cover": {"lt": 10}}';
+    queryInput.value = this._state.queryFilter;
+    queryInput.addEventListener("change", () => {
+      this._state.queryFilter = queryInput.value.trim();
+    });
+    queryGroup.appendChild(queryInput);
+
+    const queryHint = document.createElement("div");
+    queryHint.className = "maplibre-gl-stac-search-hint";
+    queryHint.textContent = "JSON filter, e.g., cloud cover < 10%";
+    queryGroup.appendChild(queryHint);
+
+    panel.appendChild(queryGroup);
+
     // Search button
     const searchGroup = document.createElement("div");
     searchGroup.className = "maplibre-gl-stac-search-form-group";
@@ -813,6 +834,17 @@ export class StacSearchControl implements IControl {
         const start = this._state.startDate || "1900-01-01";
         const end = this._state.endDate || new Date().toISOString().split("T")[0];
         searchBody.datetime = `${start}T00:00:00Z/${end}T23:59:59Z`;
+      }
+
+      // Add query filter if specified (STAC API Query extension)
+      if (this._state.queryFilter) {
+        try {
+          const queryObj = JSON.parse(this._state.queryFilter);
+          searchBody.query = queryObj;
+        } catch {
+          // Invalid JSON, ignore the query filter
+          console.warn("Invalid query filter JSON:", this._state.queryFilter);
+        }
       }
 
       const response = await fetch(searchUrl, {

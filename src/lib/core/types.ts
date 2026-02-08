@@ -2025,6 +2025,8 @@ export interface StacSearchControlState {
   endDate: string | null;
   /** Maximum items to return. */
   maxItems: number;
+  /** Query filter JSON string (e.g., {"eo:cloud_cover": {"lt": 10}}). */
+  queryFilter: string;
   /** Search results (items). */
   items: StacSearchItem[];
   /** Currently selected item. */
