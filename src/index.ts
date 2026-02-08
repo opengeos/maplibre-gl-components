@@ -18,6 +18,7 @@ import "./lib/styles/stac-layer.css";
 import "./lib/styles/stac-search.css";
 import "./lib/styles/measure-control.css";
 import "./lib/styles/bookmark-control.css";
+import "./lib/styles/print-control.css";
 
 // Main entry point - Core exports
 export { Colorbar } from "./lib/core/Colorbar";
@@ -38,6 +39,7 @@ export { StacLayerControl } from "./lib/core/StacLayer";
 export { StacSearchControl } from "./lib/core/StacSearch";
 export { MeasureControl } from "./lib/core/MeasureControl";
 export { BookmarkControl } from "./lib/core/BookmarkControl";
+export { PrintControl } from "./lib/core/PrintControl";
 
 // Adapters for layer control integration
 export {
@@ -240,6 +242,10 @@ export type {
   BookmarkEvent,
   BookmarkEventHandler,
   MapBookmark,
+  PrintControlOptions,
+  PrintControlState,
+  PrintEvent,
+  PrintEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,
