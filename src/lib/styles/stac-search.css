@@ -329,3 +329,53 @@
   background: #ffebee;
   color: #c62828;
 }
+
+/* Visualization mode toggle */
+.maplibre-gl-stac-search-mode-row {
+  display: flex;
+  gap: 8px;
+}
+
+.maplibre-gl-stac-search-btn--toggle {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 12px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  color: #666;
+}
+
+.maplibre-gl-stac-search-btn--toggle:hover:not(:disabled) {
+  background: #e8e8e8;
+}
+
+.maplibre-gl-stac-search-btn--toggle.active {
+  background: #0078d7;
+  border-color: #0078d7;
+  color: white;
+}
+
+/* RGB band selectors */
+.maplibre-gl-stac-search-rgb-row {
+  display: flex;
+  gap: 8px;
+}
+
+.maplibre-gl-stac-search-rgb-channel {
+  flex: 1;
+  min-width: 0;
+}
+
+.maplibre-gl-stac-search-rgb-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  text-align: center;
+}
+
+.maplibre-gl-stac-search-select--small {
+  padding: 6px 8px;
+  font-size: 12px;
+}

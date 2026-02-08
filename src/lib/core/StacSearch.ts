@@ -27,6 +27,33 @@ const DEFAULT_CATALOGS: StacCatalog[] = [
 ];
 
 /**
+ * Available colormap names for single band visualization.
+ */
+const COLORMAP_NAMES: string[] = [
+  "viridis",
+  "plasma",
+  "inferno",
+  "magma",
+  "cividis",
+  "coolwarm",
+  "bwr",
+  "seismic",
+  "RdBu",
+  "RdYlBu",
+  "RdYlGn",
+  "spectral",
+  "jet",
+  "rainbow",
+  "turbo",
+  "terrain",
+  "ocean",
+  "hot",
+  "cool",
+  "gray",
+  "bone",
+];
+
+/**
  * Default options for the StacSearchControl.
  */
 const DEFAULT_OPTIONS: Required<StacSearchControlOptions> = {
@@ -35,6 +62,7 @@ const DEFAULT_OPTIONS: Required<StacSearchControlOptions> = {
   visible: true,
   collapsed: true,
   panelWidth: 360,
+  maxHeight: 0, // 0 means no limit
   backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
   opacity: 1,
@@ -44,6 +72,8 @@ const DEFAULT_OPTIONS: Required<StacSearchControlOptions> = {
   maxItems: 20,
   defaultRescaleMin: 0,
   defaultRescaleMax: 10000,
+  defaultColormap: "viridis",
+  defaultRgbMode: true,
   showFootprints: true,
   minzoom: 0,
   maxzoom: 24,
@@ -113,6 +143,11 @@ export class StacSearchControl implements IControl {
       selectedItem: null,
       rescaleMin: this._options.defaultRescaleMin,
       rescaleMax: this._options.defaultRescaleMax,
+      isRgbMode: this._options.defaultRgbMode,
+      colormap: this._options.defaultColormap,
+      availableAssets: [],
+      selectedBand: null,
+      rgbBands: { r: null, g: null, b: null },
       hasLayer: false,
       loading: false,
       error: null,
@@ -334,6 +369,10 @@ export class StacSearchControl implements IControl {
     panel.className = "maplibre-gl-stac-search-panel";
     panel.style.width = `${this._options.panelWidth}px`;
 
+    if (this._options.maxHeight && this._options.maxHeight > 0) {
+      panel.style.maxHeight = `${this._options.maxHeight}px`;
+      panel.style.overflowY = "auto";
+    }
     if (this._options.fontSize) {
       panel.style.fontSize = `${this._options.fontSize}px`;
     }
@@ -606,13 +645,136 @@ export class StacSearchControl implements IControl {
         const selected = this._state.items.find((i) => i.id === itemSelect.value);
         if (selected) {
           this._state.selectedItem = selected;
+          this._updateAvailableAssets(selected);
           this._updateFootprintHighlight();
           this._emit("itemselect", { item: selected });
+          this._render();
         }
       });
 
       itemsGroup.appendChild(itemSelect);
       panel.appendChild(itemsGroup);
+
+      // Visualization mode toggle (RGB vs Single Band)
+      const modeGroup = this._createFormGroup("Visualization Mode", "mode");
+      const modeRow = document.createElement("div");
+      modeRow.className = "maplibre-gl-stac-search-mode-row";
+
+      const singleBandBtn = document.createElement("button");
+      singleBandBtn.className = `maplibre-gl-stac-search-btn maplibre-gl-stac-search-btn--toggle ${!this._state.isRgbMode ? "active" : ""}`;
+      singleBandBtn.textContent = "Single Band";
+      singleBandBtn.addEventListener("click", () => {
+        this._state.isRgbMode = false;
+        this._render();
+      });
+
+      const rgbBtn = document.createElement("button");
+      rgbBtn.className = `maplibre-gl-stac-search-btn maplibre-gl-stac-search-btn--toggle ${this._state.isRgbMode ? "active" : ""}`;
+      rgbBtn.textContent = "RGB Composite";
+      rgbBtn.addEventListener("click", () => {
+        this._state.isRgbMode = true;
+        this._render();
+      });
+
+      modeRow.appendChild(singleBandBtn);
+      modeRow.appendChild(rgbBtn);
+      modeGroup.appendChild(modeRow);
+      panel.appendChild(modeGroup);
+
+      // Band selectors based on mode
+      const assets = this._state.availableAssets;
+
+      if (!this._state.isRgbMode) {
+        // Single band mode - band selector
+        const bandGroup = this._createFormGroup("Band", "band");
+        const bandSelect = document.createElement("select");
+        bandSelect.id = "stac-search-band";
+        bandSelect.className = "maplibre-gl-stac-search-select";
+
+        for (const asset of assets) {
+          const option = document.createElement("option");
+          option.value = asset;
+          option.textContent = asset;
+          option.selected = this._state.selectedBand === asset;
+          bandSelect.appendChild(option);
+        }
+
+        bandSelect.addEventListener("change", () => {
+          this._state.selectedBand = bandSelect.value;
+        });
+
+        bandGroup.appendChild(bandSelect);
+        panel.appendChild(bandGroup);
+
+        // Colormap selector
+        const colormapGroup = this._createFormGroup("Colormap", "colormap");
+        const colormapSelect = document.createElement("select");
+        colormapSelect.id = "stac-search-colormap";
+        colormapSelect.className = "maplibre-gl-stac-search-select";
+
+        const noneOption = document.createElement("option");
+        noneOption.value = "none";
+        noneOption.textContent = "None (Grayscale)";
+        noneOption.selected = this._state.colormap === "none";
+        colormapSelect.appendChild(noneOption);
+
+        for (const name of COLORMAP_NAMES) {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          opt.selected = this._state.colormap === name;
+          colormapSelect.appendChild(opt);
+        }
+
+        colormapSelect.addEventListener("change", () => {
+          this._state.colormap = colormapSelect.value;
+        });
+
+        colormapGroup.appendChild(colormapSelect);
+        panel.appendChild(colormapGroup);
+      } else {
+        // RGB mode - three band selectors
+        const rgbGroup = this._createFormGroup("RGB Bands", "rgb");
+        const rgbRow = document.createElement("div");
+        rgbRow.className = "maplibre-gl-stac-search-rgb-row";
+
+        const channels: Array<{ key: "r" | "g" | "b"; label: string }> = [
+          { key: "r", label: "R" },
+          { key: "g", label: "G" },
+          { key: "b", label: "B" },
+        ];
+
+        for (const channel of channels) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "maplibre-gl-stac-search-rgb-channel";
+
+          const label = document.createElement("label");
+          label.textContent = channel.label;
+          label.className = "maplibre-gl-stac-search-rgb-label";
+          wrapper.appendChild(label);
+
+          const select = document.createElement("select");
+          select.className = "maplibre-gl-stac-search-select maplibre-gl-stac-search-select--small";
+
+          for (const asset of assets) {
+            const option = document.createElement("option");
+            option.value = asset;
+            option.textContent = asset;
+            option.selected = this._state.rgbBands[channel.key] === asset;
+            select.appendChild(option);
+          }
+
+          select.addEventListener("change", () => {
+            this._state.rgbBands[channel.key] = select.value;
+          });
+
+          wrapper.appendChild(select);
+          rgbRow.appendChild(wrapper);
+        }
+
+        rgbGroup.appendChild(rgbRow);
+        panel.appendChild(rgbGroup);
+      }
 
       // Rescale inputs
       const rescaleGroup = this._createFormGroup("Rescale Range", "rescale");
@@ -876,12 +1038,16 @@ export class StacSearchControl implements IControl {
             bbox: f.bbox,
             selfLink,
             properties: f.properties,
+            assets: f.assets, // Include assets for visualization options
           };
         }
       );
 
       this._state.items = items;
       this._state.selectedItem = items.length > 0 ? items[0] : null;
+      if (this._state.selectedItem) {
+        this._updateAvailableAssets(this._state.selectedItem);
+      }
       this._state.loading = false;
       this._state.status = `Found ${items.length} item(s)`;
       this._emit("search", {});
@@ -1018,6 +1184,117 @@ export class StacSearchControl implements IControl {
   }
 
   /**
+   * Update available assets based on the selected item.
+   */
+  private _updateAvailableAssets(item: StacSearchItem): void {
+    const assets: string[] = [];
+
+    // Common band/asset names to look for
+    const commonBandNames = new Set([
+      "red", "green", "blue", "nir", "nir08", "nir09", "swir", "swir16", "swir22",
+      "coastal", "data", "visual", "image", "thumbnail", "overview",
+      // Sentinel-2
+      "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12",
+      "AOT", "WVP", "SCL",
+      // Landsat
+      "SR_B1", "SR_B2", "SR_B3", "SR_B4", "SR_B5", "SR_B6", "SR_B7",
+      "ST_B10", "lwir", "lwir11",
+      // NAIP
+      "rgbir",
+      // Generic
+      "raster", "dem", "dsm", "dtm", "elevation",
+    ]);
+
+    if (item.assets) {
+      for (const [key, asset] of Object.entries(item.assets)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const assetObj = asset as any;
+        const href = assetObj.href || "";
+        const type = assetObj.type || "";
+
+        // Include asset if it's a raster type or has a known band name
+        const isRasterType =
+          type.includes("geotiff") ||
+          type.includes("image/tiff") ||
+          type.includes("image/") ||
+          type.includes("application/x-hdf") ||
+          href.endsWith(".tif") ||
+          href.endsWith(".tiff") ||
+          href.endsWith(".jp2");
+
+        const isKnownBand = commonBandNames.has(key) || commonBandNames.has(key.toLowerCase());
+
+        // Exclude metadata/auxiliary files
+        const isMetadata =
+          key.includes("metadata") ||
+          key.includes("xml") ||
+          key.includes("json") ||
+          type.includes("application/json") ||
+          type.includes("application/xml") ||
+          type.includes("text/");
+
+        if ((isRasterType || isKnownBand) && !isMetadata) {
+          assets.push(key);
+        }
+      }
+    }
+
+    // Sort assets for consistent display
+    assets.sort();
+    this._state.availableAssets = assets;
+
+    // Set default band selections
+    if (assets.length > 0) {
+      // For single band, default to first asset
+      if (!this._state.selectedBand || !assets.includes(this._state.selectedBand)) {
+        this._state.selectedBand = assets[0];
+      }
+
+      // For RGB, try to find common RGB band combinations
+      const rgbDefaults = this._findDefaultRgbBands(assets);
+      if (!this._state.rgbBands.r || !assets.includes(this._state.rgbBands.r)) {
+        this._state.rgbBands.r = rgbDefaults.r;
+      }
+      if (!this._state.rgbBands.g || !assets.includes(this._state.rgbBands.g)) {
+        this._state.rgbBands.g = rgbDefaults.g;
+      }
+      if (!this._state.rgbBands.b || !assets.includes(this._state.rgbBands.b)) {
+        this._state.rgbBands.b = rgbDefaults.b;
+      }
+    }
+  }
+
+  /**
+   * Find default RGB band assignments based on available assets.
+   */
+  private _findDefaultRgbBands(assets: string[]): { r: string; g: string; b: string } {
+    // Common RGB band patterns
+    const patterns = [
+      // Sentinel-2
+      { r: "B04", g: "B03", b: "B02" },
+      { r: "red", g: "green", b: "blue" },
+      // Landsat
+      { r: "SR_B4", g: "SR_B3", b: "SR_B2" },
+      { r: "B4", g: "B3", b: "B2" },
+      // Generic
+      { r: "visual", g: "visual", b: "visual" },
+    ];
+
+    for (const pattern of patterns) {
+      if (assets.includes(pattern.r) && assets.includes(pattern.g) && assets.includes(pattern.b)) {
+        return pattern;
+      }
+    }
+
+    // Fallback: use first three assets or repeat first asset
+    return {
+      r: assets[0] || "",
+      g: assets[1] || assets[0] || "",
+      b: assets[2] || assets[0] || "",
+    };
+  }
+
+  /**
    * Update the footprint highlight to show the selected item.
    */
   private _updateFootprintHighlight(): void {
@@ -1039,6 +1316,38 @@ export class StacSearchControl implements IControl {
    */
   private _isPlanetaryComputer(): boolean {
     return this._state.selectedCatalog?.url?.includes("planetarycomputer.microsoft.com") ?? false;
+  }
+
+  /**
+   * Get default assets for a collection (fallback when no user selection).
+   */
+  private _getDefaultAssets(collection: string): string {
+    if (collection.includes("sentinel-2")) {
+      return "B04,B03,B02";
+    } else if (collection.includes("landsat")) {
+      return "red,green,blue";
+    } else if (collection.includes("naip")) {
+      return "image";
+    } else if (collection.includes("aster")) {
+      return "VNIR";
+    }
+    return "data";
+  }
+
+  /**
+   * Get default rescale for a collection (fallback when no user selection).
+   */
+  private _getDefaultRescale(collection: string): string {
+    if (collection.includes("sentinel-2")) {
+      return "0,3000&rescale=0,3000&rescale=0,3000";
+    } else if (collection.includes("landsat")) {
+      return "0,20000&rescale=0,20000&rescale=0,20000";
+    } else if (collection.includes("dem") || collection.includes("elevation") || collection.includes("cop-dem")) {
+      return "0,4000";
+    } else if (collection.includes("naip") || collection.includes("aster")) {
+      return "0,255&rescale=0,255&rescale=0,255";
+    }
+    return "0,10000";
   }
 
   private async _displayItem(): Promise<void> {
@@ -1171,40 +1480,40 @@ export class StacSearchControl implements IControl {
     // Planetary Computer TiTiler endpoint
     const pcTiTilerBase = "https://planetarycomputer.microsoft.com/api/data/v1";
 
-    // Determine the best asset to display based on collection type
-    let assets = "data"; // Default for single-band collections like DEM
-    let rescale = `${this._state.rescaleMin},${this._state.rescaleMax}`;
+    // Build visualization parameters based on user selection
+    let assetsParam: string;
+    let rescaleParam: string;
     let colormap = "";
-    let assetBidx = ""; // For multi-band assets
 
-    // Collection-specific visualization parameters
-    if (collection.includes("sentinel-2")) {
-      // Sentinel-2 uses B04 (red), B03 (green), B02 (blue) for true color
-      assets = "B04,B03,B02";
-      rescale = "0,3000&rescale=0,3000&rescale=0,3000";
-    } else if (collection.includes("landsat")) {
-      // Landsat uses red, green, blue band names
-      assets = "red,green,blue";
-      rescale = "0,20000&rescale=0,20000&rescale=0,20000";
-    } else if (collection.includes("dem") || collection.includes("elevation") || collection.includes("cop-dem")) {
-      assets = "data";
-      colormap = "&colormap_name=terrain";
-      rescale = "0,4000";
-    } else if (collection.includes("naip")) {
-      assets = "image";
-      assetBidx = "&asset_bidx=image|1,2,3";
-      rescale = "0,255&rescale=0,255&rescale=0,255";
-    } else if (collection.includes("aster")) {
-      assets = "VNIR";
-      assetBidx = "&asset_bidx=VNIR|1,2,3";
-      rescale = "0,255&rescale=0,255&rescale=0,255";
-    } else if (collection.includes("modis")) {
-      assets = "data";
-      rescale = "0,255";
+    if (this._state.isRgbMode) {
+      // RGB mode - use selected RGB bands
+      // PC TiTiler requires repeated assets= parameters for multi-band
+      const { r, g, b } = this._state.rgbBands;
+      if (r && g && b) {
+        assetsParam = `assets=${r}&assets=${g}&assets=${b}`;
+        const rescaleVal = `${this._state.rescaleMin},${this._state.rescaleMax}`;
+        rescaleParam = `rescale=${rescaleVal}&rescale=${rescaleVal}&rescale=${rescaleVal}`;
+      } else {
+        // Fallback to collection defaults if no bands selected
+        const defaultAssets = this._getDefaultAssets(collection).split(",");
+        assetsParam = defaultAssets.map((a) => `assets=${a}`).join("&");
+        rescaleParam = this._getDefaultRescale(collection)
+          .split("&")
+          .map((r) => (r.startsWith("rescale=") ? r : `rescale=${r}`))
+          .join("&");
+      }
+    } else {
+      // Single band mode
+      const band = this._state.selectedBand || "data";
+      assetsParam = `assets=${band}`;
+      rescaleParam = `rescale=${this._state.rescaleMin},${this._state.rescaleMax}`;
+      if (this._state.colormap && this._state.colormap !== "none") {
+        colormap = `&colormap_name=${this._state.colormap}`;
+      }
     }
 
     // Build tile URL
-    const tileUrl = `${pcTiTilerBase}/item/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?collection=${encodeURIComponent(collection)}&item=${encodeURIComponent(itemId)}&assets=${assets}&rescale=${rescale}${colormap}${assetBidx}`;
+    const tileUrl = `${pcTiTilerBase}/item/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?collection=${encodeURIComponent(collection)}&item=${encodeURIComponent(itemId)}&${assetsParam}&${rescaleParam}${colormap}`;
 
     const layerId = `stac-search-pc-${itemId}-${this._layerCounter++}`;
     const sourceId = `${layerId}-source`;
@@ -1261,9 +1570,42 @@ export class StacSearchControl implements IControl {
     (this._map as unknown as { addControl(c: IControl): void }).addControl(this._deckOverlay);
   }
 
+  /**
+   * Convert S3 URLs to HTTPS URLs for browser access.
+   * Handles common S3 URL patterns from various providers.
+   */
+  private _convertS3ToHttps(url: string): string {
+    if (!url.startsWith("s3://")) {
+      return url;
+    }
+
+    // Parse s3://bucket-name/path format
+    const s3Match = url.match(/^s3:\/\/([^/]+)\/(.+)$/);
+    if (!s3Match) {
+      return url;
+    }
+
+    const [, bucket, path] = s3Match;
+
+    // Map known buckets to their regions
+    const bucketRegions: Record<string, string> = {
+      "deafrica-sentinel-2": "af-south-1",
+      "deafrica-landsat": "af-south-1",
+      "deafrica-services": "af-south-1",
+      "dea-public-data": "ap-southeast-2",
+      "dea-public-data-dev": "ap-southeast-2",
+    };
+
+    const region = bucketRegions[bucket] || "us-east-1";
+    return `https://${bucket}.s3.${region}.amazonaws.com/${path}`;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async _addCogLayer(href: string, stacItem: any, assetKey: string): Promise<void> {
     await this._ensureOverlay();
+
+    // Convert S3 URLs to HTTPS for browser access
+    const httpUrl = this._convertS3ToHttps(href);
 
     const { COGLayer } = await import("@developmentseed/deck.gl-geotiff");
 
@@ -1271,7 +1613,7 @@ export class StacSearchControl implements IControl {
 
     const newLayer = new COGLayer({
       id: layerId,
-      geotiff: href,
+      geotiff: httpUrl,
       opacity: 1,
     });
 
@@ -1309,6 +1651,12 @@ export class StacSearchControl implements IControl {
     }
 
     this._state.hasLayer = this._cogLayers.size > 0;
+
+    // Clear status message if no layers remain
+    if (this._cogLayers.size === 0) {
+      this._state.status = null;
+    }
+    this._render();
   }
 
   private _removeAllLayers(): void {
@@ -1316,5 +1664,8 @@ export class StacSearchControl implements IControl {
     for (const layerId of layerIds) {
       this._removeLayer(layerId);
     }
+    // Clear the status message when all layers are removed
+    this._state.status = null;
+    this._render();
   }
 }

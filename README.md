@@ -22,6 +22,7 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **CogLayerControl** - Load and visualize Cloud Optimized GeoTIFF (COG) files with colormaps
 - **ZarrLayerControl** - Load and visualize multi-dimensional Zarr arrays with colormaps
 - **StacLayerControl** - Load COG layers from STAC (SpatioTemporal Asset Catalog) items
+- **StacSearchControl** - Search and visualize STAC items from public catalogs (Earth Search, Planetary Computer)
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
 - **TypeScript** - Full type definitions included
@@ -1100,6 +1101,141 @@ stacControl.on('layeradd', (event) => {
 4. Click "Add Layer" to visualize
 5. Click on the layer to view info (if pickable)
 
+### StacSearchControl
+
+A control for searching and visualizing STAC items from public STAC API catalogs. Search within the current map viewport, browse results, and display imagery with customizable band combinations and colormaps.
+
+```typescript
+interface StacSearchControlOptions {
+  position?: ControlPosition;
+  className?: string;                  // Custom CSS class
+  visible?: boolean;                   // Default: true
+  collapsed?: boolean;                 // Start collapsed. Default: true
+  panelWidth?: number;                 // Panel width in pixels. Default: 360
+  maxHeight?: number;                  // Max panel height in pixels. Default: none
+  catalogs?: StacCatalog[];            // Predefined STAC catalogs
+  maxItems?: number;                   // Max search results. Default: 20
+  defaultRescaleMin?: number;          // Min rescale value. Default: 0
+  defaultRescaleMax?: number;          // Max rescale value. Default: 10000
+  defaultColormap?: string;            // Colormap for single band. Default: 'viridis'
+  defaultRgbMode?: boolean;            // Start in RGB mode. Default: true
+  showFootprints?: boolean;            // Show item footprints on map. Default: true
+  backgroundColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  fontSize?: number;
+  fontColor?: string;
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+interface StacCatalog {
+  name: string;                        // Display name
+  url: string;                         // STAC API URL
+}
+```
+
+**Usage:**
+
+```typescript
+import { StacSearchControl } from 'maplibre-gl-components';
+
+// Basic usage with default catalogs
+const stacSearch = new StacSearchControl({
+  collapsed: false,
+  maxItems: 20,
+  showFootprints: true,
+});
+map.addControl(stacSearch, 'top-right');
+
+// With custom catalogs
+const stacSearch = new StacSearchControl({
+  catalogs: [
+    { name: "Element84 Earth Search", url: "https://earth-search.aws.element84.com/v1" },
+    { name: "Microsoft Planetary Computer", url: "https://planetarycomputer.microsoft.com/api/stac/v1" },
+  ],
+  defaultRgbMode: true,
+  defaultRescaleMin: 0,
+  defaultRescaleMax: 3000,
+  maxHeight: 500,
+});
+map.addControl(stacSearch, 'top-right');
+
+// Listen for events
+stacSearch.on('catalogselect', (event) => {
+  console.log('Catalog selected:', event.catalog?.name);
+});
+
+stacSearch.on('collectionsload', (event) => {
+  console.log('Collections loaded:', event.state.collections.length);
+});
+
+stacSearch.on('collectionselect', (event) => {
+  console.log('Collection selected:', event.collection?.id);
+});
+
+stacSearch.on('search', (event) => {
+  console.log('Search completed:', event.state.items.length, 'items found');
+});
+
+stacSearch.on('itemselect', (event) => {
+  console.log('Item selected:', event.item?.id);
+});
+
+stacSearch.on('display', (event) => {
+  console.log('Item displayed:', event.item?.id);
+});
+
+stacSearch.on('error', (event) => {
+  console.error('Error:', event.error);
+});
+```
+
+**Methods:**
+
+```typescript
+stacSearch.show()
+stacSearch.hide()
+stacSearch.expand()
+stacSearch.collapse()
+stacSearch.toggle()
+stacSearch.getState()
+stacSearch.update(options)
+stacSearch.getSelectedCatalog()        // Get current catalog
+stacSearch.getSelectedCollection()     // Get current collection
+stacSearch.getSelectedItem()           // Get current item
+stacSearch.on(event, handler)          // Subscribe to events
+stacSearch.off(event, handler)         // Unsubscribe from events
+```
+
+**Default Catalogs:**
+- **Element84 Earth Search** - Sentinel-2, Landsat, NAIP, Copernicus DEM
+- **Microsoft Planetary Computer** - Extensive collection with tile server
+
+**Features:**
+- Search STAC items within current map viewport
+- Date range filtering
+- Query filter support (e.g., cloud cover)
+- Footprint visualization on map
+- **Visualization modes:**
+  - **RGB Composite** - Select R, G, B bands for true/false color composites
+  - **Single Band** - Select one band with colormap
+- 21 built-in colormaps for single band visualization
+- Rescale range adjustment
+- Auto-detects available bands/assets from STAC items
+- Custom catalog URL support
+
+**Workflow:**
+1. Select a catalog (or enter custom URL)
+2. Click "Collections" to load available collections
+3. Select a collection (e.g., sentinel-2-l2a)
+4. Optionally set date range and query filters
+5. Click "Search" to find items in current map viewport
+6. Select an item from the dropdown
+7. Choose visualization mode (RGB or Single Band)
+8. Select bands and adjust rescale range
+9. Click "Display Item" to visualize
+
 ### Layer Control Adapters
 
 To integrate COG and Zarr layers with [maplibre-gl-layer-control](https://github.com/AJPNorthwest/maplibre-gl-layer-control), use the included adapters:
@@ -1377,6 +1513,7 @@ See the [examples](./examples/) directory for complete working examples:
 - **COG Layer Example** - Cloud Optimized GeoTIFF visualization with colormaps
 - **Zarr Layer Example** - Multi-dimensional Zarr data visualization
 - **STAC Layer Example** - Load COG layers from STAC catalog items
+- **STAC Search Example** - Search and visualize STAC items from public catalogs
 
 ## Development
 

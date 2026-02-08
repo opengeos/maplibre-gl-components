@@ -1961,6 +1961,9 @@ export interface StacSearchItem {
   /** Full item properties. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   properties?: Record<string, any>;
+  /** Item assets (bands, data files). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  assets?: Record<string, any>;
 }
 
 /**
@@ -1977,6 +1980,8 @@ export interface StacSearchControlOptions {
   collapsed?: boolean;
   /** Width of the panel in pixels. Default: 360. */
   panelWidth?: number;
+  /** Maximum height of the panel in pixels. Default: undefined (no limit). */
+  maxHeight?: number;
   /** Background color of the container. */
   backgroundColor?: string;
   /** Border radius for container. */
@@ -1995,6 +2000,10 @@ export interface StacSearchControlOptions {
   defaultRescaleMin?: number;
   /** Default rescale maximum for visualization. Default: 10000. */
   defaultRescaleMax?: number;
+  /** Default colormap for single band visualization. Default: 'viridis'. */
+  defaultColormap?: string;
+  /** Whether to start in RGB mode. Default: true. */
+  defaultRgbMode?: boolean;
   /** Whether to add search result footprints to the map. Default: true. */
   showFootprints?: boolean;
   /** Minimum zoom level at which the control is visible. */
@@ -2035,6 +2044,16 @@ export interface StacSearchControlState {
   rescaleMin: number;
   /** Rescale max value. */
   rescaleMax: number;
+  /** Whether in RGB mode (true) or single band mode (false). */
+  isRgbMode: boolean;
+  /** Selected colormap for single band mode. */
+  colormap: string;
+  /** Available assets/bands from the selected item. */
+  availableAssets: string[];
+  /** Selected band for single band mode. */
+  selectedBand: string | null;
+  /** Selected RGB bands. */
+  rgbBands: { r: string | null; g: string | null; b: string | null };
   /** Whether any layer is currently active. */
   hasLayer: boolean;
   /** Whether the control is loading. */
