@@ -15,6 +15,7 @@ import "./lib/styles/zarr-layer.css";
 import "./lib/styles/pmtiles-layer.css";
 import "./lib/styles/add-vector.css";
 import "./lib/styles/stac-layer.css";
+import "./lib/styles/stac-search.css";
 
 // Main entry point - Core exports
 export { Colorbar } from "./lib/core/Colorbar";
@@ -32,6 +33,7 @@ export { ZarrLayerControl } from "./lib/core/ZarrLayer";
 export { PMTilesLayerControl } from "./lib/core/PMTilesLayer";
 export { AddVectorControl } from "./lib/core/AddVector";
 export { StacLayerControl } from "./lib/core/StacLayer";
+export { StacSearchControl } from "./lib/core/StacSearch";
 
 // Adapters for layer control integration
 export { CogLayerAdapter, ZarrLayerAdapter, PMTilesLayerAdapter, AddVectorAdapter } from "./lib/adapters";
@@ -208,6 +210,13 @@ export type {
   StacLayerEvent,
   StacLayerEventHandler,
   StacAssetInfo,
+  StacSearchControlOptions,
+  StacSearchControlState,
+  StacSearchEvent,
+  StacSearchEventHandler,
+  StacCatalog,
+  StacCollection,
+  StacSearchItem,
   ColormapName,
   ColorStop,
   ControlPosition,

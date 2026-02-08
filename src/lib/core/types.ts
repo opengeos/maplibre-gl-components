@@ -1920,3 +1920,150 @@ export type StacLayerEventHandler = (event: {
   layerId?: string;
   assetKey?: string;
 }) => void;
+
+/**
+ * A STAC catalog configuration.
+ */
+export interface StacCatalog {
+  /** Display name of the catalog. */
+  name: string;
+  /** STAC API endpoint URL. */
+  url: string;
+}
+
+/**
+ * A STAC collection from a catalog.
+ */
+export interface StacCollection {
+  /** Collection ID. */
+  id: string;
+  /** Collection title. */
+  title?: string;
+  /** Collection description. */
+  description?: string;
+}
+
+/**
+ * A STAC item from a search result.
+ */
+export interface StacSearchItem {
+  /** Item ID. */
+  id: string;
+  /** Item datetime. */
+  datetime?: string;
+  /** Item geometry (GeoJSON). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  geometry?: any;
+  /** Item bounding box. */
+  bbox?: [number, number, number, number];
+  /** Full STAC item URL. */
+  selfLink?: string;
+  /** Full item properties. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  properties?: Record<string, any>;
+}
+
+/**
+ * Options for configuring the StacSearchControl.
+ */
+export interface StacSearchControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether the panel starts collapsed (button only). Default: true. */
+  collapsed?: boolean;
+  /** Width of the panel in pixels. Default: 360. */
+  panelWidth?: number;
+  /** Background color of the container. */
+  backgroundColor?: string;
+  /** Border radius for container. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Predefined STAC catalogs. */
+  catalogs?: StacCatalog[];
+  /** Maximum number of items to return from search. Default: 20. */
+  maxItems?: number;
+  /** Default rescale minimum for visualization. Default: 0. */
+  defaultRescaleMin?: number;
+  /** Default rescale maximum for visualization. Default: 10000. */
+  defaultRescaleMax?: number;
+  /** Whether to add search result footprints to the map. Default: true. */
+  showFootprints?: boolean;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the StacSearchControl.
+ */
+export interface StacSearchControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Available catalogs. */
+  catalogs: StacCatalog[];
+  /** Currently selected catalog. */
+  selectedCatalog: StacCatalog | null;
+  /** Available collections from the selected catalog. */
+  collections: StacCollection[];
+  /** Currently selected collection. */
+  selectedCollection: StacCollection | null;
+  /** Search start date (ISO string). */
+  startDate: string | null;
+  /** Search end date (ISO string). */
+  endDate: string | null;
+  /** Maximum items to return. */
+  maxItems: number;
+  /** Search results (items). */
+  items: StacSearchItem[];
+  /** Currently selected item. */
+  selectedItem: StacSearchItem | null;
+  /** Rescale min value. */
+  rescaleMin: number;
+  /** Rescale max value. */
+  rescaleMax: number;
+  /** Whether any layer is currently active. */
+  hasLayer: boolean;
+  /** Whether the control is loading. */
+  loading: boolean;
+  /** Error message if any. */
+  error: string | null;
+  /** Status message. */
+  status: string | null;
+}
+
+/**
+ * STAC Search event types.
+ */
+export type StacSearchEvent =
+  | ComponentEvent
+  | "catalogselect"
+  | "collectionsload"
+  | "collectionselect"
+  | "search"
+  | "itemselect"
+  | "display"
+  | "error";
+
+/**
+ * STAC Search event handler function type.
+ */
+export type StacSearchEventHandler = (event: {
+  type: StacSearchEvent;
+  state: StacSearchControlState;
+  catalog?: StacCatalog;
+  collection?: StacCollection;
+  item?: StacSearchItem;
+  error?: string;
+}) => void;
