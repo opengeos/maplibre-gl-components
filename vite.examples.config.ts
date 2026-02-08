@@ -67,6 +67,7 @@ export default defineConfig({
           __dirname,
           "examples/bookmark-control/index.html",
         ),
+        viewState: resolve(__dirname, "examples/view-state/index.html"),
       },
     },
   },

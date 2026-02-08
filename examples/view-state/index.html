@@ -1,19 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>View State Control - MapLibre GL Components</title>
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.15.0/dist/maplibre-gl.css" />
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl-components@0.6.1/dist/maplibre-gl-components.css" />
+    <link
+      href="https://unpkg.com/maplibre-gl@5.5.0/dist/maplibre-gl.css"
+      rel="stylesheet"
+    />
     <style>
-      * {
-        box-sizing: border-box;
+      body {
         margin: 0;
         padding: 0;
-      }
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
       #map {
         position: absolute;
@@ -62,7 +60,8 @@
         letter-spacing: 0.3px;
       }
       #bbox-output .value {
-        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
         font-size: 11px;
         word-break: break-all;
         line-height: 1.5;
@@ -71,55 +70,15 @@
   </head>
   <body>
     <div id="map"></div>
-
     <div class="info-banner">
-      <strong>View State Control</strong> &mdash; Pan, zoom, or tilt the map to see live updates.
-      Click <strong>Draw BBox</strong> to draw a bounding box on the map.
+      <strong>View State Control</strong> &mdash; Pan, zoom, or tilt the map to
+      see live updates. Click <strong>Draw BBox</strong> to draw a bounding box
+      on the map.
     </div>
-
     <div id="bbox-output">
       <div class="label">Drawn Bounding Box</div>
       <div class="value" id="bbox-value"></div>
     </div>
-
-    <script type="module">
-      import maplibregl from 'https://esm.sh/maplibre-gl@5.15.0';
-      import { ViewStateControl } from 'https://esm.sh/maplibre-gl-components@0.6.1';
-
-      const map = new maplibregl.Map({
-        container: 'map',
-        style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-        center: [-98, 38.5],
-        zoom: 4,
-        maxPitch: 85,
-      });
-
-      map.addControl(new maplibregl.NavigationControl(), 'top-right');
-
-      // Add view state control - panel open by default
-      const viewStateControl = new ViewStateControl({
-        collapsed: false,
-        enableBBox: true,
-        precision: 4,
-      });
-      map.addControl(viewStateControl, 'bottom-left');
-
-      // Show drawn bbox in the output panel
-      const bboxOutput = document.getElementById('bbox-output');
-      const bboxValue = document.getElementById('bbox-value');
-
-      viewStateControl.on('bboxdraw', (event) => {
-        if (event.bbox && bboxOutput && bboxValue) {
-          bboxOutput.style.display = 'block';
-          bboxValue.textContent = `[${event.bbox.map(v => v.toFixed(4)).join(', ')}]`;
-        }
-      });
-
-      viewStateControl.on('bboxclear', () => {
-        if (bboxOutput) {
-          bboxOutput.style.display = 'none';
-        }
-      });
-    </script>
+    <script type="module" src="./main.ts"></script>
   </body>
 </html>
