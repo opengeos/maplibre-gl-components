@@ -118,6 +118,39 @@ function colormapToImageData(stops: ColorStop[]): ImageData {
 }
 
 /**
+ * Interpolate a colormap at position t (0-1) and return [R, G, B] values (0-255).
+ */
+function interpolateColormap(stops: ColorStop[], t: number): [number, number, number] {
+  const parsed = stops.map((s) => ({
+    pos: s.position,
+    rgb: parseHexColor(s.color),
+  }));
+
+  // Clamp t to [0, 1]
+  t = Math.max(0, Math.min(1, t));
+
+  // Find surrounding stops
+  let lo = parsed[0],
+    hi = parsed[parsed.length - 1];
+  for (let j = 0; j < parsed.length - 1; j++) {
+    if (t >= parsed[j].pos && t <= parsed[j + 1].pos) {
+      lo = parsed[j];
+      hi = parsed[j + 1];
+      break;
+    }
+  }
+
+  const range = hi.pos - lo.pos;
+  const f = range > 0 ? (t - lo.pos) / range : 0;
+
+  return [
+    Math.round(lo.rgb[0] + (hi.rgb[0] - lo.rgb[0]) * f),
+    Math.round(lo.rgb[1] + (hi.rgb[1] - lo.rgb[1]) * f),
+    Math.round(lo.rgb[2] + (hi.rgb[2] - lo.rgb[2]) * f),
+  ];
+}
+
+/**
  * All available colormap names.
  */
 const COLORMAP_NAMES: ColormapName[] = [
@@ -1525,6 +1558,13 @@ export class StacLayerControl implements IControl {
             const rgba = new Uint8ClampedArray(pixelCount * 4);
             const range = rescaleMax - rescaleMin;
 
+            // Check if a colormap is selected - apply it directly to preserve nodata transparency
+            const cmapName = selfForTile.props._colormap;
+            let colormapStops: ColorStop[] | null = null;
+            if (cmapName && cmapName !== "none") {
+              colormapStops = getColormap(cmapName);
+            }
+
             for (let i = 0; i < pixelCount; i++) {
               const rawVal = rasterData[i];
               // Handle nodata (typically 0 for Sentinel-2)
@@ -1532,14 +1572,26 @@ export class StacLayerControl implements IControl {
                 rgba[i * 4] = 0;
                 rgba[i * 4 + 1] = 0;
                 rgba[i * 4 + 2] = 0;
-                rgba[i * 4 + 3] = 0; // Transparent
+                rgba[i * 4 + 3] = 0; // Transparent - preserved even with colormap
               } else {
-                // Rescale to 0-255
-                const normalized = Math.max(0, Math.min(255, ((rawVal - rescaleMin) / range) * 255));
-                rgba[i * 4] = normalized;
-                rgba[i * 4 + 1] = normalized;
-                rgba[i * 4 + 2] = normalized;
-                rgba[i * 4 + 3] = 255;
+                // Rescale to 0-1 range for colormap lookup, or 0-255 for grayscale
+                const normalizedFloat = Math.max(0, Math.min(1, (rawVal - rescaleMin) / range));
+
+                if (colormapStops) {
+                  // Apply colormap - interpolate between stops
+                  const color = interpolateColormap(colormapStops, normalizedFloat);
+                  rgba[i * 4] = color[0];
+                  rgba[i * 4 + 1] = color[1];
+                  rgba[i * 4 + 2] = color[2];
+                  rgba[i * 4 + 3] = 255;
+                } else {
+                  // Grayscale
+                  const gray = Math.round(normalizedFloat * 255);
+                  rgba[i * 4] = gray;
+                  rgba[i * 4 + 1] = gray;
+                  rgba[i * 4 + 2] = gray;
+                  rgba[i * 4 + 3] = 255;
+                }
               }
             }
 
@@ -1556,6 +1608,7 @@ export class StacLayerControl implements IControl {
               height: rasterData.height,
               width: rasterData.width,
               _preRescaled: true, // Flag that rescaling was done in getTileData
+              _colormapApplied: !!colormapStops, // Flag that colormap was applied in getTileData
             };
           }
 
@@ -1648,8 +1701,9 @@ export class StacLayerControl implements IControl {
           }
 
           // Apply colormap if selected (works on normalized 0-1 data)
+          // Skip if colormap was already applied in getTileData (for uint16 data with nodata preservation)
           const cmapName = self.props._colormap;
-          if (cmapName && cmapName !== "none") {
+          if (cmapName && cmapName !== "none" && !tileData._colormapApplied) {
             if (cmapName !== cachedCmapName) {
               const stops = getColormap(cmapName);
               const imageData = colormapToImageData(stops);
