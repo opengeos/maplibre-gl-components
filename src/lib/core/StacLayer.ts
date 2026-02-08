@@ -948,7 +948,9 @@ export class StacLayerControl implements IControl {
         throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
       }
 
-      const stacItem = await response.json();
+      // Get raw text first to preserve asset key order from JSON source
+      const rawText = await response.text();
+      const stacItem = JSON.parse(rawText);
 
       // Validate it's a STAC item
       if (stacItem.type !== "Feature" || !stacItem.assets) {
@@ -957,9 +959,28 @@ export class StacLayerControl implements IControl {
 
       this._state.stacItem = stacItem;
 
-      // Extract COG assets
+      // Extract asset keys in original JSON order using regex
+      // This preserves the order as it appears in the source JSON
+      const assetKeysInOrder: string[] = [];
+      const assetsMatch = rawText.match(/"assets"\s*:\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/);
+      if (assetsMatch) {
+        const assetsBlock = assetsMatch[1];
+        const keyMatches = assetsBlock.matchAll(/"([^"]+)"\s*:\s*\{/g);
+        for (const match of keyMatches) {
+          assetKeysInOrder.push(match[1]);
+        }
+      }
+
+      // Fall back to Object.keys if regex didn't work
+      const keysToIterate = assetKeysInOrder.length > 0 
+        ? assetKeysInOrder 
+        : Object.keys(stacItem.assets);
+
+      // Extract COG assets in original order
       const assets: StacAssetInfo[] = [];
-      for (const [key, asset] of Object.entries(stacItem.assets)) {
+      for (const key of keysToIterate) {
+        const asset = stacItem.assets[key];
+        if (!asset) continue;
         const assetObj = asset as {
           href: string;
           type?: string;
