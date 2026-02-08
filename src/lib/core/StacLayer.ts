@@ -972,8 +972,8 @@ export class StacLayerControl implements IControl {
       }
 
       // Fall back to Object.keys if regex didn't work
-      const keysToIterate = assetKeysInOrder.length > 0 
-        ? assetKeysInOrder 
+      const keysToIterate = assetKeysInOrder.length > 0
+        ? assetKeysInOrder
         : Object.keys(stacItem.assets);
 
       // Extract COG assets in original order
