@@ -521,13 +521,27 @@ export class PrintControl implements IControl {
   }
 
   /**
+   * Capture the map canvas during the render cycle.
+   * WebGL canvases have preserveDrawingBuffer=false by default, so the
+   * framebuffer is cleared after compositing. We must read it during render.
+   */
+  private _captureMapCanvas(): Promise<HTMLCanvasElement> {
+    return new Promise((resolve) => {
+      this._map!.once("render", () => {
+        resolve(this._map!.getCanvas());
+      });
+      this._map!.triggerRepaint();
+    });
+  }
+
+  /**
    * Create the export canvas from the map.
    */
-  private _createExportCanvas(): HTMLCanvasElement | null {
+  private async _createExportCanvas(): Promise<HTMLCanvasElement | null> {
     if (!this._map) return null;
 
     try {
-      const mapCanvas = this._map.getCanvas();
+      const mapCanvas = await this._captureMapCanvas();
       const targetWidth = this._state.width || mapCanvas.width;
       const targetHeight = this._state.height || mapCanvas.height;
 
@@ -578,7 +592,7 @@ export class PrintControl implements IControl {
     this._setExporting(true);
 
     try {
-      const canvas = this._createExportCanvas();
+      const canvas = await this._createExportCanvas();
       if (!canvas) {
         this._showFeedback("Export failed");
         this._setExporting(false);
@@ -633,7 +647,7 @@ export class PrintControl implements IControl {
     this._setExporting(true);
 
     try {
-      const canvas = this._createExportCanvas();
+      const canvas = await this._createExportCanvas();
       if (!canvas) {
         this._showFeedback("Copy failed");
         this._setExporting(false);
@@ -786,7 +800,7 @@ export class PrintControl implements IControl {
     if (options?.height) this._state.height = options.height;
 
     try {
-      const canvas = this._createExportCanvas();
+      const canvas = await this._createExportCanvas();
       if (!canvas) {
         throw new Error("Failed to capture map canvas");
       }

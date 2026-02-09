@@ -63,7 +63,7 @@
   color: #374151;
 }
 
-.maplibre-gl-measure-control .measure-close {
+.maplibre-gl-measure-control .measure-panel .measure-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,15 +71,15 @@
   height: 20px;
   padding: 0;
   border: none;
-  background: transparent;
+  background-color: transparent;
   cursor: pointer;
   color: #6b7280;
   border-radius: 3px;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-measure-control .measure-close:hover {
-  background: #f3f4f6;
+.maplibre-gl-measure-control .measure-panel .measure-close:hover {
+  background-color: #f3f4f6;
   color: #374151;
 }
 
@@ -98,7 +98,7 @@
   margin-bottom: 10px;
 }
 
-.maplibre-gl-measure-control .mode-btn {
+.maplibre-gl-measure-control .measure-panel .mode-btn {
   flex: 1;
   display: flex;
   align-items: center;
@@ -107,21 +107,27 @@
   padding: 8px 10px;
   border: 1px solid #e5e7eb;
   border-radius: 4px;
-  background: #fff;
+  background-color: #fff;
   cursor: pointer;
   font-size: 12px;
   color: #374151;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-measure-control .mode-btn:hover {
-  background: #f9fafb;
+.maplibre-gl-measure-control .measure-panel .mode-btn:hover {
+  background-color: #f9fafb;
   border-color: #d1d5db;
+  color: #374151;
 }
 
-.maplibre-gl-measure-control .mode-btn.active {
-  background: #3b82f6;
+.maplibre-gl-measure-control .measure-panel .mode-btn.active {
+  background-color: #3b82f6;
   border-color: #3b82f6;
+  color: white;
+}
+
+.maplibre-gl-measure-control .measure-panel .mode-btn.active:hover {
+  background-color: #2563eb;
   color: white;
 }
 
@@ -235,7 +241,7 @@
   gap: 6px;
 }
 
-.maplibre-gl-measure-control .action-btn {
+.maplibre-gl-measure-control .measure-panel .action-btn {
   flex: 1;
   display: flex;
   align-items: center;
@@ -244,44 +250,47 @@
   padding: 8px 10px;
   border: 1px solid #e5e7eb;
   border-radius: 4px;
-  background: #fff;
+  background-color: #fff;
   cursor: pointer;
   font-size: 12px;
   color: #374151;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-measure-control .action-btn:hover {
-  background: #f9fafb;
+.maplibre-gl-measure-control .measure-panel .action-btn:hover {
+  background-color: #f9fafb;
   border-color: #d1d5db;
+  color: #374151;
 }
 
-.maplibre-gl-measure-control .action-btn.primary {
-  background: #3b82f6;
+.maplibre-gl-measure-control .measure-panel .action-btn.primary {
+  background-color: #3b82f6;
   border-color: #3b82f6;
   color: white;
 }
 
-.maplibre-gl-measure-control .action-btn.primary:hover {
-  background: #2563eb;
+.maplibre-gl-measure-control .measure-panel .action-btn.primary:hover {
+  background-color: #2563eb;
+  color: white;
 }
 
-.maplibre-gl-measure-control .action-btn.danger {
+.maplibre-gl-measure-control .measure-panel .action-btn.danger {
   color: #dc2626;
   border-color: #fecaca;
 }
 
-.maplibre-gl-measure-control .action-btn.danger:hover {
-  background: #fef2f2;
+.maplibre-gl-measure-control .measure-panel .action-btn.danger:hover {
+  background-color: #fef2f2;
   border-color: #fca5a5;
+  color: #dc2626;
 }
 
-.maplibre-gl-measure-control .action-btn svg {
+.maplibre-gl-measure-control .measure-panel .action-btn svg {
   width: 14px;
   height: 14px;
 }
 
-.maplibre-gl-measure-control .action-btn:disabled {
+.maplibre-gl-measure-control .measure-panel .action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -354,7 +363,7 @@
   color: #374151;
 }
 
-.maplibre-gl-measure-control .measurement-delete {
+.maplibre-gl-measure-control .measure-panel .measurement-delete {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -362,15 +371,15 @@
   height: 18px;
   padding: 0;
   border: none;
-  background: transparent;
+  background-color: transparent;
   cursor: pointer;
   color: #9ca3af;
   border-radius: 3px;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-measure-control .measurement-delete:hover {
-  background: #fef2f2;
+.maplibre-gl-measure-control .measure-panel .measurement-delete:hover {
+  background-color: #fef2f2;
   color: #dc2626;
 }
 

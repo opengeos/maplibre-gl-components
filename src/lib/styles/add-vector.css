@@ -53,8 +53,8 @@
   color: #333;
 }
 
-.maplibre-gl-add-vector-close {
-  background: transparent;
+.maplibre-gl-add-vector-panel .maplibre-gl-add-vector-close {
+  background-color: transparent;
   border: none;
   font-size: 18px;
   color: #666;
@@ -63,7 +63,8 @@
   line-height: 1;
 }
 
-.maplibre-gl-add-vector-close:hover {
+.maplibre-gl-add-vector-panel .maplibre-gl-add-vector-close:hover {
+  background-color: transparent;
   color: #333;
 }
 
@@ -181,38 +182,39 @@
   margin-top: 16px;
 }
 
-.maplibre-gl-add-vector-btn {
+.maplibre-gl-add-vector-panel .maplibre-gl-add-vector-btn {
   flex: 1;
   padding: 8px 16px;
   font-size: 12px;
   font-weight: 500;
   border: 1px solid #ddd;
   border-radius: 4px;
-  background: #f8f8f8;
+  background-color: #f8f8f8;
   color: #333;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-add-vector-btn:hover:not(:disabled) {
-  background: #e0e0e0;
+.maplibre-gl-add-vector-panel .maplibre-gl-add-vector-btn:hover:not(:disabled) {
+  background-color: #e0e0e0;
   color: #333;
 }
 
-.maplibre-gl-add-vector-btn:disabled {
+.maplibre-gl-add-vector-panel .maplibre-gl-add-vector-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.maplibre-gl-add-vector-btn--primary {
-  background: #0078d7;
+.maplibre-gl-add-vector-panel .maplibre-gl-add-vector-btn.maplibre-gl-add-vector-btn--primary {
+  background-color: #0078d7;
   border-color: #0078d7;
   color: white;
 }
 
-.maplibre-gl-add-vector-btn--primary:hover:not(:disabled) {
-  background: #006bc1;
+.maplibre-gl-add-vector-panel .maplibre-gl-add-vector-btn.maplibre-gl-add-vector-btn--primary:hover:not(:disabled) {
+  background-color: #006bc1;
   border-color: #006bc1;
+  color: white;
 }
 
 .maplibre-gl-add-vector-status {
@@ -270,8 +272,8 @@
   margin-right: 8px;
 }
 
-.maplibre-gl-add-vector-list-remove {
-  background: transparent;
+.maplibre-gl-add-vector-panel .maplibre-gl-add-vector-list-remove {
+  background-color: transparent;
   border: none;
   color: #999;
   cursor: pointer;
@@ -280,7 +282,8 @@
   line-height: 1;
 }
 
-.maplibre-gl-add-vector-list-remove:hover {
+.maplibre-gl-add-vector-panel .maplibre-gl-add-vector-list-remove:hover {
+  background-color: transparent;
   color: #c62828;
 }
 

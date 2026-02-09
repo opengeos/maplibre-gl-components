@@ -64,7 +64,7 @@
   color: #374151;
 }
 
-.maplibre-gl-print-control .print-close {
+.maplibre-gl-print-control .print-panel .print-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,15 +72,15 @@
   height: 20px;
   padding: 0;
   border: none;
-  background: transparent;
+  background-color: transparent;
   cursor: pointer;
   color: #6b7280;
   border-radius: 3px;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-print-control .print-close:hover {
-  background: #f3f4f6;
+.maplibre-gl-print-control .print-panel .print-close:hover {
+  background-color: #f3f4f6;
   color: #374151;
 }
 
@@ -235,7 +235,7 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
-.maplibre-gl-print-control .print-export-btn {
+.maplibre-gl-print-control .print-panel .print-export-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -244,7 +244,7 @@
   padding: 10px;
   border: none;
   border-radius: 4px;
-  background: #3b82f6;
+  background-color: #3b82f6;
   color: white;
   font-size: 13px;
   font-weight: 600;
@@ -253,12 +253,13 @@
   margin-bottom: 6px;
 }
 
-.maplibre-gl-print-control .print-export-btn:hover {
-  background: #2563eb;
+.maplibre-gl-print-control .print-panel .print-export-btn:hover {
+  background-color: #2563eb;
+  color: white;
 }
 
-.maplibre-gl-print-control .print-export-btn:disabled {
-  background: #9ca3af;
+.maplibre-gl-print-control .print-panel .print-export-btn:disabled {
+  background-color: #9ca3af;
   cursor: not-allowed;
 }
 
@@ -267,7 +268,7 @@
   height: 16px;
 }
 
-.maplibre-gl-print-control .print-copy-btn {
+.maplibre-gl-print-control .print-panel .print-copy-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -276,19 +277,20 @@
   padding: 8px;
   border: 1px solid #d1d5db;
   border-radius: 4px;
-  background: transparent;
+  background-color: transparent;
   color: #4b5563;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-print-control .print-copy-btn:hover {
-  background: #f3f4f6;
+.maplibre-gl-print-control .print-panel .print-copy-btn:hover {
+  background-color: #f3f4f6;
   border-color: #9ca3af;
+  color: #4b5563;
 }
 
-.maplibre-gl-print-control .print-copy-btn:disabled {
+.maplibre-gl-print-control .print-panel .print-copy-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
