@@ -286,10 +286,15 @@ export class PrintControl implements IControl {
     this._formatSelect.innerHTML = `
       <option value="png" ${this._state.format === "png" ? "selected" : ""}>PNG</option>
       <option value="jpeg" ${this._state.format === "jpeg" ? "selected" : ""}>JPEG</option>
+      <option value="pdf" ${this._state.format === "pdf" ? "selected" : ""}>PDF</option>
     `;
     this._formatSelect.addEventListener("change", () => {
-      this._state.format = this._formatSelect!.value as "png" | "jpeg";
+      this._state.format = this._formatSelect!.value as
+        | "png"
+        | "jpeg"
+        | "pdf";
       this._updateQualityVisibility();
+      this._updateCopyBtnVisibility();
     });
     formatField.appendChild(this._formatSelect);
     row.appendChild(formatField);
@@ -431,6 +436,7 @@ export class PrintControl implements IControl {
     this._copyBtn.innerHTML = `${CLIPBOARD_ICON}<span>Copy to Clipboard</span>`;
     this._copyBtn.addEventListener("click", () => this._copyToClipboard());
     content.appendChild(this._copyBtn);
+    this._updateCopyBtnVisibility();
 
     // Feedback element
     this._feedbackEl = document.createElement("div");
@@ -450,6 +456,41 @@ export class PrintControl implements IControl {
       this._qualityField.style.display =
         this._state.format === "jpeg" ? "" : "none";
     }
+  }
+
+  /**
+   * Toggle copy button visibility (hidden for PDF format).
+   */
+  private _updateCopyBtnVisibility(): void {
+    if (this._copyBtn) {
+      this._copyBtn.style.display =
+        this._state.format === "pdf" ? "none" : "";
+    }
+  }
+
+  /**
+   * Export the canvas to a PDF file using jspdf.
+   */
+  private async _exportPdf(canvas: HTMLCanvasElement): Promise<void> {
+    const { jsPDF } = await import("jspdf");
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const orientation = imgWidth >= imgHeight ? "landscape" : "portrait";
+    const pdf = new jsPDF({ orientation, unit: "pt", format: "a4" });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    // Fit image within the page while maintaining aspect ratio
+    const scale = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
+    const w = imgWidth * scale;
+    const h = imgHeight * scale;
+    const x = (pageWidth - w) / 2;
+    const y = (pageHeight - h) / 2;
+
+    const imgData = canvas.toDataURL("image/png");
+    pdf.addImage(imgData, "PNG", x, y, w, h);
+    pdf.save(`${this._state.filename}.pdf`);
   }
 
   /**
@@ -599,36 +640,42 @@ export class PrintControl implements IControl {
         return;
       }
 
-      const mimeType =
-        this._state.format === "jpeg" ? "image/jpeg" : "image/png";
-      const quality =
-        this._state.format === "jpeg" ? this._state.quality : undefined;
-      const ext = this._state.format === "jpeg" ? "jpg" : "png";
+      if (this._state.format === "pdf") {
+        await this._exportPdf(canvas);
+        this._showFeedback("Exported!");
+        this._emit("export");
+      } else {
+        const mimeType =
+          this._state.format === "jpeg" ? "image/jpeg" : "image/png";
+        const quality =
+          this._state.format === "jpeg" ? this._state.quality : undefined;
+        const ext = this._state.format === "jpeg" ? "jpg" : "png";
 
-      const blob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob((b) => resolve(b), mimeType, quality);
-      });
+        const blob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob((b) => resolve(b), mimeType, quality);
+        });
 
-      if (!blob) {
-        this._showFeedback("Export failed");
-        this._emit("error", { error: "Failed to create image blob" });
-        this._setExporting(false);
-        return;
+        if (!blob) {
+          this._showFeedback("Export failed");
+          this._emit("error", { error: "Failed to create image blob" });
+          this._setExporting(false);
+          return;
+        }
+
+        // Trigger download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${this._state.filename}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        const dataUrl = canvas.toDataURL(mimeType, quality);
+        this._showFeedback("Exported!");
+        this._emit("export", { dataUrl });
       }
-
-      // Trigger download
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${this._state.filename}.${ext}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      const dataUrl = canvas.toDataURL(mimeType, quality);
-      this._showFeedback("Exported!");
-      this._emit("export", { dataUrl });
     } catch (err) {
       const errorMsg =
         err instanceof Error ? err.message : "Export failed";
@@ -742,12 +789,13 @@ export class PrintControl implements IControl {
   /**
    * Set the export format.
    */
-  setFormat(format: "png" | "jpeg"): this {
+  setFormat(format: "png" | "jpeg" | "pdf"): this {
     this._state.format = format;
     if (this._formatSelect) {
       this._formatSelect.value = format;
     }
     this._updateQualityVisibility();
+    this._updateCopyBtnVisibility();
     this._emit("update");
     return this;
   }
@@ -783,7 +831,7 @@ export class PrintControl implements IControl {
    * Export the map programmatically and return a data URL.
    */
   async exportMap(options?: {
-    format?: "png" | "jpeg";
+    format?: "png" | "jpeg" | "pdf";
     quality?: number;
     filename?: string;
     title?: string;
@@ -803,6 +851,12 @@ export class PrintControl implements IControl {
       const canvas = await this._createExportCanvas();
       if (!canvas) {
         throw new Error("Failed to capture map canvas");
+      }
+
+      if (this._state.format === "pdf") {
+        await this._exportPdf(canvas);
+        this._emit("export");
+        return "";
       }
 
       const mimeType =

@@ -2452,7 +2452,7 @@ export interface PrintControlOptions {
   /** Whether to start collapsed. Default: true. */
   collapsed?: boolean;
   /** Default image format. Default: 'png'. */
-  format?: "png" | "jpeg";
+  format?: "png" | "jpeg" | "pdf";
   /** JPEG quality (0-1). Default: 0.92. */
   quality?: number;
   /** Default filename (without extension). Default: 'map-export'. */
@@ -2498,7 +2498,7 @@ export interface PrintControlState {
   /** Whether the panel is collapsed. */
   collapsed: boolean;
   /** Current image format. */
-  format: "png" | "jpeg";
+  format: "png" | "jpeg" | "pdf";
   /** JPEG quality (0-1). */
   quality: number;
   /** Current filename (without extension). */
