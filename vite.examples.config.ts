@@ -72,6 +72,14 @@ export default defineConfig({
           "examples/print-control/index.html",
         ),
         viewState: resolve(__dirname, "examples/view-state/index.html"),
+        minimapControl: resolve(
+          __dirname,
+          "examples/minimap-control/index.html",
+        ),
+        timeSliderControl: resolve(
+          __dirname,
+          "examples/time-slider-control/index.html",
+        ),
       },
     },
   },

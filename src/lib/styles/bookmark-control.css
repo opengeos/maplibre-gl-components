@@ -259,7 +259,9 @@
   color: #374151;
 }
 
-.maplibre-gl-bookmark-control .bookmark-panel .bookmark-action-btn.delete:hover {
+.maplibre-gl-bookmark-control
+  .bookmark-panel
+  .bookmark-action-btn.delete:hover {
   background-color: #fef2f2;
   color: #dc2626;
 }

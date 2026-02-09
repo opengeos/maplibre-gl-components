@@ -1,8 +1,9 @@
 /* MeasureControl styles */
 
 .maplibre-gl-measure-control {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, sans-serif;
 }
 
 .maplibre-gl-measure-control .measure-button {

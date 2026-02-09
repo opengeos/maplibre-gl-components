@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MinimapControl Example</title>
+  <link href="https://unpkg.com/maplibre-gl@5.5.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    .info-panel {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      max-width: 300px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      z-index: 1;
+    }
+    .info-panel h3 { margin: 0 0 10px 0; }
+    .info-panel p { margin: 0 0 8px 0; color: #666; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="info-panel">
+    <h3>MinimapControl</h3>
+    <p>An inset overview map showing the current viewport extent.</p>
+    <p><strong>Toggle:</strong> Click the minimap button to show/hide.</p>
+    <p><strong>Click:</strong> Click on the minimap to fly to that location.</p>
+    <p><strong>Drag:</strong> Drag on the minimap to pan the main map in real time.</p>
+  </div>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

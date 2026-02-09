@@ -1,6 +1,6 @@
 # maplibre-gl-components
 
-Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, feature inspector, measurement tools, coordinate display, bookmarks, and more for MapLibre GL JS maps.
+Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, feature inspector, measurement tools, coordinate display, bookmarks, minimap, time slider, and more for MapLibre GL JS maps.
 
 [![npm version](https://badge.fury.io/js/maplibre-gl-components.svg)](https://badge.fury.io/js/maplibre-gl-components)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -26,6 +26,8 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **MeasureControl** - Measure distances and areas on the map with multiple unit options
 - **BookmarkControl** - Save and restore map views with localStorage persistence
 - **PrintControl** - Export the map as PNG, JPEG, or PDF with optional title overlay
+- **MinimapControl** - Inset overview map showing the current viewport extent with optional click-to-navigate
+- **TimeSliderControl** - Temporal slider with play/pause animation for time-series data visualization
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
 - **TypeScript** - Full type definitions included
@@ -56,6 +58,8 @@ import {
   CogLayerControl,
   ZarrLayerControl,
   StacLayerControl,
+  MinimapControl,
+  TimeSliderControl,
 } from "maplibre-gl-components";
 import "maplibre-gl-components/style.css";
 
@@ -1388,6 +1392,173 @@ npm install jspdf
 
 The library is dynamically imported only when PDF format is selected, keeping the main bundle lean.
 
+### MinimapControl
+
+An inset overview map that shows the current viewport extent on a smaller map. Supports click-to-navigate and customizable styling.
+
+```typescript
+interface MinimapControlOptions {
+  position?: ControlPosition;          // Control position (default: 'bottom-left')
+  className?: string;                  // Custom CSS class
+  visible?: boolean;                   // Initial visibility (default: true)
+  collapsed?: boolean;                 // Start collapsed (default: false)
+  width?: number;                      // Minimap width in pixels (default: 250)
+  height?: number;                     // Minimap height in pixels (default: 180)
+  zoomOffset?: number;                 // Zoom offset from main map (default: -5)
+  style?: string | object;             // Map style URL or object
+  viewportRectColor?: string;          // Viewport rectangle color (default: '#0078d7')
+  viewportRectOpacity?: number;        // Viewport rectangle fill opacity (default: 0.2)
+  toggleable?: boolean;                // Whether minimap can be toggled (default: true)
+  interactive?: boolean;               // Click minimap to navigate main map (default: false)
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+// Methods
+minimapControl.show()
+minimapControl.hide()
+minimapControl.expand()                // Show the minimap panel
+minimapControl.collapse()              // Hide the minimap panel
+minimapControl.toggle()                // Toggle panel visibility
+minimapControl.getState()
+minimapControl.on(event, handler)      // 'show' | 'hide' | 'expand' | 'collapse'
+minimapControl.off(event, handler)
+```
+
+**Usage:**
+
+```typescript
+import { MinimapControl } from "maplibre-gl-components";
+
+const minimapControl = new MinimapControl({
+  width: 250,
+  height: 180,
+  zoomOffset: -5,
+  interactive: true,
+});
+map.addControl(minimapControl, "bottom-left");
+
+minimapControl.on("expand", (event) => {
+  console.log("Minimap expanded:", event.state);
+});
+```
+
+**Features:**
+
+- Syncs center and zoom with the main map
+- Viewport rectangle overlay showing the visible area
+- Click anywhere on the minimap to fly the main map to that location
+- Drag on the minimap to pan the main map in real time
+- Toggleable panel with button
+- Customizable size, zoom offset, and style
+
+See the [minimap-control example](./examples/minimap-control/) for a complete working example.
+
+### TimeSliderControl
+
+A temporal slider with play/pause animation for visualizing time-series data. Supports numeric values, dates, and discrete value arrays.
+
+```typescript
+type TimeSliderValue = number | Date | string;
+
+interface TimeSliderControlOptions {
+  position?: ControlPosition;          // Control position (default: 'bottom-left')
+  className?: string;                  // Custom CSS class
+  visible?: boolean;                   // Initial visibility (default: true)
+  collapsed?: boolean;                 // Start collapsed (default: true)
+  min: TimeSliderValue;                // Minimum value (required)
+  max: TimeSliderValue;                // Maximum value (required)
+  step?: number;                       // Step size (default: 1)
+  value?: TimeSliderValue;             // Initial value (defaults to min)
+  values?: TimeSliderValue[];          // Discrete values array
+  fps?: number;                        // Playback speed in FPS (default: 1)
+  loop?: boolean;                      // Loop playback (default: true)
+  showPlayButton?: boolean;            // Show play/pause button (default: true)
+  showTimestamp?: boolean;             // Show value label (default: true)
+  formatLabel?: (value: TimeSliderValue, index: number) => string;  // Custom formatter
+  panelWidth?: number;                 // Panel width in pixels (default: 300)
+  backgroundColor?: string;
+  borderRadius?: number;
+  fontSize?: number;
+  fontColor?: string;
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+// Methods
+timeSlider.show()
+timeSlider.hide()
+timeSlider.expand()                    // Show the slider panel
+timeSlider.collapse()                  // Hide the slider panel
+timeSlider.toggle()                    // Toggle panel visibility
+timeSlider.play()                      // Start playback
+timeSlider.pause()                     // Pause playback
+timeSlider.setValue(value)             // Set current value
+timeSlider.getValue()                  // Get current display value
+timeSlider.setFps(fps)                 // Change playback speed
+timeSlider.getState()
+timeSlider.on(event, handler)          // 'change' | 'play' | 'pause' | 'show' | 'hide' | ...
+timeSlider.off(event, handler)
+```
+
+**Usage:**
+
+```typescript
+import { TimeSliderControl } from "maplibre-gl-components";
+
+// Numeric range
+const slider = new TimeSliderControl({
+  min: 0,
+  max: 100,
+  step: 5,
+  fps: 2,
+  loop: true,
+});
+map.addControl(slider, "bottom-left");
+
+// Date range
+const dateSlider = new TimeSliderControl({
+  min: new Date("2024-01-01"),
+  max: new Date("2024-12-31"),
+  step: 86400000, // 1 day in ms
+  fps: 4,
+});
+map.addControl(dateSlider, "bottom-left");
+
+// Discrete values with custom labels
+const months = ["2024-01-01", "2024-02-01", "2024-03-01" /* ... */];
+const monthNames = ["January", "February", "March" /* ... */];
+
+const monthSlider = new TimeSliderControl({
+  min: 0,
+  max: 100,
+  values: months,
+  fps: 2,
+  formatLabel: (_value, index) => `${monthNames[index]} 2024`,
+});
+map.addControl(monthSlider, "bottom-left");
+
+// Listen for changes
+monthSlider.on("change", (event) => {
+  console.log("Current:", event.value, "Index:", event.index);
+  // Update map layers based on the current time step
+});
+
+monthSlider.on("play", () => console.log("Playback started"));
+monthSlider.on("pause", () => console.log("Playback paused"));
+```
+
+**Features:**
+
+- Play/pause animation with configurable FPS
+- Supports numbers, dates, and discrete value arrays
+- Custom label formatting
+- Loop or stop at bounds
+- Draggable range slider for manual scrubbing
+- Chainable API
+
+See the [time-slider-control example](./examples/time-slider-control/) for a complete working example.
+
 ### Layer Control Adapters
 
 To integrate COG and Zarr layers with [maplibre-gl-layer-control](https://github.com/AJPNorthwest/maplibre-gl-layer-control), use the included adapters:
@@ -1676,6 +1847,8 @@ See the [examples](./examples/) directory for complete working examples:
 - **STAC Layer Example** - Load COG layers from STAC catalog items
 - **STAC Search Example** - Search and visualize STAC items from public catalogs
 - **Print Control Example** - Export map as PNG, JPEG, or PDF
+- **Minimap Control Example** - Inset overview map with viewport rectangle
+- **Time Slider Control Example** - Temporal slider with play/pause animation
 
 ## Development
 

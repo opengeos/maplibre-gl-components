@@ -1,6 +1,9 @@
 import "../styles/common.css";
 import "../styles/zarr-layer.css";
-import maplibregl, { type IControl, type Map as MapLibreMap } from "maplibre-gl";
+import maplibregl, {
+  type IControl,
+  type Map as MapLibreMap,
+} from "maplibre-gl";
 import type {
   ZarrLayerControlOptions,
   ZarrLayerControlState,
@@ -753,7 +756,8 @@ export class ZarrLayerControl implements IControl {
 
     // Pickable checkbox
     const pickableGroup = document.createElement("div");
-    pickableGroup.className = "maplibre-gl-zarr-layer-form-group maplibre-gl-zarr-layer-checkbox-group";
+    pickableGroup.className =
+      "maplibre-gl-zarr-layer-form-group maplibre-gl-zarr-layer-checkbox-group";
     const pickableLabel = document.createElement("label");
     pickableLabel.className = "maplibre-gl-zarr-layer-checkbox-label";
     const pickableCheckbox = document.createElement("input");
@@ -985,19 +989,22 @@ export class ZarrLayerControl implements IControl {
       let html = '<div class="maplibre-gl-zarr-layer-popup">';
       html += '<table class="maplibre-gl-zarr-layer-popup-table">';
       html += `<tr><td><strong>Layer</strong></td><td>${layerId}</td></tr>`;
-      html += `<tr><td><strong>Variable</strong></td><td>${props?.variable || 'N/A'}</td></tr>`;
+      html += `<tr><td><strong>Variable</strong></td><td>${props?.variable || "N/A"}</td></tr>`;
       html += `<tr><td><strong>Lng</strong></td><td>${lngLat.lng.toFixed(6)}</td></tr>`;
       html += `<tr><td><strong>Lat</strong></td><td>${lngLat.lat.toFixed(6)}</td></tr>`;
       if (props?.clim) {
         html += `<tr><td><strong>Color Range</strong></td><td>${props.clim[0]} - ${props.clim[1]}</td></tr>`;
       }
       if (props?.source) {
-        html += `<tr><td><strong>Source</strong></td><td style="word-break:break-all;max-width:150px;">${props.source.split('/').pop()}</td></tr>`;
+        html += `<tr><td><strong>Source</strong></td><td style="word-break:break-all;max-width:150px;">${props.source.split("/").pop()}</td></tr>`;
       }
-      html += '</table>';
-      html += '</div>';
+      html += "</table>";
+      html += "</div>";
 
-      this._activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "250px" })
+      this._activePopup = new maplibregl.Popup({
+        closeButton: true,
+        maxWidth: "250px",
+      })
         .setLngLat(lngLat)
         .setHTML(html)
         .addTo(map);

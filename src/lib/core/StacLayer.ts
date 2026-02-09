@@ -1,6 +1,9 @@
 import "../styles/common.css";
 import "../styles/stac-layer.css";
-import maplibregl, { type IControl, type Map as MapLibreMap } from "maplibre-gl";
+import maplibregl, {
+  type IControl,
+  type Map as MapLibreMap,
+} from "maplibre-gl";
 import type {
   StacLayerControlOptions,
   StacLayerControlState,
@@ -120,7 +123,10 @@ function colormapToImageData(stops: ColorStop[]): ImageData {
 /**
  * Interpolate a colormap at position t (0-1) and return [R, G, B] values (0-255).
  */
-function interpolateColormap(stops: ColorStop[], t: number): [number, number, number] {
+function interpolateColormap(
+  stops: ColorStop[],
+  t: number,
+): [number, number, number] {
   const parsed = stops.map((s) => ({
     pos: s.position,
     rgb: parseHexColor(s.color),
@@ -410,7 +416,12 @@ export class StacLayerControl implements IControl {
 
   private _emit(
     event: StacLayerEvent,
-    extra?: { url?: string; error?: string; layerId?: string; assetKey?: string },
+    extra?: {
+      url?: string;
+      error?: string;
+      layerId?: string;
+      assetKey?: string;
+    },
   ): void {
     const handlers = this._eventHandlers.get(event);
     if (!handlers) return;
@@ -524,7 +535,8 @@ export class StacLayerControl implements IControl {
 
     // Fetch button
     const fetchBtn = document.createElement("button");
-    fetchBtn.className = "maplibre-gl-stac-layer-btn maplibre-gl-stac-layer-btn--secondary";
+    fetchBtn.className =
+      "maplibre-gl-stac-layer-btn maplibre-gl-stac-layer-btn--secondary";
     fetchBtn.textContent = "Fetch STAC";
     fetchBtn.style.marginTop = "8px";
     fetchBtn.disabled = this._state.loading;
@@ -537,7 +549,8 @@ export class StacLayerControl implements IControl {
     if (this._state.stacItem && this._state.assets.length > 0) {
       // RGB Mode toggle
       const modeGroup = document.createElement("div");
-      modeGroup.className = "maplibre-gl-stac-layer-form-group maplibre-gl-stac-layer-mode-toggle";
+      modeGroup.className =
+        "maplibre-gl-stac-layer-form-group maplibre-gl-stac-layer-mode-toggle";
 
       const modeLabel = document.createElement("label");
       modeLabel.textContent = "Layer Mode";
@@ -612,11 +625,13 @@ export class StacLayerControl implements IControl {
           const channelLabel = document.createElement("span");
           channelLabel.className = "maplibre-gl-stac-layer-rgb-label";
           channelLabel.textContent = channels[i];
-          channelLabel.style.color = i === 0 ? "#d32f2f" : i === 1 ? "#388e3c" : "#1976d2";
+          channelLabel.style.color =
+            i === 0 ? "#d32f2f" : i === 1 ? "#388e3c" : "#1976d2";
           row.appendChild(channelLabel);
 
           const select = document.createElement("select");
-          select.className = "maplibre-gl-stac-layer-select maplibre-gl-stac-layer-rgb-select";
+          select.className =
+            "maplibre-gl-stac-layer-select maplibre-gl-stac-layer-rgb-select";
 
           const defaultOpt = document.createElement("option");
           defaultOpt.value = "";
@@ -637,7 +652,9 @@ export class StacLayerControl implements IControl {
             this._state.rgbAssets[idx] = select.value || null;
             // Auto-set rescale based on first selected RGB band
             if (idx === 0 && select.value) {
-              const asset = this._state.assets.find((a) => a.key === select.value);
+              const asset = this._state.assets.find(
+                (a) => a.key === select.value,
+              );
               if (asset) {
                 this._state.selectedAsset = asset.key;
                 this._autoSetRescale();
@@ -700,7 +717,8 @@ export class StacLayerControl implements IControl {
 
       const minInput = document.createElement("input");
       minInput.type = "number";
-      minInput.className = "maplibre-gl-stac-layer-input maplibre-gl-stac-layer-input--half";
+      minInput.className =
+        "maplibre-gl-stac-layer-input maplibre-gl-stac-layer-input--half";
       minInput.placeholder = "Min";
       minInput.value = String(this._state.rescaleMin);
       minInput.addEventListener("input", () => {
@@ -712,7 +730,8 @@ export class StacLayerControl implements IControl {
 
       const maxInput = document.createElement("input");
       maxInput.type = "number";
-      maxInput.className = "maplibre-gl-stac-layer-input maplibre-gl-stac-layer-input--half";
+      maxInput.className =
+        "maplibre-gl-stac-layer-input maplibre-gl-stac-layer-input--half";
       maxInput.placeholder = "Max";
       maxInput.value = String(this._state.rescaleMax);
       maxInput.addEventListener("input", () => {
@@ -753,7 +772,8 @@ export class StacLayerControl implements IControl {
 
       // Pickable checkbox
       const pickableGroup = document.createElement("div");
-      pickableGroup.className = "maplibre-gl-stac-layer-form-group maplibre-gl-stac-layer-checkbox-group";
+      pickableGroup.className =
+        "maplibre-gl-stac-layer-form-group maplibre-gl-stac-layer-checkbox-group";
       const pickableLabel = document.createElement("label");
       pickableLabel.className = "maplibre-gl-stac-layer-checkbox-label";
       const pickableCheckbox = document.createElement("input");
@@ -775,7 +795,8 @@ export class StacLayerControl implements IControl {
       btns.className = "maplibre-gl-stac-layer-buttons";
 
       const addBtn = document.createElement("button");
-      addBtn.className = "maplibre-gl-stac-layer-btn maplibre-gl-stac-layer-btn--primary";
+      addBtn.className =
+        "maplibre-gl-stac-layer-btn maplibre-gl-stac-layer-btn--primary";
       addBtn.textContent = "Add Layer";
 
       // Check if button should be enabled
@@ -807,7 +828,7 @@ export class StacLayerControl implements IControl {
         <div class="maplibre-gl-stac-layer-info-title">
           <strong>ID:</strong> ${this._state.stacItem.id}
         </div>
-        <div><strong>Date:</strong> ${this._state.stacItem.properties?.datetime || 'N/A'}</div>
+        <div><strong>Date:</strong> ${this._state.stacItem.properties?.datetime || "N/A"}</div>
         <div><strong>Assets:</strong> ${this._state.assets.length} available</div>
       `;
       panel.appendChild(infoDiv);
@@ -881,7 +902,7 @@ export class StacLayerControl implements IControl {
     if (!this._state.selectedAsset) return;
 
     const asset = this._state.assets.find(
-      (a) => a.key === this._state.selectedAsset
+      (a) => a.key === this._state.selectedAsset,
     );
     if (!asset) return;
 
@@ -945,7 +966,9 @@ export class StacLayerControl implements IControl {
     try {
       const response = await fetch(this._state.stacUrl);
       if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch: ${response.status} ${response.statusText}`,
+        );
       }
 
       // Get raw text first to preserve asset key order from JSON source
@@ -954,7 +977,9 @@ export class StacLayerControl implements IControl {
 
       // Validate it's a STAC item
       if (stacItem.type !== "Feature" || !stacItem.assets) {
-        throw new Error("Invalid STAC item: missing 'type: Feature' or 'assets'");
+        throw new Error(
+          "Invalid STAC item: missing 'type: Feature' or 'assets'",
+        );
       }
 
       this._state.stacItem = stacItem;
@@ -962,7 +987,9 @@ export class StacLayerControl implements IControl {
       // Extract asset keys in original JSON order using regex
       // This preserves the order as it appears in the source JSON
       const assetKeysInOrder: string[] = [];
-      const assetsMatch = rawText.match(/"assets"\s*:\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/);
+      const assetsMatch = rawText.match(
+        /"assets"\s*:\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/,
+      );
       if (assetsMatch) {
         const assetsBlock = assetsMatch[1];
         const keyMatches = assetsBlock.matchAll(/"([^"]+)"\s*:\s*\{/g);
@@ -972,9 +999,10 @@ export class StacLayerControl implements IControl {
       }
 
       // Fall back to Object.keys if regex didn't work
-      const keysToIterate = assetKeysInOrder.length > 0
-        ? assetKeysInOrder
-        : Object.keys(stacItem.assets);
+      const keysToIterate =
+        assetKeysInOrder.length > 0
+          ? assetKeysInOrder
+          : Object.keys(stacItem.assets);
 
       // Extract COG assets in original order
       const assets: StacAssetInfo[] = [];
@@ -1029,7 +1057,10 @@ export class StacLayerControl implements IControl {
       // Assets without wavelength go to the end
       assets.sort((a, b) => {
         // Both have wavelength - sort by wavelength
-        if (a.centerWavelength !== undefined && b.centerWavelength !== undefined) {
+        if (
+          a.centerWavelength !== undefined &&
+          b.centerWavelength !== undefined
+        ) {
           return a.centerWavelength - b.centerWavelength;
         }
         // Only a has wavelength - a comes first
@@ -1096,7 +1127,10 @@ export class StacLayerControl implements IControl {
       }
       html += "</table></div>";
 
-      this._activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "280px" })
+      this._activePopup = new maplibregl.Popup({
+        closeButton: true,
+        maxWidth: "280px",
+      })
         .setLngLat(lngLat)
         .setHTML(html)
         .addTo(map);
@@ -1308,7 +1342,6 @@ export class StacLayerControl implements IControl {
           layers: Array.from(this._cogLayers.values()),
         });
 
-
         // Fit to bounds if available
         if (this._state.stacItem?.bbox) {
           const [west, south, east, north] = this._state.stacItem.bbox;
@@ -1326,7 +1359,11 @@ export class StacLayerControl implements IControl {
         this._state.loading = false;
         this._state.status = `Added RGB layer: ${r}, ${g}, ${b}`;
         this._render();
-        this._emit("layeradd", { layerId, assetKey: `${r},${g},${b}`, url: rAsset.href });
+        this._emit("layeradd", {
+          layerId,
+          assetKey: `${r},${g},${b}`,
+          url: rAsset.href,
+        });
       } catch (err) {
         this._state.loading = false;
         this._state.error = `Failed to add RGB layer: ${err instanceof Error ? err.message : String(err)}`;
@@ -1343,7 +1380,9 @@ export class StacLayerControl implements IControl {
       return;
     }
 
-    const asset = this._state.assets.find((a) => a.key === this._state.selectedAsset);
+    const asset = this._state.assets.find(
+      (a) => a.key === this._state.selectedAsset,
+    );
     if (!asset) {
       this._state.error = "Selected asset not found.";
       this._render();
@@ -1504,218 +1543,167 @@ export class StacLayerControl implements IControl {
       // Always use custom handling to properly support uint16/float data
       // The original library has issues with single-band uint16 textures
       // Custom handling for grayscale/float/uint16 data
-        const { fromUrl } = await import("geotiff");
-        const { parseCOGTileMatrixSet, texture } =
-          await import("@developmentseed/deck.gl-geotiff");
-        const { CreateTexture, FilterNoDataVal, Colormap } =
-          await import("@developmentseed/deck.gl-raster/gpu-modules");
-        const proj4Module = await import("proj4");
-        const proj4Fn = proj4Module.default || proj4Module;
+      const { fromUrl } = await import("geotiff");
+      const { parseCOGTileMatrixSet, texture } =
+        await import("@developmentseed/deck.gl-geotiff");
+      const { CreateTexture, FilterNoDataVal, Colormap } =
+        await import("@developmentseed/deck.gl-raster/gpu-modules");
+      const proj4Module = await import("proj4");
+      const proj4Fn = proj4Module.default || proj4Module;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const geotiffInput = (this as any).props.geotiff;
-        const geotiff =
-          typeof geotiffInput === "string"
-            ? await fromUrl(geotiffInput)
-            : geotiffInput;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const geoKeysParser = (this as any).props.geoKeysParser;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const geotiffInput = (this as any).props.geotiff;
+      const geotiff =
+        typeof geotiffInput === "string"
+          ? await fromUrl(geotiffInput)
+          : geotiffInput;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const geoKeysParser = (this as any).props.geoKeysParser;
 
-        let metadata;
-        try {
-          metadata = await parseCOGTileMatrixSet(geotiff, geoKeysParser);
-        } catch {
-          // If parsing fails, try with undefined geoKeysParser
+      let metadata;
+      try {
+        metadata = await parseCOGTileMatrixSet(geotiff, geoKeysParser);
+      } catch {
+        // If parsing fails, try with undefined geoKeysParser
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        metadata = await parseCOGTileMatrixSet(geotiff, undefined as any);
+      }
+
+      const image = await geotiff.getImage();
+      const imageCount = await geotiff.getImageCount();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const images: any[] = [];
+      for (let i = 0; i < imageCount; i++) {
+        images.push(await geotiff.getImage(i));
+      }
+
+      const sourceProjection = geoKeysParser
+        ? await geoKeysParser(image.getGeoKeys())
+        : null;
+      let forwardReproject = null;
+      let inverseReproject = null;
+
+      if (sourceProjection && typeof proj4Fn === "function") {
+        const converter = proj4Fn(sourceProjection.def, "EPSG:4326");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        forwardReproject = (x: number, y: number) =>
+          converter.forward([x, y], false as any);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        inverseReproject = (x: number, y: number) =>
+          converter.inverse([x, y], false as any);
+
+        // Compute geographic bounds for fitBounds callback
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((this as any).props.onGeoTIFFLoad) {
+          const bbox = image.getBoundingBox();
+          const corners = [
+            converter.forward([bbox[0], bbox[1]]),
+            converter.forward([bbox[2], bbox[1]]),
+            converter.forward([bbox[2], bbox[3]]),
+            converter.forward([bbox[0], bbox[3]]),
+          ];
+          const lons = corners.map((c: number[]) => c[0]);
+          const lats = corners.map((c: number[]) => c[1]);
+          const geographicBounds = {
+            west: Math.min(...lons),
+            south: Math.min(...lats),
+            east: Math.max(...lons),
+            north: Math.max(...lats),
+          };
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          metadata = await parseCOGTileMatrixSet(geotiff, undefined as any);
-        }
-
-        const image = await geotiff.getImage();
-        const imageCount = await geotiff.getImageCount();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const images: any[] = [];
-        for (let i = 0; i < imageCount; i++) {
-          images.push(await geotiff.getImage(i));
-        }
-
-        const sourceProjection = geoKeysParser ? await geoKeysParser(image.getGeoKeys()) : null;
-        let forwardReproject = null;
-        let inverseReproject = null;
-
-        if (sourceProjection && typeof proj4Fn === "function") {
-          const converter = proj4Fn(sourceProjection.def, "EPSG:4326");
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          forwardReproject = (x: number, y: number) => converter.forward([x, y], false as any);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          inverseReproject = (x: number, y: number) => converter.inverse([x, y], false as any);
-
-          // Compute geographic bounds for fitBounds callback
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if ((this as any).props.onGeoTIFFLoad) {
-            const bbox = image.getBoundingBox();
-            const corners = [
-              converter.forward([bbox[0], bbox[1]]),
-              converter.forward([bbox[2], bbox[1]]),
-              converter.forward([bbox[2], bbox[3]]),
-              converter.forward([bbox[0], bbox[3]]),
-            ];
-            const lons = corners.map((c: number[]) => c[0]);
-            const lats = corners.map((c: number[]) => c[1]);
-            const geographicBounds = {
-              west: Math.min(...lons),
-              south: Math.min(...lats),
-              east: Math.max(...lons),
-              north: Math.max(...lats),
-            };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (this as any).props.onGeoTIFFLoad(geotiff, {
-              projection: sourceProjection,
-              geographicBounds,
-            });
-          }
-        }
-
-        const ifd = image.getFileDirectory();
-        const { BitsPerSample, SampleFormat, SamplesPerPixel, GDAL_NODATA } = ifd;
-
-        // Parse GDAL_NODATA tag
-        let noDataVal: number | null = null;
-        if (GDAL_NODATA) {
-          const ndStr =
-            GDAL_NODATA[GDAL_NODATA.length - 1] === "\x00"
-              ? GDAL_NODATA.slice(0, -1)
-              : GDAL_NODATA;
-          if (ndStr.length > 0) noDataVal = parseFloat(ndStr);
-        }
-
-        // Get rescale values from props
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const selfForTile = this as any;
-        const rescaleMin = selfForTile.props._rescaleMin ?? 0;
-        const rescaleMax = selfForTile.props._rescaleMax ?? 10000;
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const defaultGetTileData = async (geotiffImage: any, options: any) => {
-          const { device } = options;
-          const rasterData = await geotiffImage.readRasters({
-            ...options,
-            interleave: true,
+          (this as any).props.onGeoTIFFLoad(geotiff, {
+            projection: sourceProjection,
+            geographicBounds,
           });
+        }
+      }
 
-          // Handle TypedArrays and regular arrays
-          const bitsPerSample =
-            typeof BitsPerSample === "object" && BitsPerSample?.[0] !== undefined
-              ? BitsPerSample[0]
-              : BitsPerSample;
-          const pixelCount = rasterData.width * rasterData.height;
+      const ifd = image.getFileDirectory();
+      const { BitsPerSample, SampleFormat, SamplesPerPixel, GDAL_NODATA } = ifd;
 
-          // For single-band uint16 data, convert to RGBA8 with rescaling applied
-          // This ensures universal WebGL compatibility
-          if (SamplesPerPixel === 1 && bitsPerSample === 16) {
-            const rgba = new Uint8ClampedArray(pixelCount * 4);
-            const range = rescaleMax - rescaleMin;
+      // Parse GDAL_NODATA tag
+      let noDataVal: number | null = null;
+      if (GDAL_NODATA) {
+        const ndStr =
+          GDAL_NODATA[GDAL_NODATA.length - 1] === "\x00"
+            ? GDAL_NODATA.slice(0, -1)
+            : GDAL_NODATA;
+        if (ndStr.length > 0) noDataVal = parseFloat(ndStr);
+      }
 
-            // Check if a colormap is selected - apply it directly to preserve nodata transparency
-            const cmapName = selfForTile.props._colormap;
-            let colormapStops: ColorStop[] | null = null;
-            if (cmapName && cmapName !== "none") {
-              colormapStops = getColormap(cmapName);
-            }
+      // Get rescale values from props
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const selfForTile = this as any;
+      const rescaleMin = selfForTile.props._rescaleMin ?? 0;
+      const rescaleMax = selfForTile.props._rescaleMax ?? 10000;
 
-            for (let i = 0; i < pixelCount; i++) {
-              const rawVal = rasterData[i];
-              // Handle nodata (typically 0 for Sentinel-2)
-              if (rawVal === 0 || rawVal === noDataVal) {
-                rgba[i * 4] = 0;
-                rgba[i * 4 + 1] = 0;
-                rgba[i * 4 + 2] = 0;
-                rgba[i * 4 + 3] = 0; // Transparent - preserved even with colormap
-              } else {
-                // Rescale to 0-1 range for colormap lookup, or 0-255 for grayscale
-                const normalizedFloat = Math.max(0, Math.min(1, (rawVal - rescaleMin) / range));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const defaultGetTileData = async (geotiffImage: any, options: any) => {
+        const { device } = options;
+        const rasterData = await geotiffImage.readRasters({
+          ...options,
+          interleave: true,
+        });
 
-                if (colormapStops) {
-                  // Apply colormap - interpolate between stops
-                  const color = interpolateColormap(colormapStops, normalizedFloat);
-                  rgba[i * 4] = color[0];
-                  rgba[i * 4 + 1] = color[1];
-                  rgba[i * 4 + 2] = color[2];
-                  rgba[i * 4 + 3] = 255;
-                } else {
-                  // Grayscale
-                  const gray = Math.round(normalizedFloat * 255);
-                  rgba[i * 4] = gray;
-                  rgba[i * 4 + 1] = gray;
-                  rgba[i * 4 + 2] = gray;
-                  rgba[i * 4 + 3] = 255;
-                }
-              }
-            }
+        // Handle TypedArrays and regular arrays
+        const bitsPerSample =
+          typeof BitsPerSample === "object" && BitsPerSample?.[0] !== undefined
+            ? BitsPerSample[0]
+            : BitsPerSample;
+        const pixelCount = rasterData.width * rasterData.height;
 
-            const tex = device.createTexture({
-              data: rgba,
-              format: "rgba8unorm",
-              width: rasterData.width,
-              height: rasterData.height,
-              sampler: { magFilter: "nearest", minFilter: "nearest" },
-            });
+        // For single-band uint16 data, convert to RGBA8 with rescaling applied
+        // This ensures universal WebGL compatibility
+        if (SamplesPerPixel === 1 && bitsPerSample === 16) {
+          const rgba = new Uint8ClampedArray(pixelCount * 4);
+          const range = rescaleMax - rescaleMin;
 
-            return {
-              texture: tex,
-              height: rasterData.height,
-              width: rasterData.width,
-              _preRescaled: true, // Flag that rescaling was done in getTileData
-              _colormapApplied: !!colormapStops, // Flag that colormap was applied in getTileData
-            };
+          // Check if a colormap is selected - apply it directly to preserve nodata transparency
+          const cmapName = selfForTile.props._colormap;
+          let colormapStops: ColorStop[] | null = null;
+          if (cmapName && cmapName !== "none") {
+            colormapStops = getColormap(cmapName);
           }
 
-          // For 3-band data, expand to RGBA with nodata handling
-          if (SamplesPerPixel === 3) {
-            const rgba = new Uint8ClampedArray(pixelCount * 4);
-            for (let i = 0; i < pixelCount; i++) {
-              const r = rasterData[i * 3];
-              const g = rasterData[i * 3 + 1];
-              const b = rasterData[i * 3 + 2];
-              // Handle nodata: if all bands are 0, treat as transparent
-              if (r === 0 && g === 0 && b === 0) {
-                rgba[i * 4] = 0;
-                rgba[i * 4 + 1] = 0;
-                rgba[i * 4 + 2] = 0;
-                rgba[i * 4 + 3] = 0; // Transparent
+          for (let i = 0; i < pixelCount; i++) {
+            const rawVal = rasterData[i];
+            // Handle nodata (typically 0 for Sentinel-2)
+            if (rawVal === 0 || rawVal === noDataVal) {
+              rgba[i * 4] = 0;
+              rgba[i * 4 + 1] = 0;
+              rgba[i * 4 + 2] = 0;
+              rgba[i * 4 + 3] = 0; // Transparent - preserved even with colormap
+            } else {
+              // Rescale to 0-1 range for colormap lookup, or 0-255 for grayscale
+              const normalizedFloat = Math.max(
+                0,
+                Math.min(1, (rawVal - rescaleMin) / range),
+              );
+
+              if (colormapStops) {
+                // Apply colormap - interpolate between stops
+                const color = interpolateColormap(
+                  colormapStops,
+                  normalizedFloat,
+                );
+                rgba[i * 4] = color[0];
+                rgba[i * 4 + 1] = color[1];
+                rgba[i * 4 + 2] = color[2];
+                rgba[i * 4 + 3] = 255;
               } else {
-                rgba[i * 4] = r;
-                rgba[i * 4 + 1] = g;
-                rgba[i * 4 + 2] = b;
+                // Grayscale
+                const gray = Math.round(normalizedFloat * 255);
+                rgba[i * 4] = gray;
+                rgba[i * 4 + 1] = gray;
+                rgba[i * 4 + 2] = gray;
                 rgba[i * 4 + 3] = 255;
               }
             }
-
-            const tex = device.createTexture({
-              data: rgba,
-              format: "rgba8unorm",
-              width: rasterData.width,
-              height: rasterData.height,
-              sampler: { magFilter: "nearest", minFilter: "nearest" },
-            });
-
-            return {
-              texture: tex,
-              height: rasterData.height,
-              width: rasterData.width,
-              _preRescaled: true, // rgba8unorm is already normalized, skip RescaleFloat
-            };
           }
 
-          // Default: use original texture format inference
-          const textureFormat = texture.inferTextureFormat(
-            SamplesPerPixel,
-            BitsPerSample,
-            SampleFormat,
-          );
-
           const tex = device.createTexture({
-            data: rasterData,
-            format: textureFormat,
+            data: rgba,
+            format: "rgba8unorm",
             width: rasterData.width,
             height: rasterData.height,
             sampler: { magFilter: "nearest", minFilter: "nearest" },
@@ -1725,87 +1713,148 @@ export class StacLayerControl implements IControl {
             texture: tex,
             height: rasterData.height,
             width: rasterData.width,
+            _preRescaled: true, // Flag that rescaling was done in getTileData
+            _colormapApplied: !!colormapStops, // Flag that colormap was applied in getTileData
           };
-        };
+        }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const self = this as any;
-        // Cache colormap texture to avoid recreating per tile
-        let cachedCmapName: string | null = null;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let cachedCmapTexture: any = null;
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const defaultRenderTile = (tileData: any) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const pipeline: any[] = [
-            {
-              module: CreateTexture,
-              props: { textureName: tileData.texture },
-            },
-          ];
-
-          // Skip nodata filter and rescaling if data was pre-processed in getTileData
-          if (!tileData._preRescaled) {
-            // Filter nodata pixels
-            if (noDataVal !== null) {
-              pipeline.push({
-                module: FilterNoDataVal,
-                props: { value: noDataVal },
-              });
+        // For 3-band data, expand to RGBA with nodata handling
+        if (SamplesPerPixel === 3) {
+          const rgba = new Uint8ClampedArray(pixelCount * 4);
+          for (let i = 0; i < pixelCount; i++) {
+            const r = rasterData[i * 3];
+            const g = rasterData[i * 3 + 1];
+            const b = rasterData[i * 3 + 2];
+            // Handle nodata: if all bands are 0, treat as transparent
+            if (r === 0 && g === 0 && b === 0) {
+              rgba[i * 4] = 0;
+              rgba[i * 4 + 1] = 0;
+              rgba[i * 4 + 2] = 0;
+              rgba[i * 4 + 3] = 0; // Transparent
+            } else {
+              rgba[i * 4] = r;
+              rgba[i * 4 + 1] = g;
+              rgba[i * 4 + 2] = b;
+              rgba[i * 4 + 3] = 255;
             }
+          }
 
-            // Rescale float values to [0,1] for visualization
-            const rescaleMin = self.props._rescaleMin ?? 0;
-            const rescaleMax = self.props._rescaleMax ?? 255;
+          const tex = device.createTexture({
+            data: rgba,
+            format: "rgba8unorm",
+            width: rasterData.width,
+            height: rasterData.height,
+            sampler: { magFilter: "nearest", minFilter: "nearest" },
+          });
+
+          return {
+            texture: tex,
+            height: rasterData.height,
+            width: rasterData.width,
+            _preRescaled: true, // rgba8unorm is already normalized, skip RescaleFloat
+          };
+        }
+
+        // Default: use original texture format inference
+        const textureFormat = texture.inferTextureFormat(
+          SamplesPerPixel,
+          BitsPerSample,
+          SampleFormat,
+        );
+
+        const tex = device.createTexture({
+          data: rasterData,
+          format: textureFormat,
+          width: rasterData.width,
+          height: rasterData.height,
+          sampler: { magFilter: "nearest", minFilter: "nearest" },
+        });
+
+        return {
+          texture: tex,
+          height: rasterData.height,
+          width: rasterData.width,
+        };
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const self = this as any;
+      // Cache colormap texture to avoid recreating per tile
+      let cachedCmapName: string | null = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let cachedCmapTexture: any = null;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const defaultRenderTile = (tileData: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pipeline: any[] = [
+          {
+            module: CreateTexture,
+            props: { textureName: tileData.texture },
+          },
+        ];
+
+        // Skip nodata filter and rescaling if data was pre-processed in getTileData
+        if (!tileData._preRescaled) {
+          // Filter nodata pixels
+          if (noDataVal !== null) {
             pipeline.push({
-              module: RescaleFloat,
-              props: {
-                minVal: rescaleMin,
-                maxVal: rescaleMax,
-                isSingleBand: SamplesPerPixel === 1 ? 1.0 : 0.0,
+              module: FilterNoDataVal,
+              props: { value: noDataVal },
+            });
+          }
+
+          // Rescale float values to [0,1] for visualization
+          const rescaleMin = self.props._rescaleMin ?? 0;
+          const rescaleMax = self.props._rescaleMax ?? 255;
+          pipeline.push({
+            module: RescaleFloat,
+            props: {
+              minVal: rescaleMin,
+              maxVal: rescaleMax,
+              isSingleBand: SamplesPerPixel === 1 ? 1.0 : 0.0,
+            },
+          });
+        }
+
+        // Apply colormap if selected (works on normalized 0-1 data)
+        // Skip if colormap was already applied in getTileData (for uint16 data with nodata preservation)
+        const cmapName = self.props._colormap;
+        if (cmapName && cmapName !== "none" && !tileData._colormapApplied) {
+          if (cmapName !== cachedCmapName) {
+            const stops = getColormap(cmapName);
+            const imageData = colormapToImageData(stops);
+            cachedCmapTexture = self.context.device.createTexture({
+              data: imageData.data,
+              format: "rgba8unorm",
+              width: imageData.width,
+              height: imageData.height,
+              sampler: {
+                minFilter: "linear",
+                magFilter: "linear",
+                addressModeU: "clamp-to-edge",
+                addressModeV: "clamp-to-edge",
               },
             });
+            cachedCmapName = cmapName;
           }
+          pipeline.push({
+            module: Colormap,
+            props: { colormapTexture: cachedCmapTexture },
+          });
+        }
 
-          // Apply colormap if selected (works on normalized 0-1 data)
-          // Skip if colormap was already applied in getTileData (for uint16 data with nodata preservation)
-          const cmapName = self.props._colormap;
-          if (cmapName && cmapName !== "none" && !tileData._colormapApplied) {
-            if (cmapName !== cachedCmapName) {
-              const stops = getColormap(cmapName);
-              const imageData = colormapToImageData(stops);
-              cachedCmapTexture = self.context.device.createTexture({
-                data: imageData.data,
-                format: "rgba8unorm",
-                width: imageData.width,
-                height: imageData.height,
-                sampler: {
-                  minFilter: "linear",
-                  magFilter: "linear",
-                  addressModeU: "clamp-to-edge",
-                  addressModeV: "clamp-to-edge",
-                },
-              });
-              cachedCmapName = cmapName;
-            }
-            pipeline.push({
-              module: Colormap,
-              props: { colormapTexture: cachedCmapTexture },
-            });
-          }
+        return pipeline;
+      };
 
-          return pipeline;
-        };
-
-        self.setState({
-          metadata,
-          forwardReproject,
-          inverseReproject,
-          images,
-          defaultGetTileData,
-          defaultRenderTile,
-        });
+      self.setState({
+        metadata,
+        forwardReproject,
+        inverseReproject,
+        images,
+        defaultGetTileData,
+        defaultRenderTile,
+      });
     };
   }
 

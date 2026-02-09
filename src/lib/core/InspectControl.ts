@@ -630,9 +630,7 @@ export class InspectControl implements IControl {
   /**
    * Determines if highlight can use the original source to avoid tile clipping.
    */
-  private _getHighlightTarget(
-    inspectedFeature: InspectedFeature,
-  ): {
+  private _getHighlightTarget(inspectedFeature: InspectedFeature): {
     sourceId: string;
     sourceLayer?: string;
     filter: maplibregl.FilterSpecification;

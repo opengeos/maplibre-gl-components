@@ -28,7 +28,9 @@ export class PMTilesLayerAdapter implements CustomLayerAdapter {
   readonly type = "pmtiles";
 
   private _control: PMTilesLayerControl;
-  private _changeCallbacks: Array<(event: "add" | "remove", layerId: string) => void> = [];
+  private _changeCallbacks: Array<
+    (event: "add" | "remove", layerId: string) => void
+  > = [];
 
   constructor(
     control: PMTilesLayerControl,
@@ -114,7 +116,9 @@ export class PMTilesLayerAdapter implements CustomLayerAdapter {
   /**
    * Subscribe to layer changes.
    */
-  onLayerChange(callback: (event: "add" | "remove", layerId: string) => void): () => void {
+  onLayerChange(
+    callback: (event: "add" | "remove", layerId: string) => void,
+  ): () => void {
     this._changeCallbacks.push(callback);
     return () => {
       const idx = this._changeCallbacks.indexOf(callback);

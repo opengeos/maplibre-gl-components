@@ -289,10 +289,7 @@ export class PrintControl implements IControl {
       <option value="pdf" ${this._state.format === "pdf" ? "selected" : ""}>PDF</option>
     `;
     this._formatSelect.addEventListener("change", () => {
-      this._state.format = this._formatSelect!.value as
-        | "png"
-        | "jpeg"
-        | "pdf";
+      this._state.format = this._formatSelect!.value as "png" | "jpeg" | "pdf";
       this._updateQualityVisibility();
       this._updateCopyBtnVisibility();
     });
@@ -365,8 +362,10 @@ export class PrintControl implements IControl {
         const canvas = this._map?.getCanvas();
         this._state.width = canvas ? canvas.width : 1920;
         this._state.height = canvas ? canvas.height : 1080;
-        if (this._widthInput) this._widthInput.value = String(this._state.width);
-        if (this._heightInput) this._heightInput.value = String(this._state.height);
+        if (this._widthInput)
+          this._widthInput.value = String(this._state.width);
+        if (this._heightInput)
+          this._heightInput.value = String(this._state.height);
         this._updateCustomSizeVisibility();
       });
       customLabel.appendChild(this._sizeRadioCustom);
@@ -463,8 +462,7 @@ export class PrintControl implements IControl {
    */
   private _updateCopyBtnVisibility(): void {
     if (this._copyBtn) {
-      this._copyBtn.style.display =
-        this._state.format === "pdf" ? "none" : "";
+      this._copyBtn.style.display = this._state.format === "pdf" ? "none" : "";
     }
   }
 
@@ -498,8 +496,9 @@ export class PrintControl implements IControl {
    */
   private _updateCustomSizeVisibility(): void {
     if (this._customSizeInputs) {
-      this._customSizeInputs.style.display =
-        this._sizeRadioCustom?.checked ? "" : "none";
+      this._customSizeInputs.style.display = this._sizeRadioCustom?.checked
+        ? ""
+        : "none";
     }
   }
 
@@ -677,8 +676,7 @@ export class PrintControl implements IControl {
         this._emit("export", { dataUrl });
       }
     } catch (err) {
-      const errorMsg =
-        err instanceof Error ? err.message : "Export failed";
+      const errorMsg = err instanceof Error ? err.message : "Export failed";
       this._showFeedback("Export failed");
       this._emit("error", { error: errorMsg });
     } finally {

@@ -1088,7 +1088,9 @@ export type DefaultControlName =
   | "inspect"
   | "vectorDataset"
   | "basemap"
-  | "cogLayer";
+  | "cogLayer"
+  | "minimap"
+  | "timeSlider";
 
 /**
  * Options for configuring the ControlGrid.
@@ -2516,11 +2518,7 @@ export interface PrintControlState {
 /**
  * PrintControl event types.
  */
-export type PrintEvent =
-  | ComponentEvent
-  | "export"
-  | "copy"
-  | "error";
+export type PrintEvent = ComponentEvent | "export" | "copy" | "error";
 
 /**
  * PrintControl event handler function type.
@@ -2530,4 +2528,181 @@ export type PrintEventHandler = (event: {
   state: PrintControlState;
   dataUrl?: string;
   error?: string;
+}) => void;
+
+// ============================================================================
+// MinimapControl Types
+// ============================================================================
+
+/**
+ * Options for configuring the MinimapControl.
+ */
+export interface MinimapControlOptions {
+  /** Position on the map. Default: 'bottom-left'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether to start collapsed (minimap hidden). Default: false. */
+  collapsed?: boolean;
+  /** Width of the minimap in pixels. Default: 250. */
+  width?: number;
+  /** Height of the minimap in pixels. Default: 180. */
+  height?: number;
+  /** Zoom offset relative to the main map. Default: -5. */
+  zoomOffset?: number;
+  /** Style for the minimap. Can be a StyleSpecification object or a URL string. */
+  style?: string | object;
+  /** Color of the viewport rectangle outline. Default: '#0078d7'. */
+  viewportRectColor?: string;
+  /** Opacity of the viewport rectangle fill. Default: 0.2. */
+  viewportRectOpacity?: number;
+  /** Whether the minimap can be toggled. Default: true. */
+  toggleable?: boolean;
+  /** Whether the minimap is interactive (click to navigate). Default: false. */
+  interactive?: boolean;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the MinimapControl.
+ */
+export interface MinimapControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the minimap panel is collapsed. */
+  collapsed: boolean;
+}
+
+/**
+ * Props for the React MinimapControl wrapper component.
+ */
+export interface MinimapControlReactProps extends MinimapControlOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: MinimapControlState) => void;
+}
+
+/**
+ * MinimapControl event types.
+ */
+export type MinimapEvent = ComponentEvent;
+
+/**
+ * MinimapControl event handler function type.
+ */
+export type MinimapEventHandler = (event: {
+  type: MinimapEvent;
+  state: MinimapControlState;
+}) => void;
+
+// ============================================================================
+// TimeSliderControl Types
+// ============================================================================
+
+/**
+ * Accepted value types for TimeSliderControl.
+ */
+export type TimeSliderValue = number | Date | string;
+
+/**
+ * Options for configuring the TimeSliderControl.
+ */
+export interface TimeSliderControlOptions {
+  /** Position on the map. Default: 'bottom-left'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether to start collapsed. Default: true. */
+  collapsed?: boolean;
+  /** Minimum value (required). */
+  min: TimeSliderValue;
+  /** Maximum value (required). */
+  max: TimeSliderValue;
+  /** Step size for the slider. Default: 1. */
+  step?: number;
+  /** Initial value. Defaults to min. */
+  value?: TimeSliderValue;
+  /** Discrete array of values. When provided, slider maps to these values. */
+  values?: TimeSliderValue[];
+  /** Playback speed in frames per second. Default: 1. */
+  fps?: number;
+  /** Whether playback loops. Default: true. */
+  loop?: boolean;
+  /** Whether to show the play/pause button. Default: true. */
+  showPlayButton?: boolean;
+  /** Whether to show the timestamp/value label. Default: true. */
+  showTimestamp?: boolean;
+  /** Custom label formatter function. */
+  formatLabel?: (value: TimeSliderValue, index: number) => string;
+  /** Panel width in pixels. Default: 300. */
+  panelWidth?: number;
+  /** Background color of the panel. */
+  backgroundColor?: string;
+  /** Border radius in pixels. */
+  borderRadius?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom level at which the control is visible. */
+  minzoom?: number;
+  /** Maximum zoom level at which the control is visible. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the TimeSliderControl.
+ */
+export interface TimeSliderControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Current numeric value of the slider. */
+  value: number;
+  /** Whether playback is active. */
+  playing: boolean;
+  /** Numeric minimum. */
+  min: number;
+  /** Numeric maximum. */
+  max: number;
+}
+
+/**
+ * Props for the React TimeSliderControl wrapper component.
+ */
+export interface TimeSliderControlReactProps extends TimeSliderControlOptions {
+  /** MapLibre GL map instance. */
+  map: Map;
+  /** Callback fired when the value changes. */
+  onChange?: (value: TimeSliderValue, index: number) => void;
+  /** Callback fired when playback starts. */
+  onPlay?: () => void;
+  /** Callback fired when playback pauses. */
+  onPause?: () => void;
+  /** Callback fired when state changes. */
+  onStateChange?: (state: TimeSliderControlState) => void;
+}
+
+/**
+ * TimeSliderControl event types.
+ */
+export type TimeSliderEvent = ComponentEvent | "change" | "play" | "pause";
+
+/**
+ * TimeSliderControl event handler function type.
+ */
+export type TimeSliderEventHandler = (event: {
+  type: TimeSliderEvent;
+  state: TimeSliderControlState;
+  value?: TimeSliderValue;
+  index?: number;
 }) => void;
