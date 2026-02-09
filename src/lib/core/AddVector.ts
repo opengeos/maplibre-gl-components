@@ -1,6 +1,9 @@
 import "../styles/common.css";
 import "../styles/add-vector.css";
-import maplibregl, { type IControl, type Map as MapLibreMap } from "maplibre-gl";
+import maplibregl, {
+  type IControl,
+  type Map as MapLibreMap,
+} from "maplibre-gl";
 import type {
   AddVectorControlOptions,
   AddVectorControlState,
@@ -267,7 +270,9 @@ export class AddVectorControl implements IControl {
   /**
    * Find the source info that contains a specific layer ID.
    */
-  private _findSourceByLayerId(layerId: string): AddVectorLayerInfo | undefined {
+  private _findSourceByLayerId(
+    layerId: string,
+  ): AddVectorLayerInfo | undefined {
     for (const info of this._vectorLayers.values()) {
       if (info.layerIds.includes(layerId)) {
         return info;
@@ -554,7 +559,10 @@ export class AddVectorControl implements IControl {
     panel.appendChild(fillColorGroup);
 
     // Stroke color
-    const strokeColorGroup = this._createFormGroup("Stroke Color", "stroke-color");
+    const strokeColorGroup = this._createFormGroup(
+      "Stroke Color",
+      "stroke-color",
+    );
     const strokeColorRow = document.createElement("div");
     strokeColorRow.className = "maplibre-gl-add-vector-color-row";
     const strokeColorInput = document.createElement("input");
@@ -612,7 +620,8 @@ export class AddVectorControl implements IControl {
 
     // Pickable checkbox
     const pickableGroup = document.createElement("div");
-    pickableGroup.className = "maplibre-gl-add-vector-form-group maplibre-gl-add-vector-checkbox-group";
+    pickableGroup.className =
+      "maplibre-gl-add-vector-form-group maplibre-gl-add-vector-checkbox-group";
     const pickableLabel = document.createElement("label");
     pickableLabel.className = "maplibre-gl-add-vector-checkbox-label";
     const pickableCheckbox = document.createElement("input");
@@ -783,10 +792,14 @@ export class AddVectorControl implements IControl {
         try {
           response = await fetch(this._state.url);
         } catch {
-          throw new Error(`CORS error: The server doesn't allow cross-origin requests. Try using a CORS-enabled URL.`);
+          throw new Error(
+            `CORS error: The server doesn't allow cross-origin requests. Try using a CORS-enabled URL.`,
+          );
         }
         if (!response.ok) {
-          throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+          throw new Error(
+            `Failed to fetch: ${response.status} ${response.statusText}`,
+          );
         }
         const data = await response.json();
         geojson = this._normalizeGeoJSON(data);
@@ -838,9 +851,10 @@ export class AddVectorControl implements IControl {
       const stateBeforeId = this._state.beforeId?.trim();
       const optionsBeforeId = this._options.beforeId;
       const beforeIdToUse = stateBeforeId || optionsBeforeId;
-      const beforeId = beforeIdToUse && this._map.getLayer(beforeIdToUse)
-        ? beforeIdToUse
-        : undefined;
+      const beforeId =
+        beforeIdToUse && this._map.getLayer(beforeIdToUse)
+          ? beforeIdToUse
+          : undefined;
 
       // Add polygon fill layer
       if (geometryTypes.has("Polygon") || geometryTypes.has("MultiPolygon")) {
@@ -888,7 +902,10 @@ export class AddVectorControl implements IControl {
       }
 
       // Add line layer
-      if (geometryTypes.has("LineString") || geometryTypes.has("MultiLineString")) {
+      if (
+        geometryTypes.has("LineString") ||
+        geometryTypes.has("MultiLineString")
+      ) {
         const lineLayerId = `${layerId}-line`;
         this._map.addLayer(
           {
@@ -964,14 +981,17 @@ export class AddVectorControl implements IControl {
             for (const [key, value] of entries) {
               html += `<tr><td><strong>${key}</strong></td><td>${value}</td></tr>`;
             }
-            html += '</table></div>';
+            html += "</table></div>";
 
             // Close any existing popup first
             if (this._activePopup) {
               this._activePopup.remove();
             }
 
-            this._activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "300px" })
+            this._activePopup = new maplibregl.Popup({
+              closeButton: true,
+              maxWidth: "300px",
+            })
               .setLngLat(e.lngLat)
               .setHTML(html)
               .addTo(map);
@@ -1062,18 +1082,25 @@ export class AddVectorControl implements IControl {
     // Try with public CORS proxy as last resort
     const publicProxy = "https://corsproxy.io/?";
     try {
-      const response = await fetch(publicProxy + encodeURIComponent(url), { mode: "cors" });
+      const response = await fetch(publicProxy + encodeURIComponent(url), {
+        mode: "cors",
+      });
       if (response.ok) return response;
     } catch {
       // All attempts failed
     }
 
-    throw new Error(`CORS error: Unable to fetch the file. The server doesn't allow cross-origin requests.`);
+    throw new Error(
+      `CORS error: Unable to fetch the file. The server doesn't allow cross-origin requests.`,
+    );
   }
 
-  private async _loadGeoParquet(url: string): Promise<GeoJSON.FeatureCollection> {
+  private async _loadGeoParquet(
+    url: string,
+  ): Promise<GeoJSON.FeatureCollection> {
     // Use DuckDB converter for GeoParquet support (most reliable)
-    const { getDuckDBConverter } = await import("../converters/DuckDBConverter");
+    const { getDuckDBConverter } =
+      await import("../converters/DuckDBConverter");
     const converter = getDuckDBConverter();
 
     const response = await this._fetchWithCorsProxy(url);
@@ -1082,14 +1109,18 @@ export class AddVectorControl implements IControl {
     try {
       buffer = await response.arrayBuffer();
     } catch (bufferError) {
-      throw new Error(`Failed to read GeoParquet response: ${bufferError instanceof Error ? bufferError.message : String(bufferError)}`);
+      throw new Error(
+        `Failed to read GeoParquet response: ${bufferError instanceof Error ? bufferError.message : String(bufferError)}`,
+      );
     }
 
     let result;
     try {
       result = await converter.convert(buffer, "data.parquet");
     } catch (convertError) {
-      throw new Error(`Failed to convert GeoParquet: ${convertError instanceof Error ? convertError.message : String(convertError)}`);
+      throw new Error(
+        `Failed to convert GeoParquet: ${convertError instanceof Error ? convertError.message : String(convertError)}`,
+      );
     }
 
     if (result.geojson) {
@@ -1098,13 +1129,17 @@ export class AddVectorControl implements IControl {
     throw new Error("Failed to convert GeoParquet: No GeoJSON output");
   }
 
-  private async _loadFlatGeobuf(url: string): Promise<GeoJSON.FeatureCollection> {
+  private async _loadFlatGeobuf(
+    url: string,
+  ): Promise<GeoJSON.FeatureCollection> {
     // Dynamically import flatgeobuf geojson module
     const fgb = await import("flatgeobuf/lib/mjs/geojson.js");
 
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch: ${response.status} ${response.statusText}`,
+      );
     }
 
     if (!response.body) {

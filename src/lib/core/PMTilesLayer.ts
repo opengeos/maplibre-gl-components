@@ -1,6 +1,11 @@
 import "../styles/common.css";
 import "../styles/pmtiles-layer.css";
-import { type IControl, type Map as MapLibreMap, type MapMouseEvent, Popup } from "maplibre-gl";
+import {
+  type IControl,
+  type Map as MapLibreMap,
+  type MapMouseEvent,
+  Popup,
+} from "maplibre-gl";
 import type {
   PMTilesLayerControlOptions,
   PMTilesLayerControlState,
@@ -65,8 +70,10 @@ export class PMTilesLayerControl implements IControl {
   private _panel?: HTMLElement;
   private _options: Required<PMTilesLayerControlOptions>;
   private _state: PMTilesLayerControlState;
-  private _eventHandlers: Map<PMTilesLayerEvent, Set<PMTilesLayerEventHandler>> =
-    new Map();
+  private _eventHandlers: Map<
+    PMTilesLayerEvent,
+    Set<PMTilesLayerEventHandler>
+  > = new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
@@ -463,17 +470,19 @@ export class PMTilesLayerControl implements IControl {
 
       const propEntries = Object.entries(properties);
       if (propEntries.length === 0) {
-        html += '<div class="maplibre-gl-pmtiles-popup-empty">No properties</div>';
+        html +=
+          '<div class="maplibre-gl-pmtiles-popup-empty">No properties</div>';
       } else {
         html += '<table class="maplibre-gl-pmtiles-popup-table">';
         for (const [key, value] of propEntries) {
-          const displayValue = typeof value === "object" ? JSON.stringify(value) : String(value);
+          const displayValue =
+            typeof value === "object" ? JSON.stringify(value) : String(value);
           html += `<tr><td class="maplibre-gl-pmtiles-popup-key">${key}</td><td class="maplibre-gl-pmtiles-popup-value">${displayValue}</td></tr>`;
         }
-        html += '</table>';
+        html += "</table>";
       }
 
-      html += '</div></div>';
+      html += "</div></div>";
 
       // Show popup
       if (!this._popup) {
@@ -484,10 +493,7 @@ export class PMTilesLayerControl implements IControl {
         });
       }
 
-      this._popup
-        .setLngLat(e.lngLat)
-        .setHTML(html)
-        .addTo(this._map);
+      this._popup.setLngLat(e.lngLat).setHTML(html).addTo(this._map);
     };
 
     this._map.on("click", this._clickHandler);
@@ -646,7 +652,10 @@ export class PMTilesLayerControl implements IControl {
     panel.appendChild(pickableGroup);
 
     // Source layers section with Fetch button
-    const sourceLayersGroup = this._createFormGroup("Source Layers", "source-layers");
+    const sourceLayersGroup = this._createFormGroup(
+      "Source Layers",
+      "source-layers",
+    );
 
     // Fetch button row
     const fetchRow = document.createElement("div");
@@ -673,7 +682,9 @@ export class PMTilesLayerControl implements IControl {
       allBtn.style.padding = "4px 8px";
       allBtn.style.fontSize = "11px";
       allBtn.addEventListener("click", () => {
-        this._state.selectedSourceLayers = [...this._state.availableSourceLayers];
+        this._state.selectedSourceLayers = [
+          ...this._state.availableSourceLayers,
+        ];
         this._render();
       });
       fetchRow.appendChild(allBtn);
@@ -727,9 +738,8 @@ export class PMTilesLayerControl implements IControl {
               this._state.selectedSourceLayers.push(layerName);
             }
           } else {
-            this._state.selectedSourceLayers = this._state.selectedSourceLayers.filter(
-              (l) => l !== layerName,
-            );
+            this._state.selectedSourceLayers =
+              this._state.selectedSourceLayers.filter((l) => l !== layerName);
           }
           this._render();
         });
@@ -872,7 +882,8 @@ export class PMTilesLayerControl implements IControl {
 
     // Register the protocol with MapLibre
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const maplibregl = (window as any).maplibregl || (await import("maplibre-gl"));
+    const maplibregl =
+      (window as any).maplibregl || (await import("maplibre-gl"));
     if (!maplibregl.config?.REGISTERED_PROTOCOLS?.pmtiles) {
       maplibregl.addProtocol("pmtiles", this._protocol.tile);
     }
@@ -958,7 +969,11 @@ export class PMTilesLayerControl implements IControl {
       let tileType: PMTilesTileType = "unknown";
       if (header.tileType === 1) {
         tileType = "vector";
-      } else if (header.tileType === 2 || header.tileType === 3 || header.tileType === 4) {
+      } else if (
+        header.tileType === 2 ||
+        header.tileType === 3 ||
+        header.tileType === 4
+      ) {
         tileType = "raster";
       }
 
@@ -990,9 +1005,10 @@ export class PMTilesLayerControl implements IControl {
       );
 
       const layerIds: string[] = [];
-      const beforeId = this._options.beforeId && this._map.getLayer(this._options.beforeId)
-        ? this._options.beforeId
-        : undefined;
+      const beforeId =
+        this._options.beforeId && this._map.getLayer(this._options.beforeId)
+          ? this._options.beforeId
+          : undefined;
 
       if (tileType === "vector") {
         // Use selected source layers if available, otherwise use all
@@ -1037,7 +1053,11 @@ export class PMTilesLayerControl implements IControl {
                 "line-opacity": this._state.layerOpacity,
                 "line-width": 1,
               },
-              filter: ["in", ["geometry-type"], ["literal", ["LineString", "Polygon"]]],
+              filter: [
+                "in",
+                ["geometry-type"],
+                ["literal", ["LineString", "Polygon"]],
+              ],
             },
             beforeId,
           );

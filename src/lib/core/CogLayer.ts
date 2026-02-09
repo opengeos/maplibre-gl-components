@@ -1,6 +1,9 @@
 import "../styles/common.css";
 import "../styles/cog-layer.css";
-import maplibregl, { type IControl, type Map as MapLibreMap } from "maplibre-gl";
+import maplibregl, {
+  type IControl,
+  type Map as MapLibreMap,
+} from "maplibre-gl";
 import type {
   CogLayerControlOptions,
   CogLayerControlState,
@@ -693,7 +696,8 @@ export class CogLayerControl implements IControl {
 
     // Pickable checkbox
     const pickableGroup = document.createElement("div");
-    pickableGroup.className = "maplibre-gl-cog-layer-form-group maplibre-gl-cog-layer-checkbox-group";
+    pickableGroup.className =
+      "maplibre-gl-cog-layer-form-group maplibre-gl-cog-layer-checkbox-group";
     const pickableLabel = document.createElement("label");
     pickableLabel.className = "maplibre-gl-cog-layer-checkbox-label";
     const pickableCheckbox = document.createElement("input");
@@ -882,14 +886,17 @@ export class CogLayerControl implements IControl {
       html += `<tr><td><strong>Lat</strong></td><td>${lngLat.lat.toFixed(6)}</td></tr>`;
       if (props) {
         html += `<tr><td><strong>Rescale</strong></td><td>${props._rescaleMin} - ${props._rescaleMax}</td></tr>`;
-        if (props._colormap && props._colormap !== 'none') {
+        if (props._colormap && props._colormap !== "none") {
           html += `<tr><td><strong>Colormap</strong></td><td>${props._colormap}</td></tr>`;
         }
       }
-      html += '</table>';
-      html += '</div>';
+      html += "</table>";
+      html += "</div>";
 
-      this._activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "280px" })
+      this._activePopup = new maplibregl.Popup({
+        closeButton: true,
+        maxWidth: "280px",
+      })
         .setLngLat(lngLat)
         .setHTML(html)
         .addTo(map);
@@ -953,9 +960,7 @@ export class CogLayerControl implements IControl {
    * with @developmentseed/deck.gl-geotiff.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _buildGeoKeysParser(
-    geoKeysToProj4: any,
-  ): (
+  private _buildGeoKeysParser(geoKeysToProj4: any): (
     geoKeys: Record<string, unknown>,
   ) => Promise<{
     def: string;

@@ -27,12 +27,11 @@ export class AddVectorAdapter implements CustomLayerAdapter {
 
   private _control: AddVectorControl;
   private _options: AddVectorAdapterOptions;
-  private _changeCallbacks: Array<(event: "add" | "remove", layerId: string) => void> = [];
+  private _changeCallbacks: Array<
+    (event: "add" | "remove", layerId: string) => void
+  > = [];
 
-  constructor(
-    control: AddVectorControl,
-    options?: AddVectorAdapterOptions,
-  ) {
+  constructor(control: AddVectorControl, options?: AddVectorAdapterOptions) {
     this._control = control;
     this._options = options || {};
 
@@ -111,7 +110,9 @@ export class AddVectorAdapter implements CustomLayerAdapter {
   /**
    * Subscribe to layer changes.
    */
-  onLayerChange(callback: (event: "add" | "remove", layerId: string) => void): () => void {
+  onLayerChange(
+    callback: (event: "add" | "remove", layerId: string) => void,
+  ): () => void {
     this._changeCallbacks.push(callback);
     return () => {
       const idx = this._changeCallbacks.indexOf(callback);

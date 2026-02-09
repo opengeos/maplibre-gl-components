@@ -110,15 +110,18 @@ export class StacSearchControl implements IControl {
   private _panel?: HTMLElement;
   private _options: Required<StacSearchControlOptions>;
   private _state: StacSearchControlState;
-  private _eventHandlers: Map<StacSearchEvent, Set<StacSearchEventHandler>> = new Map();
+  private _eventHandlers: Map<StacSearchEvent, Set<StacSearchEventHandler>> =
+    new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
   private _footprintSourceId: string = "stac-search-footprints";
   private _footprintLayerId: string = "stac-search-footprints-layer";
   private _footprintOutlineLayerId: string = "stac-search-footprints-outline";
-  private _footprintHighlightLayerId: string = "stac-search-footprints-highlight";
-  private _footprintHighlightOutlineLayerId: string = "stac-search-footprints-highlight-outline";
+  private _footprintHighlightLayerId: string =
+    "stac-search-footprints-highlight";
+  private _footprintHighlightOutlineLayerId: string =
+    "stac-search-footprints-highlight-outline";
   private _showCustomUrlInput: boolean = false;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _deckOverlay?: any;
@@ -132,7 +135,8 @@ export class StacSearchControl implements IControl {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
       catalogs: this._options.catalogs,
-      selectedCatalog: this._options.catalogs.length > 0 ? this._options.catalogs[0] : null,
+      selectedCatalog:
+        this._options.catalogs.length > 0 ? this._options.catalogs[0] : null,
       collections: [],
       selectedCollection: null,
       startDate: null,
@@ -178,9 +182,9 @@ export class StacSearchControl implements IControl {
 
     if (this._deckOverlay && this._map) {
       try {
-        (this._map as unknown as { removeControl(c: IControl): void }).removeControl(
-          this._deckOverlay
-        );
+        (
+          this._map as unknown as { removeControl(c: IControl): void }
+        ).removeControl(this._deckOverlay);
       } catch {
         // overlay may already be removed
       }
@@ -242,7 +246,8 @@ export class StacSearchControl implements IControl {
   update(options: Partial<StacSearchControlOptions>): void {
     this._options = { ...this._options, ...options };
     if (options.visible !== undefined) this._state.visible = options.visible;
-    if (options.collapsed !== undefined) this._state.collapsed = options.collapsed;
+    if (options.collapsed !== undefined)
+      this._state.collapsed = options.collapsed;
     if (options.catalogs) {
       this._state.catalogs = options.catalogs;
       if (options.catalogs.length > 0 && !this._state.selectedCatalog) {
@@ -284,7 +289,7 @@ export class StacSearchControl implements IControl {
       collection?: StacCollection;
       item?: StacSearchItem;
       error?: string;
-    }
+    },
   ): void {
     const handlers = this._eventHandlers.get(event);
     if (!handlers) return;
@@ -298,7 +303,8 @@ export class StacSearchControl implements IControl {
     if (!this._map) return;
     const zoom = this._map.getZoom();
     const wasVisible = this._zoomVisible;
-    this._zoomVisible = zoom >= this._options.minzoom && zoom <= this._options.maxzoom;
+    this._zoomVisible =
+      zoom >= this._options.minzoom && zoom <= this._options.maxzoom;
     if (wasVisible !== this._zoomVisible) {
       this._updateDisplayState();
     }
@@ -331,7 +337,9 @@ export class StacSearchControl implements IControl {
     if (!this._container) return;
 
     // Save scroll position before re-rendering
-    const panel = this._container.querySelector(".maplibre-gl-stac-search-panel");
+    const panel = this._container.querySelector(
+      ".maplibre-gl-stac-search-panel",
+    );
     const scrollTop = panel?.scrollTop ?? 0;
 
     this._container.innerHTML = "";
@@ -342,7 +350,9 @@ export class StacSearchControl implements IControl {
       this._renderExpanded();
 
       // Restore scroll position after re-rendering
-      const newPanel = this._container.querySelector(".maplibre-gl-stac-search-panel");
+      const newPanel = this._container.querySelector(
+        ".maplibre-gl-stac-search-panel",
+      );
       if (newPanel && scrollTop > 0) {
         newPanel.scrollTop = scrollTop;
       }
@@ -415,7 +425,9 @@ export class StacSearchControl implements IControl {
     const customOption = document.createElement("option");
     customOption.value = "__custom__";
     customOption.textContent = "── Custom URL ──";
-    customOption.selected = this._showCustomUrlInput || this._state.selectedCatalog?.name === "__custom__";
+    customOption.selected =
+      this._showCustomUrlInput ||
+      this._state.selectedCatalog?.name === "__custom__";
     catalogSelect.appendChild(customOption);
 
     catalogSelect.addEventListener("change", () => {
@@ -426,7 +438,9 @@ export class StacSearchControl implements IControl {
         return;
       }
       this._showCustomUrlInput = false;
-      const selected = this._state.catalogs.find((c) => c.url === catalogSelect.value);
+      const selected = this._state.catalogs.find(
+        (c) => c.url === catalogSelect.value,
+      );
       if (selected) {
         this._state.selectedCatalog = selected;
         this._state.collections = [];
@@ -441,7 +455,10 @@ export class StacSearchControl implements IControl {
     catalogGroup.appendChild(catalogSelect);
 
     // Custom URL input (show if custom is selected or if current catalog is custom)
-    if (this._showCustomUrlInput || this._state.selectedCatalog?.name === "__custom__") {
+    if (
+      this._showCustomUrlInput ||
+      this._state.selectedCatalog?.name === "__custom__"
+    ) {
       const customUrlRow = document.createElement("div");
       customUrlRow.className = "maplibre-gl-stac-search-custom-url-row";
 
@@ -450,10 +467,14 @@ export class StacSearchControl implements IControl {
       customUrlInput.id = "stac-search-custom-url";
       customUrlInput.className = "maplibre-gl-stac-search-input";
       customUrlInput.placeholder = "https://stac-api.example.com/v1";
-      customUrlInput.value = this._state.selectedCatalog?.name === "__custom__" ? this._state.selectedCatalog.url : "";
+      customUrlInput.value =
+        this._state.selectedCatalog?.name === "__custom__"
+          ? this._state.selectedCatalog.url
+          : "";
 
       const addCustomBtn = document.createElement("button");
-      addCustomBtn.className = "maplibre-gl-stac-search-btn maplibre-gl-stac-search-btn--secondary";
+      addCustomBtn.className =
+        "maplibre-gl-stac-search-btn maplibre-gl-stac-search-btn--secondary";
       addCustomBtn.textContent = "Use";
       addCustomBtn.addEventListener("click", () => {
         const url = customUrlInput.value.trim();
@@ -483,15 +504,20 @@ export class StacSearchControl implements IControl {
     collectionsRow.className = "maplibre-gl-stac-search-row";
 
     const fetchCollectionsBtn = document.createElement("button");
-    fetchCollectionsBtn.className = "maplibre-gl-stac-search-btn maplibre-gl-stac-search-btn--secondary";
+    fetchCollectionsBtn.className =
+      "maplibre-gl-stac-search-btn maplibre-gl-stac-search-btn--secondary";
     fetchCollectionsBtn.textContent = "Collections";
-    fetchCollectionsBtn.disabled = this._state.loading || !this._state.selectedCatalog;
-    fetchCollectionsBtn.addEventListener("click", () => this._fetchCollections());
+    fetchCollectionsBtn.disabled =
+      this._state.loading || !this._state.selectedCatalog;
+    fetchCollectionsBtn.addEventListener("click", () =>
+      this._fetchCollections(),
+    );
     collectionsRow.appendChild(fetchCollectionsBtn);
 
     const collectionSelect = document.createElement("select");
     collectionSelect.id = "stac-search-collection";
-    collectionSelect.className = "maplibre-gl-stac-search-select maplibre-gl-stac-search-select--flex";
+    collectionSelect.className =
+      "maplibre-gl-stac-search-select maplibre-gl-stac-search-select--flex";
     collectionSelect.disabled = this._state.collections.length === 0;
 
     if (this._state.collections.length === 0) {
@@ -510,7 +536,9 @@ export class StacSearchControl implements IControl {
     }
 
     collectionSelect.addEventListener("change", () => {
-      const selected = this._state.collections.find((c) => c.id === collectionSelect.value);
+      const selected = this._state.collections.find(
+        (c) => c.id === collectionSelect.value,
+      );
       if (selected) {
         this._state.selectedCollection = selected;
         this._state.items = [];
@@ -532,7 +560,8 @@ export class StacSearchControl implements IControl {
     const startInput = document.createElement("input");
     startInput.type = "date";
     startInput.id = "stac-search-start-date";
-    startInput.className = "maplibre-gl-stac-search-input maplibre-gl-stac-search-input--half";
+    startInput.className =
+      "maplibre-gl-stac-search-input maplibre-gl-stac-search-input--half";
     startInput.value = this._state.startDate || "";
     startInput.addEventListener("change", () => {
       this._state.startDate = startInput.value || null;
@@ -541,7 +570,8 @@ export class StacSearchControl implements IControl {
     const endInput = document.createElement("input");
     endInput.type = "date";
     endInput.id = "stac-search-end-date";
-    endInput.className = "maplibre-gl-stac-search-input maplibre-gl-stac-search-input--half";
+    endInput.className =
+      "maplibre-gl-stac-search-input maplibre-gl-stac-search-input--half";
     endInput.value = this._state.endDate || "";
     endInput.addEventListener("change", () => {
       this._state.endDate = endInput.value || null;
@@ -562,13 +592,19 @@ export class StacSearchControl implements IControl {
     maxItemsInput.max = "100";
     maxItemsInput.value = String(this._state.maxItems);
     maxItemsInput.addEventListener("change", () => {
-      this._state.maxItems = Math.max(1, Math.min(100, Number(maxItemsInput.value) || 20));
+      this._state.maxItems = Math.max(
+        1,
+        Math.min(100, Number(maxItemsInput.value) || 20),
+      );
     });
     maxItemsGroup.appendChild(maxItemsInput);
     panel.appendChild(maxItemsGroup);
 
     // Query filter
-    const queryGroup = this._createFormGroup("Query Filter (optional)", "query");
+    const queryGroup = this._createFormGroup(
+      "Query Filter (optional)",
+      "query",
+    );
     const queryInput = document.createElement("input");
     queryInput.type = "text";
     queryInput.id = "stac-search-query";
@@ -592,7 +628,8 @@ export class StacSearchControl implements IControl {
     searchGroup.className = "maplibre-gl-stac-search-form-group";
 
     const searchBtn = document.createElement("button");
-    searchBtn.className = "maplibre-gl-stac-search-btn maplibre-gl-stac-search-btn--primary";
+    searchBtn.className =
+      "maplibre-gl-stac-search-btn maplibre-gl-stac-search-btn--primary";
     searchBtn.textContent = "Search Items";
     searchBtn.disabled = this._state.loading || !this._state.selectedCollection;
     searchBtn.addEventListener("click", () => this._searchItems());
@@ -609,7 +646,8 @@ export class StacSearchControl implements IControl {
     // Add clear footprints button if there are items
     if (this._state.items.length > 0) {
       const clearFootprintsBtn = document.createElement("button");
-      clearFootprintsBtn.className = "maplibre-gl-stac-search-btn-clear-footprints";
+      clearFootprintsBtn.className =
+        "maplibre-gl-stac-search-btn-clear-footprints";
       clearFootprintsBtn.textContent = "Clear Footprints";
       clearFootprintsBtn.title = "Remove footprints from map";
       clearFootprintsBtn.addEventListener("click", () => {
@@ -635,14 +673,18 @@ export class StacSearchControl implements IControl {
       for (const item of this._state.items) {
         const option = document.createElement("option");
         option.value = item.id;
-        const dateStr = item.datetime ? new Date(item.datetime).toLocaleDateString() : "";
+        const dateStr = item.datetime
+          ? new Date(item.datetime).toLocaleDateString()
+          : "";
         option.textContent = `${item.id}${dateStr ? ` (${dateStr})` : ""}`;
         option.selected = this._state.selectedItem?.id === item.id;
         itemSelect.appendChild(option);
       }
 
       itemSelect.addEventListener("change", () => {
-        const selected = this._state.items.find((i) => i.id === itemSelect.value);
+        const selected = this._state.items.find(
+          (i) => i.id === itemSelect.value,
+        );
         if (selected) {
           this._state.selectedItem = selected;
           this._updateAvailableAssets(selected);
@@ -754,7 +796,8 @@ export class StacSearchControl implements IControl {
           wrapper.appendChild(label);
 
           const select = document.createElement("select");
-          select.className = "maplibre-gl-stac-search-select maplibre-gl-stac-search-select--small";
+          select.className =
+            "maplibre-gl-stac-search-select maplibre-gl-stac-search-select--small";
 
           for (const asset of assets) {
             const option = document.createElement("option");
@@ -783,7 +826,8 @@ export class StacSearchControl implements IControl {
 
       const minInput = document.createElement("input");
       minInput.type = "number";
-      minInput.className = "maplibre-gl-stac-search-input maplibre-gl-stac-search-input--half";
+      minInput.className =
+        "maplibre-gl-stac-search-input maplibre-gl-stac-search-input--half";
       minInput.placeholder = "Min";
       minInput.value = String(this._state.rescaleMin);
       minInput.addEventListener("change", () => {
@@ -792,7 +836,8 @@ export class StacSearchControl implements IControl {
 
       const maxInput = document.createElement("input");
       maxInput.type = "number";
-      maxInput.className = "maplibre-gl-stac-search-input maplibre-gl-stac-search-input--half";
+      maxInput.className =
+        "maplibre-gl-stac-search-input maplibre-gl-stac-search-input--half";
       maxInput.placeholder = "Max";
       maxInput.value = String(this._state.rescaleMax);
       maxInput.addEventListener("change", () => {
@@ -809,7 +854,8 @@ export class StacSearchControl implements IControl {
       displayGroup.className = "maplibre-gl-stac-search-form-group";
 
       const displayBtn = document.createElement("button");
-      displayBtn.className = "maplibre-gl-stac-search-btn maplibre-gl-stac-search-btn--primary";
+      displayBtn.className =
+        "maplibre-gl-stac-search-btn maplibre-gl-stac-search-btn--primary";
       displayBtn.textContent = "Display Item";
       displayBtn.disabled = this._state.loading || !this._state.selectedItem;
       displayBtn.addEventListener("click", () => this._displayItem());
@@ -895,7 +941,7 @@ export class StacSearchControl implements IControl {
   private _appendStatus(
     panel: HTMLElement,
     message: string,
-    type: "info" | "error" | "success"
+    type: "info" | "error" | "success",
   ): void {
     const status = document.createElement("div");
     status.className = `maplibre-gl-stac-search-status maplibre-gl-stac-search-status--${type}`;
@@ -920,7 +966,9 @@ export class StacSearchControl implements IControl {
       const response = await fetch(url);
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch: ${response.status} ${response.statusText}`,
+        );
       }
 
       const data = await response.json();
@@ -930,7 +978,7 @@ export class StacSearchControl implements IControl {
           id: c.id,
           title: c.title,
           description: c.description,
-        })
+        }),
       );
 
       // Sort collections alphabetically by title or id
@@ -941,7 +989,8 @@ export class StacSearchControl implements IControl {
       });
 
       this._state.collections = collections;
-      this._state.selectedCollection = collections.length > 0 ? collections[0] : null;
+      this._state.selectedCollection =
+        collections.length > 0 ? collections[0] : null;
       this._state.loading = false;
       this._state.status = `Found ${collections.length} collection(s)`;
       this._emit("collectionsload", {});
@@ -994,7 +1043,8 @@ export class StacSearchControl implements IControl {
       // Add date range if specified
       if (this._state.startDate || this._state.endDate) {
         const start = this._state.startDate || "1900-01-01";
-        const end = this._state.endDate || new Date().toISOString().split("T")[0];
+        const end =
+          this._state.endDate || new Date().toISOString().split("T")[0];
         searchBody.datetime = `${start}T00:00:00Z/${end}T23:59:59Z`;
       }
 
@@ -1018,7 +1068,9 @@ export class StacSearchControl implements IControl {
       });
 
       if (!response.ok) {
-        throw new Error(`Search failed: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Search failed: ${response.status} ${response.statusText}`,
+        );
       }
 
       const data = await response.json();
@@ -1028,7 +1080,7 @@ export class StacSearchControl implements IControl {
           // Find self link
           const selfLink = f.links?.find(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (l: any) => l.rel === "self"
+            (l: any) => l.rel === "self",
           )?.href;
 
           return {
@@ -1040,7 +1092,7 @@ export class StacSearchControl implements IControl {
             properties: f.properties,
             assets: f.assets, // Include assets for visualization options
           };
-        }
+        },
       );
 
       this._state.items = items;
@@ -1191,18 +1243,57 @@ export class StacSearchControl implements IControl {
 
     // Common band/asset names to look for
     const commonBandNames = new Set([
-      "red", "green", "blue", "nir", "nir08", "nir09", "swir", "swir16", "swir22",
-      "coastal", "data", "visual", "image", "thumbnail", "overview",
+      "red",
+      "green",
+      "blue",
+      "nir",
+      "nir08",
+      "nir09",
+      "swir",
+      "swir16",
+      "swir22",
+      "coastal",
+      "data",
+      "visual",
+      "image",
+      "thumbnail",
+      "overview",
       // Sentinel-2
-      "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12",
-      "AOT", "WVP", "SCL",
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "B05",
+      "B06",
+      "B07",
+      "B08",
+      "B8A",
+      "B09",
+      "B10",
+      "B11",
+      "B12",
+      "AOT",
+      "WVP",
+      "SCL",
       // Landsat
-      "SR_B1", "SR_B2", "SR_B3", "SR_B4", "SR_B5", "SR_B6", "SR_B7",
-      "ST_B10", "lwir", "lwir11",
+      "SR_B1",
+      "SR_B2",
+      "SR_B3",
+      "SR_B4",
+      "SR_B5",
+      "SR_B6",
+      "SR_B7",
+      "ST_B10",
+      "lwir",
+      "lwir11",
       // NAIP
       "rgbir",
       // Generic
-      "raster", "dem", "dsm", "dtm", "elevation",
+      "raster",
+      "dem",
+      "dsm",
+      "dtm",
+      "elevation",
     ]);
 
     if (item.assets) {
@@ -1222,7 +1313,8 @@ export class StacSearchControl implements IControl {
           href.endsWith(".tiff") ||
           href.endsWith(".jp2");
 
-        const isKnownBand = commonBandNames.has(key) || commonBandNames.has(key.toLowerCase());
+        const isKnownBand =
+          commonBandNames.has(key) || commonBandNames.has(key.toLowerCase());
 
         // Exclude metadata/auxiliary files
         const isMetadata =
@@ -1246,7 +1338,10 @@ export class StacSearchControl implements IControl {
     // Set default band selections
     if (assets.length > 0) {
       // For single band, default to first asset
-      if (!this._state.selectedBand || !assets.includes(this._state.selectedBand)) {
+      if (
+        !this._state.selectedBand ||
+        !assets.includes(this._state.selectedBand)
+      ) {
         this._state.selectedBand = assets[0];
       }
 
@@ -1267,7 +1362,11 @@ export class StacSearchControl implements IControl {
   /**
    * Find default RGB band assignments based on available assets.
    */
-  private _findDefaultRgbBands(assets: string[]): { r: string; g: string; b: string } {
+  private _findDefaultRgbBands(assets: string[]): {
+    r: string;
+    g: string;
+    b: string;
+  } {
     // Common RGB band patterns
     const patterns = [
       // Sentinel-2
@@ -1281,7 +1380,11 @@ export class StacSearchControl implements IControl {
     ];
 
     for (const pattern of patterns) {
-      if (assets.includes(pattern.r) && assets.includes(pattern.g) && assets.includes(pattern.b)) {
+      if (
+        assets.includes(pattern.r) &&
+        assets.includes(pattern.g) &&
+        assets.includes(pattern.b)
+      ) {
         return pattern;
       }
     }
@@ -1301,7 +1404,11 @@ export class StacSearchControl implements IControl {
     if (!this._map) return;
 
     const selectedId = this._state.selectedItem?.id || "";
-    const filter: ["==", ["get", string], string] = ["==", ["get", "id"], selectedId];
+    const filter: ["==", ["get", string], string] = [
+      "==",
+      ["get", "id"],
+      selectedId,
+    ];
 
     if (this._map.getLayer(this._footprintHighlightLayerId)) {
       this._map.setFilter(this._footprintHighlightLayerId, filter);
@@ -1315,7 +1422,11 @@ export class StacSearchControl implements IControl {
    * Check if a catalog URL is for Microsoft Planetary Computer.
    */
   private _isPlanetaryComputer(): boolean {
-    return this._state.selectedCatalog?.url?.includes("planetarycomputer.microsoft.com") ?? false;
+    return (
+      this._state.selectedCatalog?.url?.includes(
+        "planetarycomputer.microsoft.com",
+      ) ?? false
+    );
   }
 
   /**
@@ -1342,7 +1453,11 @@ export class StacSearchControl implements IControl {
       return "0,3000&rescale=0,3000&rescale=0,3000";
     } else if (collection.includes("landsat")) {
       return "0,20000&rescale=0,20000&rescale=0,20000";
-    } else if (collection.includes("dem") || collection.includes("elevation") || collection.includes("cop-dem")) {
+    } else if (
+      collection.includes("dem") ||
+      collection.includes("elevation") ||
+      collection.includes("cop-dem")
+    ) {
       return "0,4000";
     } else if (collection.includes("naip") || collection.includes("aster")) {
       return "0,255&rescale=0,255&rescale=0,255";
@@ -1378,7 +1493,11 @@ export class StacSearchControl implements IControl {
       // Get the item URL for other catalogs
       let itemUrl = this._state.selectedItem.selfLink;
 
-      if (!itemUrl && this._state.selectedCatalog && this._state.selectedCollection) {
+      if (
+        !itemUrl &&
+        this._state.selectedCatalog &&
+        this._state.selectedCollection
+      ) {
         // Construct URL from catalog/collection/item
         itemUrl = `${this._state.selectedCatalog.url}/collections/${this._state.selectedCollection.id}/items/${this._state.selectedItem.id}`;
       }
@@ -1448,7 +1567,7 @@ export class StacSearchControl implements IControl {
             [west, south],
             [east, north],
           ],
-          { padding: 50, duration: 1000 }
+          { padding: 50, duration: 1000 },
         );
       }
 
@@ -1470,7 +1589,11 @@ export class StacSearchControl implements IControl {
    * PC requires signed URLs, so we use their tile service instead of direct COG access.
    */
   private async _displayPlanetaryComputerItem(): Promise<void> {
-    if (!this._map || !this._state.selectedItem || !this._state.selectedCollection) {
+    if (
+      !this._map ||
+      !this._state.selectedItem ||
+      !this._state.selectedCollection
+    ) {
       throw new Error("Missing required state for PC display");
     }
 
@@ -1547,7 +1670,7 @@ export class StacSearchControl implements IControl {
           [west, south],
           [east, north],
         ],
-        { padding: 50, duration: 1000 }
+        { padding: 50, duration: 1000 },
       );
     }
 
@@ -1567,7 +1690,9 @@ export class StacSearchControl implements IControl {
       interleaved: false,
       layers: [],
     });
-    (this._map as unknown as { addControl(c: IControl): void }).addControl(this._deckOverlay);
+    (this._map as unknown as { addControl(c: IControl): void }).addControl(
+      this._deckOverlay,
+    );
   }
 
   /**
@@ -1601,7 +1726,11 @@ export class StacSearchControl implements IControl {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async _addCogLayer(href: string, stacItem: any, assetKey: string): Promise<void> {
+  private async _addCogLayer(
+    href: string,
+    stacItem: any,
+    assetKey: string,
+  ): Promise<void> {
     await this._ensureOverlay();
 
     // Convert S3 URLs to HTTPS for browser access
@@ -1643,7 +1772,7 @@ export class StacSearchControl implements IControl {
     // Update deck.gl overlay with remaining COG layers
     if (this._deckOverlay) {
       const deckLayers = Array.from(this._cogLayers.values()).filter(
-        (l) => l.type !== "raster"
+        (l) => l.type !== "raster",
       );
       this._deckOverlay.setProps({
         layers: deckLayers,

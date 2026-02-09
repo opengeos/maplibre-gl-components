@@ -209,24 +209,32 @@
   cursor: not-allowed;
 }
 
-.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-btn.maplibre-gl-stac-layer-btn--primary {
+.maplibre-gl-stac-layer-panel
+  .maplibre-gl-stac-layer-btn.maplibre-gl-stac-layer-btn--primary {
   background-color: #0078d7;
   border-color: #0078d7;
   color: white;
 }
 
-.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-btn.maplibre-gl-stac-layer-btn--primary:hover:not(:disabled) {
+.maplibre-gl-stac-layer-panel
+  .maplibre-gl-stac-layer-btn.maplibre-gl-stac-layer-btn--primary:hover:not(
+    :disabled
+  ) {
   background-color: #006bc1;
   border-color: #006bc1;
   color: white;
 }
 
-.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-btn.maplibre-gl-stac-layer-btn--secondary {
+.maplibre-gl-stac-layer-panel
+  .maplibre-gl-stac-layer-btn.maplibre-gl-stac-layer-btn--secondary {
   background-color: #f0f0f0;
   border-color: #ccc;
 }
 
-.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-btn.maplibre-gl-stac-layer-btn--secondary:hover:not(:disabled) {
+.maplibre-gl-stac-layer-panel
+  .maplibre-gl-stac-layer-btn.maplibre-gl-stac-layer-btn--secondary:hover:not(
+    :disabled
+  ) {
   background-color: #e0e0e0;
   color: #333;
 }
@@ -395,12 +403,14 @@
   color: #333;
 }
 
-.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-mode-btn.maplibre-gl-stac-layer-mode-btn--active {
+.maplibre-gl-stac-layer-panel
+  .maplibre-gl-stac-layer-mode-btn.maplibre-gl-stac-layer-mode-btn--active {
   background-color: #0078d7;
   color: white;
 }
 
-.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-mode-btn.maplibre-gl-stac-layer-mode-btn--active:hover {
+.maplibre-gl-stac-layer-panel
+  .maplibre-gl-stac-layer-mode-btn.maplibre-gl-stac-layer-mode-btn--active:hover {
   background-color: #006bc1;
   color: white;
 }

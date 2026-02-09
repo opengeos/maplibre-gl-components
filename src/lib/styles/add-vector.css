@@ -205,13 +205,17 @@
   cursor: not-allowed;
 }
 
-.maplibre-gl-add-vector-panel .maplibre-gl-add-vector-btn.maplibre-gl-add-vector-btn--primary {
+.maplibre-gl-add-vector-panel
+  .maplibre-gl-add-vector-btn.maplibre-gl-add-vector-btn--primary {
   background-color: #0078d7;
   border-color: #0078d7;
   color: white;
 }
 
-.maplibre-gl-add-vector-panel .maplibre-gl-add-vector-btn.maplibre-gl-add-vector-btn--primary:hover:not(:disabled) {
+.maplibre-gl-add-vector-panel
+  .maplibre-gl-add-vector-btn.maplibre-gl-add-vector-btn--primary:hover:not(
+    :disabled
+  ) {
   background-color: #006bc1;
   border-color: #006bc1;
   color: white;
