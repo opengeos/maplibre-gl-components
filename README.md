@@ -25,6 +25,7 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **StacSearchControl** - Search and visualize STAC items from public catalogs (Earth Search, Planetary Computer)
 - **MeasureControl** - Measure distances and areas on the map with multiple unit options
 - **BookmarkControl** - Save and restore map views with localStorage persistence
+- **PrintControl** - Export the map as PNG, JPEG, or PDF with optional title overlay
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
 - **TypeScript** - Full type definitions included
@@ -1285,6 +1286,108 @@ stacSearch.off(event, handler); // Unsubscribe from events
 8. Select bands and adjust rescale range
 9. Click "Display Item" to visualize
 
+### MeasureControl
+
+A control for measuring distances and areas on the map.
+
+See the [measure-control example](./examples/measure-control/) for a complete working example.
+
+### BookmarkControl
+
+A control for saving and restoring map views with localStorage persistence.
+
+See the [bookmark-control example](./examples/bookmark-control/) for a complete working example.
+
+### PrintControl
+
+A control for exporting the current map view as PNG, JPEG, or PDF. Supports optional title overlays, custom filenames, quality settings, and custom export sizes. PDF export requires the optional `jspdf` peer dependency.
+
+```typescript
+interface PrintControlOptions {
+  position?: ControlPosition;          // Control position (default: 'top-right')
+  className?: string;                  // Custom CSS class
+  visible?: boolean;                   // Initial visibility (default: true)
+  collapsed?: boolean;                 // Start collapsed (default: true)
+  format?: "png" | "jpeg" | "pdf";    // Default format (default: 'png')
+  quality?: number;                    // JPEG quality 0-1 (default: 0.92)
+  filename?: string;                   // Default filename without extension (default: 'map-export')
+  title?: string;                      // Optional title rendered on the image
+  titleFontSize?: number;              // Title font size in pixels (default: 24)
+  titleFontColor?: string;             // Title font color (default: '#333333')
+  titleBackground?: string;            // Title background (default: 'rgba(255,255,255,0.8)')
+  showSizeOptions?: boolean;           // Show current/custom size options (default: false)
+  width?: number;                      // Width override in pixels
+  height?: number;                     // Height override in pixels
+  panelWidth?: number;                 // Panel width in pixels (default: 280)
+  backgroundColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  fontSize?: number;
+  fontColor?: string;
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+// Methods
+printControl.show()
+printControl.hide()
+printControl.getState()
+printControl.setFormat(format)          // Set format: 'png', 'jpeg', or 'pdf'
+printControl.setQuality(quality)        // Set JPEG quality (0.1 - 1)
+printControl.setTitle(title)            // Set title text
+printControl.exportMap(options?)        // Programmatic export, returns data URL (empty string for PDF)
+printControl.on('export', handler)      // Fired after successful export
+printControl.on('copy', handler)        // Fired after clipboard copy
+printControl.on('error', handler)       // Fired on error
+```
+
+**Usage:**
+
+```typescript
+import { PrintControl } from "maplibre-gl-components";
+
+const printControl = new PrintControl({
+  filename: "my-map",
+  format: "png",
+  title: "My Map Title",
+});
+map.addControl(printControl, "top-right");
+
+// Listen for export events
+printControl.on("export", (event) => {
+  console.log("Exported:", event.state.filename);
+});
+
+// Programmatic export
+const dataUrl = await printControl.exportMap({
+  format: "jpeg",
+  quality: 0.95,
+  title: "Custom Title",
+});
+
+// Export as PDF (requires jspdf)
+await printControl.exportMap({ format: "pdf" });
+```
+
+**Features:**
+
+- Export as PNG, JPEG, or PDF
+- Optional title overlay rendered on the exported image
+- Customizable filename, quality, and export size
+- Copy to clipboard (PNG/JPEG only)
+- PDF export with auto landscape/portrait detection, fitted to A4 page
+- Programmatic export API
+
+**PDF Export:**
+
+PDF export requires the optional [`jspdf`](https://www.npmjs.com/package/jspdf) package:
+
+```bash
+npm install jspdf
+```
+
+The library is dynamically imported only when PDF format is selected, keeping the main bundle lean.
+
 ### Layer Control Adapters
 
 To integrate COG and Zarr layers with [maplibre-gl-layer-control](https://github.com/AJPNorthwest/maplibre-gl-layer-control), use the included adapters:
@@ -1572,6 +1675,7 @@ See the [examples](./examples/) directory for complete working examples:
 - **Zarr Layer Example** - Multi-dimensional Zarr data visualization
 - **STAC Layer Example** - Load COG layers from STAC catalog items
 - **STAC Search Example** - Search and visualize STAC items from public catalogs
+- **Print Control Example** - Export map as PNG, JPEG, or PDF
 
 ## Development
 
