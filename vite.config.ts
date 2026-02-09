@@ -39,7 +39,7 @@ export default defineConfig({
     rollupOptions: {
       // External packages that should not be bundled
       // shpjs and @duckdb/duckdb-wasm are optional dependencies loaded at runtime
-      external: ['react', 'react-dom', 'maplibre-gl', 'shpjs', '@duckdb/duckdb-wasm'],
+      external: ['react', 'react-dom', 'maplibre-gl', 'shpjs', '@duckdb/duckdb-wasm', 'jspdf'],
       output: {
         globals: {
           react: 'React',

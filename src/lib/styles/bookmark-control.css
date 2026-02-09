@@ -64,7 +64,7 @@
   color: #374151;
 }
 
-.maplibre-gl-bookmark-control .bookmark-close {
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,15 +72,15 @@
   height: 20px;
   padding: 0;
   border: none;
-  background: transparent;
+  background-color: transparent;
   cursor: pointer;
   color: #6b7280;
   border-radius: 3px;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-bookmark-control .bookmark-close:hover {
-  background: #f3f4f6;
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-close:hover {
+  background-color: #f3f4f6;
   color: #374151;
 }
 
@@ -119,7 +119,7 @@
   color: #9ca3af;
 }
 
-.maplibre-gl-bookmark-control .bookmark-add-btn {
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-add-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -128,18 +128,19 @@
   padding: 0;
   border: none;
   border-radius: 4px;
-  background: #3b82f6;
+  background-color: #3b82f6;
   color: white;
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
-.maplibre-gl-bookmark-control .bookmark-add-btn:hover {
-  background: #2563eb;
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-add-btn:hover {
+  background-color: #2563eb;
+  color: white;
 }
 
-.maplibre-gl-bookmark-control .bookmark-add-btn:disabled {
-  background: #9ca3af;
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-add-btn:disabled {
+  background-color: #9ca3af;
   cursor: not-allowed;
 }
 
@@ -238,7 +239,7 @@
   opacity: 1;
 }
 
-.maplibre-gl-bookmark-control .bookmark-action-btn {
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -246,20 +247,20 @@
   height: 24px;
   padding: 0;
   border: none;
-  background: transparent;
+  background-color: transparent;
   cursor: pointer;
   color: #9ca3af;
   border-radius: 4px;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-bookmark-control .bookmark-action-btn:hover {
-  background: #e5e7eb;
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-action-btn:hover {
+  background-color: #e5e7eb;
   color: #374151;
 }
 
-.maplibre-gl-bookmark-control .bookmark-action-btn.delete:hover {
-  background: #fef2f2;
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-action-btn.delete:hover {
+  background-color: #fef2f2;
   color: #dc2626;
 }
 
@@ -281,25 +282,26 @@
   gap: 4px;
 }
 
-.maplibre-gl-bookmark-control .bookmark-import-btn,
-.maplibre-gl-bookmark-control .bookmark-export-btn {
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-import-btn,
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-btn {
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 6px 10px;
   border: 1px solid #d1d5db;
   border-radius: 4px;
-  background: transparent;
+  background-color: transparent;
   cursor: pointer;
   font-size: 11px;
   color: #4b5563;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-bookmark-control .bookmark-import-btn:hover,
-.maplibre-gl-bookmark-control .bookmark-export-btn:hover {
-  background: #f3f4f6;
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-import-btn:hover,
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-btn:hover {
+  background-color: #f3f4f6;
   border-color: #9ca3af;
+  color: #4b5563;
 }
 
 .maplibre-gl-bookmark-control .bookmark-import-btn svg,
@@ -308,26 +310,27 @@
   height: 12px;
 }
 
-.maplibre-gl-bookmark-control .bookmark-clear-btn {
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-clear-btn {
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 6px 10px;
   border: 1px solid #fecaca;
   border-radius: 4px;
-  background: transparent;
+  background-color: transparent;
   cursor: pointer;
   font-size: 11px;
   color: #dc2626;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-bookmark-control .bookmark-clear-btn:hover {
-  background: #fef2f2;
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-clear-btn:hover {
+  background-color: #fef2f2;
   border-color: #fca5a5;
+  color: #dc2626;
 }
 
-.maplibre-gl-bookmark-control .bookmark-clear-btn:disabled {
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-clear-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

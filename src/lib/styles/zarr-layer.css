@@ -48,14 +48,14 @@
   color: #333;
 }
 
-.maplibre-gl-zarr-layer-close {
+.maplibre-gl-zarr-layer-panel .maplibre-gl-zarr-layer-close {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 20px;
   height: 20px;
   border: none;
-  background: transparent;
+  background-color: transparent;
   cursor: pointer;
   color: #666;
   font-size: 16px;
@@ -64,8 +64,8 @@
   padding: 0;
 }
 
-.maplibre-gl-zarr-layer-close:hover {
-  background: rgba(0, 0, 0, 0.08);
+.maplibre-gl-zarr-layer-panel .maplibre-gl-zarr-layer-close:hover {
+  background-color: rgba(0, 0, 0, 0.08);
   color: #333;
 }
 
@@ -160,47 +160,49 @@
   margin-top: 10px;
 }
 
-.maplibre-gl-zarr-layer-btn {
+.maplibre-gl-zarr-layer-panel .maplibre-gl-zarr-layer-btn {
   flex: 1;
   padding: 6px 10px;
   border: 1px solid #ccc;
   border-radius: 3px;
   font-size: 12px;
   cursor: pointer;
-  background: #fff;
+  background-color: #fff;
   color: #333;
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease;
 }
 
-.maplibre-gl-zarr-layer-btn:hover {
-  background: #f5f5f5;
+.maplibre-gl-zarr-layer-panel .maplibre-gl-zarr-layer-btn:hover {
+  background-color: #f5f5f5;
   border-color: #bbb;
+  color: #333;
 }
 
-.maplibre-gl-zarr-layer-panel button.maplibre-gl-zarr-layer-btn--primary {
+.maplibre-gl-zarr-layer-panel .maplibre-gl-zarr-layer-btn.maplibre-gl-zarr-layer-btn--primary {
   background-color: #0078d7;
   color: #fff;
   border-color: #0078d7;
 }
 
-.maplibre-gl-zarr-layer-panel button.maplibre-gl-zarr-layer-btn--primary:hover {
+.maplibre-gl-zarr-layer-panel .maplibre-gl-zarr-layer-btn.maplibre-gl-zarr-layer-btn--primary:hover {
   background-color: #006cbd;
   border-color: #006cbd;
   color: #fff;
 }
 
-.maplibre-gl-zarr-layer-panel button.maplibre-gl-zarr-layer-btn--danger {
+.maplibre-gl-zarr-layer-panel .maplibre-gl-zarr-layer-btn.maplibre-gl-zarr-layer-btn--danger {
   color: #d32f2f;
   border-color: #d32f2f;
 }
 
-.maplibre-gl-zarr-layer-panel button.maplibre-gl-zarr-layer-btn--danger:hover {
+.maplibre-gl-zarr-layer-panel .maplibre-gl-zarr-layer-btn.maplibre-gl-zarr-layer-btn--danger:hover {
   background-color: #fce4e4;
+  color: #d32f2f;
 }
 
-.maplibre-gl-zarr-layer-btn:disabled {
+.maplibre-gl-zarr-layer-panel .maplibre-gl-zarr-layer-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -259,14 +261,14 @@
   min-width: 0;
 }
 
-.maplibre-gl-zarr-layer-list-remove {
+.maplibre-gl-zarr-layer-panel .maplibre-gl-zarr-layer-list-remove {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 18px;
   height: 18px;
   border: none;
-  background: transparent;
+  background-color: transparent;
   cursor: pointer;
   color: #999;
   font-size: 14px;
@@ -276,8 +278,8 @@
   flex-shrink: 0;
 }
 
-.maplibre-gl-zarr-layer-list-remove:hover {
-  background: rgba(211, 47, 47, 0.1);
+.maplibre-gl-zarr-layer-panel .maplibre-gl-zarr-layer-list-remove:hover {
+  background-color: rgba(211, 47, 47, 0.1);
   color: #d32f2f;
 }
 

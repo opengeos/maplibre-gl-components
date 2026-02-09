@@ -1,0 +1,315 @@
+/* PrintControl styles */
+
+.maplibre-gl-print-control {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, sans-serif;
+}
+
+.maplibre-gl-print-control .print-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.15s ease;
+}
+
+.maplibre-gl-print-control .print-button:hover {
+  background-color: #f3f4f6;
+}
+
+.maplibre-gl-print-control .print-button.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.maplibre-gl-print-control .print-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.maplibre-gl-print-control .print-panel {
+  position: absolute;
+  top: 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.maplibre-gl-print-control .print-panel.left {
+  right: calc(100% + 8px);
+}
+
+.maplibre-gl-print-control .print-panel.right {
+  left: calc(100% + 8px);
+}
+
+.maplibre-gl-print-control .print-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+}
+
+.maplibre-gl-print-control .print-panel .print-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  color: #6b7280;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-print-control .print-panel .print-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.maplibre-gl-print-control .print-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.maplibre-gl-print-control .print-content {
+  padding: 10px;
+}
+
+.maplibre-gl-print-control .print-field {
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-print-control .print-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.maplibre-gl-print-control .print-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-print-control .print-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-print-control .print-input::placeholder {
+  color: #9ca3af;
+}
+
+.maplibre-gl-print-control .print-row {
+  display: flex;
+  gap: 10px;
+}
+
+.maplibre-gl-print-control .print-row .print-field {
+  flex: 1;
+}
+
+.maplibre-gl-print-control .print-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  background: #fff;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-print-control .print-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-print-control .print-quality-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.maplibre-gl-print-control .print-quality-range {
+  flex: 1;
+  height: 4px;
+  cursor: pointer;
+  accent-color: #3b82f6;
+}
+
+.maplibre-gl-print-control .print-quality-value {
+  font-size: 11px;
+  color: #6b7280;
+  min-width: 28px;
+  text-align: right;
+}
+
+.maplibre-gl-print-control .print-size-options {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.maplibre-gl-print-control .print-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  text-transform: none;
+  font-weight: normal;
+  letter-spacing: normal;
+}
+
+.maplibre-gl-print-control .print-radio-label input[type="radio"] {
+  accent-color: #3b82f6;
+}
+
+.maplibre-gl-print-control .print-custom-size {
+  display: flex;
+  gap: 8px;
+}
+
+.maplibre-gl-print-control .print-size-group {
+  flex: 1;
+}
+
+.maplibre-gl-print-control .print-size-label {
+  display: block;
+  font-size: 10px;
+  color: #9ca3af;
+  margin-bottom: 2px;
+  text-transform: none;
+  font-weight: normal;
+  letter-spacing: normal;
+}
+
+.maplibre-gl-print-control .print-size-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.maplibre-gl-print-control .print-size-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-print-control .print-panel .print-export-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: #3b82f6;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  margin-bottom: 6px;
+}
+
+.maplibre-gl-print-control .print-panel .print-export-btn:hover {
+  background-color: #2563eb;
+  color: white;
+}
+
+.maplibre-gl-print-control .print-panel .print-export-btn:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.maplibre-gl-print-control .print-export-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.maplibre-gl-print-control .print-panel .print-copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background-color: transparent;
+  color: #4b5563;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-print-control .print-panel .print-copy-btn:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+  color: #4b5563;
+}
+
+.maplibre-gl-print-control .print-panel .print-copy-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.maplibre-gl-print-control .print-copy-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.maplibre-gl-print-control .print-feedback {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+  padding: 4px 0 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.maplibre-gl-print-control .print-feedback.visible {
+  opacity: 1;
+}

@@ -48,8 +48,8 @@
   color: #333;
 }
 
-.maplibre-gl-stac-layer-close {
-  background: transparent;
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-close {
+  background-color: transparent;
   border: none;
   font-size: 20px;
   color: #666;
@@ -58,7 +58,8 @@
   line-height: 1;
 }
 
-.maplibre-gl-stac-layer-close:hover {
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-close:hover {
+  background-color: transparent;
   color: #333;
 }
 
@@ -185,47 +186,49 @@
   margin-top: 16px;
 }
 
-.maplibre-gl-stac-layer-btn {
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-btn {
   flex: 1;
   padding: 8px 16px;
   font-size: 12px;
   font-weight: 500;
   border: 1px solid #ddd;
   border-radius: 4px;
-  background: #f8f8f8;
+  background-color: #f8f8f8;
   color: #333;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-stac-layer-btn:hover:not(:disabled) {
-  background: #e0e0e0;
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-btn:hover:not(:disabled) {
+  background-color: #e0e0e0;
+  color: #333;
 }
 
-.maplibre-gl-stac-layer-btn:disabled {
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.maplibre-gl-stac-layer-btn--primary {
-  background: #0078d7 !important;
-  border-color: #0078d7 !important;
-  color: white !important;
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-btn.maplibre-gl-stac-layer-btn--primary {
+  background-color: #0078d7;
+  border-color: #0078d7;
+  color: white;
 }
 
-.maplibre-gl-stac-layer-btn--primary:hover:not(:disabled) {
-  background: #006bc1 !important;
-  border-color: #006bc1 !important;
-  color: white !important;
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-btn.maplibre-gl-stac-layer-btn--primary:hover:not(:disabled) {
+  background-color: #006bc1;
+  border-color: #006bc1;
+  color: white;
 }
 
-.maplibre-gl-stac-layer-btn--secondary {
-  background: #f0f0f0;
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-btn.maplibre-gl-stac-layer-btn--secondary {
+  background-color: #f0f0f0;
   border-color: #ccc;
 }
 
-.maplibre-gl-stac-layer-btn--secondary:hover:not(:disabled) {
-  background: #e0e0e0;
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-btn.maplibre-gl-stac-layer-btn--secondary:hover:not(:disabled) {
+  background-color: #e0e0e0;
+  color: #333;
 }
 
 .maplibre-gl-stac-layer-status {
@@ -304,14 +307,14 @@
   margin-right: 8px;
 }
 
-.maplibre-gl-stac-layer-list-remove {
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-list-remove {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 18px;
   height: 18px;
   border: none;
-  background: transparent;
+  background-color: transparent;
   cursor: pointer;
   color: #999;
   font-size: 14px;
@@ -321,8 +324,8 @@
   flex-shrink: 0;
 }
 
-.maplibre-gl-stac-layer-list-remove:hover {
-  background: rgba(211, 47, 47, 0.1);
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-list-remove:hover {
+  background-color: rgba(211, 47, 47, 0.1);
   color: #d32f2f;
 }
 
@@ -371,35 +374,35 @@
   overflow: hidden;
 }
 
-.maplibre-gl-stac-layer-mode-btn {
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-mode-btn {
   flex: 1;
   padding: 6px 12px;
   font-size: 11px;
   font-weight: 500;
   border: none;
-  background: #f8f8f8;
+  background-color: #f8f8f8;
   color: #666;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-stac-layer-mode-btn:first-child {
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-mode-btn:first-child {
   border-right: 1px solid #ddd;
 }
 
-.maplibre-gl-stac-layer-mode-btn:hover {
-  background: #e8e8e8 !important;
-  color: #333 !important;
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-mode-btn:hover {
+  background-color: #e8e8e8;
+  color: #333;
 }
 
-.maplibre-gl-stac-layer-mode-btn--active {
-  background: #0078d7 !important;
-  color: white !important;
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-mode-btn.maplibre-gl-stac-layer-mode-btn--active {
+  background-color: #0078d7;
+  color: white;
 }
 
-.maplibre-gl-stac-layer-mode-btn--active:hover {
-  background: #006bc1 !important;
-  color: white !important;
+.maplibre-gl-stac-layer-panel .maplibre-gl-stac-layer-mode-btn.maplibre-gl-stac-layer-mode-btn--active:hover {
+  background-color: #006bc1;
+  color: white;
 }
 
 /* RGB band selectors */
