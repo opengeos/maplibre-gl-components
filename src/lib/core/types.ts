@@ -1089,8 +1089,7 @@ export type DefaultControlName =
   | "vectorDataset"
   | "basemap"
   | "cogLayer"
-  | "minimap"
-  | "timeSlider";
+  | "minimap";
 
 /**
  * Options for configuring the ControlGrid.
@@ -2601,108 +2600,3 @@ export type MinimapEventHandler = (event: {
   state: MinimapControlState;
 }) => void;
 
-// ============================================================================
-// TimeSliderControl Types
-// ============================================================================
-
-/**
- * Accepted value types for TimeSliderControl.
- */
-export type TimeSliderValue = number | Date | string;
-
-/**
- * Options for configuring the TimeSliderControl.
- */
-export interface TimeSliderControlOptions {
-  /** Position on the map. Default: 'bottom-left'. */
-  position?: ControlPosition;
-  /** Custom CSS class name. */
-  className?: string;
-  /** Whether the control is initially visible. Default: true. */
-  visible?: boolean;
-  /** Whether to start collapsed. Default: true. */
-  collapsed?: boolean;
-  /** Minimum value (required). */
-  min: TimeSliderValue;
-  /** Maximum value (required). */
-  max: TimeSliderValue;
-  /** Step size for the slider. Default: 1. */
-  step?: number;
-  /** Initial value. Defaults to min. */
-  value?: TimeSliderValue;
-  /** Discrete array of values. When provided, slider maps to these values. */
-  values?: TimeSliderValue[];
-  /** Playback speed in frames per second. Default: 1. */
-  fps?: number;
-  /** Whether playback loops. Default: true. */
-  loop?: boolean;
-  /** Whether to show the play/pause button. Default: true. */
-  showPlayButton?: boolean;
-  /** Whether to show the timestamp/value label. Default: true. */
-  showTimestamp?: boolean;
-  /** Custom label formatter function. */
-  formatLabel?: (value: TimeSliderValue, index: number) => string;
-  /** Panel width in pixels. Default: 300. */
-  panelWidth?: number;
-  /** Background color of the panel. */
-  backgroundColor?: string;
-  /** Border radius in pixels. */
-  borderRadius?: number;
-  /** Font size in pixels. */
-  fontSize?: number;
-  /** Font color. */
-  fontColor?: string;
-  /** Minimum zoom level at which the control is visible. */
-  minzoom?: number;
-  /** Maximum zoom level at which the control is visible. */
-  maxzoom?: number;
-}
-
-/**
- * Internal state of the TimeSliderControl.
- */
-export interface TimeSliderControlState {
-  /** Whether the control is visible. */
-  visible: boolean;
-  /** Whether the panel is collapsed. */
-  collapsed: boolean;
-  /** Current numeric value of the slider. */
-  value: number;
-  /** Whether playback is active. */
-  playing: boolean;
-  /** Numeric minimum. */
-  min: number;
-  /** Numeric maximum. */
-  max: number;
-}
-
-/**
- * Props for the React TimeSliderControl wrapper component.
- */
-export interface TimeSliderControlReactProps extends TimeSliderControlOptions {
-  /** MapLibre GL map instance. */
-  map: Map;
-  /** Callback fired when the value changes. */
-  onChange?: (value: TimeSliderValue, index: number) => void;
-  /** Callback fired when playback starts. */
-  onPlay?: () => void;
-  /** Callback fired when playback pauses. */
-  onPause?: () => void;
-  /** Callback fired when state changes. */
-  onStateChange?: (state: TimeSliderControlState) => void;
-}
-
-/**
- * TimeSliderControl event types.
- */
-export type TimeSliderEvent = ComponentEvent | "change" | "play" | "pause";
-
-/**
- * TimeSliderControl event handler function type.
- */
-export type TimeSliderEventHandler = (event: {
-  type: TimeSliderEvent;
-  state: TimeSliderControlState;
-  value?: TimeSliderValue;
-  index?: number;
-}) => void;
