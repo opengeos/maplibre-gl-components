@@ -576,6 +576,7 @@ export class ZarrLayerControl implements IControl {
     const urlInput = document.createElement("input");
     urlInput.type = "text";
     urlInput.className = "maplibre-gl-zarr-layer-input";
+    urlInput.style.color = "#000";
     urlInput.placeholder = "https://example.com/data.zarr";
     urlInput.value = this._state.url;
     urlInput.addEventListener("input", () => {
@@ -595,6 +596,7 @@ export class ZarrLayerControl implements IControl {
       // Show dropdown if variables are available
       const varSelect = document.createElement("select");
       varSelect.className = "maplibre-gl-zarr-layer-select";
+      varSelect.style.color = "#000";
       varSelect.style.flex = "1";
 
       for (const varName of this._availableVariables) {
@@ -615,6 +617,7 @@ export class ZarrLayerControl implements IControl {
       const varInput = document.createElement("input");
       varInput.type = "text";
       varInput.className = "maplibre-gl-zarr-layer-input";
+      varInput.style.color = "#000";
       varInput.style.flex = "1";
       varInput.placeholder = "e.g., temperature";
       varInput.value = this._state.variable;
@@ -641,6 +644,7 @@ export class ZarrLayerControl implements IControl {
     const cmGroup = this._createFormGroup("Colormap", "colormap");
     const cmSelect = document.createElement("select");
     cmSelect.className = "maplibre-gl-zarr-layer-select";
+    cmSelect.style.color = "#000";
 
     // Add 'custom' option if we have a custom colormap
     if (this._customColormap) {
@@ -690,6 +694,7 @@ export class ZarrLayerControl implements IControl {
     const minInput = document.createElement("input");
     minInput.type = "number";
     minInput.className = "maplibre-gl-zarr-layer-input";
+    minInput.style.color = "#000";
     minInput.value = String(this._state.clim[0]);
     minInput.addEventListener("input", () => {
       this._state.clim = [Number(minInput.value) || 0, this._state.clim[1]];
@@ -700,6 +705,7 @@ export class ZarrLayerControl implements IControl {
     const maxInput = document.createElement("input");
     maxInput.type = "number";
     maxInput.className = "maplibre-gl-zarr-layer-input";
+    maxInput.style.color = "#000";
     maxInput.value = String(this._state.clim[1]);
     maxInput.addEventListener("input", () => {
       this._state.clim = [this._state.clim[0], Number(maxInput.value) || 1];
@@ -713,6 +719,7 @@ export class ZarrLayerControl implements IControl {
     const selectorInput = document.createElement("input");
     selectorInput.type = "text";
     selectorInput.className = "maplibre-gl-zarr-layer-input";
+    selectorInput.style.color = "#000";
     selectorInput.placeholder = '{"time": 0, "band": "prec"}';
     selectorInput.value = this._state.selector
       ? JSON.stringify(this._state.selector)
@@ -783,6 +790,7 @@ export class ZarrLayerControl implements IControl {
     const beforeIdInput = document.createElement("input");
     beforeIdInput.type = "text";
     beforeIdInput.className = "maplibre-gl-zarr-layer-input";
+    beforeIdInput.style.color = "#000";
     beforeIdInput.placeholder = "e.g. labels or water";
     beforeIdInput.value = this._options.beforeId || "";
     beforeIdInput.addEventListener("input", () => {

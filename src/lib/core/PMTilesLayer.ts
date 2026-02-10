@@ -593,6 +593,7 @@ export class PMTilesLayerControl implements IControl {
     const urlInput = document.createElement("input");
     urlInput.type = "text";
     urlInput.className = "maplibre-gl-pmtiles-layer-input";
+    urlInput.style.color = "#000";
     urlInput.placeholder = "https://example.com/tiles.pmtiles";
     urlInput.value = this._state.url;
     urlInput.addEventListener("input", () => {
@@ -767,6 +768,7 @@ export class PMTilesLayerControl implements IControl {
     const beforeIdInput = document.createElement("input");
     beforeIdInput.type = "text";
     beforeIdInput.className = "maplibre-gl-pmtiles-layer-input";
+    beforeIdInput.style.color = "#000";
     beforeIdInput.placeholder = "e.g. labels or water";
     beforeIdInput.value = this._options.beforeId || "";
     beforeIdInput.addEventListener("input", () => {

@@ -784,7 +784,7 @@ export class SearchControl implements IControl {
     button.type = "button";
     button.title = "Search places";
     button.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="11" cy="11" r="8"/>
         <path d="M21 21l-4.35-4.35"/>
       </svg>
@@ -799,7 +799,7 @@ export class SearchControl implements IControl {
       border: "none",
       background: "transparent",
       cursor: "pointer",
-      color: this._options.fontColor,
+      color: "#000",
     });
     button.addEventListener("click", (e) => {
       e.stopPropagation();

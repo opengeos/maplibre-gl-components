@@ -18,6 +18,21 @@
   box-sizing: border-box;
 }
 
+/**
+ * Force dark text on all form elements inside controls.
+ * Browser default form styling can override CSS class colors,
+ * so we use a broad selector with high specificity.
+ */
+.maplibregl-ctrl input,
+.maplibregl-ctrl select,
+.maplibregl-ctrl textarea {
+  color: #000 !important;
+}
+
+.maplibregl-ctrl input::placeholder {
+  color: #888 !important;
+}
+
 /* Scrollbar styling */
 .maplibre-gl-legend-content::-webkit-scrollbar,
 .maplibre-gl-colorbar::-webkit-scrollbar,

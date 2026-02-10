@@ -67,7 +67,7 @@ const DEFAULT_OPTIONS: Required<StacSearchControlOptions> = {
   borderRadius: 4,
   opacity: 1,
   fontSize: 13,
-  fontColor: "#333",
+  fontColor: "#1a1a1a",
   catalogs: DEFAULT_CATALOGS,
   maxItems: 20,
   defaultRescaleMin: 0,
@@ -412,6 +412,7 @@ export class StacSearchControl implements IControl {
     const catalogSelect = document.createElement("select");
     catalogSelect.id = "stac-search-catalog";
     catalogSelect.className = "maplibre-gl-stac-search-select";
+    catalogSelect.style.color = "#000";
 
     for (const catalog of this._state.catalogs) {
       const option = document.createElement("option");
@@ -466,6 +467,7 @@ export class StacSearchControl implements IControl {
       customUrlInput.type = "text";
       customUrlInput.id = "stac-search-custom-url";
       customUrlInput.className = "maplibre-gl-stac-search-input";
+      customUrlInput.style.color = "#000";
       customUrlInput.placeholder = "https://stac-api.example.com/v1";
       customUrlInput.value =
         this._state.selectedCatalog?.name === "__custom__"
@@ -518,6 +520,7 @@ export class StacSearchControl implements IControl {
     collectionSelect.id = "stac-search-collection";
     collectionSelect.className =
       "maplibre-gl-stac-search-select maplibre-gl-stac-search-select--flex";
+    collectionSelect.style.color = "#000";
     collectionSelect.disabled = this._state.collections.length === 0;
 
     if (this._state.collections.length === 0) {
@@ -562,6 +565,7 @@ export class StacSearchControl implements IControl {
     startInput.id = "stac-search-start-date";
     startInput.className =
       "maplibre-gl-stac-search-input maplibre-gl-stac-search-input--half";
+    startInput.style.color = "#000";
     startInput.value = this._state.startDate || "";
     startInput.addEventListener("change", () => {
       this._state.startDate = startInput.value || null;
@@ -572,6 +576,7 @@ export class StacSearchControl implements IControl {
     endInput.id = "stac-search-end-date";
     endInput.className =
       "maplibre-gl-stac-search-input maplibre-gl-stac-search-input--half";
+    endInput.style.color = "#000";
     endInput.value = this._state.endDate || "";
     endInput.addEventListener("change", () => {
       this._state.endDate = endInput.value || null;
@@ -588,6 +593,7 @@ export class StacSearchControl implements IControl {
     maxItemsInput.type = "number";
     maxItemsInput.id = "stac-search-maxitems";
     maxItemsInput.className = "maplibre-gl-stac-search-input";
+    maxItemsInput.style.color = "#000";
     maxItemsInput.min = "1";
     maxItemsInput.max = "100";
     maxItemsInput.value = String(this._state.maxItems);
@@ -609,6 +615,7 @@ export class StacSearchControl implements IControl {
     queryInput.type = "text";
     queryInput.id = "stac-search-query";
     queryInput.className = "maplibre-gl-stac-search-input";
+    queryInput.style.color = "#000";
     queryInput.placeholder = '{"eo:cloud_cover": {"lt": 10}}';
     queryInput.value = this._state.queryFilter;
     queryInput.addEventListener("change", () => {
@@ -669,6 +676,7 @@ export class StacSearchControl implements IControl {
       const itemSelect = document.createElement("select");
       itemSelect.id = "stac-search-item";
       itemSelect.className = "maplibre-gl-stac-search-select";
+      itemSelect.style.color = "#000";
 
       for (const item of this._state.items) {
         const option = document.createElement("option");
@@ -732,6 +740,7 @@ export class StacSearchControl implements IControl {
         const bandSelect = document.createElement("select");
         bandSelect.id = "stac-search-band";
         bandSelect.className = "maplibre-gl-stac-search-select";
+        bandSelect.style.color = "#000";
 
         for (const asset of assets) {
           const option = document.createElement("option");
@@ -753,6 +762,7 @@ export class StacSearchControl implements IControl {
         const colormapSelect = document.createElement("select");
         colormapSelect.id = "stac-search-colormap";
         colormapSelect.className = "maplibre-gl-stac-search-select";
+        colormapSelect.style.color = "#000";
 
         const noneOption = document.createElement("option");
         noneOption.value = "none";
@@ -798,6 +808,7 @@ export class StacSearchControl implements IControl {
           const select = document.createElement("select");
           select.className =
             "maplibre-gl-stac-search-select maplibre-gl-stac-search-select--small";
+          select.style.color = "#000";
 
           for (const asset of assets) {
             const option = document.createElement("option");
@@ -828,6 +839,7 @@ export class StacSearchControl implements IControl {
       minInput.type = "number";
       minInput.className =
         "maplibre-gl-stac-search-input maplibre-gl-stac-search-input--half";
+      minInput.style.color = "#000";
       minInput.placeholder = "Min";
       minInput.value = String(this._state.rescaleMin);
       minInput.addEventListener("change", () => {
@@ -838,6 +850,7 @@ export class StacSearchControl implements IControl {
       maxInput.type = "number";
       maxInput.className =
         "maplibre-gl-stac-search-input maplibre-gl-stac-search-input--half";
+      maxInput.style.color = "#000";
       maxInput.placeholder = "Max";
       maxInput.value = String(this._state.rescaleMax);
       maxInput.addEventListener("change", () => {

@@ -89,6 +89,15 @@
   z-index: 10;
 }
 
+/* Override minimap panel positioning inside the floating panel so it flows
+   below the button instead of using bottom:36px (which would go behind the grid). */
+.maplibre-gl-control-grid-floating-panel .maplibre-gl-minimap-control .minimap-panel {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  margin-top: 4px;
+}
+
 /* Placeholder icon in grid when a child is floating */
 .maplibre-gl-control-grid-placeholder--active {
   outline: 2px solid #0078d7;

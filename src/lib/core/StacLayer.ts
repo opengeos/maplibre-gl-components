@@ -526,6 +526,7 @@ export class StacLayerControl implements IControl {
     urlInput.type = "text";
     urlInput.id = "stac-layer-url";
     urlInput.className = "maplibre-gl-stac-layer-input";
+    urlInput.style.color = "#000";
     urlInput.placeholder = "https://example.com/stac-item.json";
     urlInput.value = this._state.stacUrl;
     urlInput.addEventListener("input", () => {
@@ -588,6 +589,7 @@ export class StacLayerControl implements IControl {
         const assetSelect = document.createElement("select");
         assetSelect.id = "stac-layer-asset";
         assetSelect.className = "maplibre-gl-stac-layer-select";
+        assetSelect.style.color = "#000";
 
         const defaultOption = document.createElement("option");
         defaultOption.value = "";
@@ -632,6 +634,7 @@ export class StacLayerControl implements IControl {
           const select = document.createElement("select");
           select.className =
             "maplibre-gl-stac-layer-select maplibre-gl-stac-layer-rgb-select";
+          select.style.color = "#000";
 
           const defaultOpt = document.createElement("option");
           defaultOpt.value = "";
@@ -677,6 +680,7 @@ export class StacLayerControl implements IControl {
         const colormapSelect = document.createElement("select");
         colormapSelect.id = "stac-layer-colormap";
         colormapSelect.className = "maplibre-gl-stac-layer-select";
+        colormapSelect.style.color = "#000";
 
         const noneOption = document.createElement("option");
         noneOption.value = "none";
@@ -719,6 +723,7 @@ export class StacLayerControl implements IControl {
       minInput.type = "number";
       minInput.className =
         "maplibre-gl-stac-layer-input maplibre-gl-stac-layer-input--half";
+      minInput.style.color = "#000";
       minInput.placeholder = "Min";
       minInput.value = String(this._state.rescaleMin);
       minInput.addEventListener("input", () => {
@@ -732,6 +737,7 @@ export class StacLayerControl implements IControl {
       maxInput.type = "number";
       maxInput.className =
         "maplibre-gl-stac-layer-input maplibre-gl-stac-layer-input--half";
+      maxInput.style.color = "#000";
       maxInput.placeholder = "Max";
       maxInput.value = String(this._state.rescaleMax);
       maxInput.addEventListener("input", () => {

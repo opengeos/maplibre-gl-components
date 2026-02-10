@@ -279,6 +279,7 @@ export class BookmarkControl implements IControl {
     this._nameInput = addForm.querySelector(
       ".bookmark-name-input",
     ) as HTMLInputElement;
+    this._nameInput.style.color = "#000";
     const addBtn = addForm.querySelector(".bookmark-add-btn")!;
 
     // Handle add
@@ -345,16 +346,34 @@ export class BookmarkControl implements IControl {
   }
 
   /**
+   * Expand the panel.
+   */
+  expand(): void {
+    if (!this._state.collapsed) return;
+    this._state.collapsed = false;
+    this._showPanel();
+    this._emit("expand");
+  }
+
+  /**
+   * Collapse the panel.
+   */
+  collapse(): void {
+    if (this._state.collapsed) return;
+    this._state.collapsed = true;
+    this._hidePanel();
+    this._emit("collapse");
+  }
+
+  /**
    * Toggle the panel visibility.
    */
   private _togglePanel(): void {
-    this._state.collapsed = !this._state.collapsed;
     if (this._state.collapsed) {
-      this._hidePanel();
+      this.expand();
     } else {
-      this._showPanel();
+      this.collapse();
     }
-    this._emit(this._state.collapsed ? "collapse" : "expand");
   }
 
   /**
@@ -559,6 +578,7 @@ export class BookmarkControl implements IControl {
     const input = document.createElement("input");
     input.type = "text";
     input.className = "bookmark-rename-input";
+    input.style.color = "#000";
     input.value = currentName;
     input.maxLength = 50;
 

@@ -21,6 +21,13 @@ import { VectorDatasetControl } from "./VectorDataset";
 import { BasemapControl } from "./Basemap";
 import { CogLayerControl } from "./CogLayer";
 import { MinimapControl } from "./MinimapControl";
+import { MeasureControl } from "./MeasureControl";
+import { BookmarkControl } from "./BookmarkControl";
+import { PrintControl } from "./PrintControl";
+import { ZarrLayerControl } from "./ZarrLayer";
+import { PMTilesLayerControl } from "./PMTilesLayer";
+import { StacLayerControl } from "./StacLayer";
+import { StacSearchControl } from "./StacSearch";
 
 
 /**
@@ -248,7 +255,7 @@ export class ControlGrid implements IControl {
       case "search":
         return new SearchControl({ collapsed: true });
       case "viewState":
-        return new ViewStateControl({ collapsed: true });
+        return new ViewStateControl({ collapsed: true, enableBBox: true });
       case "inspect":
         return new InspectControl();
       case "vectorDataset":
@@ -256,9 +263,79 @@ export class ControlGrid implements IControl {
       case "basemap":
         return new BasemapControl({ collapsed: true });
       case "cogLayer":
-        return new CogLayerControl({ collapsed: true });
+        return new CogLayerControl({
+          collapsed: true,
+          defaultUrl:
+            "https://data.source.coop/giswqs/opengeos/nlcd_2021_land_cover_30m.tif",
+          defaultColormap: "none",
+          defaultRescaleMin: 0,
+          defaultRescaleMax: 4000,
+        });
       case "minimap":
-        return new MinimapControl({ collapsed: false });
+        return new MinimapControl({ collapsed: true });
+      case "measure":
+        return new MeasureControl({ collapsed: true });
+      case "bookmark":
+        return new BookmarkControl({ collapsed: true });
+      case "print":
+        return new PrintControl({ collapsed: true });
+      case "zarrLayer":
+        return new ZarrLayerControl({
+          collapsed: true,
+          defaultUrl:
+            "https://carbonplan-maps.s3.us-west-2.amazonaws.com/v2/demo/4d/tavg-prec-month",
+          defaultVariable: "climate",
+          defaultColormap: [
+            "#f7fbff",
+            "#deebf7",
+            "#c6dbef",
+            "#9ecae1",
+            "#6baed6",
+            "#4292c6",
+            "#2171b5",
+            "#08519c",
+            "#08306b",
+          ],
+          defaultClim: [0, 300],
+          defaultSelector: { band: "prec", month: 1 },
+          defaultOpacity: 0.8,
+        });
+      case "pmtilesLayer":
+        return new PMTilesLayerControl({
+          collapsed: true,
+          defaultUrl:
+            "https://pmtiles.io/protomaps(vector)ODbL_firenze.pmtiles",
+          defaultOpacity: 0.8,
+          defaultFillColor: "steelblue",
+          defaultLineColor: "#333",
+        });
+      case "stacLayer":
+        return new StacLayerControl({
+          collapsed: true,
+          defaultUrl:
+            "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_10SEG_20251229_0_L2A",
+          defaultRescaleMin: 0,
+          defaultRescaleMax: 255,
+          defaultColormap: "none",
+        });
+      case "stacSearch":
+        return new StacSearchControl({
+          collapsed: true,
+          catalogs: [
+            {
+              name: "Element84 Earth Search",
+              url: "https://earth-search.aws.element84.com/v1",
+            },
+            {
+              name: "Microsoft Planetary Computer",
+              url: "https://planetarycomputer.microsoft.com/api/stac/v1",
+            },
+          ],
+          maxItems: 20,
+          defaultRescaleMin: 0,
+          defaultRescaleMax: 10000,
+          showFootprints: true,
+        });
       default:
         return null;
     }
@@ -551,7 +628,11 @@ export class ControlGrid implements IControl {
   }
 
   private _isExpandable(control: IControl): boolean {
-    return typeof (control as any).on === "function";
+    const ctrl = control as any;
+    return (
+      typeof ctrl.on === "function" &&
+      typeof ctrl.collapse === "function"
+    );
   }
 
   private _attachExpandListeners(entry: ChildEntry): void {

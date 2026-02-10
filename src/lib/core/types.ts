@@ -1091,7 +1091,14 @@ export type DefaultControlName =
   | "vectorDataset"
   | "basemap"
   | "cogLayer"
-  | "minimap";
+  | "minimap"
+  | "measure"
+  | "bookmark"
+  | "print"
+  | "zarrLayer"
+  | "pmtilesLayer"
+  | "stacLayer"
+  | "stacSearch";
 
 /**
  * Options for configuring the ControlGrid.

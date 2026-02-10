@@ -10,17 +10,15 @@ const map = new maplibregl.Map({
   maxPitch: 85,
 });
 
-// map.addControl(new maplibregl.NavigationControl(), 'top-right');
-
 // Add a ControlGrid with built-in default controls
 const controlGrid = new ControlGrid({
   position: 'top-right',
   rows: 3,
-  columns: 3,
+  columns: 4,
   collapsible: true,
   collapsed: true,
   showRowColumnControls: true,
-  gap: 4,
+  gap: 2,
   defaultControls: [
     'globe',
     'fullscreen',
@@ -31,6 +29,14 @@ const controlGrid = new ControlGrid({
     'inspect',
     'vectorDataset',
     'basemap',
+    'measure',
+    'bookmark',
+    'print',
+    'cogLayer',
+    'zarrLayer',
+    'pmtilesLayer',
+    'stacLayer',
+    'stacSearch',
   ],
 });
 

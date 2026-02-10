@@ -223,7 +223,11 @@ export class MeasureControl implements IControl {
   onAdd(map: MapLibreMap): HTMLElement {
     this._map = map;
     this._container = this._createContainer();
-    this._setupMapSources();
+    if (map.isStyleLoaded()) {
+      this._setupMapSources();
+    } else {
+      map.once("styledata", () => this._setupMapSources());
+    }
     this._setupZoomHandler();
 
     if (!this._state.collapsed) {
@@ -376,6 +380,7 @@ export class MeasureControl implements IControl {
       <select></select>
     `;
     const select = unitDiv.querySelector("select")!;
+    select.style.color = "#000";
     this._updateUnitOptions(select);
     select.addEventListener("change", (e) => {
       const value = (e.target as HTMLSelectElement).value;
@@ -482,16 +487,34 @@ export class MeasureControl implements IControl {
   }
 
   /**
+   * Expand the panel.
+   */
+  expand(): void {
+    if (!this._state.collapsed) return;
+    this._state.collapsed = false;
+    this._showPanel();
+    this._emit("expand");
+  }
+
+  /**
+   * Collapse the panel.
+   */
+  collapse(): void {
+    if (this._state.collapsed) return;
+    this._state.collapsed = true;
+    this._hidePanel();
+    this._emit("collapse");
+  }
+
+  /**
    * Toggle the panel visibility.
    */
   private _togglePanel(): void {
-    this._state.collapsed = !this._state.collapsed;
     if (this._state.collapsed) {
-      this._hidePanel();
+      this.expand();
     } else {
-      this._showPanel();
+      this.collapse();
     }
-    this._emit(this._state.collapsed ? "collapse" : "expand");
   }
 
   /**

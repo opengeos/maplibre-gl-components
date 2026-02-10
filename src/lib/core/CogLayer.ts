@@ -581,6 +581,7 @@ export class CogLayerControl implements IControl {
     const urlInput = document.createElement("input");
     urlInput.type = "text";
     urlInput.className = "maplibre-gl-cog-layer-input";
+    urlInput.style.color = "#000";
     urlInput.placeholder = "https://example.com/cog.tif";
     urlInput.value = this._state.url;
     urlInput.addEventListener("input", () => {
@@ -597,6 +598,7 @@ export class CogLayerControl implements IControl {
     const bandsInput = document.createElement("input");
     bandsInput.type = "text";
     bandsInput.className = "maplibre-gl-cog-layer-input";
+    bandsInput.style.color = "#000";
     bandsInput.placeholder = "1 or 1,2,3";
     bandsInput.value = this._state.bands;
     bandsInput.addEventListener("input", () => {
@@ -609,6 +611,7 @@ export class CogLayerControl implements IControl {
     const cmGroup = this._createFormGroup("Colormap", "colormap");
     const cmSelect = document.createElement("select");
     cmSelect.className = "maplibre-gl-cog-layer-select";
+    cmSelect.style.color = "#000";
     for (const name of COLORMAP_NAMES) {
       const opt = document.createElement("option");
       opt.value = name;
@@ -637,6 +640,7 @@ export class CogLayerControl implements IControl {
     const minInput = document.createElement("input");
     minInput.type = "number";
     minInput.className = "maplibre-gl-cog-layer-input";
+    minInput.style.color = "#000";
     minInput.value = String(this._state.rescaleMin);
     minInput.addEventListener("input", () => {
       this._state.rescaleMin = Number(minInput.value) || 0;
@@ -647,6 +651,7 @@ export class CogLayerControl implements IControl {
     const maxInput = document.createElement("input");
     maxInput.type = "number";
     maxInput.className = "maplibre-gl-cog-layer-input";
+    maxInput.style.color = "#000";
     maxInput.value = String(this._state.rescaleMax);
     maxInput.addEventListener("input", () => {
       this._state.rescaleMax = Number(maxInput.value) || 0;
@@ -660,6 +665,7 @@ export class CogLayerControl implements IControl {
     const nodataInput = document.createElement("input");
     nodataInput.type = "number";
     nodataInput.className = "maplibre-gl-cog-layer-input";
+    nodataInput.style.color = "#000";
     nodataInput.placeholder = "e.g. 0 or -9999";
     nodataInput.value =
       this._state.nodata !== undefined ? String(this._state.nodata) : "";
@@ -723,6 +729,7 @@ export class CogLayerControl implements IControl {
     const beforeIdInput = document.createElement("input");
     beforeIdInput.type = "text";
     beforeIdInput.className = "maplibre-gl-cog-layer-input";
+    beforeIdInput.style.color = "#000";
     beforeIdInput.placeholder = "e.g. labels or water";
     beforeIdInput.value = this._options.beforeId || "";
     beforeIdInput.addEventListener("input", () => {

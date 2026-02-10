@@ -490,6 +490,7 @@ export class AddVectorControl implements IControl {
     urlInput.type = "text";
     urlInput.id = "add-vector-url";
     urlInput.className = "maplibre-gl-add-vector-input";
+    urlInput.style.color = "#000";
     urlInput.placeholder = "https://flatgeobuf.org/test/data/UScounties.fgb";
     urlInput.value = this._state.url;
     urlInput.addEventListener("input", () => {
@@ -513,6 +514,7 @@ export class AddVectorControl implements IControl {
     const formatSelect = document.createElement("select");
     formatSelect.id = "add-vector-format";
     formatSelect.className = "maplibre-gl-add-vector-select";
+    formatSelect.style.color = "#000";
     const formats: { value: RemoteVectorFormat; label: string }[] = [
       { value: "auto", label: "Auto-detect" },
       { value: "geojson", label: "GeoJSON" },
@@ -548,6 +550,7 @@ export class AddVectorControl implements IControl {
     const fillColorText = document.createElement("input");
     fillColorText.type = "text";
     fillColorText.className = "maplibre-gl-add-vector-input";
+    fillColorText.style.color = "#000";
     fillColorText.style.flex = "1";
     fillColorText.value = this._state.fillColor;
     fillColorText.addEventListener("input", () => {
@@ -577,6 +580,7 @@ export class AddVectorControl implements IControl {
     const strokeColorText = document.createElement("input");
     strokeColorText.type = "text";
     strokeColorText.className = "maplibre-gl-add-vector-input";
+    strokeColorText.style.color = "#000";
     strokeColorText.style.flex = "1";
     strokeColorText.value = this._state.strokeColor;
     strokeColorText.addEventListener("input", () => {
@@ -645,6 +649,7 @@ export class AddVectorControl implements IControl {
     layerNameInput.type = "text";
     layerNameInput.id = "add-vector-layer-name";
     layerNameInput.className = "maplibre-gl-add-vector-input";
+    layerNameInput.style.color = "#000";
     layerNameInput.placeholder = "Optional custom layer name";
     layerNameInput.value = this._state.layerName;
     layerNameInput.addEventListener("input", () => {
@@ -659,6 +664,7 @@ export class AddVectorControl implements IControl {
     beforeIdInput.type = "text";
     beforeIdInput.id = "add-vector-before-id";
     beforeIdInput.className = "maplibre-gl-add-vector-input";
+    beforeIdInput.style.color = "#000";
     beforeIdInput.placeholder = "Optional layer ID to insert before";
     beforeIdInput.value = this._state.beforeId;
     beforeIdInput.addEventListener("input", () => {

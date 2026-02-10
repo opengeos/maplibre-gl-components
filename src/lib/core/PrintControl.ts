@@ -251,6 +251,7 @@ export class PrintControl implements IControl {
     this._titleInput = document.createElement("input");
     this._titleInput.type = "text";
     this._titleInput.className = "print-input";
+    this._titleInput.style.color = "#000";
     this._titleInput.placeholder = "Enter a title...";
     this._titleInput.value = this._state.title;
     this._titleInput.addEventListener("input", () => {
@@ -266,6 +267,7 @@ export class PrintControl implements IControl {
     this._filenameInput = document.createElement("input");
     this._filenameInput.type = "text";
     this._filenameInput.className = "print-input";
+    this._filenameInput.style.color = "#000";
     this._filenameInput.value = this._state.filename;
     this._filenameInput.addEventListener("input", () => {
       this._state.filename = this._filenameInput!.value || "map-export";
@@ -283,6 +285,7 @@ export class PrintControl implements IControl {
     formatField.innerHTML = `<label>Format</label>`;
     this._formatSelect = document.createElement("select");
     this._formatSelect.className = "print-select";
+    this._formatSelect.style.color = "#000";
     this._formatSelect.innerHTML = `
       <option value="png" ${this._state.format === "png" ? "selected" : ""}>PNG</option>
       <option value="jpeg" ${this._state.format === "jpeg" ? "selected" : ""}>JPEG</option>
@@ -305,6 +308,7 @@ export class PrintControl implements IControl {
     this._qualityInput = document.createElement("input");
     this._qualityInput.type = "range";
     this._qualityInput.className = "print-quality-range";
+    this._qualityInput.style.color = "#000";
     this._qualityInput.min = "0.1";
     this._qualityInput.max = "1";
     this._qualityInput.step = "0.01";
@@ -384,6 +388,7 @@ export class PrintControl implements IControl {
       this._widthInput = document.createElement("input");
       this._widthInput.type = "number";
       this._widthInput.className = "print-size-input";
+      this._widthInput.style.color = "#000";
       this._widthInput.min = "1";
       this._widthInput.max = "8192";
       this._widthInput.value = String(this._state.width || 1920);
@@ -401,6 +406,7 @@ export class PrintControl implements IControl {
       this._heightInput = document.createElement("input");
       this._heightInput.type = "number";
       this._heightInput.className = "print-size-input";
+      this._heightInput.style.color = "#000";
       this._heightInput.min = "1";
       this._heightInput.max = "8192";
       this._heightInput.value = String(this._state.height || 1080);
@@ -503,16 +509,34 @@ export class PrintControl implements IControl {
   }
 
   /**
+   * Expand the panel.
+   */
+  expand(): void {
+    if (!this._state.collapsed) return;
+    this._state.collapsed = false;
+    this._showPanel();
+    this._emit("expand");
+  }
+
+  /**
+   * Collapse the panel.
+   */
+  collapse(): void {
+    if (this._state.collapsed) return;
+    this._state.collapsed = true;
+    this._hidePanel();
+    this._emit("collapse");
+  }
+
+  /**
    * Toggle the panel visibility.
    */
   private _togglePanel(): void {
-    this._state.collapsed = !this._state.collapsed;
     if (this._state.collapsed) {
-      this._hidePanel();
+      this.expand();
     } else {
-      this._showPanel();
+      this.collapse();
     }
-    this._emit(this._state.collapsed ? "collapse" : "expand");
   }
 
   /**
