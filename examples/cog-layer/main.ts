@@ -24,7 +24,7 @@ map.addControl(new maplibregl.NavigationControl(), 'top-left');
 const cogControl = new CogLayerControl({
   collapsed: false,
   defaultUrl:
-    'https://s3.us-east-1.amazonaws.com/ds-deck.gl-raster-public/cog/Annual_NLCD_LndCov_2024_CU_C1V1.tif',
+    'https://data.source.coop/giswqs/opengeos/nlcd_2021_land_cover_30m.tif',
   defaultColormap: 'none',
   defaultRescaleMin: 0,
   defaultRescaleMax: 4000,
