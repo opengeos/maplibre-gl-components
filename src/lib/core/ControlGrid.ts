@@ -20,7 +20,7 @@ import { VectorDatasetControl } from "./VectorDataset";
 import { BasemapControl } from "./Basemap";
 import { CogLayerControl } from "./CogLayer";
 import { MinimapControl } from "./MinimapControl";
-import { TimeSliderControl } from "./TimeSliderControl";
+
 
 /**
  * Default options for the ControlGrid.
@@ -131,8 +131,6 @@ export class ControlGrid implements IControl {
         return new CogLayerControl({ collapsed: true });
       case "minimap":
         return new MinimapControl({ collapsed: false });
-      case "timeSlider":
-        return new TimeSliderControl({ min: 0, max: 100, collapsed: false });
       default:
         return null;
     }

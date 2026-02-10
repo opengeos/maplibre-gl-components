@@ -11,7 +11,7 @@ export { ViewStateControlReact } from "./lib/core/ViewStateControlReact";
 export { ControlGridReact } from "./lib/core/ControlGridReact";
 export { CogLayerReact } from "./lib/core/CogLayerReact";
 export { MinimapControlReact } from "./lib/core/MinimapControlReact";
-export { TimeSliderControlReact } from "./lib/core/TimeSliderControlReact";
+
 
 // React hooks
 export {
@@ -27,7 +27,6 @@ export {
   useControlGrid,
   useCogLayer,
   useMinimapControl,
-  useTimeSliderControl,
 } from "./lib/hooks";
 
 // Re-export types for React consumers
@@ -100,10 +99,4 @@ export type {
   MinimapControlReactProps,
   MinimapEvent,
   MinimapEventHandler,
-  TimeSliderValue,
-  TimeSliderControlOptions,
-  TimeSliderControlState,
-  TimeSliderControlReactProps,
-  TimeSliderEvent,
-  TimeSliderEventHandler,
 } from "./lib/core/types";

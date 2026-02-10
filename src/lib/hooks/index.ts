@@ -10,4 +10,4 @@ export { useViewState } from "./useViewState";
 export { useControlGrid } from "./useControlGrid";
 export { useCogLayer } from "./useCogLayer";
 export { useMinimapControl } from "./useMinimapControl";
-export { useTimeSliderControl } from "./useTimeSliderControl";
+

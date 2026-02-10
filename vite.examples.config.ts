@@ -76,10 +76,7 @@ export default defineConfig({
           __dirname,
           "examples/minimap-control/index.html",
         ),
-        timeSliderControl: resolve(
-          __dirname,
-          "examples/time-slider-control/index.html",
-        ),
+
       },
     },
   },

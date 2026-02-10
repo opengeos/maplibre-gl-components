@@ -21,7 +21,7 @@ map.addControl(new maplibregl.NavigationControl(), "top-left");
 const stacControl = new StacLayerControl({
   collapsed: false,
   defaultUrl:
-    "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_10SEG_20260207_0_L2A",
+    "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_10SEG_20251229_0_L2A",
   loadDefaultUrl: true,
   defaultRescaleMin: 0,
   defaultRescaleMax: 255,

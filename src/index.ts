@@ -20,7 +20,7 @@ import "./lib/styles/measure-control.css";
 import "./lib/styles/bookmark-control.css";
 import "./lib/styles/print-control.css";
 import "./lib/styles/minimap-control.css";
-import "./lib/styles/time-slider-control.css";
+
 
 // Main entry point - Core exports
 export { Colorbar } from "./lib/core/Colorbar";
@@ -43,7 +43,7 @@ export { MeasureControl } from "./lib/core/MeasureControl";
 export { BookmarkControl } from "./lib/core/BookmarkControl";
 export { PrintControl } from "./lib/core/PrintControl";
 export { MinimapControl } from "./lib/core/MinimapControl";
-export { TimeSliderControl } from "./lib/core/TimeSliderControl";
+
 
 // Adapters for layer control integration
 export {
@@ -254,11 +254,6 @@ export type {
   MinimapControlState,
   MinimapEvent,
   MinimapEventHandler,
-  TimeSliderValue,
-  TimeSliderControlOptions,
-  TimeSliderControlState,
-  TimeSliderEvent,
-  TimeSliderEventHandler,
   ColormapName,
   ColorStop,
   ControlPosition,
