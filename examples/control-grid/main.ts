@@ -1,6 +1,10 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { ControlGrid } from '../../src';
+import { LayerControl } from 'maplibre-gl-layer-control';
+import 'maplibre-gl-layer-control/style.css';
+
+const BASEMAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
 const map = new maplibregl.Map({
   container: 'map',
@@ -9,6 +13,18 @@ const map = new maplibregl.Map({
   zoom: 4,
   maxPitch: 85,
 });
+
+// Add layer control with the COG adapter
+const layerControl = new LayerControl({
+  collapsed: true,
+  layers: [], // LayerControl auto-detects opacity, visibility, and generates friendly names
+  panelWidth: 340,
+  panelMinWidth: 240,
+  panelMaxWidth: 450,
+  basemapStyleUrl: BASEMAP_STYLE,
+});
+
+map.addControl(layerControl, 'top-right');
 
 // Add a ControlGrid with built-in default controls
 const controlGrid = new ControlGrid({
