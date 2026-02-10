@@ -1044,6 +1044,36 @@ export class CogLayerControl implements IControl {
     COGLayerClass.prototype._parseGeoTIFF = async function () {
       try {
         await originalParseGeoTIFF.call(this);
+
+        // Uint path: inject user-specified nodata filtering after successful parse
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userNodata = (this as any).props._nodata;
+        if (userNodata !== undefined && userNodata !== null && !isNaN(userNodata)) {
+          const { FilterNoDataVal } =
+            await import("@developmentseed/deck.gl-raster/gpu-modules");
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const origRenderTile = (this as any).state.defaultRenderTile;
+          if (typeof origRenderTile === "function") {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const wrappedRenderTile = (tileData: any) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const pipeline: any[] = origRenderTile(tileData);
+              // Remove any existing FilterNoDataVal entries
+              const filtered = pipeline.filter(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (step: any) => step.module !== FilterNoDataVal,
+              );
+              // Insert FilterNoDataVal after CreateTexture (index 1)
+              filtered.splice(1, 0, {
+                module: FilterNoDataVal,
+                props: { value: userNodata },
+              });
+              return filtered;
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (this as any).setState({ defaultRenderTile: wrappedRenderTile });
+          }
+        }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         if (!msg.includes("non-unsigned integers not yet supported")) {
@@ -1203,11 +1233,15 @@ export class CogLayerControl implements IControl {
             },
           ];
 
-          // Filter nodata pixels
-          if (noDataVal !== null) {
+          // Filter nodata pixels: prefer user-specified nodata over GDAL_NODATA
+          const effectiveNodata =
+            self.props._nodata !== undefined && self.props._nodata !== null && !isNaN(self.props._nodata)
+              ? self.props._nodata
+              : noDataVal;
+          if (effectiveNodata !== null) {
             pipeline.push({
               module: FilterNoDataVal,
-              props: { value: noDataVal },
+              props: { value: effectiveNodata },
             });
           }
 
@@ -1318,6 +1352,7 @@ export class CogLayerControl implements IControl {
         _rescaleMin: this._state.rescaleMin,
         _rescaleMax: this._state.rescaleMax,
         _colormap: this._state.colormap,
+        _nodata: this._state.nodata,
         // Add beforeId for layer ordering (only if specified and layer exists)
         ...(() => {
           if (this._options.beforeId) {
@@ -1446,7 +1481,7 @@ export class CogLayerControl implements IControl {
         colormap: (props._colormap as ColormapName | "none") || "none",
         rescaleMin: (props._rescaleMin as number) ?? 0,
         rescaleMax: (props._rescaleMax as number) ?? 255,
-        nodata: undefined,
+        nodata: props._nodata as number | undefined,
         opacity: (props.opacity as number) ?? 1,
       });
     }
