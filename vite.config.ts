@@ -40,6 +40,14 @@ export default defineConfig({
       // External packages that should not be bundled
       // shpjs and @duckdb/duckdb-wasm are optional dependencies loaded at runtime
       external: ['react', 'react-dom', 'maplibre-gl', 'shpjs', '@duckdb/duckdb-wasm', 'jspdf'],
+      onwarn(warning, defaultHandler) {
+        // Suppress "spawn" not exported warning from @loaders.gl/worker-utils
+        // (it imports Node.js child_process which doesn't exist in browser builds)
+        if (warning.code === 'MISSING_EXPORT' && warning.message.includes('"spawn"')) return;
+        // Suppress circular chunk reexport warning between @luma.gl/webgl and @deck.gl/core
+        if (warning.code === 'CYCLIC_CROSS_CHUNK_REEXPORT' && warning.message.includes('WebGLDevice')) return;
+        defaultHandler(warning);
+      },
       output: {
         globals: {
           react: 'React',
