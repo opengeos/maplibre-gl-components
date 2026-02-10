@@ -10,7 +10,7 @@ const map = new maplibregl.Map({
   maxPitch: 85,
 });
 
-map.addControl(new maplibregl.NavigationControl(), 'top-right');
+// map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
 // Add a ControlGrid with built-in default controls
 const controlGrid = new ControlGrid({

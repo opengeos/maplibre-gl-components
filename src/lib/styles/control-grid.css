@@ -3,6 +3,7 @@
  */
 
 .maplibre-gl-control-grid {
+  position: relative;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 4px;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
@@ -79,6 +80,23 @@
   border-color: #0078d7;
 }
 
+/* Floating panel for expanded child controls */
+.maplibre-gl-control-grid-floating-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  z-index: 10;
+}
+
+/* Placeholder icon in grid when a child is floating */
+.maplibre-gl-control-grid-placeholder--active {
+  outline: 2px solid #0078d7;
+  outline-offset: -2px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   .maplibre-gl-control-grid {
@@ -104,5 +122,9 @@
   .maplibre-gl-control-grid-title,
   .maplibre-gl-control-grid-toggle {
     color: #e8e8e8;
+  }
+
+  .maplibre-gl-control-grid-placeholder--active {
+    outline-color: #58a6ff;
   }
 }
