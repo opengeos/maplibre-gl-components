@@ -1081,7 +1081,9 @@ export type ViewStateEventHandler = (event: {
  * Names of built-in controls that can be added to a ControlGrid via `defaultControls`.
  */
 export type DefaultControlName =
+  | "fullscreen"
   | "globe"
+  | "north"
   | "terrain"
   | "search"
   | "viewState"

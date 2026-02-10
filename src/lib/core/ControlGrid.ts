@@ -1,7 +1,9 @@
 import "../styles/common.css";
 import "../styles/control-grid.css";
 import {
+  FullscreenControl,
   GlobeControl,
+  TerrainControl as MapLibreTerrainControl,
   type IControl,
   type Map as MapLibreMap,
 } from "maplibre-gl";
@@ -12,7 +14,6 @@ import type {
   ControlGridEventHandler,
   DefaultControlName,
 } from "./types";
-import { TerrainControl } from "./Terrain";
 import { SearchControl } from "./SearchControl";
 import { ViewStateControl } from "./ViewStateControl";
 import { InspectControl } from "./InspectControl";
@@ -49,6 +50,103 @@ const DEFAULT_OPTIONS: Required<
 
 /** Wrench icon SVG for collapsed state – stroke style matching MapLibre globe icon. */
 const WRENCH_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
+
+/** Compass SVG matching MapLibre's built-in compass icon. */
+const COMPASS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 29 29"><path d="m10.5 14 4-8 4 8z" fill="#333"/><path d="m10.5 16 4 8 4-8z" fill="#ccc"/></svg>`;
+
+/**
+ * Lightweight compass button that resets bearing to north.
+ * Mirrors MapLibre's NavigationControl compass without the zoom buttons.
+ */
+class NorthControl implements IControl {
+  private _map?: MapLibreMap;
+  private _container?: HTMLElement;
+  private _icon?: HTMLElement;
+  private _rotateHandler?: () => void;
+
+  onAdd(map: MapLibreMap): HTMLElement {
+    this._map = map;
+    this._container = document.createElement("div");
+    this._container.className = "maplibregl-ctrl maplibregl-ctrl-group";
+
+    const btn = document.createElement("button");
+    btn.className = "maplibregl-ctrl-compass";
+    btn.type = "button";
+    btn.title = "Reset bearing to north";
+    btn.setAttribute("aria-label", "Reset bearing to north");
+
+    this._icon = document.createElement("span");
+    this._icon.className = "maplibregl-ctrl-icon";
+    this._icon.setAttribute("aria-hidden", "true");
+    this._icon.style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(COMPASS_SVG)}")`;
+    this._icon.style.backgroundSize = "contain";
+    this._icon.style.width = "29px";
+    this._icon.style.height = "29px";
+    this._icon.style.display = "block";
+
+    btn.appendChild(this._icon);
+    btn.addEventListener("click", () => this._map?.resetNorth());
+    this._container.appendChild(btn);
+
+    this._rotateHandler = () => {
+      if (this._icon && this._map) {
+        this._icon.style.transform = `rotate(${-this._map.getBearing()}deg)`;
+      }
+    };
+    this._map.on("rotate", this._rotateHandler);
+    this._rotateHandler();
+
+    return this._container;
+  }
+
+  onRemove(): void {
+    if (this._map && this._rotateHandler) {
+      this._map.off("rotate", this._rotateHandler);
+    }
+    this._container?.parentNode?.removeChild(this._container);
+    this._map = undefined;
+    this._container = undefined;
+    this._icon = undefined;
+  }
+}
+
+const DEM_SOURCE_ID = "maplibre-gl-components-terrain-dem";
+const DEM_TILE_URL =
+  "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";
+
+/**
+ * Wrapper around MapLibre's built-in TerrainControl that auto-adds
+ * a raster-DEM source using Terrarium tiles.
+ */
+class DemTerrainControl implements IControl {
+  private _inner?: MapLibreTerrainControl;
+
+  private _addSource(map: MapLibreMap): void {
+    if (!map.getSource(DEM_SOURCE_ID)) {
+      map.addSource(DEM_SOURCE_ID, {
+        type: "raster-dem",
+        tiles: [DEM_TILE_URL],
+        tileSize: 256,
+        encoding: "terrarium",
+      });
+    }
+  }
+
+  onAdd(map: MapLibreMap): HTMLElement {
+    if (map.isStyleLoaded()) {
+      this._addSource(map);
+    } else {
+      map.once("styledata", () => this._addSource(map));
+    }
+    this._inner = new MapLibreTerrainControl({ source: DEM_SOURCE_ID });
+    return this._inner.onAdd(map);
+  }
+
+  onRemove(): void {
+    this._inner?.onRemove();
+    this._inner = undefined;
+  }
+}
 
 interface ChildEntry {
   control: IControl;
@@ -113,10 +211,14 @@ export class ControlGrid implements IControl {
     name: DefaultControlName,
   ): IControl | null {
     switch (name) {
+      case "fullscreen":
+        return new FullscreenControl();
       case "globe":
         return new GlobeControl();
+      case "north":
+        return new NorthControl();
       case "terrain":
-        return new TerrainControl({ hillshade: true });
+        return new DemTerrainControl();
       case "search":
         return new SearchControl({ collapsed: true });
       case "viewState":

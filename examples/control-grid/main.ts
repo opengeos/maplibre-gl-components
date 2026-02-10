@@ -23,6 +23,8 @@ const controlGrid = new ControlGrid({
   gap: 4,
   defaultControls: [
     'globe',
+    'fullscreen',
+    'north',
     'terrain',
     'search',
     'viewState',
