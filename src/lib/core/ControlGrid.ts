@@ -151,6 +151,11 @@ class DemTerrainControl implements IControl {
 interface ChildEntry {
   control: IControl;
   element: HTMLElement | null;
+  expandable: boolean;
+  collapsedSnapshot: HTMLElement | null;
+  expandHandler: (() => void) | null;
+  collapseHandler: (() => void) | null;
+  _placeholder: HTMLElement | null;
 }
 
 /**
@@ -185,6 +190,8 @@ export class ControlGrid implements IControl {
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
+  private _floatingEntry: ChildEntry | null = null;
+  private _floatingPanel: HTMLElement | null = null;
 
   constructor(options?: ControlGridOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -196,13 +203,32 @@ export class ControlGrid implements IControl {
     };
     // Add explicitly passed controls
     const initial = options?.controls ?? this._options.controls ?? [];
-    initial.forEach((c) => this._children.push({ control: c, element: null }));
+    initial.forEach((c) =>
+      this._children.push({
+        control: c,
+        element: null,
+        expandable: this._isExpandable(c),
+        collapsedSnapshot: null,
+        expandHandler: null,
+        collapseHandler: null,
+        _placeholder: null,
+      }),
+    );
 
     // Create and add built-in default controls
     const defaults = options?.defaultControls ?? [];
     for (const name of defaults) {
       const ctrl = ControlGrid._createDefaultControl(name);
-      if (ctrl) this._children.push({ control: ctrl, element: null });
+      if (ctrl)
+        this._children.push({
+          control: ctrl,
+          element: null,
+          expandable: this._isExpandable(ctrl),
+          collapsedSnapshot: null,
+          expandHandler: null,
+          collapseHandler: null,
+          _placeholder: null,
+        });
     }
     this._autoGrowRows();
   }
@@ -271,11 +297,25 @@ export class ControlGrid implements IControl {
    */
   addControl(control: IControl): void {
     if (this._children.some((e) => e.control === control)) return;
-    const entry: ChildEntry = { control, element: null };
+    const entry: ChildEntry = {
+      control,
+      element: null,
+      expandable: this._isExpandable(control),
+      collapsedSnapshot: null,
+      expandHandler: null,
+      collapseHandler: null,
+      _placeholder: null,
+    };
     this._children.push(entry);
     this._autoGrowRows();
     if (this._map && this._gridEl) {
       entry.element = control.onAdd(this._map);
+      if (entry.expandable) {
+        entry.collapsedSnapshot = entry.element.cloneNode(
+          true,
+        ) as HTMLElement;
+        this._attachExpandListeners(entry);
+      }
       this._gridEl.appendChild(entry.element);
     }
     this._emit("controladd", control);
@@ -288,6 +328,14 @@ export class ControlGrid implements IControl {
     const index = this._children.findIndex((e) => e.control === control);
     if (index === -1) return;
     const entry = this._children[index];
+    // If this control is currently floating, clear it first
+    if (this._floatingEntry === entry) {
+      this._clearFloating();
+    }
+    this._detachExpandListeners(entry);
+    if (entry._placeholder?.parentNode) {
+      entry._placeholder.parentNode.removeChild(entry._placeholder);
+    }
     if (entry.element?.parentNode) {
       entry.element.parentNode.removeChild(entry.element);
     }
@@ -455,20 +503,37 @@ export class ControlGrid implements IControl {
   private _mountChildren(): void {
     if (!this._map || !this._gridEl) return;
     this._children.forEach((entry) => {
-      if (entry.element) {
+      if (!entry.element) {
+        entry.element = entry.control.onAdd(this._map!);
+        // Capture collapsed snapshot on first mount for expandable controls
+        if (entry.expandable && !entry.collapsedSnapshot) {
+          entry.collapsedSnapshot = entry.element.cloneNode(
+            true,
+          ) as HTMLElement;
+        }
+        this._attachExpandListeners(entry);
+      }
+
+      // If this entry is the currently floating one, mount as floating
+      if (this._floatingEntry === entry) {
+        this._mountAsFloating(entry);
+      } else {
         if (entry.element.parentNode !== this._gridEl) {
           this._gridEl!.appendChild(entry.element);
         }
-      } else {
-        entry.element = entry.control.onAdd(this._map!);
-        this._gridEl!.appendChild(entry.element);
       }
     });
   }
 
   private _unmountChildren(): void {
+    this._clearFloating();
     const map = this._map;
     this._children.forEach((entry) => {
+      this._detachExpandListeners(entry);
+      if (entry._placeholder?.parentNode) {
+        entry._placeholder.parentNode.removeChild(entry._placeholder);
+      }
+      entry._placeholder = null;
       if (entry.element?.parentNode) {
         entry.element.parentNode.removeChild(entry.element);
       }
@@ -477,7 +542,157 @@ export class ControlGrid implements IControl {
     this._children = this._children.map((e) => ({
       control: e.control,
       element: null,
+      expandable: e.expandable,
+      collapsedSnapshot: null,
+      expandHandler: null,
+      collapseHandler: null,
+      _placeholder: null,
     }));
+  }
+
+  private _isExpandable(control: IControl): boolean {
+    return typeof (control as any).on === "function";
+  }
+
+  private _attachExpandListeners(entry: ChildEntry): void {
+    if (!entry.expandable) return;
+    const ctrl = entry.control as any;
+    entry.expandHandler = () => this._onChildExpand(entry);
+    entry.collapseHandler = () => this._onChildCollapse(entry);
+    ctrl.on("expand", entry.expandHandler);
+    ctrl.on("collapse", entry.collapseHandler);
+  }
+
+  private _detachExpandListeners(entry: ChildEntry): void {
+    if (!entry.expandable) return;
+    const ctrl = entry.control as any;
+    if (entry.expandHandler) ctrl.off("expand", entry.expandHandler);
+    if (entry.collapseHandler) ctrl.off("collapse", entry.collapseHandler);
+    entry.expandHandler = null;
+    entry.collapseHandler = null;
+  }
+
+  private _onChildExpand(entry: ChildEntry): void {
+    // If another child is already floating, collapse it first
+    if (this._floatingEntry && this._floatingEntry !== entry) {
+      this._collapseFloatingChild();
+    }
+
+    if (!entry.element || !this._gridEl) return;
+
+    // Create placeholder from collapsed snapshot
+    const placeholder = entry.collapsedSnapshot
+      ? (entry.collapsedSnapshot.cloneNode(true) as HTMLElement)
+      : document.createElement("div");
+    placeholder.classList.add("maplibre-gl-control-grid-placeholder--active");
+    placeholder.addEventListener("click", () => {
+      (entry.control as any).collapse();
+      // Ensure cleanup even if the control was already collapsed (no-op collapse)
+      if (this._floatingEntry === entry) {
+        this._onChildCollapse(entry);
+      }
+    });
+    entry._placeholder = placeholder;
+
+    // Replace the element in the grid with the placeholder
+    this._gridEl.replaceChild(placeholder, entry.element);
+
+    // Move element into floating panel
+    const panel = this._ensureFloatingPanel();
+    panel.appendChild(entry.element);
+    this._floatingEntry = entry;
+  }
+
+  private _onChildCollapse(entry: ChildEntry): void {
+    if (this._floatingEntry !== entry) return;
+
+    // Move element back to the grid, replacing placeholder
+    if (entry._placeholder && entry.element && this._gridEl) {
+      if (entry._placeholder.parentNode === this._gridEl) {
+        this._gridEl.replaceChild(entry.element, entry._placeholder);
+      } else {
+        this._gridEl.appendChild(entry.element);
+      }
+    }
+    entry._placeholder = null;
+
+    // Update collapsed snapshot for next time
+    if (entry.element) {
+      entry.collapsedSnapshot = entry.element.cloneNode(true) as HTMLElement;
+    }
+
+    // Hide floating panel
+    if (this._floatingPanel) {
+      this._floatingPanel.style.display = "none";
+    }
+    this._floatingEntry = null;
+  }
+
+  private _mountAsFloating(entry: ChildEntry): void {
+    if (!this._gridEl || !entry.element) return;
+
+    // Put placeholder in grid
+    const placeholder = entry.collapsedSnapshot
+      ? (entry.collapsedSnapshot.cloneNode(true) as HTMLElement)
+      : document.createElement("div");
+    placeholder.classList.add("maplibre-gl-control-grid-placeholder--active");
+    placeholder.addEventListener("click", () => {
+      (entry.control as any).collapse();
+      // Ensure cleanup even if the control was already collapsed (no-op collapse)
+      if (this._floatingEntry === entry) {
+        this._onChildCollapse(entry);
+      }
+    });
+    entry._placeholder = placeholder;
+    this._gridEl.appendChild(placeholder);
+
+    // Put element in floating panel
+    const panel = this._ensureFloatingPanel();
+    panel.appendChild(entry.element);
+  }
+
+  private _ensureFloatingPanel(): HTMLElement {
+    if (!this._floatingPanel) {
+      this._floatingPanel = document.createElement("div");
+      this._floatingPanel.className =
+        "maplibre-gl-control-grid-floating-panel";
+    }
+    // Always re-attach to container (it may have been removed by _render's innerHTML="")
+    if (this._container && this._floatingPanel.parentNode !== this._container) {
+      this._container.appendChild(this._floatingPanel);
+    }
+    // Compensate for container padding so the panel's right edge stays
+    // at the same visual position whether the grid is expanded or collapsed.
+    const isCollapsedWithHeader =
+      this._state.collapsed &&
+      (this._options.title || this._options.collapsible);
+    const expandedOffset = Math.max(0, this._options.padding - 1);
+    const expandedContainerPad = Math.max(0, this._options.padding - 10);
+    const rightPad = isCollapsedWithHeader
+      ? expandedOffset - expandedContainerPad
+      : expandedOffset;
+    this._floatingPanel.style.right = `-${rightPad}px`;
+    this._floatingPanel.style.display = "block";
+    return this._floatingPanel;
+  }
+
+  private _clearFloating(): void {
+    if (this._floatingEntry) {
+      this._floatingEntry._placeholder = null;
+    }
+    this._floatingEntry = null;
+    if (this._floatingPanel) {
+      this._floatingPanel.remove();
+      this._floatingPanel = null;
+    }
+  }
+
+  private _collapseFloatingChild(): void {
+    if (!this._floatingEntry) return;
+    const ctrl = this._floatingEntry.control as any;
+    if (typeof ctrl.collapse === "function") {
+      ctrl.collapse();
+    }
   }
 
   private _render(): void {
