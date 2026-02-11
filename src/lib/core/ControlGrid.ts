@@ -177,6 +177,10 @@ interface ChildEntry {
   expandHandler: (() => void) | null;
   collapseHandler: (() => void) | null;
   _placeholder: HTMLElement | null;
+  _externalPanel: HTMLElement | null;
+  _externalPanelParent: HTMLElement | null;
+  /** Saved positioning methods (overridden to no-op during relocation) */
+  _savedPositionMethods: Record<string, () => void> | null;
 }
 
 /**
@@ -233,6 +237,9 @@ export class ControlGrid implements IControl {
         expandHandler: null,
         collapseHandler: null,
         _placeholder: null,
+        _externalPanel: null,
+        _externalPanelParent: null,
+        _savedPositionMethods: null,
       }),
     );
 
@@ -249,6 +256,9 @@ export class ControlGrid implements IControl {
           expandHandler: null,
           collapseHandler: null,
           _placeholder: null,
+          _externalPanel: null,
+          _externalPanelParent: null,
+          _savedPositionMethods: null,
         });
     }
     this._autoGrowRows();
@@ -357,7 +367,7 @@ export class ControlGrid implements IControl {
             "https://flatgeobuf.org/test/data/UScounties.fgb",
         });
       case "geoEditor":
-        return new GeoEditor({ collapsed: true }) as unknown as IControl;
+        return new GeoEditor({ collapsed: true, columns: 2 }) as unknown as IControl;
       case "lidar":
         return new LidarControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
       case "planetaryComputer":
@@ -367,7 +377,7 @@ export class ControlGrid implements IControl {
       case "streetView":
         return new StreetViewControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
       case "swipe":
-        return new SwipeControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+        return new SwipeControl({ collapsed: true, maxHeight: 500, active: false }) as unknown as IControl;
       case "usgsLidar":
         return new UsgsLidarControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
       default:
@@ -416,6 +426,9 @@ export class ControlGrid implements IControl {
       expandHandler: null,
       collapseHandler: null,
       _placeholder: null,
+      _externalPanel: null,
+      _externalPanelParent: null,
+      _savedPositionMethods: null,
     };
     this._children.push(entry);
     this._autoGrowRows();
@@ -547,6 +560,10 @@ export class ControlGrid implements IControl {
 
   collapse(): void {
     if (!this._state.collapsed) {
+      // Collapse any floating child first to properly restore external panels
+      if (this._floatingEntry) {
+        this._collapseFloatingChild();
+      }
       this._state.collapsed = true;
       this._render();
       this._emit("collapse");
@@ -695,6 +712,9 @@ export class ControlGrid implements IControl {
       expandHandler: null,
       collapseHandler: null,
       _placeholder: null,
+      _externalPanel: null,
+      _externalPanelParent: null,
+      _savedPositionMethods: null,
     }));
   }
 
@@ -753,10 +773,16 @@ export class ControlGrid implements IControl {
     const panel = this._ensureFloatingPanel();
     panel.appendChild(entry.element);
     this._floatingEntry = entry;
+
+    // Relocate external panel (appended to map container) into floating panel
+    this._relocateExternalPanel(entry, panel);
   }
 
   private _onChildCollapse(entry: ChildEntry): void {
     if (this._floatingEntry !== entry) return;
+
+    // Restore external panel to its original parent
+    this._restoreExternalPanel(entry);
 
     // Move element back to the grid, replacing placeholder
     if (entry._placeholder && entry.element && this._gridEl) {
@@ -801,6 +827,9 @@ export class ControlGrid implements IControl {
     // Put element in floating panel
     const panel = this._ensureFloatingPanel();
     panel.appendChild(entry.element);
+
+    // Relocate external panel (appended to map container) into floating panel
+    this._relocateExternalPanel(entry, panel);
   }
 
   private _ensureFloatingPanel(): HTMLElement {
@@ -808,13 +837,18 @@ export class ControlGrid implements IControl {
       this._floatingPanel = document.createElement("div");
       this._floatingPanel.className =
         "maplibre-gl-control-grid-floating-panel";
+      // Prevent clicks inside the floating panel from reaching document-level
+      // click-outside handlers that upstream plugins use to auto-collapse.
+      this._floatingPanel.addEventListener("click", (e) =>
+        e.stopPropagation(),
+      );
     }
     // Always re-attach to container (it may have been removed by _render's innerHTML="")
     if (this._container && this._floatingPanel.parentNode !== this._container) {
       this._container.appendChild(this._floatingPanel);
     }
-    // Compensate for container padding so the panel's right edge stays
-    // at the same visual position whether the grid is expanded or collapsed.
+    // Compensate for container padding so the panel's right edge aligns
+    // with the container's outer edge.
     const isCollapsedWithHeader =
       this._state.collapsed &&
       (this._options.title || this._options.collapsible);
@@ -830,6 +864,8 @@ export class ControlGrid implements IControl {
 
   private _clearFloating(): void {
     if (this._floatingEntry) {
+      // Restore external panel to its original parent before clearing
+      this._restoreExternalPanel(this._floatingEntry);
       this._floatingEntry._placeholder = null;
     }
     this._floatingEntry = null;
@@ -844,6 +880,108 @@ export class ControlGrid implements IControl {
     const ctrl = this._floatingEntry.control as any;
     if (typeof ctrl.collapse === "function") {
       ctrl.collapse();
+    }
+  }
+
+  /**
+   * Move an external panel (appended to the map container by the upstream control)
+   * into the floating panel, stripping its absolute positioning.
+   */
+  private _relocateExternalPanel(
+    entry: ChildEntry,
+    floatingPanel: HTMLElement,
+  ): void {
+    const ctrl = entry.control as any;
+    if (typeof ctrl.getPanelElement !== "function") return;
+
+    const extPanel = ctrl.getPanelElement() as HTMLElement | null;
+    if (!extPanel || !entry.element || entry.element.contains(extPanel)) return;
+
+    // Already relocated — skip to avoid overwriting _externalPanelParent
+    if (entry._externalPanel) return;
+
+    entry._externalPanelParent = extPanel.parentNode as HTMLElement;
+    entry._externalPanel = extPanel;
+    extPanel.classList.add("maplibre-gl-control-grid-relocated");
+
+    // Override positioning methods to no-ops so the upstream control
+    // cannot re-position the panel while it's inside the floating panel.
+    const methods = ["_updatePanelPosition", "updatePanelPosition"];
+    entry._savedPositionMethods = {};
+    for (const m of methods) {
+      if (typeof ctrl[m] === "function") {
+        entry._savedPositionMethods[m] = ctrl[m].bind(ctrl);
+        ctrl[m] = () => {};
+      }
+    }
+    // StreetView uses a Panel class with its own positionRelativeTo method
+    const panelObj = ctrl._panel;
+    if (panelObj && typeof panelObj.positionRelativeTo === "function") {
+      entry._savedPositionMethods["_panel.positionRelativeTo"] =
+        panelObj.positionRelativeTo.bind(panelObj);
+      panelObj.positionRelativeTo = () => {};
+    }
+
+    // Force inline !important overrides for belt-and-suspenders safety.
+    const force = (prop: string, val: string) =>
+      extPanel.style.setProperty(prop, val, "important");
+    force("position", "static");
+    force("top", "auto");
+    force("bottom", "auto");
+    force("left", "auto");
+    force("right", "auto");
+    force("z-index", "auto");
+
+    floatingPanel.appendChild(extPanel);
+
+    // Shift the floating panel's right edge inward so the wide external
+    // panel doesn't extend past the map edge.
+    floatingPanel.style.right = "0px";
+
+    // Hide the control's button element since the external panel has its
+    // own header/close button — showing both causes visual overlap.
+    if (entry.element) {
+      entry.element.style.display = "none";
+    }
+  }
+
+  /**
+   * Move an external panel back to its original parent and clear
+   * the inline overrides set during relocation.
+   */
+  private _restoreExternalPanel(entry: ChildEntry): void {
+    if (!entry._externalPanel || !entry._externalPanelParent) return;
+
+    entry._externalPanel.classList.remove("maplibre-gl-control-grid-relocated");
+
+    // Clear the inline !important overrides so the control's own
+    // positioning logic works normally again.
+    const props = ["position", "top", "bottom", "left", "right", "z-index"];
+    for (const prop of props) {
+      entry._externalPanel.style.removeProperty(prop);
+    }
+
+    entry._externalPanelParent.appendChild(entry._externalPanel);
+    entry._externalPanel = null;
+    entry._externalPanelParent = null;
+
+    // Restore positioning methods to their original implementations
+    if (entry._savedPositionMethods) {
+      const ctrl = entry.control as any;
+      for (const [key, fn] of Object.entries(entry._savedPositionMethods)) {
+        if (key === "_panel.positionRelativeTo") {
+          const panelObj = ctrl._panel;
+          if (panelObj) panelObj.positionRelativeTo = fn;
+        } else {
+          ctrl[key] = fn;
+        }
+      }
+      entry._savedPositionMethods = null;
+    }
+
+    // Show the control's button element again
+    if (entry.element) {
+      entry.element.style.display = "";
     }
   }
 

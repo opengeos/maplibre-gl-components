@@ -98,6 +98,24 @@
   margin-top: 4px;
 }
 
+/* Relocated external panel: strip absolute positioning when moved into floating panel */
+.maplibre-gl-control-grid-relocated {
+  position: static !important;
+  top: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  z-index: auto !important;
+  display: block !important;
+}
+
+/* Planetary Computer panel uses flex-column layout for scrollable content;
+   preserve it when relocated so overflow-y on .pc-control-content works. */
+.maplibre-gl-control-grid-relocated.pc-control-panel {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
 /* Placeholder icon in grid when a child is floating */
 .maplibre-gl-control-grid-placeholder--active {
   outline: 2px solid #0078d7;
