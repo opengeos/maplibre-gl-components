@@ -988,9 +988,19 @@ export class ControlGrid implements IControl {
     floatingPanel: HTMLElement,
   ): void {
     const ctrl = entry.control as any;
-    if (typeof ctrl.getPanelElement !== "function") return;
 
-    const extPanel = ctrl.getPanelElement() as HTMLElement | null;
+    // Try getPanelElement() first, then fall back to ctrl._panel directly
+    // (in case Vite's pre-bundled version doesn't include getPanelElement yet).
+    let extPanel: HTMLElement | null = null;
+    if (typeof ctrl.getPanelElement === "function") {
+      extPanel = ctrl.getPanelElement() as HTMLElement | null;
+    } else if (ctrl._panel instanceof HTMLElement) {
+      extPanel = ctrl._panel;
+    } else if (ctrl._panel && typeof ctrl._panel.getElement === "function") {
+      // StreetView uses a Panel class with getElement()
+      extPanel = ctrl._panel.getElement() as HTMLElement | null;
+    }
+
     if (!extPanel || !entry.element || entry.element.contains(extPanel)) return;
 
     // Already relocated — skip to avoid overwriting _externalPanelParent
