@@ -414,6 +414,79 @@ export class StacLayerControl implements IControl {
     await this._fetchStacItem();
   }
 
+  /**
+   * Remove a specific layer by ID, or all layers if no ID is provided.
+   */
+  removeLayer(id?: string): void {
+    if (id) {
+      this._removeLayer(id);
+    } else {
+      this._removeAllLayers();
+    }
+    this._render();
+  }
+
+  /**
+   * Get all layer IDs currently managed by this control.
+   */
+  getLayerIds(): string[] {
+    return Array.from(this._cogLayers.keys());
+  }
+
+  /**
+   * Get the opacity of a specific layer.
+   */
+  getLayerOpacity(layerId: string): number | null {
+    const layer = this._cogLayers.get(layerId);
+    if (!layer || !layer.props) return null;
+    return layer.props.opacity ?? 1;
+  }
+
+  /**
+   * Set the opacity of a specific layer.
+   */
+  setLayerOpacity(layerId: string, opacity: number): void {
+    const layer = this._cogLayers.get(layerId);
+    if (!layer || typeof layer.clone !== "function") return;
+
+    const clampedOpacity = Math.max(0, Math.min(1, opacity));
+    const updatedLayer = layer.clone({ opacity: clampedOpacity });
+    this._cogLayers.set(layerId, updatedLayer);
+
+    if (this._deckOverlay) {
+      this._deckOverlay.setProps({
+        layers: Array.from(this._cogLayers.values()),
+      });
+    }
+
+    if (this._map) {
+      this._map.triggerRepaint();
+    }
+  }
+
+  /**
+   * Get the visibility of a specific layer (opacity > 0 = visible).
+   */
+  getLayerVisibility(layerId: string): boolean {
+    const opacity = this.getLayerOpacity(layerId);
+    return opacity !== null && opacity > 0;
+  }
+
+  /**
+   * Set the visibility of a specific layer via opacity.
+   */
+  setLayerVisibility(
+    layerId: string,
+    visible: boolean,
+    storedOpacity: number = 1,
+  ): void {
+    if (visible) {
+      this.setLayerOpacity(layerId, storedOpacity);
+    } else {
+      this.setLayerOpacity(layerId, 0);
+    }
+  }
+
   private _emit(
     event: StacLayerEvent,
     extra?: {

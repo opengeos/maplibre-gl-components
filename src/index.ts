@@ -51,6 +51,7 @@ export {
   ZarrLayerAdapter,
   PMTilesLayerAdapter,
   AddVectorAdapter,
+  StacLayerAdapter,
 } from "./lib/adapters";
 export type { CustomLayerAdapter } from "./lib/adapters";
 

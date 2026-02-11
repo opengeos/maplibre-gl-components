@@ -54,6 +54,12 @@ export interface CustomLayerAdapter {
    * Called when user removes a layer via context menu.
    */
   removeLayer?(layerId: string): void;
+  /**
+   * Get native MapLibre layer IDs for a custom layer (optional).
+   * When provided, the style editor will show paint property controls
+   * for these native layers instead of the generic "custom layer" message.
+   */
+  getNativeLayerIds?(layerId: string): string[];
 }
 
 /**

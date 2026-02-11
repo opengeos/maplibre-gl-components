@@ -58,6 +58,11 @@ const controlGrid = new ControlGrid({
 
 map.addControl(controlGrid, 'top-right');
 
+// Register data-layer adapters so COG, Zarr, PMTiles layers appear in the LayerControl
+for (const adapter of controlGrid.getAdapters()) {
+  layerControl.registerCustomAdapter(adapter);
+}
+
 // Optional: listen for grid events
 controlGrid.on('controladd', () => console.log('Control added to grid'));
 controlGrid.on('controlremove', () => console.log('Control removed from grid'));

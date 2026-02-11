@@ -28,6 +28,13 @@ import { ZarrLayerControl } from "./ZarrLayer";
 import { PMTilesLayerControl } from "./PMTilesLayer";
 import { StacLayerControl } from "./StacLayer";
 import { StacSearchControl } from "./StacSearch";
+import { AddVectorControl } from "./AddVector";
+import { CogLayerAdapter } from "../adapters/CogLayerAdapter";
+import { ZarrLayerAdapter } from "../adapters/ZarrLayerAdapter";
+import { PMTilesLayerAdapter } from "../adapters/PMTilesLayerAdapter";
+import { AddVectorAdapter } from "../adapters/AddVectorAdapter";
+import { StacLayerAdapter } from "../adapters/StacLayerAdapter";
+import type { CustomLayerAdapter } from "../adapters/CogLayerAdapter";
 
 
 /**
@@ -448,6 +455,33 @@ export class ControlGrid implements IControl {
    */
   getControls(): IControl[] {
     return this._children.map((e) => e.control);
+  }
+
+  /**
+   * Create custom layer adapters for all data-layer controls in the grid.
+   * Returns adapters suitable for registering with a LayerControl via
+   * `layerControl.registerCustomAdapter(adapter)`.
+   *
+   * Supported controls: CogLayerControl, ZarrLayerControl,
+   * PMTilesLayerControl, StacLayerControl, AddVectorControl.
+   */
+  getAdapters(): CustomLayerAdapter[] {
+    const adapters: CustomLayerAdapter[] = [];
+    for (const entry of this._children) {
+      const ctrl = entry.control;
+      if (ctrl instanceof CogLayerControl) {
+        adapters.push(new CogLayerAdapter(ctrl));
+      } else if (ctrl instanceof ZarrLayerControl) {
+        adapters.push(new ZarrLayerAdapter(ctrl));
+      } else if (ctrl instanceof PMTilesLayerControl) {
+        adapters.push(new PMTilesLayerAdapter(ctrl));
+      } else if (ctrl instanceof StacLayerControl) {
+        adapters.push(new StacLayerAdapter(ctrl));
+      } else if (ctrl instanceof AddVectorControl) {
+        adapters.push(new AddVectorAdapter(ctrl));
+      }
+    }
+    return adapters;
   }
 
   show(): void {
