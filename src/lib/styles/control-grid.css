@@ -89,6 +89,14 @@
   z-index: 10;
 }
 
+/* Strip default MapLibre vertical margins inside the floating panel
+   so internal and external panels have consistent spacing.
+   Keep horizontal margins for right-side padding from map edge. */
+.maplibre-gl-control-grid-floating-panel > .maplibregl-ctrl {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
 /* Override minimap panel positioning inside the floating panel so it flows
    below the button instead of using bottom:36px (which would go behind the grid). */
 .maplibre-gl-control-grid-floating-panel .maplibre-gl-minimap-control .minimap-panel {
