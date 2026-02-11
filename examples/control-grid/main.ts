@@ -23,6 +23,13 @@ const layerControl = new LayerControl({
   panelMinWidth: 240,
   panelMaxWidth: 450,
   basemapStyleUrl: BASEMAP_STYLE,
+  // Exclude internal layers from controls that add helper/draw layers
+  excludeLayers: [
+    'usgs-lidar-*',      // USGS LiDAR draw and footprint layers
+    'lidar-*',           // LiDAR control layers
+    'mapbox-gl-draw-*',  // Draw control layers
+    'gl-draw-*',         // Geoman draw layers
+  ],
 });
 
 map.addControl(layerControl, 'top-right');
@@ -71,6 +78,3 @@ map.addControl(controlGrid, 'top-right');
 for (const adapter of controlGrid.getAdapters()) {
   layerControl.registerCustomAdapter(adapter);
 }
-
-// Register data-layer adapters so COG, Zarr, PMTiles layers appear in the LayerControl
-// (already done above)
