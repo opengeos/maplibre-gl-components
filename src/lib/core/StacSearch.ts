@@ -62,7 +62,7 @@ const DEFAULT_OPTIONS: Required<StacSearchControlOptions> = {
   visible: true,
   collapsed: true,
   panelWidth: 360,
-  maxHeight: 0, // 0 means no limit
+  maxHeight: 500,
   backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
   opacity: 1,

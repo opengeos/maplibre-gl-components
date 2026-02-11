@@ -33,6 +33,7 @@ const DEFAULT_OPTIONS: Required<ViewStateControlOptions> = {
   bboxStrokeColor: "#0078d7",
   bboxStrokeWidth: 2,
   panelWidth: 280,
+  maxHeight: 500,
   backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
   opacity: 1,
@@ -448,6 +449,10 @@ export class ViewStateControl implements IControl {
     const panel = document.createElement("div");
     panel.className = "maplibre-gl-view-state-panel";
     panel.style.width = `${this._options.panelWidth}px`;
+    if (this._options.maxHeight && this._options.maxHeight > 0) {
+      panel.style.maxHeight = `${this._options.maxHeight}px`;
+      panel.style.overflowY = "auto";
+    }
 
     if (this._options.fontSize) {
       panel.style.fontSize = `${this._options.fontSize}px`;

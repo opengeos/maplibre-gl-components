@@ -38,6 +38,7 @@ const DEFAULT_OPTIONS: Required<PMTilesLayerControlOptions> = {
   defaultLayerName: "",
   defaultPickable: true,
   panelWidth: 300,
+  maxHeight: 500,
   backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
   opacity: 1,
@@ -573,6 +574,10 @@ export class PMTilesLayerControl implements IControl {
     const panel = document.createElement("div");
     panel.className = "maplibre-gl-pmtiles-layer-panel";
     panel.style.width = `${this._options.panelWidth}px`;
+    if (this._options.maxHeight && this._options.maxHeight > 0) {
+      panel.style.maxHeight = `${this._options.maxHeight}px`;
+      panel.style.overflowY = "auto";
+    }
     this._panel = panel;
 
     // Header

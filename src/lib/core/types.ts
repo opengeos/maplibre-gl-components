@@ -1003,6 +1003,8 @@ export interface ViewStateControlOptions {
   bboxStrokeWidth?: number;
   /** Width of the info panel in pixels. Default: 280. */
   panelWidth?: number;
+  /** Maximum height of the panel in pixels before scrolling. Default: 500. */
+  maxHeight?: number;
   /** Background color of the container. */
   backgroundColor?: string;
   /** Border radius for container. */
@@ -1241,6 +1243,8 @@ export interface CogLayerControlOptions {
   defaultPickable?: boolean;
   /** Width of the panel in pixels. Default: 300. */
   panelWidth?: number;
+  /** Maximum height of the panel in pixels before scrolling. Default: 500. */
+  maxHeight?: number;
   /** Background color of the container. */
   backgroundColor?: string;
   /** Border radius for container. */
@@ -1396,6 +1400,8 @@ export interface ZarrLayerControlOptions {
   defaultPickable?: boolean;
   /** Width of the panel in pixels. Default: 300. */
   panelWidth?: number;
+  /** Maximum height of the panel in pixels before scrolling. Default: 500. */
+  maxHeight?: number;
   /** Background color of the container. */
   backgroundColor?: string;
   /** Border radius for container. */
@@ -1552,6 +1558,8 @@ export interface PMTilesLayerControlOptions {
   defaultPickable?: boolean;
   /** Width of the panel in pixels. Default: 300. */
   panelWidth?: number;
+  /** Maximum height of the panel in pixels before scrolling. Default: 500. */
+  maxHeight?: number;
   /** Background color of the container. */
   backgroundColor?: string;
   /** Border radius for container. */
@@ -1719,6 +1727,8 @@ export interface AddVectorControlOptions {
   fitBoundsPadding?: number;
   /** Width of the panel in pixels. Default: 300. */
   panelWidth?: number;
+  /** Maximum height of the panel in pixels before scrolling. Default: 500. */
+  maxHeight?: number;
   /** Background color of the container. */
   backgroundColor?: string;
   /** Border radius for container. */
@@ -1875,6 +1885,8 @@ export interface StacLayerControlOptions {
   defaultPickable?: boolean;
   /** Width of the panel in pixels. Default: 320. */
   panelWidth?: number;
+  /** Maximum height of the panel in pixels before scrolling. Default: 500. */
+  maxHeight?: number;
   /** Background color of the container. */
   backgroundColor?: string;
   /** Border radius for container. */
@@ -2194,6 +2206,8 @@ export interface MeasureControlOptions {
   precision?: number;
   /** Panel width in pixels. Default: 240. */
   panelWidth?: number;
+  /** Maximum height of the panel in pixels before scrolling. Default: 500. */
+  maxHeight?: number;
   /** Background color of the panel. Default: 'rgba(255, 255, 255, 0.95)'. */
   backgroundColor?: string;
   /** Border radius in pixels. Default: 4. */
@@ -2420,6 +2434,8 @@ export interface BookmarkControlOptions {
   flyToDuration?: number;
   /** Panel width in pixels. Default: 260. */
   panelWidth?: number;
+  /** Maximum height of the panel in pixels before scrolling. Default: 500. */
+  maxHeight?: number;
   /** Background color. Default: 'rgba(255, 255, 255, 0.95)'. */
   backgroundColor?: string;
   /** Border radius in pixels. Default: 4. */
@@ -2507,6 +2523,8 @@ export interface PrintControlOptions {
   height?: number;
   /** Panel width in pixels. Default: 280. */
   panelWidth?: number;
+  /** Maximum height of the panel in pixels before scrolling. Default: 500. */
+  maxHeight?: number;
   /** Background color of the panel. Default: 'rgba(255, 255, 255, 0.95)'. */
   backgroundColor?: string;
   /** Border radius in pixels. Default: 4. */

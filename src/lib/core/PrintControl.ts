@@ -31,6 +31,7 @@ const DEFAULT_OPTIONS: Required<PrintControlOptions> = {
   width: 0,
   height: 0,
   panelWidth: 280,
+  maxHeight: 500,
   backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
   opacity: 1,
@@ -223,6 +224,10 @@ export class PrintControl implements IControl {
     const panel = document.createElement("div");
     panel.className = `print-panel ${this._options.position.includes("left") ? "right" : "left"}`;
     panel.style.width = `${this._options.panelWidth}px`;
+    if (this._options.maxHeight && this._options.maxHeight > 0) {
+      panel.style.maxHeight = `${this._options.maxHeight}px`;
+      panel.style.overflowY = "auto";
+    }
     panel.style.background = this._options.backgroundColor;
     panel.style.borderRadius = `${this._options.borderRadius}px`;
     panel.style.fontSize = `${this._options.fontSize}px`;
