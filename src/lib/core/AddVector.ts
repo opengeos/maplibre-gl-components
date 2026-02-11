@@ -38,7 +38,7 @@ const DEFAULT_OPTIONS: Required<AddVectorControlOptions> = {
   defaultFormat: "auto",
   defaultOpacity: 1,
   defaultFillColor: "#3388ff",
-  defaultStrokeColor: "#3388ff",
+  defaultStrokeColor: "#2266cc",
   defaultCircleColor: "#3388ff",
   defaultPickable: true,
   corsProxy: "",

@@ -167,6 +167,7 @@ const DEFAULT_OPTIONS: Required<CogLayerControlOptions> = {
   defaultRescaleMin: 0,
   defaultRescaleMax: 255,
   defaultNodata: 0,
+  defaultLayerName: "",
   defaultOpacity: 1,
   defaultPickable: true,
   panelWidth: 300,
@@ -239,6 +240,7 @@ export class CogLayerControl implements IControl {
       rescaleMin: this._options.defaultRescaleMin,
       rescaleMax: this._options.defaultRescaleMax,
       nodata: this._options.defaultNodata,
+      layerName: this._options.defaultLayerName,
       layerOpacity: this._options.defaultOpacity,
       pickable: this._options.defaultPickable,
       hasLayer: false,
@@ -721,6 +723,20 @@ export class CogLayerControl implements IControl {
     pickableGroup.appendChild(pickableLabel);
     panel.appendChild(pickableGroup);
 
+    // Layer name input
+    const layerNameGroup = this._createFormGroup("Layer Name", "layer-name");
+    const layerNameInput = document.createElement("input");
+    layerNameInput.type = "text";
+    layerNameInput.className = "maplibre-gl-cog-layer-input";
+    layerNameInput.style.color = "#000";
+    layerNameInput.placeholder = "Optional custom layer name";
+    layerNameInput.value = this._state.layerName;
+    layerNameInput.addEventListener("input", () => {
+      this._state.layerName = layerNameInput.value;
+    });
+    layerNameGroup.appendChild(layerNameInput);
+    panel.appendChild(layerNameGroup);
+
     // Before ID input (for layer ordering)
     const beforeIdGroup = this._createFormGroup(
       "Before Layer ID (optional)",
@@ -780,14 +796,19 @@ export class CogLayerControl implements IControl {
 
         const label = document.createElement("span");
         label.className = "maplibre-gl-cog-layer-list-label";
-        // Extract filename from URL for display
+        // Use custom name if provided, otherwise extract filename from URL
         const url = props.geotiff as string;
+        const customName = props._layerName as string | undefined;
         let displayName: string;
-        try {
-          const urlObj = new URL(url);
-          displayName = urlObj.pathname.split("/").pop() || url;
-        } catch {
-          displayName = url;
+        if (customName) {
+          displayName = customName;
+        } else {
+          try {
+            const urlObj = new URL(url);
+            displayName = urlObj.pathname.split("/").pop() || url;
+          } catch {
+            displayName = url;
+          }
         }
         label.textContent = displayName;
         label.title = url;
@@ -1406,6 +1427,11 @@ export class CogLayerControl implements IControl {
       // Generate unique layer ID
       const layerId = `cog-layer-${this._layerCounter++}`;
       layerProps.id = layerId;
+      // Store custom layer name if provided
+      const customName = this._state.layerName?.trim();
+      if (customName) {
+        layerProps._layerName = customName;
+      }
 
       this._cogLayerPropsMap.set(layerId, layerProps);
       const newLayer = new COGLayer(layerProps);
@@ -1419,6 +1445,7 @@ export class CogLayerControl implements IControl {
       this._state.layers = this._buildLayerInfoList();
       this._state.loading = false;
       this._state.status = "COG layer added successfully.";
+      this._state.layerName = "";
       this._render();
       this._emit("layeradd", { url: this._state.url, layerId });
     } catch (err) {
@@ -1483,6 +1510,7 @@ export class CogLayerControl implements IControl {
     for (const [layerId, props] of this._cogLayerPropsMap) {
       list.push({
         id: layerId,
+        name: (props._layerName as string) || undefined,
         url: props.geotiff as string,
         bands: "1", // bands are baked into COGLayer at creation
         colormap: (props._colormap as ColormapName | "none") || "none",

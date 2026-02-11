@@ -18,6 +18,7 @@ const DEFAULT_STATE: CogLayerControlState = {
   loading: false,
   error: null,
   status: null,
+  layerName: "",
 };
 
 /**

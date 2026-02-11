@@ -106,9 +106,12 @@ export class CogLayerAdapter implements CustomLayerAdapter {
     this.cogControl.on("layeradd", (event) => {
       const layerId = event.layerId;
       if (layerId) {
-        // Extract name from URL
-        let displayName = layerId;
-        if (event.url) {
+        // Use custom name from layer info if available, otherwise extract from URL
+        const layerInfo = event.state?.layers?.find(
+          (l) => l.id === layerId,
+        );
+        let displayName = layerInfo?.name || layerId;
+        if (!layerInfo?.name && event.url) {
           try {
             const urlObj = new URL(event.url);
             displayName = urlObj.pathname.split("/").pop() || layerId;
@@ -148,8 +151,8 @@ export class CogLayerAdapter implements CustomLayerAdapter {
     const state = this.cogControl.getState();
     if (state.layers && Array.isArray(state.layers)) {
       for (const layer of state.layers) {
-        let displayName = layer.id;
-        if (layer.url) {
+        let displayName = layer.name || layer.id;
+        if (!layer.name && layer.url) {
           try {
             const urlObj = new URL(layer.url);
             displayName = urlObj.pathname.split("/").pop() || layer.id;

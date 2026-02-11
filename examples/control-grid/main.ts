@@ -48,6 +48,7 @@ const controlGrid = new ControlGrid({
     'measure',
     'bookmark',
     'print',
+    'addVector',
     'cogLayer',
     'zarrLayer',
     'pmtilesLayer',

@@ -87,7 +87,7 @@ export class PMTilesLayerAdapter implements CustomLayerAdapter {
         }
       } else {
         // Raster or generic — single entry per source
-        const name = this._extractFilename(layerInfo.url);
+        const name = layerInfo.name || this._extractFilename(layerInfo.url);
         newGroups.set(sourceId, {
           name,
           sublayers: [...layerInfo.layerIds],

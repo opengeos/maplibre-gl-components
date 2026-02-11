@@ -85,6 +85,7 @@ const DEFAULT_OPTIONS: Required<ZarrLayerControlOptions> = {
   defaultColormap: getColormapColors("viridis"),
   defaultClim: [0, 1],
   defaultSelector: {},
+  defaultLayerName: "",
   defaultOpacity: 1,
   defaultPickable: true,
   panelWidth: 300,
@@ -158,6 +159,7 @@ export class ZarrLayerControl implements IControl {
       colormap: this._options.defaultColormap,
       clim: this._options.defaultClim,
       selector: this._options.defaultSelector,
+      layerName: this._options.defaultLayerName,
       layerOpacity: this._options.defaultOpacity,
       pickable: this._options.defaultPickable,
       hasLayer: false,
@@ -782,6 +784,20 @@ export class ZarrLayerControl implements IControl {
     pickableGroup.appendChild(pickableLabel);
     panel.appendChild(pickableGroup);
 
+    // Layer name input
+    const layerNameGroup = this._createFormGroup("Layer Name", "layer-name");
+    const layerNameInput = document.createElement("input");
+    layerNameInput.type = "text";
+    layerNameInput.className = "maplibre-gl-zarr-layer-input";
+    layerNameInput.style.color = "#000";
+    layerNameInput.placeholder = "Optional custom layer name";
+    layerNameInput.value = this._state.layerName;
+    layerNameInput.addEventListener("input", () => {
+      this._state.layerName = layerNameInput.value;
+    });
+    layerNameGroup.appendChild(layerNameInput);
+    panel.appendChild(layerNameGroup);
+
     // Before ID input (for layer ordering)
     const beforeIdGroup = this._createFormGroup(
       "Before Layer ID (optional)",
@@ -843,12 +859,18 @@ export class ZarrLayerControl implements IControl {
         label.className = "maplibre-gl-zarr-layer-list-label";
         const url = props.source as string;
         const variable = props.variable as string;
-        let displayName = variable || layerId;
-        try {
-          const urlObj = new URL(url);
-          displayName = `${urlObj.pathname.split("/").pop()} / ${variable}`;
-        } catch {
-          displayName = `${url} / ${variable}`;
+        const customName = props._layerName as string | undefined;
+        let displayName: string;
+        if (customName) {
+          displayName = customName;
+        } else {
+          displayName = variable || layerId;
+          try {
+            const urlObj = new URL(url);
+            displayName = `${urlObj.pathname.split("/").pop()} / ${variable}`;
+          } catch {
+            displayName = `${url} / ${variable}`;
+          }
         }
         label.textContent = displayName;
         label.title = `${url} (${variable})`;
@@ -937,6 +959,11 @@ export class ZarrLayerControl implements IControl {
       // Store props for adapter use
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const layerProps: Record<string, any> = { ...layerOptions };
+      // Store custom layer name if provided
+      const customName = this._state.layerName?.trim();
+      if (customName) {
+        layerProps._layerName = customName;
+      }
       this._zarrLayerPropsMap.set(layerId, layerProps);
 
       const newLayer = new ZarrLayer(layerOptions);
@@ -968,6 +995,7 @@ export class ZarrLayerControl implements IControl {
       this._state.layers = this._buildLayerInfoList();
       this._state.loading = false;
       this._state.status = "Zarr layer added successfully.";
+      this._state.layerName = "";
       this._render();
       this._emit("layeradd", { url: this._state.url, layerId });
     } catch (err) {
@@ -1093,6 +1121,7 @@ export class ZarrLayerControl implements IControl {
     for (const [layerId, props] of this._zarrLayerPropsMap) {
       list.push({
         id: layerId,
+        name: (props._layerName as string) || undefined,
         url: props.source as string,
         variable: props.variable as string,
         colormap: props.colormap as string[],

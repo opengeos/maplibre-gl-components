@@ -343,6 +343,12 @@ export class ControlGrid implements IControl {
           defaultRescaleMax: 10000,
           showFootprints: true,
         });
+      case "addVector":
+        return new AddVectorControl({
+          collapsed: true,
+          defaultUrl:
+            "https://flatgeobuf.org/test/data/UScounties.fgb",
+        });
       default:
         return null;
     }

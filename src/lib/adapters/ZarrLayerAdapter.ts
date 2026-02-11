@@ -51,16 +51,15 @@ export class ZarrLayerAdapter implements CustomLayerAdapter {
     this.zarrControl.on("layeradd", (event) => {
       const layerId = event.layerId;
       if (layerId) {
-        // Extract name from URL and variable
-        let displayName = layerId;
-        if (event.url) {
+        // Use custom name from layer info if available, otherwise extract from URL
+        const state = this.zarrControl.getState();
+        const layerInfo = state.layers.find((l) => l.id === layerId);
+        let displayName = layerInfo?.name || layerId;
+        if (!layerInfo?.name && event.url) {
           try {
             const urlObj = new URL(event.url);
             const filename = urlObj.pathname.split("/").pop() || "";
-            // Get variable from state
-            const state = this.zarrControl.getState();
-            const variable =
-              state.layers.find((l) => l.id === layerId)?.variable || "";
+            const variable = layerInfo?.variable || "";
             displayName = variable ? `${filename} / ${variable}` : filename;
           } catch {
             displayName = event.url;
@@ -98,8 +97,8 @@ export class ZarrLayerAdapter implements CustomLayerAdapter {
     const state = this.zarrControl.getState();
     if (state.layers && Array.isArray(state.layers)) {
       for (const layer of state.layers) {
-        let displayName = layer.id;
-        if (layer.url) {
+        let displayName = layer.name || layer.id;
+        if (!layer.name && layer.url) {
           try {
             const urlObj = new URL(layer.url);
             const filename = urlObj.pathname.split("/").pop() || "";

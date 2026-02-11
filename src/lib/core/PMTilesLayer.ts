@@ -35,6 +35,7 @@ const DEFAULT_OPTIONS: Required<PMTilesLayerControlOptions> = {
   defaultFillColor: "steelblue",
   defaultLineColor: "#333333",
   defaultCircleColor: "steelblue",
+  defaultLayerName: "",
   defaultPickable: true,
   panelWidth: 300,
   backgroundColor: "rgba(255, 255, 255, 0.95)",
@@ -91,6 +92,7 @@ export class PMTilesLayerControl implements IControl {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
       url: this._options.defaultUrl,
+      layerName: this._options.defaultLayerName,
       layerOpacity: this._options.defaultOpacity,
       availableSourceLayers: [],
       selectedSourceLayers: [],
@@ -760,6 +762,20 @@ export class PMTilesLayerControl implements IControl {
 
     panel.appendChild(sourceLayersGroup);
 
+    // Layer name input
+    const layerNameGroup = this._createFormGroup("Layer Name", "layer-name");
+    const layerNameInput = document.createElement("input");
+    layerNameInput.type = "text";
+    layerNameInput.className = "maplibre-gl-pmtiles-layer-input";
+    layerNameInput.style.color = "#000";
+    layerNameInput.placeholder = "Optional custom layer name";
+    layerNameInput.value = this._state.layerName;
+    layerNameInput.addEventListener("input", () => {
+      this._state.layerName = layerNameInput.value;
+    });
+    layerNameGroup.appendChild(layerNameInput);
+    panel.appendChild(layerNameGroup);
+
     // Before ID input (for layer ordering)
     const beforeIdGroup = this._createFormGroup(
       "Before Layer ID (optional)",
@@ -817,11 +833,15 @@ export class PMTilesLayerControl implements IControl {
         const label = document.createElement("span");
         label.className = "maplibre-gl-pmtiles-layer-list-label";
         let displayName: string;
-        try {
-          const urlObj = new URL(info.url);
-          displayName = urlObj.pathname.split("/").pop() || info.url;
-        } catch {
-          displayName = info.url;
+        if (info.name) {
+          displayName = info.name;
+        } else {
+          try {
+            const urlObj = new URL(info.url);
+            displayName = urlObj.pathname.split("/").pop() || info.url;
+          } catch {
+            displayName = info.url;
+          }
         }
         label.textContent = displayName;
         label.title = info.url;
@@ -1128,8 +1148,10 @@ export class PMTilesLayerControl implements IControl {
       }
 
       // Store layer info
+      const customName = this._state.layerName?.trim();
       const layerInfo: PMTilesLayerInfo = {
         id: sourceId,
+        name: customName || undefined,
         url: this._state.url,
         tileType,
         sourceLayers,
@@ -1144,6 +1166,7 @@ export class PMTilesLayerControl implements IControl {
       this._state.layers = Array.from(this._pmtilesLayers.values());
       this._state.loading = false;
       this._state.status = `PMTiles layer added (${tileType}).`;
+      this._state.layerName = "";
       this._render();
       this._emit("layeradd", { url: this._state.url, layerId: sourceId });
     } catch (err) {

@@ -197,6 +197,7 @@ const DEFAULT_OPTIONS: Required<StacLayerControlOptions> = {
   defaultColormap: "none",
   defaultRescaleMin: 0,
   defaultRescaleMax: 255,
+  defaultLayerName: "",
   defaultOpacity: 1,
   defaultPickable: true,
   panelWidth: 320,
@@ -263,6 +264,7 @@ export class StacLayerControl implements IControl {
     this._state = {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
+      layerName: this._options.defaultLayerName,
       stacUrl: this._options.defaultUrl,
       stacItem: null,
       assets: [],
@@ -494,6 +496,7 @@ export class StacLayerControl implements IControl {
       error?: string;
       layerId?: string;
       assetKey?: string;
+      layerName?: string;
     },
   ): void {
     const handlers = this._eventHandlers.get(event);
@@ -849,6 +852,20 @@ export class StacLayerControl implements IControl {
       opacityGroup.appendChild(sliderRow);
       panel.appendChild(opacityGroup);
 
+      // Layer name input
+      const layerNameGroup = this._createFormGroup("Layer Name", "layer-name");
+      const layerNameInput = document.createElement("input");
+      layerNameInput.type = "text";
+      layerNameInput.className = "maplibre-gl-stac-layer-input";
+      layerNameInput.style.color = "#000";
+      layerNameInput.placeholder = "Optional custom layer name";
+      layerNameInput.value = this._state.layerName;
+      layerNameInput.addEventListener("input", () => {
+        this._state.layerName = layerNameInput.value;
+      });
+      layerNameGroup.appendChild(layerNameInput);
+      panel.appendChild(layerNameGroup);
+
       // Pickable checkbox
       const pickableGroup = document.createElement("div");
       pickableGroup.className =
@@ -929,7 +946,10 @@ export class StacLayerControl implements IControl {
 
         const label = document.createElement("span");
         label.className = "maplibre-gl-stac-layer-list-label";
-        label.textContent = layerId;
+        const props = this._cogLayerPropsMap.get(layerId);
+        const customName = props?._layerName as string | undefined;
+        label.textContent = customName || layerId;
+        label.title = layerId;
         item.appendChild(label);
 
         const removeBtn = document.createElement("button");
@@ -1414,6 +1434,12 @@ export class StacLayerControl implements IControl {
           layerProps.geoKeysParser = geoKeysParser;
         }
 
+        // Store custom layer name if provided
+        const customNameRgb = this._state.layerName?.trim();
+        if (customNameRgb) {
+          layerProps._layerName = customNameRgb;
+        }
+
         this._cogLayerPropsMap.set(layerId, layerProps);
         const newLayer = new COGLayer(layerProps);
         this._cogLayers.set(layerId, newLayer);
@@ -1437,11 +1463,13 @@ export class StacLayerControl implements IControl {
         this._state.layerCount = this._cogLayers.size;
         this._state.loading = false;
         this._state.status = `Added RGB layer: ${r}, ${g}, ${b}`;
+        this._state.layerName = "";
         this._render();
         this._emit("layeradd", {
           layerId,
           assetKey: `${r},${g},${b}`,
           url: rAsset.href,
+          layerName: customNameRgb || undefined,
         });
       } catch (err) {
         this._state.loading = false;
@@ -1492,6 +1520,12 @@ export class StacLayerControl implements IControl {
         _colormap: this._state.colormap,
       };
 
+      // Store custom layer name if provided
+      const customName = this._state.layerName?.trim();
+      if (customName) {
+        layerProps._layerName = customName;
+      }
+
       // Add custom geoKeysParser for better projection support
       const geoKeysParser = await this._buildGeoKeysParser();
       if (geoKeysParser) {
@@ -1521,8 +1555,9 @@ export class StacLayerControl implements IControl {
       this._state.layerCount = this._cogLayers.size;
       this._state.loading = false;
       this._state.status = `Added layer: ${asset.title || asset.key}`;
+      this._state.layerName = "";
       this._render();
-      this._emit("layeradd", { layerId, assetKey: asset.key, url: asset.href });
+      this._emit("layeradd", { layerId, assetKey: asset.key, url: asset.href, layerName: customName || undefined });
     } catch (err) {
       this._state.loading = false;
       this._state.error = `Failed to add layer: ${err instanceof Error ? err.message : String(err)}`;

@@ -1098,7 +1098,8 @@ export type DefaultControlName =
   | "zarrLayer"
   | "pmtilesLayer"
   | "stacLayer"
-  | "stacSearch";
+  | "stacSearch"
+  | "addVector";
 
 /**
  * Options for configuring the ControlGrid.
@@ -1186,6 +1187,8 @@ export type ControlGridEventHandler = (event: {
 export interface CogLayerInfo {
   /** Unique layer identifier. */
   id: string;
+  /** Optional custom display name. */
+  name?: string;
   /** COG URL. */
   url: string;
   /** Bands string. */
@@ -1232,6 +1235,8 @@ export interface CogLayerControlOptions {
   defaultNodata?: number;
   /** Default opacity (0-1). Default: 1. */
   defaultOpacity?: number;
+  /** Default layer name to pre-fill. If not specified, name is auto-generated. */
+  defaultLayerName?: string;
   /** Whether COG layers are pickable (clickable to show pixel values). Default: true. */
   defaultPickable?: boolean;
   /** Width of the panel in pixels. Default: 300. */
@@ -1272,6 +1277,8 @@ export interface CogLayerControlState {
   rescaleMax: number;
   /** Current nodata value. */
   nodata: number | undefined;
+  /** Current layer name (optional, auto-generated if empty). */
+  layerName: string;
   /** Current opacity (0-1). */
   layerOpacity: number;
   /** Whether layers are pickable (clickable). */
@@ -1339,6 +1346,8 @@ export type CogLayerEventHandler = (event: {
 export interface ZarrLayerInfo {
   /** Unique layer identifier. */
   id: string;
+  /** Optional custom display name. */
+  name?: string;
   /** Zarr URL. */
   url: string;
   /** Variable name. */
@@ -1381,6 +1390,8 @@ export interface ZarrLayerControlOptions {
   defaultSelector?: Record<string, number | string>;
   /** Default opacity (0-1). Default: 1. */
   defaultOpacity?: number;
+  /** Default layer name to pre-fill. If not specified, name is auto-generated. */
+  defaultLayerName?: string;
   /** Whether Zarr layers are pickable (clickable to show info). Default: true. */
   defaultPickable?: boolean;
   /** Width of the panel in pixels. Default: 300. */
@@ -1419,6 +1430,8 @@ export interface ZarrLayerControlState {
   clim: [number, number];
   /** Current selector. */
   selector?: Record<string, number | string>;
+  /** Current layer name (optional, auto-generated if empty). */
+  layerName: string;
   /** Current opacity (0-1). */
   layerOpacity: number;
   /** Whether layers are pickable (clickable). */
@@ -1491,6 +1504,8 @@ export type PMTilesTileType = "vector" | "raster" | "unknown";
 export interface PMTilesLayerInfo {
   /** Unique layer identifier. */
   id: string;
+  /** Optional custom display name. */
+  name?: string;
   /** PMTiles URL. */
   url: string;
   /** Tile type (vector or raster). */
@@ -1531,6 +1546,8 @@ export interface PMTilesLayerControlOptions {
   defaultLineColor?: string;
   /** Default circle color for vector points. Default: 'steelblue'. */
   defaultCircleColor?: string;
+  /** Default layer name to pre-fill. If not specified, name is auto-generated. */
+  defaultLayerName?: string;
   /** Whether features are pickable (clickable) by default. Default: true. */
   defaultPickable?: boolean;
   /** Width of the panel in pixels. Default: 300. */
@@ -1561,6 +1578,8 @@ export interface PMTilesLayerControlState {
   collapsed: boolean;
   /** Current PMTiles URL. */
   url: string;
+  /** Current layer name (optional, auto-generated if empty). */
+  layerName: string;
   /** Current opacity (0-1). */
   layerOpacity: number;
   /** Available source layers (fetched from metadata). */
@@ -1850,6 +1869,8 @@ export interface StacLayerControlOptions {
   defaultRescaleMax?: number;
   /** Default opacity (0-1). Default: 1. */
   defaultOpacity?: number;
+  /** Default layer name to pre-fill. If not specified, name is auto-generated. */
+  defaultLayerName?: string;
   /** Whether layers are pickable (clickable to show info). Default: true. */
   defaultPickable?: boolean;
   /** Width of the panel in pixels. Default: 320. */
@@ -1878,6 +1899,8 @@ export interface StacLayerControlState {
   visible: boolean;
   /** Whether the panel is collapsed. */
   collapsed: boolean;
+  /** Current layer name (optional, auto-generated if empty). */
+  layerName: string;
   /** Current STAC item URL. */
   stacUrl: string;
   /** Loaded STAC item. */
@@ -1933,6 +1956,7 @@ export type StacLayerEventHandler = (event: {
   error?: string;
   layerId?: string;
   assetKey?: string;
+  layerName?: string;
 }) => void;
 
 /**

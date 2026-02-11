@@ -51,15 +51,18 @@ export class StacLayerAdapter implements CustomLayerAdapter {
     this.stacControl.on("layeradd", (event) => {
       const layerId = event.layerId;
       if (layerId) {
-        let displayName = layerId;
-        if (event.assetKey) {
-          displayName = `STAC: ${event.assetKey}`;
-        } else if (event.url) {
-          try {
-            const urlObj = new URL(event.url);
-            displayName = urlObj.pathname.split("/").pop() || layerId;
-          } catch {
-            displayName = event.url;
+        // Use custom name if available, otherwise build from asset key or URL
+        let displayName = event.layerName || layerId;
+        if (!event.layerName) {
+          if (event.assetKey) {
+            displayName = `STAC: ${event.assetKey}`;
+          } else if (event.url) {
+            try {
+              const urlObj = new URL(event.url);
+              displayName = urlObj.pathname.split("/").pop() || layerId;
+            } catch {
+              displayName = event.url;
+            }
           }
         }
 
