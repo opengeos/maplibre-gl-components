@@ -72,11 +72,5 @@ for (const adapter of controlGrid.getAdapters()) {
   layerControl.registerCustomAdapter(adapter);
 }
 
-// Optional: listen for grid events
-controlGrid.on('controladd', () => console.log('Control added to grid'));
-controlGrid.on('controlremove', () => console.log('Control removed from grid'));
-controlGrid.on('collapse', () => console.log('Grid collapsed'));
-controlGrid.on('expand', () => console.log('Grid expanded'));
-
-console.log('Control Grid example — using defaultControls for built-in controls.');
-console.log('Use grid.setRows(n) / grid.setColumns(n) or the R/C inputs to change the layout.');
+// Register data-layer adapters so COG, Zarr, PMTiles layers appear in the LayerControl
+// (already done above)
