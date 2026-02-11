@@ -945,12 +945,15 @@ export class ControlGrid implements IControl {
       if (entry.element) {
         // Remove maplibregl-ctrl-group which constrains width and clips
         // overflow, preventing the inner panel from sizing correctly.
-        if (entry.element.classList.contains("maplibregl-ctrl-group")) {
+        const hasCtrlGroup =
+          entry.element.classList.contains("maplibregl-ctrl-group");
+        if (hasCtrlGroup) {
           entry.element.classList.remove("maplibregl-ctrl-group");
           entry.element.dataset.hadCtrlGroup = "1";
-        } else {
-          // Controls without ctrl-group (e.g. Bookmark, Print) don't need
-          // MapLibre's positional margin-right inside the floating panel.
+        }
+        // Controls that never had ctrl-group (e.g. Bookmark, Print) don't
+        // need MapLibre's positional margin-right inside the floating panel.
+        if (!hasCtrlGroup && !entry.element.dataset.hadCtrlGroup) {
           entry.element.style.marginRight = "0";
         }
       }
