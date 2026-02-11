@@ -29,8 +29,8 @@ map.addControl(layerControl, 'top-right');
 // Add a ControlGrid with built-in default controls
 const controlGrid = new ControlGrid({
   position: 'top-right',
-  rows: 3,
-  columns: 4,
+  rows: 5,
+  columns: 5,
   collapsible: true,
   collapsed: true,
   showRowColumnControls: true,
@@ -54,6 +54,13 @@ const controlGrid = new ControlGrid({
     'pmtilesLayer',
     'stacLayer',
     'stacSearch',
+    'geoEditor',
+    'lidar',
+    'planetaryComputer',
+    'gaussianSplat',
+    'streetView',
+    'swipe',
+    'usgsLidar',
   ],
 });
 

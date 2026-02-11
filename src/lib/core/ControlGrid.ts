@@ -35,6 +35,13 @@ import { PMTilesLayerAdapter } from "../adapters/PMTilesLayerAdapter";
 import { AddVectorAdapter } from "../adapters/AddVectorAdapter";
 import { StacLayerAdapter } from "../adapters/StacLayerAdapter";
 import type { CustomLayerAdapter } from "../adapters/CogLayerAdapter";
+import { GeoEditor, GeoEditorLayerAdapter } from "maplibre-gl-geo-editor";
+import { LidarControl, LidarLayerAdapter } from "maplibre-gl-lidar";
+import { PlanetaryComputerControl, PlanetaryComputerLayerAdapter } from "maplibre-gl-planetary-computer";
+import { GaussianSplatControl, GaussianSplatLayerAdapter } from "maplibre-gl-splat";
+import { StreetViewControl } from "maplibre-gl-streetview";
+import { SwipeControl } from "maplibre-gl-swipe";
+import { UsgsLidarControl, UsgsLidarLayerAdapter } from "maplibre-gl-usgs-lidar";
 
 
 /**
@@ -349,6 +356,20 @@ export class ControlGrid implements IControl {
           defaultUrl:
             "https://flatgeobuf.org/test/data/UScounties.fgb",
         });
+      case "geoEditor":
+        return new GeoEditor({ collapsed: true }) as unknown as IControl;
+      case "lidar":
+        return new LidarControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+      case "planetaryComputer":
+        return new PlanetaryComputerControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+      case "gaussianSplat":
+        return new GaussianSplatControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+      case "streetView":
+        return new StreetViewControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+      case "swipe":
+        return new SwipeControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+      case "usgsLidar":
+        return new UsgsLidarControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
       default:
         return null;
     }
@@ -485,6 +506,16 @@ export class ControlGrid implements IControl {
         adapters.push(new StacLayerAdapter(ctrl));
       } else if (ctrl instanceof AddVectorControl) {
         adapters.push(new AddVectorAdapter(ctrl));
+      } else if (ctrl instanceof LidarControl) {
+        adapters.push(new LidarLayerAdapter(ctrl));
+      } else if (ctrl instanceof PlanetaryComputerControl) {
+        adapters.push(new PlanetaryComputerLayerAdapter(ctrl));
+      } else if (ctrl instanceof GaussianSplatControl) {
+        adapters.push(new GaussianSplatLayerAdapter(ctrl));
+      } else if (ctrl instanceof UsgsLidarControl) {
+        adapters.push(new UsgsLidarLayerAdapter(ctrl));
+      } else if (ctrl instanceof GeoEditor) {
+        adapters.push(new GeoEditorLayerAdapter(ctrl));
       }
     }
     return adapters;

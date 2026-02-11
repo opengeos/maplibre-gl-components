@@ -1101,7 +1101,14 @@ export type DefaultControlName =
   | "pmtilesLayer"
   | "stacLayer"
   | "stacSearch"
-  | "addVector";
+  | "addVector"
+  | "geoEditor"
+  | "lidar"
+  | "planetaryComputer"
+  | "gaussianSplat"
+  | "streetView"
+  | "swipe"
+  | "usgsLidar";
 
 /**
  * Options for configuring the ControlGrid.
