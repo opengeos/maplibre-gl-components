@@ -217,6 +217,9 @@ export class ControlGrid implements IControl {
   private _zoomVisible: boolean = true;
   private _floatingEntry: ChildEntry | null = null;
   private _floatingPanel: HTMLElement | null = null;
+  /** True during a click that originated inside the grid (not the floating panel). */
+  private _clickInGrid: boolean = false;
+  private _docCaptureHandler?: (e: MouseEvent) => void;
 
   constructor(options?: ControlGridOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -393,6 +396,24 @@ export class ControlGrid implements IControl {
     this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
 
+    // Register capture-phase click listener on document BEFORE children
+    // are mounted, so it fires before any child control's capture handlers.
+    // This flags clicks inside the grid (but not the floating panel) so the
+    // collapse override can block capture-phase click-outside handlers.
+    this._docCaptureHandler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        this._container?.contains(target) &&
+        !this._floatingPanel?.contains(target)
+      ) {
+        this._clickInGrid = true;
+        queueMicrotask(() => {
+          this._clickInGrid = false;
+        });
+      }
+    };
+    document.addEventListener("click", this._docCaptureHandler, true);
+
     this._render();
     this._mountChildren();
 
@@ -400,6 +421,10 @@ export class ControlGrid implements IControl {
   }
 
   onRemove(): void {
+    if (this._docCaptureHandler) {
+      document.removeEventListener("click", this._docCaptureHandler, true);
+      this._docCaptureHandler = undefined;
+    }
     if (this._map && this._handleZoom) {
       this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
@@ -560,10 +585,6 @@ export class ControlGrid implements IControl {
 
   collapse(): void {
     if (!this._state.collapsed) {
-      // Collapse any floating child first to properly restore external panels
-      if (this._floatingEntry) {
-        this._collapseFloatingChild();
-      }
       this._state.collapsed = true;
       this._render();
       this._emit("collapse");
@@ -635,6 +656,9 @@ export class ControlGrid implements IControl {
     }`;
     const shouldShow = this._state.visible && this._zoomVisible;
     if (!shouldShow) container.style.display = "none";
+    // Prevent clicks inside the grid from reaching document-level
+    // click-outside handlers that upstream plugins use to auto-collapse.
+    container.addEventListener("click", (e) => e.stopPropagation());
     return container;
   }
 
@@ -804,6 +828,13 @@ export class ControlGrid implements IControl {
       this._floatingPanel.style.display = "none";
     }
     this._floatingEntry = null;
+
+    // Now that _floatingEntry is null (preventing re-entry), collapse the
+    // control so its internal state matches and the panel is hidden.
+    const ctrl = entry.control as any;
+    if (typeof ctrl.collapse === "function") {
+      ctrl.collapse();
+    }
   }
 
   private _mountAsFloating(entry: ChildEntry): void {
@@ -830,6 +861,12 @@ export class ControlGrid implements IControl {
 
     // Relocate external panel (appended to map container) into floating panel
     this._relocateExternalPanel(entry, panel);
+
+    // If the external panel is already relocated (e.g. after a re-render),
+    // _relocateExternalPanel bails early, so re-apply right:0px here.
+    if (entry._externalPanel) {
+      panel.style.right = "0px";
+    }
   }
 
   private _ensureFloatingPanel(): HTMLElement {
@@ -877,10 +914,9 @@ export class ControlGrid implements IControl {
 
   private _collapseFloatingChild(): void {
     if (!this._floatingEntry) return;
-    const ctrl = this._floatingEntry.control as any;
-    if (typeof ctrl.collapse === "function") {
-      ctrl.collapse();
-    }
+    // Call _onChildCollapse directly rather than ctrl.collapse()
+    // to bypass the collapse override that blocks click-outside handlers.
+    this._onChildCollapse(this._floatingEntry);
   }
 
   /**
@@ -921,6 +957,20 @@ export class ControlGrid implements IControl {
         panelObj.positionRelativeTo.bind(panelObj);
       panelObj.positionRelativeTo = () => {};
     }
+    // Override collapse() so that close buttons inside the relocated panel
+    // trigger proper grid cleanup via _onChildCollapse.
+    // Bubble-phase click-outside handlers are already blocked by
+    // stopPropagation on the grid container. Capture-phase handlers
+    // (like USGS LiDAR) are blocked by checking _clickInGrid — set by
+    // our capture listener on document registered before the child's.
+    if (typeof ctrl.collapse === "function") {
+      entry._savedPositionMethods["collapse"] = ctrl.collapse.bind(ctrl);
+      ctrl.collapse = () => {
+        if (this._floatingEntry === entry && !this._clickInGrid) {
+          this._onChildCollapse(entry);
+        }
+      };
+    }
 
     // Force inline !important overrides for belt-and-suspenders safety.
     const force = (prop: string, val: string) =>
@@ -952,20 +1002,22 @@ export class ControlGrid implements IControl {
   private _restoreExternalPanel(entry: ChildEntry): void {
     if (!entry._externalPanel || !entry._externalPanelParent) return;
 
-    entry._externalPanel.classList.remove("maplibre-gl-control-grid-relocated");
+    const extPanel = entry._externalPanel;
+
+    extPanel.classList.remove("maplibre-gl-control-grid-relocated");
 
     // Clear the inline !important overrides so the control's own
     // positioning logic works normally again.
     const props = ["position", "top", "bottom", "left", "right", "z-index"];
     for (const prop of props) {
-      entry._externalPanel.style.removeProperty(prop);
+      extPanel.style.removeProperty(prop);
     }
 
-    entry._externalPanelParent.appendChild(entry._externalPanel);
+    entry._externalPanelParent.appendChild(extPanel);
     entry._externalPanel = null;
     entry._externalPanelParent = null;
 
-    // Restore positioning methods to their original implementations
+    // Restore overridden methods to their original implementations
     if (entry._savedPositionMethods) {
       const ctrl = entry.control as any;
       for (const [key, fn] of Object.entries(entry._savedPositionMethods)) {
