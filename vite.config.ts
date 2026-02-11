@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import dts from 'vite-plugin-dts';
 
+// Use DEBUG=1 to generate sourcemaps and disable minification for debugging
+const isDebug = process.env.DEBUG === '1';
+
 export default defineConfig({
   plugins: [
     react(),
@@ -61,7 +64,10 @@ export default defineConfig({
       },
     },
     cssCodeSplit: false,
-    sourcemap: true,
-    minify: false,
+    // Production: no sourcemaps, minified for smaller package size
+    // Debug: sourcemaps enabled, no minification for easier debugging
+    // Use `DEBUG=1 npm run build` to generate debuggable artifacts
+    sourcemap: isDebug,
+    minify: isDebug ? false : 'esbuild',
   },
 });
