@@ -530,6 +530,7 @@ export class InspectControl implements IControl {
    */
   private _addHighlight(inspectedFeature: InspectedFeature): void {
     if (!this._map) return;
+    const map = this._map;
 
     // Remove existing highlight
     this._removeHighlight();
@@ -538,93 +539,104 @@ export class InspectControl implements IControl {
     const geometryType = feature.geometry.type;
     const style = this._options.highlightStyle;
 
+    // Try filter-based approach first (uses original source, avoids tile clipping)
     const highlightTarget = this._getHighlightTarget(inspectedFeature);
-    const highlightSourceId =
-      highlightTarget?.sourceId ?? this._highlightSourceId;
-    const highlightSourceLayer = highlightTarget?.sourceLayer;
-    const highlightFilter = highlightTarget?.filter;
 
-    if (!highlightTarget) {
-      // Add source only when we can't use the original source for highlighting.
-      this._map.addSource(this._highlightSourceId, {
-        type: "geojson",
-        data: feature,
-      });
-    }
-
-    const layerBase: {
+    // Helper to add layers with a given configuration
+    const addLayers = (layerBase: {
       source: string;
       "source-layer"?: string;
       filter?: maplibregl.FilterSpecification;
-    } = { source: highlightSourceId };
+    }): void => {
+      if (geometryType === "Point" || geometryType === "MultiPoint") {
+        const layerId = `${this._highlightSourceId}-circle`;
+        map.addLayer({
+          id: layerId,
+          type: "circle",
+          ...layerBase,
+          paint: {
+            "circle-radius": style.circleRadius,
+            "circle-color": style.fillColor,
+            "circle-opacity": style.fillOpacity,
+            "circle-stroke-color": style.strokeColor,
+            "circle-stroke-width": style.circleStrokeWidth,
+          },
+        });
+        this._highlightLayerIds.push(layerId);
+      } else if (
+        geometryType === "LineString" ||
+        geometryType === "MultiLineString"
+      ) {
+        const layerId = `${this._highlightSourceId}-line`;
+        map.addLayer({
+          id: layerId,
+          type: "line",
+          ...layerBase,
+          paint: {
+            "line-color": style.strokeColor,
+            "line-width": style.strokeWidth,
+            "line-opacity": 1,
+          },
+        });
+        this._highlightLayerIds.push(layerId);
+      } else if (geometryType === "Polygon" || geometryType === "MultiPolygon") {
+        // Fill layer
+        const fillLayerId = `${this._highlightSourceId}-fill`;
+        map.addLayer({
+          id: fillLayerId,
+          type: "fill",
+          ...layerBase,
+          paint: {
+            "fill-color": style.fillColor,
+            "fill-opacity": style.fillOpacity,
+          },
+        });
+        this._highlightLayerIds.push(fillLayerId);
 
-    if (highlightSourceLayer) {
-      layerBase["source-layer"] = highlightSourceLayer;
+        // Outline layer
+        const lineLayerId = `${this._highlightSourceId}-outline`;
+        map.addLayer({
+          id: lineLayerId,
+          type: "line",
+          ...layerBase,
+          paint: {
+            "line-color": style.strokeColor,
+            "line-width": style.strokeWidth,
+          },
+        });
+        this._highlightLayerIds.push(lineLayerId);
+      }
+    };
+
+    if (highlightTarget) {
+      // Try using the original source with a filter
+      const layerBase: {
+        source: string;
+        "source-layer"?: string;
+        filter?: maplibregl.FilterSpecification;
+      } = { source: highlightTarget.sourceId };
+
+      if (highlightTarget.sourceLayer) {
+        layerBase["source-layer"] = highlightTarget.sourceLayer;
+      }
+      layerBase.filter = highlightTarget.filter;
+
+      try {
+        addLayers(layerBase);
+        return; // Success - exit early
+      } catch {
+        // Filter-based approach failed (e.g., legacy filter syntax incompatibility)
+        // Clean up any partially added layers and fall back to GeoJSON source
+        this._removeHighlight();
+      }
     }
 
-    if (highlightFilter) {
-      layerBase.filter = highlightFilter;
-    }
-
-    // Add appropriate layer(s) based on geometry type
-    if (geometryType === "Point" || geometryType === "MultiPoint") {
-      const layerId = `${this._highlightSourceId}-circle`;
-      this._map.addLayer({
-        id: layerId,
-        type: "circle",
-        ...layerBase,
-        paint: {
-          "circle-radius": style.circleRadius,
-          "circle-color": style.fillColor,
-          "circle-opacity": style.fillOpacity,
-          "circle-stroke-color": style.strokeColor,
-          "circle-stroke-width": style.circleStrokeWidth,
-        },
-      });
-      this._highlightLayerIds.push(layerId);
-    } else if (
-      geometryType === "LineString" ||
-      geometryType === "MultiLineString"
-    ) {
-      const layerId = `${this._highlightSourceId}-line`;
-      this._map.addLayer({
-        id: layerId,
-        type: "line",
-        ...layerBase,
-        paint: {
-          "line-color": style.strokeColor,
-          "line-width": style.strokeWidth,
-          "line-opacity": 1,
-        },
-      });
-      this._highlightLayerIds.push(layerId);
-    } else if (geometryType === "Polygon" || geometryType === "MultiPolygon") {
-      // Fill layer
-      const fillLayerId = `${this._highlightSourceId}-fill`;
-      this._map.addLayer({
-        id: fillLayerId,
-        type: "fill",
-        ...layerBase,
-        paint: {
-          "fill-color": style.fillColor,
-          "fill-opacity": style.fillOpacity,
-        },
-      });
-      this._highlightLayerIds.push(fillLayerId);
-
-      // Outline layer
-      const lineLayerId = `${this._highlightSourceId}-outline`;
-      this._map.addLayer({
-        id: lineLayerId,
-        type: "line",
-        ...layerBase,
-        paint: {
-          "line-color": style.strokeColor,
-          "line-width": style.strokeWidth,
-        },
-      });
-      this._highlightLayerIds.push(lineLayerId);
-    }
+    // Fallback: use a dedicated GeoJSON source with the feature data
+    map.addSource(this._highlightSourceId, {
+      type: "geojson",
+      data: feature,
+    });
+    addLayers({ source: this._highlightSourceId });
   }
 
   /**
@@ -637,7 +649,7 @@ export class InspectControl implements IControl {
   } | null {
     if (!this._map) return null;
 
-    const { sourceId, sourceLayer, featureId, layerId } = inspectedFeature;
+    const { sourceId, sourceLayer, featureId } = inspectedFeature;
     if (!sourceId || sourceId === "unknown") return null;
     if (featureId === null || featureId === undefined) return null;
 
@@ -648,13 +660,11 @@ export class InspectControl implements IControl {
 
     if (source.type === "vector" && !sourceLayer) return null;
 
-    const idFilter: maplibregl.FilterSpecification = ["==", ["id"], featureId];
-    const layerFilter = this._map.getLayer(layerId)?.filter;
-    const combinedFilter = layerFilter
-      ? (["all", idFilter, layerFilter] as maplibregl.FilterSpecification)
-      : idFilter;
+    // Use legacy $id syntax which is universally compatible
+    // Don't combine with layerFilter as it may use incompatible filter syntax
+    const idFilter: maplibregl.FilterSpecification = ["==", "$id", featureId];
 
-    return { sourceId, sourceLayer, filter: combinedFilter };
+    return { sourceId, sourceLayer, filter: idFilter };
   }
 
   /**
