@@ -5,6 +5,15 @@ import { ControlGrid } from '../../src';
 import { LayerControl } from 'maplibre-gl-layer-control';
 import 'maplibre-gl-layer-control/style.css';
 
+// Plugin CSS imports
+import 'maplibre-gl-geo-editor/style.css';
+import 'maplibre-gl-lidar/style.css';
+import 'maplibre-gl-planetary-computer/style.css';
+import 'maplibre-gl-splat/style.css';
+import 'maplibre-gl-streetview/style.css';
+import 'maplibre-gl-swipe/style.css';
+import 'maplibre-gl-usgs-lidar/style.css';
+
 const BASEMAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
 const map = new maplibregl.Map({
