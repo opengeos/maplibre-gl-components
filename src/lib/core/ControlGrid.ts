@@ -220,6 +220,7 @@ export class ControlGrid implements IControl {
   /** True during a click that originated inside the grid (not the floating panel). */
   private _clickInGrid: boolean = false;
   private _docCaptureHandler?: (e: MouseEvent) => void;
+  private _docBubbleHandler?: (e: MouseEvent) => void;
 
   constructor(options?: ControlGridOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -400,19 +401,24 @@ export class ControlGrid implements IControl {
     // are mounted, so it fires before any child control's capture handlers.
     // This flags clicks inside the grid (but not the floating panel) so the
     // collapse override can block capture-phase click-outside handlers.
+    // Capture-phase handler: set _clickInGrid BEFORE child handlers run.
+    // We set it true for clicks in the grid (but not floating panel), and
+    // explicitly reset to false otherwise. This ensures the flag is always
+    // correct for the current click, even if a previous bubble handler was
+    // blocked by stopPropagation.
     this._docCaptureHandler = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (
-        this._container?.contains(target) &&
-        !this._floatingPanel?.contains(target)
-      ) {
-        this._clickInGrid = true;
-        queueMicrotask(() => {
-          this._clickInGrid = false;
-        });
-      }
+      const inContainer = this._container?.contains(target);
+      const inFloating = this._floatingPanel?.contains(target);
+      // Clicks in the grid container (but NOT in floating panel) block collapse
+      this._clickInGrid = !!(inContainer && !inFloating);
+    };
+    // Bubble-phase handler: reset _clickInGrid AFTER all handlers have run
+    this._docBubbleHandler = () => {
+      this._clickInGrid = false;
     };
     document.addEventListener("click", this._docCaptureHandler, true);
+    document.addEventListener("click", this._docBubbleHandler, false);
 
     this._render();
     this._mountChildren();
@@ -424,6 +430,10 @@ export class ControlGrid implements IControl {
     if (this._docCaptureHandler) {
       document.removeEventListener("click", this._docCaptureHandler, true);
       this._docCaptureHandler = undefined;
+    }
+    if (this._docBubbleHandler) {
+      document.removeEventListener("click", this._docBubbleHandler, false);
+      this._docBubbleHandler = undefined;
     }
     if (this._map && this._handleZoom) {
       this._map.off("zoom", this._handleZoom);
@@ -1036,6 +1046,9 @@ export class ControlGrid implements IControl {
     if (typeof ctrl.collapse === "function") {
       entry._savedPositionMethods["collapse"] = ctrl.collapse.bind(ctrl);
       ctrl.collapse = () => {
+        // Only collapse if panel is floating AND click was outside the grid.
+        // Clicks inside the grid (e.g. wrench icon) set _clickInGrid = true
+        // in the capture phase, blocking the collapse.
         if (this._floatingEntry === entry && !this._clickInGrid) {
           this._onChildCollapse(entry);
         }
