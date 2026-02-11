@@ -97,6 +97,16 @@
   margin-bottom: 0 !important;
 }
 
+/* ViewState panel uses top:100%/right:0 absolute positioning which breaks
+   inside the floating panel. Reset to static so it flows normally;
+   the explicit inline width (280px) is preserved. */
+.maplibre-gl-control-grid-floating-panel .maplibre-gl-view-state-panel {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  margin-top: 0 !important;
+}
+
 /* Override minimap panel positioning inside the floating panel so it flows
    below the button instead of using bottom:36px (which would go behind the grid). */
 .maplibre-gl-control-grid-floating-panel .maplibre-gl-minimap-control .minimap-panel {
@@ -105,6 +115,7 @@
   left: auto;
   margin-top: 4px;
 }
+
 
 /* Relocated external panel: strip absolute positioning when moved into floating panel */
 .maplibre-gl-control-grid-relocated {

@@ -800,10 +800,17 @@ export class ControlGrid implements IControl {
 
     // Relocate external panel (appended to map container) into floating panel
     this._relocateExternalPanel(entry, panel);
+
+    // For internal controls (no external panel), hide the toggle button
+    // so only the panel content is visible in the floating panel.
+    this._hideFloatingButton(entry);
   }
 
   private _onChildCollapse(entry: ChildEntry): void {
     if (this._floatingEntry !== entry) return;
+
+    // Show the toggle button again before moving back to grid
+    this._showFloatingButton(entry);
 
     // Restore external panel to its original parent
     this._restoreExternalPanel(entry);
@@ -818,11 +825,6 @@ export class ControlGrid implements IControl {
     }
     entry._placeholder = null;
 
-    // Update collapsed snapshot for next time
-    if (entry.element) {
-      entry.collapsedSnapshot = entry.element.cloneNode(true) as HTMLElement;
-    }
-
     // Hide floating panel
     if (this._floatingPanel) {
       this._floatingPanel.style.display = "none";
@@ -834,6 +836,12 @@ export class ControlGrid implements IControl {
     const ctrl = entry.control as any;
     if (typeof ctrl.collapse === "function") {
       ctrl.collapse();
+    }
+
+    // Update collapsed snapshot AFTER the control has collapsed,
+    // so the snapshot captures the collapsed (not expanded) DOM.
+    if (entry.element) {
+      entry.collapsedSnapshot = entry.element.cloneNode(true) as HTMLElement;
     }
   }
 
@@ -867,6 +875,10 @@ export class ControlGrid implements IControl {
     if (entry._externalPanel) {
       panel.style.right = "0px";
     }
+
+    // For internal controls (no external panel), hide the toggle button
+    // so only the panel content is visible in the floating panel.
+    this._hideFloatingButton(entry);
   }
 
   private _ensureFloatingPanel(): HTMLElement {
@@ -901,7 +913,8 @@ export class ControlGrid implements IControl {
 
   private _clearFloating(): void {
     if (this._floatingEntry) {
-      // Restore external panel to its original parent before clearing
+      // Restore button visibility and external panel before clearing
+      this._showFloatingButton(this._floatingEntry);
       this._restoreExternalPanel(this._floatingEntry);
       this._floatingEntry._placeholder = null;
     }
@@ -917,6 +930,50 @@ export class ControlGrid implements IControl {
     // Call _onChildCollapse directly rather than ctrl.collapse()
     // to bypass the collapse override that blocks click-outside handlers.
     this._onChildCollapse(this._floatingEntry);
+  }
+
+  /**
+   * Hide the control's toggle button when it is inside the floating panel
+   * so only the expanded panel content is visible.
+   * Only applies to internal controls (no external panel).
+   */
+  private _hideFloatingButton(entry: ChildEntry): void {
+    if (entry._externalPanel) return; // external panels handle this differently
+    const ctrl = entry.control as any;
+    if (ctrl._button) {
+      ctrl._button.style.display = "none";
+      if (entry.element) {
+        // Remove maplibregl-ctrl-group which constrains width and clips
+        // overflow, preventing the inner panel from sizing correctly.
+        if (entry.element.classList.contains("maplibregl-ctrl-group")) {
+          entry.element.classList.remove("maplibregl-ctrl-group");
+          entry.element.dataset.hadCtrlGroup = "1";
+        } else {
+          // Controls without ctrl-group (e.g. Bookmark, Print) don't need
+          // MapLibre's positional margin-right inside the floating panel.
+          entry.element.style.marginRight = "0";
+        }
+      }
+    }
+  }
+
+  /**
+   * Restore the control's toggle button visibility when moving
+   * back from the floating panel to the grid.
+   */
+  private _showFloatingButton(entry: ChildEntry): void {
+    const ctrl = entry.control as any;
+    if (ctrl._button) {
+      ctrl._button.style.display = "";
+      if (entry.element) {
+        if (entry.element.dataset.hadCtrlGroup) {
+          entry.element.classList.add("maplibregl-ctrl-group");
+          delete entry.element.dataset.hadCtrlGroup;
+        } else {
+          entry.element.style.marginRight = "";
+        }
+      }
+    }
   }
 
   /**
