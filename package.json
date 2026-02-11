@@ -112,7 +112,7 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-dts": "^4.5.4",
-    "vite-plugin-node-polyfills": "^0.2.0",
+    "vite-plugin-node-polyfills": "^0.25.0",
     "vitest": "^4.0.18"
   },
   "dependencies": {
@@ -126,7 +126,7 @@
     "maplibre-gl-layer-control": "^0.13.0",
     "maplibre-gl-lidar": "^0.11.1",
     "maplibre-gl-planetary-computer": "^0.2.1",
-    "maplibre-gl-splat": "^0.2.1",
+    "maplibre-gl-splat": "^0.2.2",
     "maplibre-gl-streetview": "^0.3.1",
     "maplibre-gl-swipe": "^0.3.1",
     "maplibre-gl-usgs-lidar": "^0.7.2",
