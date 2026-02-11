@@ -85,8 +85,26 @@
   position: absolute;
   top: 100%;
   right: 0;
-  margin-top: 6px;
+  margin-top: 10px;
   z-index: 10;
+}
+
+/* Strip default MapLibre vertical margins inside the floating panel
+   so internal and external panels have consistent spacing.
+   Keep horizontal margins for right-side padding from map edge. */
+.maplibre-gl-control-grid-floating-panel > .maplibregl-ctrl {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* ViewState panel uses top:100%/right:0 absolute positioning which breaks
+   inside the floating panel. Reset to static so it flows normally;
+   the explicit inline width (280px) is preserved. */
+.maplibre-gl-control-grid-floating-panel .maplibre-gl-view-state-panel {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  margin-top: 0 !important;
 }
 
 /* Override minimap panel positioning inside the floating panel so it flows
@@ -96,6 +114,25 @@
   bottom: auto;
   left: auto;
   margin-top: 4px;
+}
+
+
+/* Relocated external panel: strip absolute positioning when moved into floating panel */
+.maplibre-gl-control-grid-relocated {
+  position: static !important;
+  top: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  z-index: auto !important;
+  display: block !important;
+}
+
+/* Planetary Computer panel uses flex-column layout for scrollable content;
+   preserve it when relocated so overflow-y on .pc-control-content works. */
+.maplibre-gl-control-grid-relocated.pc-control-panel {
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 /* Placeholder icon in grid when a child is floating */

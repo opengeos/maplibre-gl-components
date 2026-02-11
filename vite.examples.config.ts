@@ -25,11 +25,12 @@ export default defineConfig({
   plugins: [
     react(),
     copyStaticCdnExample(),
-    // Polyfill Node.js Buffer for shpjs browser compatibility
+    // Polyfill Node.js APIs for browser compatibility (shpjs, maplibre-gl-lidar, etc.)
     nodePolyfills({
-      include: ["buffer"],
+      include: ["buffer", "process", "string_decoder"],
       globals: {
         Buffer: true,
+        process: true,
       },
     }),
   ],

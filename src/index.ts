@@ -21,6 +21,14 @@ import "./lib/styles/bookmark-control.css";
 import "./lib/styles/print-control.css";
 import "./lib/styles/minimap-control.css";
 
+// Plugin CSS
+import "maplibre-gl-geo-editor/style.css";
+import "maplibre-gl-lidar/style.css";
+import "maplibre-gl-planetary-computer/style.css";
+import "maplibre-gl-splat/style.css";
+import "maplibre-gl-streetview/style.css";
+import "maplibre-gl-swipe/style.css";
+import "maplibre-gl-usgs-lidar/style.css";
 
 // Main entry point - Core exports
 export { Colorbar } from "./lib/core/Colorbar";
@@ -54,6 +62,15 @@ export {
   StacLayerAdapter,
 } from "./lib/adapters";
 export type { CustomLayerAdapter } from "./lib/adapters";
+
+// Plugin re-exports
+export { GeoEditor, GeoEditorLayerAdapter } from "maplibre-gl-geo-editor";
+export { LidarControl, LidarLayerAdapter } from "maplibre-gl-lidar";
+export { PlanetaryComputerControl, PlanetaryComputerLayerAdapter } from "maplibre-gl-planetary-computer";
+export { GaussianSplatControl, GaussianSplatLayerAdapter } from "maplibre-gl-splat";
+export { StreetViewControl } from "maplibre-gl-streetview";
+export { SwipeControl } from "maplibre-gl-swipe";
+export { UsgsLidarControl, UsgsLidarLayerAdapter } from "maplibre-gl-usgs-lidar";
 
 // Provider utilities
 export {

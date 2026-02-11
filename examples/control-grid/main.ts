@@ -1,5 +1,6 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import '@geoman-io/maplibre-geoman-free/dist/maplibre-geoman.css';
 import { ControlGrid } from '../../src';
 import { LayerControl } from 'maplibre-gl-layer-control';
 import 'maplibre-gl-layer-control/style.css';
@@ -22,6 +23,13 @@ const layerControl = new LayerControl({
   panelMinWidth: 240,
   panelMaxWidth: 450,
   basemapStyleUrl: BASEMAP_STYLE,
+  // Exclude internal layers from controls that add helper/draw layers
+  excludeLayers: [
+    'usgs-lidar-*',      // USGS LiDAR draw and footprint layers
+    'lidar-*',           // LiDAR control layers
+    'mapbox-gl-draw-*',  // Draw control layers
+    'gl-draw-*',         // Geoman draw layers
+  ],
 });
 
 map.addControl(layerControl, 'top-right');
@@ -29,8 +37,8 @@ map.addControl(layerControl, 'top-right');
 // Add a ControlGrid with built-in default controls
 const controlGrid = new ControlGrid({
   position: 'top-right',
-  rows: 3,
-  columns: 4,
+  rows: 5,
+  columns: 5,
   collapsible: true,
   collapsed: true,
   showRowColumnControls: true,
@@ -46,14 +54,21 @@ const controlGrid = new ControlGrid({
     'vectorDataset',
     'basemap',
     'measure',
+    'geoEditor',
     'bookmark',
     'print',
+    'swipe',
+    'streetView',
     'addVector',
     'cogLayer',
     'zarrLayer',
     'pmtilesLayer',
     'stacLayer',
     'stacSearch',
+    'planetaryComputer',
+    'gaussianSplat',
+    'lidar',
+    'usgsLidar',
   ],
 });
 
@@ -63,12 +78,3 @@ map.addControl(controlGrid, 'top-right');
 for (const adapter of controlGrid.getAdapters()) {
   layerControl.registerCustomAdapter(adapter);
 }
-
-// Optional: listen for grid events
-controlGrid.on('controladd', () => console.log('Control added to grid'));
-controlGrid.on('controlremove', () => console.log('Control removed from grid'));
-controlGrid.on('collapse', () => console.log('Grid collapsed'));
-controlGrid.on('expand', () => console.log('Grid expanded'));
-
-console.log('Control Grid example — using defaultControls for built-in controls.');
-console.log('Use grid.setRows(n) / grid.setColumns(n) or the R/C inputs to change the layout.');

@@ -35,6 +35,13 @@ import { PMTilesLayerAdapter } from "../adapters/PMTilesLayerAdapter";
 import { AddVectorAdapter } from "../adapters/AddVectorAdapter";
 import { StacLayerAdapter } from "../adapters/StacLayerAdapter";
 import type { CustomLayerAdapter } from "../adapters/CogLayerAdapter";
+import { GeoEditor, GeoEditorLayerAdapter } from "maplibre-gl-geo-editor";
+import { LidarControl, LidarLayerAdapter } from "maplibre-gl-lidar";
+import { PlanetaryComputerControl, PlanetaryComputerLayerAdapter } from "maplibre-gl-planetary-computer";
+import { GaussianSplatControl, GaussianSplatLayerAdapter } from "maplibre-gl-splat";
+import { StreetViewControl } from "maplibre-gl-streetview";
+import { SwipeControl } from "maplibre-gl-swipe";
+import { UsgsLidarControl, UsgsLidarLayerAdapter } from "maplibre-gl-usgs-lidar";
 
 
 /**
@@ -170,6 +177,10 @@ interface ChildEntry {
   expandHandler: (() => void) | null;
   collapseHandler: (() => void) | null;
   _placeholder: HTMLElement | null;
+  _externalPanel: HTMLElement | null;
+  _externalPanelParent: HTMLElement | null;
+  /** Saved positioning methods (overridden to no-op during relocation) */
+  _savedPositionMethods: Record<string, () => void> | null;
 }
 
 /**
@@ -206,6 +217,10 @@ export class ControlGrid implements IControl {
   private _zoomVisible: boolean = true;
   private _floatingEntry: ChildEntry | null = null;
   private _floatingPanel: HTMLElement | null = null;
+  /** True during a click that originated inside the grid (not the floating panel). */
+  private _clickInGrid: boolean = false;
+  private _docCaptureHandler?: (e: MouseEvent) => void;
+  private _docBubbleHandler?: (e: MouseEvent) => void;
 
   constructor(options?: ControlGridOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -226,6 +241,9 @@ export class ControlGrid implements IControl {
         expandHandler: null,
         collapseHandler: null,
         _placeholder: null,
+        _externalPanel: null,
+        _externalPanelParent: null,
+        _savedPositionMethods: null,
       }),
     );
 
@@ -242,6 +260,9 @@ export class ControlGrid implements IControl {
           expandHandler: null,
           collapseHandler: null,
           _placeholder: null,
+          _externalPanel: null,
+          _externalPanelParent: null,
+          _savedPositionMethods: null,
         });
     }
     this._autoGrowRows();
@@ -349,6 +370,20 @@ export class ControlGrid implements IControl {
           defaultUrl:
             "https://flatgeobuf.org/test/data/UScounties.fgb",
         });
+      case "geoEditor":
+        return new GeoEditor({ collapsed: true, columns: 2 }) as unknown as IControl;
+      case "lidar":
+        return new LidarControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+      case "planetaryComputer":
+        return new PlanetaryComputerControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+      case "gaussianSplat":
+        return new GaussianSplatControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+      case "streetView":
+        return new StreetViewControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+      case "swipe":
+        return new SwipeControl({ collapsed: true, maxHeight: 500, active: false }) as unknown as IControl;
+      case "usgsLidar":
+        return new UsgsLidarControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
       default:
         return null;
     }
@@ -362,6 +397,29 @@ export class ControlGrid implements IControl {
     this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
 
+    // Register capture-phase click listener on document BEFORE children
+    // are mounted, so it fires before any child control's capture handlers.
+    // This flags clicks inside the grid (but not the floating panel) so the
+    // collapse override can block capture-phase click-outside handlers.
+    // Capture-phase handler: set _clickInGrid BEFORE child handlers run.
+    // We set it true for clicks in the grid (but not floating panel), and
+    // explicitly reset to false otherwise. This ensures the flag is always
+    // correct for the current click, even if a previous bubble handler was
+    // blocked by stopPropagation.
+    this._docCaptureHandler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      const inContainer = this._container?.contains(target);
+      const inFloating = this._floatingPanel?.contains(target);
+      // Clicks in the grid container (but NOT in floating panel) block collapse
+      this._clickInGrid = !!(inContainer && !inFloating);
+    };
+    // Bubble-phase handler: reset _clickInGrid AFTER all handlers have run
+    this._docBubbleHandler = () => {
+      this._clickInGrid = false;
+    };
+    document.addEventListener("click", this._docCaptureHandler, true);
+    document.addEventListener("click", this._docBubbleHandler, false);
+
     this._render();
     this._mountChildren();
 
@@ -369,6 +427,14 @@ export class ControlGrid implements IControl {
   }
 
   onRemove(): void {
+    if (this._docCaptureHandler) {
+      document.removeEventListener("click", this._docCaptureHandler, true);
+      this._docCaptureHandler = undefined;
+    }
+    if (this._docBubbleHandler) {
+      document.removeEventListener("click", this._docBubbleHandler, false);
+      this._docBubbleHandler = undefined;
+    }
     if (this._map && this._handleZoom) {
       this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
@@ -395,6 +461,9 @@ export class ControlGrid implements IControl {
       expandHandler: null,
       collapseHandler: null,
       _placeholder: null,
+      _externalPanel: null,
+      _externalPanelParent: null,
+      _savedPositionMethods: null,
     };
     this._children.push(entry);
     this._autoGrowRows();
@@ -485,6 +554,16 @@ export class ControlGrid implements IControl {
         adapters.push(new StacLayerAdapter(ctrl));
       } else if (ctrl instanceof AddVectorControl) {
         adapters.push(new AddVectorAdapter(ctrl));
+      } else if (ctrl instanceof LidarControl) {
+        adapters.push(new LidarLayerAdapter(ctrl));
+      } else if (ctrl instanceof PlanetaryComputerControl) {
+        adapters.push(new PlanetaryComputerLayerAdapter(ctrl));
+      } else if (ctrl instanceof GaussianSplatControl) {
+        adapters.push(new GaussianSplatLayerAdapter(ctrl));
+      } else if (ctrl instanceof UsgsLidarControl) {
+        adapters.push(new UsgsLidarLayerAdapter(ctrl));
+      } else if (ctrl instanceof GeoEditor) {
+        adapters.push(new GeoEditorLayerAdapter(ctrl));
       }
     }
     return adapters;
@@ -587,6 +666,9 @@ export class ControlGrid implements IControl {
     }`;
     const shouldShow = this._state.visible && this._zoomVisible;
     if (!shouldShow) container.style.display = "none";
+    // Prevent clicks inside the grid from reaching document-level
+    // click-outside handlers that upstream plugins use to auto-collapse.
+    container.addEventListener("click", (e) => e.stopPropagation());
     return container;
   }
 
@@ -664,6 +746,9 @@ export class ControlGrid implements IControl {
       expandHandler: null,
       collapseHandler: null,
       _placeholder: null,
+      _externalPanel: null,
+      _externalPanelParent: null,
+      _savedPositionMethods: null,
     }));
   }
 
@@ -722,10 +807,23 @@ export class ControlGrid implements IControl {
     const panel = this._ensureFloatingPanel();
     panel.appendChild(entry.element);
     this._floatingEntry = entry;
+
+    // Relocate external panel (appended to map container) into floating panel
+    this._relocateExternalPanel(entry, panel);
+
+    // For internal controls (no external panel), hide the toggle button
+    // so only the panel content is visible in the floating panel.
+    this._hideFloatingButton(entry);
   }
 
   private _onChildCollapse(entry: ChildEntry): void {
     if (this._floatingEntry !== entry) return;
+
+    // Show the toggle button again before moving back to grid
+    this._showFloatingButton(entry);
+
+    // Restore external panel to its original parent
+    this._restoreExternalPanel(entry);
 
     // Move element back to the grid, replacing placeholder
     if (entry._placeholder && entry.element && this._gridEl) {
@@ -737,16 +835,24 @@ export class ControlGrid implements IControl {
     }
     entry._placeholder = null;
 
-    // Update collapsed snapshot for next time
-    if (entry.element) {
-      entry.collapsedSnapshot = entry.element.cloneNode(true) as HTMLElement;
-    }
-
     // Hide floating panel
     if (this._floatingPanel) {
       this._floatingPanel.style.display = "none";
     }
     this._floatingEntry = null;
+
+    // Now that _floatingEntry is null (preventing re-entry), collapse the
+    // control so its internal state matches and the panel is hidden.
+    const ctrl = entry.control as any;
+    if (typeof ctrl.collapse === "function") {
+      ctrl.collapse();
+    }
+
+    // Update collapsed snapshot AFTER the control has collapsed,
+    // so the snapshot captures the collapsed (not expanded) DOM.
+    if (entry.element) {
+      entry.collapsedSnapshot = entry.element.cloneNode(true) as HTMLElement;
+    }
   }
 
   private _mountAsFloating(entry: ChildEntry): void {
@@ -770,6 +876,19 @@ export class ControlGrid implements IControl {
     // Put element in floating panel
     const panel = this._ensureFloatingPanel();
     panel.appendChild(entry.element);
+
+    // Relocate external panel (appended to map container) into floating panel
+    this._relocateExternalPanel(entry, panel);
+
+    // If the external panel is already relocated (e.g. after a re-render),
+    // _relocateExternalPanel bails early, so re-apply right:0px here.
+    if (entry._externalPanel) {
+      panel.style.right = "0px";
+    }
+
+    // For internal controls (no external panel), hide the toggle button
+    // so only the panel content is visible in the floating panel.
+    this._hideFloatingButton(entry);
   }
 
   private _ensureFloatingPanel(): HTMLElement {
@@ -777,13 +896,18 @@ export class ControlGrid implements IControl {
       this._floatingPanel = document.createElement("div");
       this._floatingPanel.className =
         "maplibre-gl-control-grid-floating-panel";
+      // Prevent clicks inside the floating panel from reaching document-level
+      // click-outside handlers that upstream plugins use to auto-collapse.
+      this._floatingPanel.addEventListener("click", (e) =>
+        e.stopPropagation(),
+      );
     }
     // Always re-attach to container (it may have been removed by _render's innerHTML="")
     if (this._container && this._floatingPanel.parentNode !== this._container) {
       this._container.appendChild(this._floatingPanel);
     }
-    // Compensate for container padding so the panel's right edge stays
-    // at the same visual position whether the grid is expanded or collapsed.
+    // Compensate for container padding so the panel's right edge aligns
+    // with the container's outer edge.
     const isCollapsedWithHeader =
       this._state.collapsed &&
       (this._options.title || this._options.collapsible);
@@ -799,6 +923,9 @@ export class ControlGrid implements IControl {
 
   private _clearFloating(): void {
     if (this._floatingEntry) {
+      // Restore button visibility and external panel before clearing
+      this._showFloatingButton(this._floatingEntry);
+      this._restoreExternalPanel(this._floatingEntry);
       this._floatingEntry._placeholder = null;
     }
     this._floatingEntry = null;
@@ -810,9 +937,186 @@ export class ControlGrid implements IControl {
 
   private _collapseFloatingChild(): void {
     if (!this._floatingEntry) return;
-    const ctrl = this._floatingEntry.control as any;
+    // Call _onChildCollapse directly rather than ctrl.collapse()
+    // to bypass the collapse override that blocks click-outside handlers.
+    this._onChildCollapse(this._floatingEntry);
+  }
+
+  /**
+   * Hide the control's toggle button when it is inside the floating panel
+   * so only the expanded panel content is visible.
+   * Only applies to internal controls (no external panel).
+   */
+  private _hideFloatingButton(entry: ChildEntry): void {
+    if (entry._externalPanel) return; // external panels handle this differently
+    const ctrl = entry.control as any;
+    if (ctrl._button) {
+      ctrl._button.style.display = "none";
+      if (entry.element) {
+        // Remove maplibregl-ctrl-group which constrains width and clips
+        // overflow, preventing the inner panel from sizing correctly.
+        const hasCtrlGroup =
+          entry.element.classList.contains("maplibregl-ctrl-group");
+        if (hasCtrlGroup) {
+          entry.element.classList.remove("maplibregl-ctrl-group");
+          entry.element.dataset.hadCtrlGroup = "1";
+        }
+        // Controls that never had ctrl-group (e.g. Bookmark, Print) don't
+        // need MapLibre's positional margin-right inside the floating panel.
+        if (!hasCtrlGroup && !entry.element.dataset.hadCtrlGroup) {
+          entry.element.style.marginRight = "0";
+        }
+      }
+    }
+  }
+
+  /**
+   * Restore the control's toggle button visibility when moving
+   * back from the floating panel to the grid.
+   */
+  private _showFloatingButton(entry: ChildEntry): void {
+    const ctrl = entry.control as any;
+    if (ctrl._button) {
+      ctrl._button.style.display = "";
+      if (entry.element) {
+        if (entry.element.dataset.hadCtrlGroup) {
+          entry.element.classList.add("maplibregl-ctrl-group");
+          delete entry.element.dataset.hadCtrlGroup;
+        } else {
+          entry.element.style.marginRight = "";
+        }
+      }
+    }
+  }
+
+  /**
+   * Move an external panel (appended to the map container by the upstream control)
+   * into the floating panel, stripping its absolute positioning.
+   */
+  private _relocateExternalPanel(
+    entry: ChildEntry,
+    floatingPanel: HTMLElement,
+  ): void {
+    const ctrl = entry.control as any;
+
+    // Try getPanelElement() first, then fall back to ctrl._panel directly
+    // (in case Vite's pre-bundled version doesn't include getPanelElement yet).
+    let extPanel: HTMLElement | null = null;
+    if (typeof ctrl.getPanelElement === "function") {
+      extPanel = ctrl.getPanelElement() as HTMLElement | null;
+    } else if (ctrl._panel instanceof HTMLElement) {
+      extPanel = ctrl._panel;
+    } else if (ctrl._panel && typeof ctrl._panel.getElement === "function") {
+      // StreetView uses a Panel class with getElement()
+      extPanel = ctrl._panel.getElement() as HTMLElement | null;
+    }
+
+    if (!extPanel || !entry.element || entry.element.contains(extPanel)) return;
+
+    // Already relocated — skip to avoid overwriting _externalPanelParent
+    if (entry._externalPanel) return;
+
+    entry._externalPanelParent = extPanel.parentNode as HTMLElement;
+    entry._externalPanel = extPanel;
+    extPanel.classList.add("maplibre-gl-control-grid-relocated");
+
+    // Override positioning methods to no-ops so the upstream control
+    // cannot re-position the panel while it's inside the floating panel.
+    const methods = ["_updatePanelPosition", "updatePanelPosition"];
+    entry._savedPositionMethods = {};
+    for (const m of methods) {
+      if (typeof ctrl[m] === "function") {
+        entry._savedPositionMethods[m] = ctrl[m].bind(ctrl);
+        ctrl[m] = () => {};
+      }
+    }
+    // StreetView uses a Panel class with its own positionRelativeTo method
+    const panelObj = ctrl._panel;
+    if (panelObj && typeof panelObj.positionRelativeTo === "function") {
+      entry._savedPositionMethods["_panel.positionRelativeTo"] =
+        panelObj.positionRelativeTo.bind(panelObj);
+      panelObj.positionRelativeTo = () => {};
+    }
+    // Override collapse() so that close buttons inside the relocated panel
+    // trigger proper grid cleanup via _onChildCollapse.
+    // Bubble-phase click-outside handlers are already blocked by
+    // stopPropagation on the grid container. Capture-phase handlers
+    // (like USGS LiDAR) are blocked by checking _clickInGrid — set by
+    // our capture listener on document registered before the child's.
     if (typeof ctrl.collapse === "function") {
-      ctrl.collapse();
+      entry._savedPositionMethods["collapse"] = ctrl.collapse.bind(ctrl);
+      ctrl.collapse = () => {
+        // Only collapse if panel is floating AND click was outside the grid.
+        // Clicks inside the grid (e.g. wrench icon) set _clickInGrid = true
+        // in the capture phase, blocking the collapse.
+        if (this._floatingEntry === entry && !this._clickInGrid) {
+          this._onChildCollapse(entry);
+        }
+      };
+    }
+
+    // Force inline !important overrides for belt-and-suspenders safety.
+    const force = (prop: string, val: string) =>
+      extPanel.style.setProperty(prop, val, "important");
+    force("position", "static");
+    force("top", "auto");
+    force("bottom", "auto");
+    force("left", "auto");
+    force("right", "auto");
+    force("z-index", "auto");
+
+    floatingPanel.appendChild(extPanel);
+
+    // Shift the floating panel's right edge inward so the wide external
+    // panel doesn't extend past the map edge.
+    floatingPanel.style.right = "0px";
+
+    // Hide the control's button element since the external panel has its
+    // own header/close button — showing both causes visual overlap.
+    if (entry.element) {
+      entry.element.style.display = "none";
+    }
+  }
+
+  /**
+   * Move an external panel back to its original parent and clear
+   * the inline overrides set during relocation.
+   */
+  private _restoreExternalPanel(entry: ChildEntry): void {
+    if (!entry._externalPanel || !entry._externalPanelParent) return;
+
+    const extPanel = entry._externalPanel;
+
+    extPanel.classList.remove("maplibre-gl-control-grid-relocated");
+
+    // Clear the inline !important overrides so the control's own
+    // positioning logic works normally again.
+    const props = ["position", "top", "bottom", "left", "right", "z-index"];
+    for (const prop of props) {
+      extPanel.style.removeProperty(prop);
+    }
+
+    entry._externalPanelParent.appendChild(extPanel);
+    entry._externalPanel = null;
+    entry._externalPanelParent = null;
+
+    // Restore overridden methods to their original implementations
+    if (entry._savedPositionMethods) {
+      const ctrl = entry.control as any;
+      for (const [key, fn] of Object.entries(entry._savedPositionMethods)) {
+        if (key === "_panel.positionRelativeTo") {
+          const panelObj = ctrl._panel;
+          if (panelObj) panelObj.positionRelativeTo = fn;
+        } else {
+          ctrl[key] = fn;
+        }
+      }
+      entry._savedPositionMethods = null;
+    }
+
+    // Show the control's button element again
+    if (entry.element) {
+      entry.element.style.display = "";
     }
   }
 
