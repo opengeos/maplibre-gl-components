@@ -29,7 +29,7 @@ const EXCLUDE_LAYERS = [
 
 const map = new maplibregl.Map({
   container: 'map',
-  style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+  style: BASEMAP_STYLE,
   center: [-98, 38.5],
   zoom: 4,
   maxPitch: 85,
