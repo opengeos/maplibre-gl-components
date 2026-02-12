@@ -177,12 +177,21 @@
     color: #e8e8e8;
   }
 
-  /* Fix only the four built-in icon buttons with poor dark-mode contrast */
-  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-globe:not(:disabled) .maplibregl-ctrl-icon,
-  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-fullscreen:not(:disabled) .maplibregl-ctrl-icon,
-  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-compass:not(:disabled) .maplibregl-ctrl-icon,
-  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-terrain:not(:disabled) .maplibregl-ctrl-icon {
-    filter: invert(1) brightness(1.15);
+  /* Fix only the four built-in icon buttons with inconsistent dark-mode styling */
+  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-globe,
+  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-fullscreen,
+  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-compass,
+  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-terrain {
+    background: #fff;
+    border-color: rgba(0, 0, 0, 0.2);
+    color: #1a1a1a;
+  }
+
+  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-globe .maplibregl-ctrl-icon,
+  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-fullscreen .maplibregl-ctrl-icon,
+  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-compass .maplibregl-ctrl-icon,
+  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-terrain .maplibregl-ctrl-icon {
+    filter: none;
   }
 
   .maplibre-gl-control-grid-placeholder--active {
