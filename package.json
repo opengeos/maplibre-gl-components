@@ -128,7 +128,7 @@
     "maplibre-gl-planetary-computer": "^0.2.1",
     "maplibre-gl-splat": "^0.2.2",
     "maplibre-gl-streetview": "^0.3.1",
-    "maplibre-gl-swipe": "^0.3.1",
+    "maplibre-gl-swipe": "^0.6.0",
     "maplibre-gl-usgs-lidar": "^0.7.2",
     "pmtiles": "^4.4.0"
   }
