@@ -3,12 +3,18 @@
  */
 
 .maplibre-gl-control-grid {
+  --mlc-grid-text-color: #1a1a1a;
+  --mlc-grid-muted-border: rgba(0, 0, 0, 0.15);
+  --mlc-grid-control-bg: #ffffff;
+  --mlc-grid-control-hover-bg: #f2f2f2;
+  --mlc-grid-control-icon: #1a1a1a;
+
   position: relative;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 4px;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
   padding: 10px;
-  color: #1a1a1a;
+  color: var(--mlc-grid-text-color);
 }
 
 /* Collapsed: single square wrench button, no grid visible */
@@ -64,6 +70,22 @@
 .maplibre-gl-control-grid-content > * {
   min-width: 0;
   min-height: 0;
+}
+
+/* Normalize embedded MapLibre buttons inside the control grid */
+.maplibre-gl-control-grid .maplibregl-ctrl-group {
+  background: var(--mlc-grid-control-bg);
+  border: 1px solid var(--mlc-grid-muted-border);
+}
+
+.maplibre-gl-control-grid .maplibregl-ctrl-group button {
+  background: var(--mlc-grid-control-bg);
+  color: var(--mlc-grid-control-icon);
+  border-color: var(--mlc-grid-muted-border);
+}
+
+.maplibre-gl-control-grid .maplibregl-ctrl-group button:hover {
+  background: var(--mlc-grid-control-hover-bg);
 }
 
 /* Number inputs in header */
@@ -153,8 +175,14 @@
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   .maplibre-gl-control-grid {
+    --mlc-grid-text-color: #e8e8e8;
+    --mlc-grid-muted-border: rgba(255, 255, 255, 0.18);
+    --mlc-grid-control-bg: #2b2b2b;
+    --mlc-grid-control-hover-bg: #3a3a3a;
+    --mlc-grid-control-icon: #f1f1f1;
+
     background: rgba(40, 40, 40, 0.9);
-    color: #e0e0e0;
+    color: var(--mlc-grid-text-color);
   }
 
   .maplibre-gl-control-grid input[type="number"] {
@@ -175,6 +203,10 @@
   .maplibre-gl-control-grid-title,
   .maplibre-gl-control-grid-toggle {
     color: #e8e8e8;
+  }
+
+  .maplibre-gl-control-grid .maplibregl-ctrl button .maplibregl-ctrl-icon {
+    filter: invert(1) brightness(1.1);
   }
 
   .maplibre-gl-control-grid-placeholder--active {

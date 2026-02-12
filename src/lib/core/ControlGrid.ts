@@ -77,7 +77,7 @@ const DEFAULT_OPTIONS: ResolvedControlGridOptions = {
 };
 
 /** Wrench icon SVG for collapsed state – stroke style matching MapLibre globe icon. */
-const WRENCH_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
+const WRENCH_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
 
 /** Compass SVG matching MapLibre's built-in compass icon. */
 const COMPASS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 29 29"><path d="m10.5 14 4-8 4 8z" fill="#333"/><path d="m10.5 16 4 8 4-8z" fill="#ccc"/></svg>`;
@@ -1215,7 +1215,7 @@ export class ControlGrid implements IControl {
       display: shouldShow ? "block" : "none",
       fontFamily:
         '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      color: "#1a1a1a",
+      color: "var(--mlc-grid-text-color, #1a1a1a)",
     });
 
     if (collapsible || title) {
@@ -1260,7 +1260,7 @@ export class ControlGrid implements IControl {
           titleEl.className = "maplibre-gl-control-grid-title";
           titleEl.textContent = title;
           titleEl.style.fontWeight = "600";
-          titleEl.style.color = "#333";
+          titleEl.style.color = "var(--mlc-grid-text-color, #333)";
           left.appendChild(titleEl);
         }
 
@@ -1270,7 +1270,7 @@ export class ControlGrid implements IControl {
           rowLabel.style.alignItems = "center";
           rowLabel.style.gap = "2px";
           rowLabel.style.fontSize = "11px";
-          rowLabel.style.color = "#333";
+          rowLabel.style.color = "var(--mlc-grid-text-color, #333)";
           rowLabel.innerHTML = "R:";
           const rowInput = document.createElement("input");
           rowInput.type = "number";
@@ -1281,7 +1281,7 @@ export class ControlGrid implements IControl {
           rowInput.style.padding = "2px 2px";
           rowInput.style.boxSizing = "border-box";
           rowInput.style.textAlign = "center";
-          rowInput.style.color = "#333";
+          rowInput.style.color = "var(--mlc-grid-text-color, #333)";
           rowInput.addEventListener("change", () =>
             this.setRows(Number(rowInput.value) || 1),
           );
@@ -1292,7 +1292,7 @@ export class ControlGrid implements IControl {
           colLabel.style.alignItems = "center";
           colLabel.style.gap = "2px";
           colLabel.style.fontSize = "11px";
-          colLabel.style.color = "#333";
+          colLabel.style.color = "var(--mlc-grid-text-color, #333)";
           colLabel.innerHTML = "C:";
           const colInput = document.createElement("input");
           colInput.type = "number";
@@ -1303,7 +1303,7 @@ export class ControlGrid implements IControl {
           colInput.style.padding = "2px 2px";
           colInput.style.boxSizing = "border-box";
           colInput.style.textAlign = "center";
-          colInput.style.color = "#333";
+          colInput.style.color = "var(--mlc-grid-text-color, #333)";
           colInput.addEventListener("change", () =>
             this.setColumns(Number(colInput.value) || 1),
           );
@@ -1322,7 +1322,7 @@ export class ControlGrid implements IControl {
           Object.assign(toggleBtn.style, {
             fontSize: "10px",
             userSelect: "none",
-            color: "#333",
+            color: "var(--mlc-grid-text-color, #333)",
           });
           header.appendChild(toggleBtn);
           header.addEventListener("click", (ev) => {
