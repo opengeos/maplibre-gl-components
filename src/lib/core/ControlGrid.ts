@@ -188,7 +188,39 @@ interface ChildEntry {
   _externalPanelParent: HTMLElement | null;
   /** Saved positioning methods (overridden to no-op during relocation) */
   _savedPositionMethods: Record<string, () => void> | null;
+  /** Tooltip text to apply if the control's button has no title */
+  tooltip?: string;
 }
+
+/** Human-readable tooltip labels for default controls. */
+const DEFAULT_CONTROL_TOOLTIPS: Record<string, string> = {
+  fullscreen: "Toggle fullscreen",
+  globe: "Toggle globe projection",
+  north: "Reset bearing to north",
+  terrain: "Toggle terrain",
+  search: "Search places",
+  viewState: "View map state",
+  inspect: "Inspect features",
+  vectorDataset: "Add vector dataset",
+  basemap: "Basemaps",
+  cogLayer: "COG Layer",
+  minimap: "Toggle minimap",
+  measure: "Measure distances and areas",
+  bookmark: "Bookmarks",
+  print: "Export map",
+  zarrLayer: "Zarr Layer",
+  pmtilesLayer: "PMTiles Layer",
+  stacLayer: "STAC Layer",
+  stacSearch: "STAC Search",
+  addVector: "Add vector layer",
+  geoEditor: "Geo Editor",
+  lidar: "LiDAR Layer",
+  planetaryComputer: "Planetary Computer",
+  gaussianSplat: "Gaussian Splat",
+  streetView: "Street View",
+  swipe: "Layer Swipe",
+  usgsLidar: "USGS LiDAR",
+};
 
 /**
  * A collapsible grid container for MapLibre IControl instances.
@@ -268,6 +300,7 @@ export class ControlGrid implements IControl {
           _externalPanel: null,
           _externalPanelParent: null,
           _savedPositionMethods: null,
+          tooltip: DEFAULT_CONTROL_TOOLTIPS[name],
         });
     }
     this._autoGrowRows();
@@ -715,6 +748,10 @@ export class ControlGrid implements IControl {
     this._children.forEach((entry) => {
       if (!entry.element) {
         entry.element = entry.control.onAdd(this._map!);
+        // Apply tooltip to the button if the control doesn't already set one
+        if (entry.tooltip) {
+          this._applyTooltip(entry.element, entry.tooltip);
+        }
         // Capture collapsed snapshot on first mount for expandable controls
         if (entry.expandable && !entry.collapsedSnapshot) {
           entry.collapsedSnapshot = entry.element.cloneNode(
@@ -733,6 +770,16 @@ export class ControlGrid implements IControl {
         }
       }
     });
+  }
+
+  /**
+   * Set title on the control's button if it doesn't already have one.
+   */
+  private _applyTooltip(element: HTMLElement, tooltip: string): void {
+    const btn = element.querySelector("button");
+    if (btn && !btn.title) {
+      btn.title = tooltip;
+    }
   }
 
   private _unmountChildren(): void {
