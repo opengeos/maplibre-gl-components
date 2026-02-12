@@ -27,6 +27,8 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **BookmarkControl** - Save and restore map views with localStorage persistence
 - **PrintControl** - Export the map as PNG, JPEG, or PDF with optional title overlay
 - **MinimapControl** - Inset overview map showing the current viewport extent with optional click-to-navigate
+- **ControlGrid** - Collapsible toolbar grid that hosts any combination of built-in and plugin controls
+- **addControlGrid** - One-call convenience function to add all default controls with customization
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
 - **TypeScript** - Full type definitions included
@@ -1452,6 +1454,136 @@ minimapControl.on("expand", (event) => {
 
 See the [minimap-control example](./examples/minimap-control/) for a complete working example.
 
+### ControlGrid
+
+A collapsible toolbar grid that organizes multiple controls (built-in and plugin) in a configurable rows × columns layout.
+
+```typescript
+interface ControlGridOptions {
+  title?: string;                         // Header title
+  position?: ControlPosition;             // Control position (default: 'top-right')
+  visible?: boolean;                      // Initial visibility (default: true)
+  collapsible?: boolean;                  // Whether grid is collapsible (default: true)
+  collapsed?: boolean;                    // Start collapsed (default: true)
+  rows?: number;                          // Grid rows, 1-12 (default: 1)
+  columns?: number;                       // Grid columns, 1-12 (default: 3)
+  showRowColumnControls?: boolean;        // Show row/column input fields (default: true)
+  controls?: IControl[];                  // Custom IControl instances
+  defaultControls?: DefaultControlName[]; // Built-in control names (26 available)
+  gap?: number;                           // Gap between cells in pixels (default: 6)
+  basemapStyleUrl?: string;               // Basemap style URL for SwipeControl
+  excludeLayers?: string[];               // Layer patterns to exclude from SwipeControl
+  backgroundColor?: string;
+  padding?: number;
+  borderRadius?: number;
+  opacity?: number;
+  minzoom?: number;
+  maxzoom?: number;
+}
+```
+
+**Available default controls:** `fullscreen`, `globe`, `north`, `terrain`, `search`, `viewState`, `inspect`, `vectorDataset`, `basemap`, `cogLayer`, `minimap`, `measure`, `bookmark`, `print`, `zarrLayer`, `pmtilesLayer`, `stacLayer`, `stacSearch`, `addVector`, `geoEditor`, `lidar`, `planetaryComputer`, `gaussianSplat`, `streetView`, `swipe`, `usgsLidar`
+
+```typescript
+// Methods
+controlGrid.addControl(control)       // Add a control to the grid
+controlGrid.removeControl(control)    // Remove a control from the grid
+controlGrid.getControls()             // Get all controls in the grid
+controlGrid.getAdapters()             // Get layer adapters for LayerControl integration
+controlGrid.show()
+controlGrid.hide()
+controlGrid.expand()
+controlGrid.collapse()
+controlGrid.toggle()
+controlGrid.setRows(n)
+controlGrid.setColumns(n)
+controlGrid.getState()
+controlGrid.on(event, handler)        // 'show' | 'hide' | 'expand' | 'collapse' | 'controladd' | 'controlremove'
+controlGrid.off(event, handler)
+```
+
+**Usage:**
+
+```typescript
+import { ControlGrid } from "maplibre-gl-components";
+
+const controlGrid = new ControlGrid({
+  rows: 5,
+  columns: 5,
+  collapsible: true,
+  collapsed: true,
+  basemapStyleUrl: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+  defaultControls: [
+    "globe", "fullscreen", "north", "terrain", "search",
+    "viewState", "inspect", "basemap", "measure", "bookmark",
+  ],
+});
+map.addControl(controlGrid, "top-right");
+```
+
+See the [control-grid example](./examples/control-grid/) for a complete working example.
+
+### addControlGrid
+
+A convenience function that adds a ControlGrid with all 26 default controls in one call. Auto-calculates grid dimensions and sets sensible defaults.
+
+```typescript
+import { addControlGrid } from "maplibre-gl-components";
+
+// Add all 26 default controls
+const grid = addControlGrid(map);
+
+// Or use as a Map method (auto-installed on import)
+const grid = map.addControlGrid();
+
+// Exclude specific controls
+const grid = addControlGrid(map, {
+  exclude: ["minimap", "streetView", "gaussianSplat"],
+});
+
+// Only specific controls
+const grid = addControlGrid(map, {
+  defaultControls: ["search", "basemap", "terrain", "fullscreen"],
+});
+
+// With basemap style for SwipeControl layer grouping
+const grid = addControlGrid(map, {
+  basemapStyleUrl: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+});
+```
+
+```typescript
+interface AddControlGridOptions extends ControlGridOptions {
+  exclude?: DefaultControlName[];  // Controls to exclude (ignored if defaultControls is set)
+}
+```
+
+**Defaults applied by `addControlGrid`:**
+
+- All 26 controls included (unless filtered by `exclude` or `defaultControls`)
+- Grid dimensions auto-calculated as near-square layout
+- `collapsed: true`, `collapsible: true`, `showRowColumnControls: true`
+- `gap: 2`, `position: "top-right"`
+- `excludeLayers` set to default patterns for internal/helper layers
+
+**With LayerControl integration:**
+
+```typescript
+import { addControlGrid, DEFAULT_EXCLUDE_LAYERS } from "maplibre-gl-components";
+import { LayerControl } from "maplibre-gl-layer-control";
+
+const layerControl = new LayerControl({ collapsed: true });
+map.addControl(layerControl, "top-right");
+
+const grid = addControlGrid(map, { basemapStyleUrl: BASEMAP_STYLE });
+
+for (const adapter of grid.getAdapters()) {
+  layerControl.registerCustomAdapter(adapter);
+}
+```
+
+See the [add-control-grid example](./examples/add-control-grid/) for a complete working example.
+
 ### Layer Control Adapters
 
 To integrate COG and Zarr layers with [maplibre-gl-layer-control](https://github.com/AJPNorthwest/maplibre-gl-layer-control), use the included adapters:
@@ -1741,6 +1873,8 @@ See the [examples](./examples/) directory for complete working examples:
 - **STAC Search Example** - Search and visualize STAC items from public catalogs
 - **Print Control Example** - Export map as PNG, JPEG, or PDF
 - **Minimap Control Example** - Inset overview map with viewport rectangle
+- **Control Grid Example** - ControlGrid with all built-in and plugin controls
+- **addControlGrid Example** - One-call convenience function with all default controls
 
 
 ## Development

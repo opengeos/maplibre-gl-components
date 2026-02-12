@@ -77,7 +77,10 @@ export default defineConfig({
           __dirname,
           "examples/minimap-control/index.html",
         ),
-
+        addControlGrid: resolve(
+          __dirname,
+          "examples/add-control-grid/index.html",
+        ),
       },
     },
   },

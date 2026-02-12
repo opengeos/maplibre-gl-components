@@ -41,6 +41,12 @@ export { VectorDatasetControl } from "./lib/core/VectorDataset";
 export { InspectControl } from "./lib/core/InspectControl";
 export { ViewStateControl } from "./lib/core/ViewStateControl";
 export { ControlGrid } from "./lib/core/ControlGrid";
+export {
+  addControlGrid,
+  ALL_DEFAULT_CONTROLS,
+  DEFAULT_EXCLUDE_LAYERS,
+} from "./lib/addControlGrid";
+export type { AddControlGridOptions } from "./lib/addControlGrid";
 export { CogLayerControl } from "./lib/core/CogLayer";
 export { ZarrLayerControl } from "./lib/core/ZarrLayer";
 export { PMTilesLayerControl } from "./lib/core/PMTilesLayer";
@@ -288,3 +294,8 @@ export type {
   ConversionMetadata,
   VectorConverter,
 } from "./lib/converters";
+
+// Auto-install Map.prototype.addControlGrid
+import maplibregl from "maplibre-gl";
+import { installAddControlGrid } from "./lib/addControlGrid";
+installAddControlGrid(maplibregl.Map);

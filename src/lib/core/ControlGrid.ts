@@ -305,7 +305,7 @@ export class ControlGrid implements IControl {
           defaultRescaleMax: 4000,
         });
       case "minimap":
-        return new MinimapControl({ collapsed: true });
+        return new MinimapControl({ collapsed: true, interactive: true });
       case "measure":
         return new MeasureControl({ collapsed: true });
       case "bookmark":

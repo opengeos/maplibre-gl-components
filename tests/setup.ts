@@ -26,9 +26,71 @@ class MockMap {
   _canvas = { style: {}, getBoundingClientRect: () => ({ left: 0, top: 0, width: 250, height: 180 }), addEventListener: vi.fn(), removeEventListener: vi.fn() };
 }
 
+// Mock control classes used by ControlGrid
+class MockControl {
+  onAdd = vi.fn().mockReturnValue(document.createElement('div'));
+  onRemove = vi.fn();
+}
+
+class MockLngLat {
+  lng: number;
+  lat: number;
+  constructor(lng: number, lat: number) { this.lng = lng; this.lat = lat; }
+}
+
+class MockMarker {
+  setLngLat = vi.fn().mockReturnThis();
+  addTo = vi.fn().mockReturnThis();
+  remove = vi.fn();
+  getElement = vi.fn().mockReturnValue(document.createElement('div'));
+}
+
+class MockPopup {
+  setLngLat = vi.fn().mockReturnThis();
+  setHTML = vi.fn().mockReturnThis();
+  addTo = vi.fn().mockReturnThis();
+  remove = vi.fn();
+}
+
 vi.mock('maplibre-gl', () => ({
   default: { Map: MockMap },
   Map: MockMap,
+  FullscreenControl: MockControl,
+  GlobeControl: MockControl,
+  TerrainControl: MockControl,
+  Marker: MockMarker,
+  LngLat: MockLngLat,
+  Popup: MockPopup,
+}));
+
+// Mock external plugins that import from maplibre-gl at module level
+const mockPluginControl = () => MockControl;
+const mockPluginAdapter = () => MockControl;
+vi.mock('maplibre-gl-geo-editor', () => ({
+  GeoEditor: mockPluginControl(),
+  GeoEditorLayerAdapter: mockPluginAdapter(),
+}));
+vi.mock('maplibre-gl-lidar', () => ({
+  LidarControl: mockPluginControl(),
+  LidarLayerAdapter: mockPluginAdapter(),
+}));
+vi.mock('maplibre-gl-planetary-computer', () => ({
+  PlanetaryComputerControl: mockPluginControl(),
+  PlanetaryComputerLayerAdapter: mockPluginAdapter(),
+}));
+vi.mock('maplibre-gl-splat', () => ({
+  GaussianSplatControl: mockPluginControl(),
+  GaussianSplatLayerAdapter: mockPluginAdapter(),
+}));
+vi.mock('maplibre-gl-streetview', () => ({
+  StreetViewControl: mockPluginControl(),
+}));
+vi.mock('maplibre-gl-swipe', () => ({
+  SwipeControl: mockPluginControl(),
+}));
+vi.mock('maplibre-gl-usgs-lidar', () => ({
+  UsgsLidarControl: mockPluginControl(),
+  UsgsLidarLayerAdapter: mockPluginAdapter(),
 }));
 
 // Mock ResizeObserver

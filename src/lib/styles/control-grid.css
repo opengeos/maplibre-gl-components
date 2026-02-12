@@ -113,7 +113,14 @@
   position: relative;
   bottom: auto;
   left: auto;
-  margin-top: 4px;
+  margin-top: 0;
+}
+
+/* Preserve right margin for minimap control inside the floating panel.
+   _hideFloatingButton zeroes marginRight for controls without maplibregl-ctrl-group,
+   but the minimap needs its margin to match other controls' right padding. */
+.maplibre-gl-control-grid-floating-panel .maplibre-gl-minimap-control {
+  margin-right: 8px !important;
 }
 
 
