@@ -16,6 +16,17 @@ import 'maplibre-gl-usgs-lidar/style.css';
 
 const BASEMAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
+// Exclude internal layers from controls that add helper/draw layers
+const EXCLUDE_LAYERS = [
+  'usgs-lidar-*',        // USGS LiDAR draw and footprint layers
+  'lidar-*',             // LiDAR control layers
+  'mapbox-gl-draw-*',    // Draw control layers
+  'gl-draw-*',           // Geoman draw layers (old prefix)
+  'gm_*',                // Geoman draw layers (new prefix)
+  'inspect-highlight-*', // InspectControl highlight layers
+  'measure-*',           // MeasureControl measurement layers
+];
+
 const map = new maplibregl.Map({
   container: 'map',
   style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
@@ -32,13 +43,7 @@ const layerControl = new LayerControl({
   panelMinWidth: 240,
   panelMaxWidth: 450,
   basemapStyleUrl: BASEMAP_STYLE,
-  // Exclude internal layers from controls that add helper/draw layers
-  excludeLayers: [
-    'usgs-lidar-*',      // USGS LiDAR draw and footprint layers
-    'lidar-*',           // LiDAR control layers
-    'mapbox-gl-draw-*',  // Draw control layers
-    'gl-draw-*',         // Geoman draw layers
-  ],
+  excludeLayers: EXCLUDE_LAYERS,
 });
 
 map.addControl(layerControl, 'top-right');
@@ -52,6 +57,8 @@ const controlGrid = new ControlGrid({
   collapsed: true,
   showRowColumnControls: true,
   gap: 2,
+  basemapStyleUrl: BASEMAP_STYLE,
+  excludeLayers: EXCLUDE_LAYERS,
   defaultControls: [
     'globe',
     'fullscreen',

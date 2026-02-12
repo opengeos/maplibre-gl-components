@@ -962,23 +962,30 @@ export class MeasureControl implements IControl {
   private _addMarker(point: MeasurePoint): void {
     if (!this._map) return;
 
-    // Dynamic import to avoid issues
-    const maplibregl = (window as any).maplibregl;
-    if (!maplibregl) return;
+    // Use dynamically imported maplibre-gl or fallback to window
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const maplibreglModule = (window as any).maplibregl;
+    // Also try dynamic import
+    import("maplibre-gl").then((mod) => {
+      const MaplibreMarker = mod.Marker || maplibreglModule?.Marker;
+      if (!MaplibreMarker || !this._map) return;
 
-    const el = document.createElement("div");
-    el.style.width = `${this._options.pointRadius * 2}px`;
-    el.style.height = `${this._options.pointRadius * 2}px`;
-    el.style.borderRadius = "50%";
-    el.style.backgroundColor = this._options.pointColor;
-    el.style.border = "2px solid white";
-    el.style.boxShadow = "0 1px 4px rgba(0,0,0,0.3)";
+      const el = document.createElement("div");
+      el.className = "maplibre-gl-measure-vertex";
+      el.style.width = `${this._options.pointRadius * 2}px`;
+      el.style.height = `${this._options.pointRadius * 2}px`;
+      el.style.borderRadius = "50%";
+      el.style.backgroundColor = this._options.pointColor;
+      el.style.border = "2px solid white";
+      el.style.boxShadow = "0 1px 4px rgba(0,0,0,0.3)";
+      el.style.cursor = "pointer";
 
-    const marker = new maplibregl.Marker({ element: el })
-      .setLngLat([point.lng, point.lat])
-      .addTo(this._map);
+      const marker = new MaplibreMarker({ element: el })
+        .setLngLat([point.lng, point.lat])
+        .addTo(this._map);
 
-    this._markers.push(marker);
+      this._markers.push(marker);
+    });
   }
 
   /**

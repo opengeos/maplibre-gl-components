@@ -44,12 +44,17 @@ import { SwipeControl } from "maplibre-gl-swipe";
 import { UsgsLidarControl, UsgsLidarLayerAdapter } from "maplibre-gl-usgs-lidar";
 
 
+/** Optional fields that should not be made required */
+type OptionalControlGridFields = "controls" | "defaultControls" | "basemapStyleUrl" | "excludeLayers";
+
+/** ControlGrid options with required fields except for optional ones */
+type ResolvedControlGridOptions = Required<Omit<ControlGridOptions, OptionalControlGridFields>>
+  & Pick<ControlGridOptions, OptionalControlGridFields>;
+
 /**
  * Default options for the ControlGrid.
  */
-const DEFAULT_OPTIONS: Required<
-  Omit<ControlGridOptions, "controls" | "defaultControls">
-> & { controls?: IControl[]; defaultControls?: DefaultControlName[] } = {
+const DEFAULT_OPTIONS: ResolvedControlGridOptions = {
   title: "",
   position: "top-right",
   className: "",
@@ -67,6 +72,8 @@ const DEFAULT_OPTIONS: Required<
   gap: 6,
   minzoom: 0,
   maxzoom: 24,
+  basemapStyleUrl: undefined,
+  excludeLayers: undefined,
 };
 
 /** Wrench icon SVG for collapsed state – stroke style matching MapLibre globe icon. */
@@ -205,9 +212,7 @@ interface ChildEntry {
 export class ControlGrid implements IControl {
   private _container?: HTMLElement;
   private _gridEl?: HTMLElement;
-  private _options: Required<
-    Omit<ControlGridOptions, "controls" | "defaultControls">
-  > & { controls?: IControl[]; defaultControls?: DefaultControlName[] };
+  private _options: ResolvedControlGridOptions;
   private _state: ControlGridState;
   private _children: ChildEntry[] = [];
   private _eventHandlers: Map<ControlGridEvent, Set<ControlGridEventHandler>> =
@@ -250,7 +255,7 @@ export class ControlGrid implements IControl {
     // Create and add built-in default controls
     const defaults = options?.defaultControls ?? [];
     for (const name of defaults) {
-      const ctrl = ControlGrid._createDefaultControl(name);
+      const ctrl = this._createDefaultControl(name);
       if (ctrl)
         this._children.push({
           control: ctrl,
@@ -268,7 +273,7 @@ export class ControlGrid implements IControl {
     this._autoGrowRows();
   }
 
-  private static _createDefaultControl(
+  private _createDefaultControl(
     name: DefaultControlName,
   ): IControl | null {
     switch (name) {
@@ -381,7 +386,13 @@ export class ControlGrid implements IControl {
       case "streetView":
         return new StreetViewControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
       case "swipe":
-        return new SwipeControl({ collapsed: true, maxHeight: 500, active: false }) as unknown as IControl;
+        return new SwipeControl({
+          collapsed: true,
+          maxHeight: 500,
+          active: false,
+          basemapStyle: this._options.basemapStyleUrl,
+          excludeLayers: this._options.excludeLayers,
+        }) as unknown as IControl;
       case "usgsLidar":
         return new UsgsLidarControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
       default:

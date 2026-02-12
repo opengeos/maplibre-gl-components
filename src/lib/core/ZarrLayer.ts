@@ -525,6 +525,11 @@ export class ZarrLayerControl implements IControl {
 
   private _render(): void {
     if (!this._container) return;
+
+    // Save scroll position before clearing content
+    const panelEl = this._container.querySelector(".maplibre-gl-zarr-layer-panel");
+    const scrollTop = panelEl ? panelEl.scrollTop : 0;
+
     this._container.innerHTML = "";
 
     if (this._state.collapsed) {
@@ -534,6 +539,14 @@ export class ZarrLayerControl implements IControl {
     }
 
     this._updateDisplayState();
+
+    // Restore scroll position
+    if (scrollTop > 0) {
+      const newPanelEl = this._container.querySelector(".maplibre-gl-zarr-layer-panel");
+      if (newPanelEl) {
+        newPanelEl.scrollTop = scrollTop;
+      }
+    }
   }
 
   private _renderCollapsed(): void {

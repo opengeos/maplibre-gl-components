@@ -1150,6 +1150,13 @@ export interface ControlGridOptions {
   minzoom?: number;
   /** Maximum zoom level at which the control is visible. */
   maxzoom?: number;
+  /** URL of the basemap style JSON. Used by SwipeControl to group basemap layers. */
+  basemapStyleUrl?: string;
+  /**
+   * Layer ID patterns to exclude from SwipeControl layer list.
+   * Supports glob-style wildcards (e.g., 'measure-*', 'gl-draw-*').
+   */
+  excludeLayers?: string[];
 }
 
 /**

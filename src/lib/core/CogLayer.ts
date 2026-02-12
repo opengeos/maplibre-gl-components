@@ -530,6 +530,11 @@ export class CogLayerControl implements IControl {
 
   private _render(): void {
     if (!this._container) return;
+
+    // Save scroll position before clearing content
+    const panelEl = this._container.querySelector(".maplibre-gl-cog-layer-panel");
+    const scrollTop = panelEl ? panelEl.scrollTop : 0;
+
     this._container.innerHTML = "";
 
     if (this._state.collapsed) {
@@ -539,6 +544,14 @@ export class CogLayerControl implements IControl {
     }
 
     this._updateDisplayState();
+
+    // Restore scroll position
+    if (scrollTop > 0) {
+      const newPanelEl = this._container.querySelector(".maplibre-gl-cog-layer-panel");
+      if (newPanelEl) {
+        newPanelEl.scrollTop = scrollTop;
+      }
+    }
   }
 
   private _renderCollapsed(): void {
@@ -1011,9 +1024,7 @@ export class CogLayerControl implements IControl {
 
     return async (geoKeys: Record<string, unknown>) => {
       try {
-        console.log("COG geoKeysParser called with:", geoKeys);
         const result = geoKeysToProj4.toProj4(geoKeys);
-        console.log("COG geoKeysToProj4 result:", result);
 
         if (result && result.proj4) {
           // Remove axis parameter which can cause issues with some projections
@@ -1021,7 +1032,6 @@ export class CogLayerControl implements IControl {
           // confuse coordinate transformations
           let proj4Str = result.proj4 as string;
           proj4Str = proj4Str.replace(/\+axis=\w+\s*/g, "");
-          console.log("COG cleaned proj4 string:", proj4Str);
 
           // Dynamically import proj4 for parsing if not already loaded
           if (!proj4Fn) {
@@ -1042,9 +1052,8 @@ export class CogLayerControl implements IControl {
                   string,
                   unknown
                 >) || {};
-              console.log("COG proj4 parsed definition:", parsed);
-            } catch (e) {
-              console.error("COG proj4 parsing error:", e);
+            } catch {
+              // proj4 parsing error - continue with empty parsed
             }
           }
           return {
@@ -1053,8 +1062,8 @@ export class CogLayerControl implements IControl {
             coordinatesUnits: (result.coordinatesUnits as string) || "metre",
           };
         }
-      } catch (e) {
-        console.error("COG geoKeysParser error:", e);
+      } catch {
+        // geoKeysParser error - return null
       }
       return null;
     };
