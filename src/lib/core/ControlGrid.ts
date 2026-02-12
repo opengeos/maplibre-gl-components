@@ -44,12 +44,17 @@ import { SwipeControl } from "maplibre-gl-swipe";
 import { UsgsLidarControl, UsgsLidarLayerAdapter } from "maplibre-gl-usgs-lidar";
 
 
+/** Optional fields that should not be made required */
+type OptionalControlGridFields = "controls" | "defaultControls" | "basemapStyleUrl" | "excludeLayers";
+
+/** ControlGrid options with required fields except for optional ones */
+type ResolvedControlGridOptions = Required<Omit<ControlGridOptions, OptionalControlGridFields>>
+  & Pick<ControlGridOptions, OptionalControlGridFields>;
+
 /**
  * Default options for the ControlGrid.
  */
-const DEFAULT_OPTIONS: Required<
-  Omit<ControlGridOptions, "controls" | "defaultControls" | "basemapStyleUrl" | "excludeLayers">
-> & { controls?: IControl[]; defaultControls?: DefaultControlName[]; basemapStyleUrl?: string; excludeLayers?: string[] } = {
+const DEFAULT_OPTIONS: ResolvedControlGridOptions = {
   title: "",
   position: "top-right",
   className: "",
@@ -207,9 +212,7 @@ interface ChildEntry {
 export class ControlGrid implements IControl {
   private _container?: HTMLElement;
   private _gridEl?: HTMLElement;
-  private _options: Required<
-    Omit<ControlGridOptions, "controls" | "defaultControls" | "basemapStyleUrl" | "excludeLayers">
-  > & { controls?: IControl[]; defaultControls?: DefaultControlName[]; basemapStyleUrl?: string; excludeLayers?: string[] };
+  private _options: ResolvedControlGridOptions;
   private _state: ControlGridState;
   private _children: ChildEntry[] = [];
   private _eventHandlers: Map<ControlGridEvent, Set<ControlGridEventHandler>> =

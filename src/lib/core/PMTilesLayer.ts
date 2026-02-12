@@ -542,6 +542,11 @@ export class PMTilesLayerControl implements IControl {
 
   private _render(): void {
     if (!this._container) return;
+
+    // Save scroll position before clearing content
+    const panelEl = this._container.querySelector(".maplibre-gl-pmtiles-layer-panel");
+    const scrollTop = panelEl ? panelEl.scrollTop : 0;
+
     this._container.innerHTML = "";
 
     if (this._state.collapsed) {
@@ -551,6 +556,14 @@ export class PMTilesLayerControl implements IControl {
     }
 
     this._updateDisplayState();
+
+    // Restore scroll position
+    if (scrollTop > 0) {
+      const newPanelEl = this._container.querySelector(".maplibre-gl-pmtiles-layer-panel");
+      if (newPanelEl) {
+        newPanelEl.scrollTop = scrollTop;
+      }
+    }
   }
 
   private _renderCollapsed(): void {
@@ -1081,9 +1094,9 @@ export class PMTilesLayerControl implements IControl {
                 "line-width": 1,
               },
               filter: [
-                "in",
-                ["geometry-type"],
-                ["literal", ["LineString", "Polygon"]],
+                "any",
+                ["==", ["geometry-type"], "LineString"],
+                ["==", ["geometry-type"], "Polygon"],
               ],
             },
             beforeId,

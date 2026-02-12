@@ -544,12 +544,25 @@ export class StacLayerControl implements IControl {
 
   private _render(): void {
     if (!this._container) return;
+
+    // Save scroll position before clearing content
+    const panelEl = this._container.querySelector(".maplibre-gl-stac-layer-panel");
+    const scrollTop = panelEl ? panelEl.scrollTop : 0;
+
     this._container.innerHTML = "";
 
     if (this._state.collapsed) {
       this._renderCollapsed();
     } else {
       this._renderExpanded();
+    }
+
+    // Restore scroll position
+    if (scrollTop > 0) {
+      const newPanelEl = this._container.querySelector(".maplibre-gl-stac-layer-panel");
+      if (newPanelEl) {
+        newPanelEl.scrollTop = scrollTop;
+      }
     }
   }
 

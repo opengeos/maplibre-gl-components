@@ -379,11 +379,16 @@ export class BasemapControl implements IControl {
       }
       const data = await response.json();
 
-      this._basemaps = parseProviders(data, {
+      let basemaps = parseProviders(data, {
         filterGroups: this._options.filterGroups,
         excludeGroups: this._options.excludeGroups,
         excludeBroken: this._options.excludeBroken,
       });
+
+      // Filter out basemaps that require an API key but don't have one provided
+      basemaps = basemaps.filter(
+        (b) => !b.requiresApiKey || (b.requiresApiKey && b.apiKey),
+      );
 
       // Add Google basemaps if not excluded
       const shouldIncludeGoogle =
@@ -392,8 +397,10 @@ export class BasemapControl implements IControl {
           this._options.filterGroups.includes("Google"));
 
       if (shouldIncludeGoogle) {
-        this._basemaps = [...this._basemaps, ...GOOGLE_BASEMAPS];
+        basemaps = [...basemaps, ...GOOGLE_BASEMAPS];
       }
+
+      this._basemaps = basemaps;
 
       this._state.loading = false;
       this._state.error = null;
