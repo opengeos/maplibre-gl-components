@@ -16,7 +16,7 @@ class ThreeSceneAdapter implements CustomLayerAdapter {
   private visible = true;
   private opacity = 1;
   private onChangeCb: ((event: "add" | "remove", layerId: string) => void) | null = null;
-  private renderWatcher: (() => void) | null = null;
+  private intervalId: number | null = null;
 
   constructor(private map: maplibregl.Map, private scene: MapScene) {}
 
@@ -75,23 +75,28 @@ class ThreeSceneAdapter implements CustomLayerAdapter {
   onLayerChange(callback: (event: "add" | "remove", layerId: string) => void): () => void {
     this.onChangeCb = callback;
 
-    const onRender = () => {
+    const notifyIfReady = () => {
       if (this.map.getLayer(THREE_LAYER_ID) && this.onChangeCb) {
         this.onChangeCb("add", THREE_LAYER_ID);
-        if (this.renderWatcher) {
-          this.map.off("render", this.renderWatcher);
-          this.renderWatcher = null;
-        }
+        return true;
       }
+      return false;
     };
 
-    this.renderWatcher = onRender;
-    this.map.on("render", onRender);
+    // Try immediately, then poll briefly until MapScene injects the custom layer.
+    if (!notifyIfReady()) {
+      this.intervalId = window.setInterval(() => {
+        if (notifyIfReady() && this.intervalId !== null) {
+          window.clearInterval(this.intervalId);
+          this.intervalId = null;
+        }
+      }, 100);
+    }
 
     return () => {
-      if (this.renderWatcher) {
-        this.map.off("render", this.renderWatcher);
-        this.renderWatcher = null;
+      if (this.intervalId !== null) {
+        window.clearInterval(this.intervalId);
+        this.intervalId = null;
       }
       this.onChangeCb = null;
     };
@@ -112,7 +117,7 @@ map.on("load", () => {
   const layerControl = new LayerControl({
     collapsed: false,
     basemapStyleUrl: BASEMAP_STYLE,
-    layers: ["Background", THREE_LAYER_ID],
+    layers: [],
   });
   map.addControl(layerControl, "top-right");
 
