@@ -16,6 +16,9 @@ import 'maplibre-gl-usgs-lidar/style.css';
 
 const BASEMAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+const MAPILLARY_TOKEN = import.meta.env.VITE_MAPILLARY_ACCESS_TOKEN || '';
+
 // Exclude internal layers from controls that add helper/draw layers
 const EXCLUDE_LAYERS = [
   'usgs-lidar-*',        // USGS LiDAR draw and footprint layers
@@ -59,6 +62,10 @@ const controlGrid = new ControlGrid({
   gap: 2,
   basemapStyleUrl: BASEMAP_STYLE,
   excludeLayers: EXCLUDE_LAYERS,
+  streetViewOptions: {
+    googleApiKey: GOOGLE_API_KEY,
+    mapillaryAccessToken: MAPILLARY_TOKEN,
+  },
   defaultControls: [
     'globe',
     'fullscreen',

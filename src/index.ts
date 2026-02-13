@@ -27,6 +27,7 @@ import "maplibre-gl-lidar/style.css";
 import "maplibre-gl-planetary-computer/style.css";
 import "maplibre-gl-splat/style.css";
 import "maplibre-gl-streetview/style.css";
+import "mapillary-js/dist/mapillary.css";
 import "maplibre-gl-swipe/style.css";
 import "maplibre-gl-usgs-lidar/style.css";
 

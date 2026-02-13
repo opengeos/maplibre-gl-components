@@ -132,7 +132,13 @@
   left: auto !important;
   right: auto !important;
   z-index: auto !important;
-  display: block !important;
+}
+
+/* StreetView panel depends on flex layout; forcing block causes sizing glitches
+   (Google letterbox area / Mapillary black canvas) when relocated into floating panel. */
+.maplibre-gl-control-grid-relocated.streetview-panel {
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 /* Planetary Computer panel uses flex-column layout for scrollable content;

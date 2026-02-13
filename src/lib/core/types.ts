@@ -1,4 +1,5 @@
 import type { IControl, Map } from "maplibre-gl";
+import type { StreetViewControlOptions } from "maplibre-gl-streetview";
 
 /**
  * Position options for legend controls.
@@ -1157,6 +1158,13 @@ export interface ControlGridOptions {
    * Supports glob-style wildcards (e.g., 'measure-*', 'gl-draw-*').
    */
   excludeLayers?: string[];
+  /**
+   * Optional StreetView control options.
+   *
+   * If omitted, ControlGrid auto-loads `googleApiKey` and `mapillaryAccessToken`
+   * from Vite env vars (`VITE_GOOGLE_MAPS_API_KEY`, `VITE_MAPILLARY_ACCESS_TOKEN`).
+   */
+  streetViewOptions?: Partial<StreetViewControlOptions>;
 }
 
 /**

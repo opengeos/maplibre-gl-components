@@ -1474,6 +1474,7 @@ interface ControlGridOptions {
   gap?: number;                           // Gap between cells in pixels (default: 6)
   basemapStyleUrl?: string;               // Basemap style URL for SwipeControl
   excludeLayers?: string[];               // Layer patterns to exclude from SwipeControl
+  streetViewOptions?: Partial<StreetViewControlOptions>; // Optional API keys and StreetView config overrides
   backgroundColor?: string;
   padding?: number;
   borderRadius?: number;
@@ -1484,6 +1485,17 @@ interface ControlGridOptions {
 ```
 
 **Available default controls:** `fullscreen`, `globe`, `north`, `terrain`, `search`, `viewState`, `inspect`, `vectorDataset`, `basemap`, `cogLayer`, `minimap`, `measure`, `bookmark`, `print`, `zarrLayer`, `pmtilesLayer`, `stacLayer`, `stacSearch`, `addVector`, `geoEditor`, `lidar`, `planetaryComputer`, `gaussianSplat`, `streetView`, `swipe`, `usgsLidar`
+
+**StreetView env setup (for `streetView` default control):**
+
+```bash
+# .env
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+VITE_MAPILLARY_ACCESS_TOKEN=your_mapillary_access_token
+```
+
+`ControlGrid` auto-reads these values for the built-in `streetView` control. You can also override explicitly with `streetViewOptions`.
+Mapillary viewer CSS is bundled by `maplibre-gl-components`, so no extra `mapillary-js` CSS import is needed.
 
 ```typescript
 // Methods
@@ -1514,6 +1526,11 @@ const controlGrid = new ControlGrid({
   collapsible: true,
   collapsed: true,
   basemapStyleUrl: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+  streetViewOptions: {
+    // Optional explicit override (otherwise auto-read from VITE_* env vars)
+    googleApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    mapillaryAccessToken: import.meta.env.VITE_MAPILLARY_ACCESS_TOKEN,
+  },
   defaultControls: [
     "globe", "fullscreen", "north", "terrain", "search",
     "viewState", "inspect", "basemap", "measure", "bookmark",

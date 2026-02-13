@@ -45,7 +45,7 @@ import { UsgsLidarControl, UsgsLidarLayerAdapter } from "maplibre-gl-usgs-lidar"
 
 
 /** Optional fields that should not be made required */
-type OptionalControlGridFields = "controls" | "defaultControls" | "basemapStyleUrl" | "excludeLayers";
+type OptionalControlGridFields = "controls" | "defaultControls" | "basemapStyleUrl" | "excludeLayers" | "streetViewOptions";
 
 /** ControlGrid options with required fields except for optional ones */
 type ResolvedControlGridOptions = Required<Omit<ControlGridOptions, OptionalControlGridFields>>
@@ -74,6 +74,7 @@ const DEFAULT_OPTIONS: ResolvedControlGridOptions = {
   maxzoom: 24,
   basemapStyleUrl: undefined,
   excludeLayers: undefined,
+  streetViewOptions: undefined,
 };
 
 /** Wrench icon SVG for collapsed state – stroke style matching MapLibre globe icon. */
@@ -416,8 +417,32 @@ export class ControlGrid implements IControl {
         return new PlanetaryComputerControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
       case "gaussianSplat":
         return new GaussianSplatControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
-      case "streetView":
-        return new StreetViewControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+      case "streetView": {
+        const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+        const googleApiKey = env?.VITE_GOOGLE_MAPS_API_KEY;
+        const mapillaryAccessToken = env?.VITE_MAPILLARY_ACCESS_TOKEN;
+        const defaultProvider: "google" | "mapillary" =
+          !googleApiKey && mapillaryAccessToken ? "mapillary" : "google";
+
+        return new StreetViewControl({
+          collapsed: true,
+          panelWidth: 450,
+          panelHeight: 350,
+          maxHeight: 500,
+          defaultProvider,
+          clickToView: true,
+          showMarker: true,
+          maxSearchRadius: 200,
+          markerOptions: {
+            color: "#ff5722",
+            showDirection: false,
+            directionColor: "#1976d2",
+          },
+          googleApiKey,
+          mapillaryAccessToken,
+          ...this._options.streetViewOptions,
+        }) as unknown as IControl;
+      }
       case "swipe":
         return new SwipeControl({
           collapsed: true,
