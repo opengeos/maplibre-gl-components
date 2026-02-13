@@ -1,13 +1,17 @@
 import maplibregl from "maplibre-gl";
+import { LayerControl } from "maplibre-gl-layer-control";
 import { MapScene, SceneTransform, Sun } from "../../src";
 import * as THREE from "three";
 import "maplibre-gl/dist/maplibre-gl.css";
+import "maplibre-gl-layer-control/style.css";
 
 const center: [number, number] = [-122.4194, 37.7749];
 
+const BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+
 const map = new maplibregl.Map({
   container: "map",
-  style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+  style: BASEMAP_STYLE,
   center,
   zoom: 16,
   pitch: 60,
@@ -16,6 +20,13 @@ const map = new maplibregl.Map({
 });
 
 map.on("load", () => {
+  const layerControl = new LayerControl({
+    collapsed: false,
+    layers: ["map_scene_layer"],
+    basemapStyleUrl: BASEMAP_STYLE,
+  });
+  map.addControl(layerControl, "top-right");
+
   const scene = new MapScene(map as unknown as any, {
     preserveDrawingBuffer: false,
   });
