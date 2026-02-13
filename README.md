@@ -29,6 +29,7 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **MinimapControl** - Inset overview map showing the current viewport extent with optional click-to-navigate
 - **ControlGrid** - Collapsible toolbar grid that hosts any combination of built-in and plugin controls
 - **addControlGrid** - One-call convenience function to add all default controls with customization
+- **Three.js Integration** - Re-exported helpers (`MapScene`, `SceneTransform`, `Sun`, `Creator`) from `@dvt3d/maplibre-three-plugin`
 - **Zoom-based Visibility** - Show/hide components at specific zoom levels with `minzoom`/`maxzoom`
 - **React Support** - First-class React components and hooks
 - **TypeScript** - Full type definitions included
@@ -1875,7 +1876,7 @@ See the [examples](./examples/) directory for complete working examples:
 - **Minimap Control Example** - Inset overview map with viewport rectangle
 - **Control Grid Example** - ControlGrid with all built-in and plugin controls
 - **addControlGrid Example** - One-call convenience function with all default controls
-
+- **Three.js Plugin Example** - Integrate `MapScene` from maplibre-three-plugin with a rotating 3D object
 
 ## Development
 

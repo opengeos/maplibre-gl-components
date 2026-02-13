@@ -77,6 +77,7 @@ export { GaussianSplatControl, GaussianSplatLayerAdapter } from "maplibre-gl-spl
 export { StreetViewControl } from "maplibre-gl-streetview";
 export { SwipeControl } from "maplibre-gl-swipe";
 export { UsgsLidarControl, UsgsLidarLayerAdapter } from "maplibre-gl-usgs-lidar";
+export { MapScene, SceneTransform, Sun, Creator } from "@dvt3d/maplibre-three-plugin";
 
 // Provider utilities
 export {

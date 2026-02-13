@@ -81,6 +81,10 @@ export default defineConfig({
           __dirname,
           "examples/add-control-grid/index.html",
         ),
+        threePlugin: resolve(
+          __dirname,
+          "examples/three-plugin/index.html",
+        ),
       },
     },
   },

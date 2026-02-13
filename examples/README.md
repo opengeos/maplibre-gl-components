@@ -71,6 +71,16 @@ A vanilla TypeScript example showing the **StacSearchControl** component:
 
 **Location:** `examples/stac-search/`
 
+### Three.js Plugin Example
+
+A vanilla TypeScript example showing `MapScene` integration from `@dvt3d/maplibre-three-plugin`:
+
+- Create a Three.js scene synchronized with MapLibre camera movement
+- Add a 3D mesh at a georeferenced lng/lat location
+- Add dynamic sunlight via `Sun`
+
+**Location:** `examples/three-plugin/`
+
 ## Running Examples Locally
 
 1. Install dependencies from the project root:
