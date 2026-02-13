@@ -112,7 +112,7 @@ map.on("load", () => {
   const layerControl = new LayerControl({
     collapsed: false,
     basemapStyleUrl: BASEMAP_STYLE,
-    layers: [THREE_LAYER_ID],
+    layers: ["Background", THREE_LAYER_ID],
   });
   map.addControl(layerControl, "top-right");
 
