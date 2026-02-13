@@ -11,6 +11,9 @@ const center: [number, number] = [-122.4194, 37.7749];
 const BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 const THREE_LAYER_ID = "map_scene_layer";
 
+type MapSceneMapInput = ConstructorParameters<typeof MapScene>[0];
+type MapSceneLightInput = Parameters<MapScene["addLight"]>[0];
+
 class ThreeSceneAdapter implements CustomLayerAdapter {
   type = "three-scene";
   private visible = true;
@@ -121,7 +124,7 @@ map.on("load", () => {
   });
   map.addControl(layerControl, "top-right");
 
-  const scene = new MapScene(map as unknown as any, {
+  const scene = new MapScene(map as MapSceneMapInput, {
     preserveDrawingBuffer: false,
   });
   layerControl.registerCustomAdapter(new ThreeSceneAdapter(map, scene));
@@ -141,7 +144,7 @@ map.on("load", () => {
   scene.addObject(cube);
 
   const sun = new Sun();
-  scene.addLight(sun as unknown as any);
+  scene.addLight(sun as MapSceneLightInput);
 
   scene.on("render", () => {
     cube.rotation.x += 0.01;
