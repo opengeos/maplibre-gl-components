@@ -691,7 +691,22 @@ export class PrintControl implements IControl {
    * Return a rounded scale distance using 1/2/5 progression.
    */
   private _niceDistance(meters: number): number {
-    const exponent = Math.floor(Math.log10(Math.max(meters, 1)));
+    if (meters <= 0) {
+      return 0;
+    }
+
+    // Preserve sub-meter values using centimeter-based progression.
+    if (meters < 1) {
+      const centimeters = meters * 100;
+      const exponent = Math.floor(Math.log10(Math.max(centimeters, 1)));
+      const fraction = centimeters / 10 ** exponent;
+      let niceFraction = 1;
+      if (fraction >= 5) niceFraction = 5;
+      else if (fraction >= 2) niceFraction = 2;
+      return (niceFraction * 10 ** exponent) / 100;
+    }
+
+    const exponent = Math.floor(Math.log10(meters));
     const fraction = meters / 10 ** exponent;
     let niceFraction = 1;
     if (fraction >= 5) niceFraction = 5;
@@ -707,7 +722,6 @@ export class PrintControl implements IControl {
     targetWidth: number,
     targetHeight: number,
     mapCanvasWidth: number,
-    mapCanvasHeight: number,
   ): void {
     if (!this._map) return;
 
@@ -721,8 +735,7 @@ export class PrintControl implements IControl {
     if (!Number.isFinite(metersPerPixel) || metersPerPixel <= 0) return;
 
     const scaleX = targetWidth / mapCanvasWidth;
-    const scaleY = targetHeight / mapCanvasHeight;
-    const pixelScale = (scaleX + scaleY) / 2;
+    const pixelScale = scaleX;
 
     const targetBarPx = Math.max(80, Math.min(160, targetWidth * 0.16));
     const rawMeters = (targetBarPx / pixelScale) * metersPerPixel;
@@ -731,6 +744,11 @@ export class PrintControl implements IControl {
 
     const padding = 18;
     const barHeight = 10;
+    const minHeight = padding + barHeight + 28;
+    if (targetHeight < minHeight) {
+      return;
+    }
+
     const x = padding;
     const y = targetHeight - padding - 24;
 
@@ -760,7 +778,9 @@ export class PrintControl implements IControl {
     const label =
       niceMeters >= 1000
         ? `${(niceMeters / 1000).toFixed(niceMeters % 1000 === 0 ? 0 : 1)} km`
-        : `${Math.round(niceMeters)} m`;
+        : niceMeters >= 1
+          ? `${Math.round(niceMeters)} m`
+          : `${Math.round(niceMeters * 100)} cm`;
     ctx.fillStyle = "#111";
     ctx.font = "600 12px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif";
     ctx.textAlign = "center";
@@ -814,20 +834,18 @@ export class PrintControl implements IControl {
 
       if (this._state.includeNorthArrow) {
         const arrowSize = Math.max(44, Math.min(72, targetWidth * 0.07));
-        const arrowX = targetWidth - arrowSize - 18;
-        const arrowY = Math.max(18, titleBarHeight + 8);
-        const bearing = this._map.getBearing();
-        this._drawNorthArrow(ctx, arrowX, arrowY, arrowSize, bearing);
+        const minCanvasWidthForArrow = arrowSize + 18;
+
+        if (targetWidth >= minCanvasWidthForArrow) {
+          const arrowX = targetWidth - arrowSize - 18;
+          const arrowY = Math.max(18, titleBarHeight + 8);
+          const bearing = this._map.getBearing();
+          this._drawNorthArrow(ctx, arrowX, arrowY, arrowSize, bearing);
+        }
       }
 
       if (this._state.includeScaleBar) {
-        this._drawScaleBar(
-          ctx,
-          targetWidth,
-          targetHeight,
-          mapCanvas.width,
-          mapCanvas.height,
-        );
+        this._drawScaleBar(ctx, targetWidth, targetHeight, mapCanvas.width);
       }
 
       return exportCanvas;
