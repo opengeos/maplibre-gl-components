@@ -1317,6 +1317,8 @@ interface PrintControlOptions {
   quality?: number;                    // JPEG quality 0-1 (default: 0.92)
   filename?: string;                   // Default filename without extension (default: 'map-export')
   title?: string;                      // Optional title rendered on the image
+  includeNorthArrow?: boolean;         // Include north arrow in export (default: false)
+  includeScaleBar?: boolean;           // Include scale bar in export (default: false)
   titleFontSize?: number;              // Title font size in pixels (default: 24)
   titleFontColor?: string;             // Title font color (default: '#333333')
   titleBackground?: string;            // Title background (default: 'rgba(255,255,255,0.8)')
@@ -1355,6 +1357,8 @@ const printControl = new PrintControl({
   filename: "my-map",
   format: "png",
   title: "My Map Title",
+  includeNorthArrow: true,
+  includeScaleBar: true,
 });
 map.addControl(printControl, "top-right");
 
@@ -1368,6 +1372,8 @@ const dataUrl = await printControl.exportMap({
   format: "jpeg",
   quality: 0.95,
   title: "Custom Title",
+  includeNorthArrow: true,
+  includeScaleBar: true,
 });
 
 // Export as PDF (requires jspdf)
@@ -1378,6 +1384,7 @@ await printControl.exportMap({ format: "pdf" });
 
 - Export as PNG, JPEG, or PDF
 - Optional title overlay rendered on the exported image
+- Optional north arrow and scale bar overlays in exported output
 - Customizable filename, quality, and export size
 - Copy to clipboard (PNG/JPEG only)
 - PDF export with auto landscape/portrait detection, fitted to A4 page

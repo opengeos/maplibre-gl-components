@@ -24,6 +24,8 @@ const DEFAULT_OPTIONS: Required<PrintControlOptions> = {
   quality: 0.92,
   filename: "map-export",
   title: "",
+  includeNorthArrow: false,
+  includeScaleBar: false,
   titleFontSize: 24,
   titleFontColor: "#333333",
   titleBackground: "rgba(255,255,255,0.8)",
@@ -90,6 +92,8 @@ export class PrintControl implements IControl {
 
   // DOM elements
   private _titleInput?: HTMLInputElement;
+  private _northArrowInput?: HTMLInputElement;
+  private _scaleBarInput?: HTMLInputElement;
   private _filenameInput?: HTMLInputElement;
   private _formatSelect?: HTMLSelectElement;
   private _qualityInput?: HTMLInputElement;
@@ -116,6 +120,8 @@ export class PrintControl implements IControl {
       quality: this._options.quality,
       filename: this._options.filename,
       title: this._options.title,
+      includeNorthArrow: this._options.includeNorthArrow,
+      includeScaleBar: this._options.includeScaleBar,
       exporting: false,
       width: this._options.width || null,
       height: this._options.height || null,
@@ -264,6 +270,37 @@ export class PrintControl implements IControl {
     });
     titleField.appendChild(this._titleInput);
     content.appendChild(titleField);
+
+    // Optional map elements
+    const elementsField = document.createElement("div");
+    elementsField.className = "print-field";
+    elementsField.innerHTML = `<label>Map elements</label>`;
+
+    const northArrowLabel = document.createElement("label");
+    northArrowLabel.className = "print-checkbox-label";
+    this._northArrowInput = document.createElement("input");
+    this._northArrowInput.type = "checkbox";
+    this._northArrowInput.checked = this._state.includeNorthArrow;
+    this._northArrowInput.addEventListener("change", () => {
+      this._state.includeNorthArrow = !!this._northArrowInput?.checked;
+    });
+    northArrowLabel.appendChild(this._northArrowInput);
+    northArrowLabel.appendChild(document.createTextNode(" Include north arrow"));
+
+    const scaleBarLabel = document.createElement("label");
+    scaleBarLabel.className = "print-checkbox-label";
+    this._scaleBarInput = document.createElement("input");
+    this._scaleBarInput.type = "checkbox";
+    this._scaleBarInput.checked = this._state.includeScaleBar;
+    this._scaleBarInput.addEventListener("change", () => {
+      this._state.includeScaleBar = !!this._scaleBarInput?.checked;
+    });
+    scaleBarLabel.appendChild(this._scaleBarInput);
+    scaleBarLabel.appendChild(document.createTextNode(" Include scale bar"));
+
+    elementsField.appendChild(northArrowLabel);
+    elementsField.appendChild(scaleBarLabel);
+    content.appendChild(elementsField);
 
     // Filename field
     const filenameField = document.createElement("div");
@@ -604,6 +641,147 @@ export class PrintControl implements IControl {
   }
 
   /**
+   * Draw a north arrow on the export canvas.
+   */
+  private _drawNorthArrow(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    size: number,
+    bearing: number,
+  ): void {
+    const half = size / 2;
+    const tipMargin = size * 0.18;
+
+    ctx.save();
+    ctx.translate(x + half, y + half);
+    // Keep north arrow aligned to true north when map is rotated.
+    ctx.rotate((-bearing * Math.PI) / 180);
+
+    // Arrow
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.moveTo(0, -half + tipMargin);
+    ctx.lineTo(size * 0.16, size * 0.12);
+    ctx.lineTo(0, size * 0.02);
+    ctx.lineTo(-size * 0.16, size * 0.12);
+    ctx.closePath();
+    ctx.fill();
+
+    // N label
+    ctx.fillStyle = "#111";
+    ctx.font = `bold ${Math.round(size * 0.22)}px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("N", 0, size * 0.3);
+
+    ctx.restore();
+  }
+
+  /**
+   * Return a rounded scale distance using 1/2/5 progression.
+   */
+  private _niceDistance(meters: number): number {
+    if (meters <= 0) {
+      return 0;
+    }
+
+    // Preserve sub-meter values using centimeter-based progression.
+    if (meters < 1) {
+      const centimeters = meters * 100;
+      const exponent = Math.floor(Math.log10(Math.max(centimeters, 1)));
+      const fraction = centimeters / 10 ** exponent;
+      let niceFraction = 1;
+      if (fraction >= 5) niceFraction = 5;
+      else if (fraction >= 2) niceFraction = 2;
+      return (niceFraction * 10 ** exponent) / 100;
+    }
+
+    const exponent = Math.floor(Math.log10(meters));
+    const fraction = meters / 10 ** exponent;
+    let niceFraction = 1;
+    if (fraction >= 5) niceFraction = 5;
+    else if (fraction >= 2) niceFraction = 2;
+    return niceFraction * 10 ** exponent;
+  }
+
+  /**
+   * Draw a scale bar on the export canvas.
+   */
+  private _drawScaleBar(
+    ctx: CanvasRenderingContext2D,
+    targetWidth: number,
+    targetHeight: number,
+    mapCanvasWidth: number,
+  ): void {
+    if (!this._map) return;
+
+    const center = this._map.getCenter();
+    const zoom = this._map.getZoom();
+
+    // Meters per pixel for Web Mercator at current latitude.
+    const metersPerPixel =
+      (156543.03392804097 * Math.cos((center.lat * Math.PI) / 180)) /
+      2 ** zoom;
+    if (!Number.isFinite(metersPerPixel) || metersPerPixel <= 0) return;
+
+    const scaleX = targetWidth / mapCanvasWidth;
+    const pixelScale = scaleX;
+
+    const targetBarPx = Math.max(80, Math.min(160, targetWidth * 0.16));
+    const rawMeters = (targetBarPx / pixelScale) * metersPerPixel;
+    const niceMeters = this._niceDistance(rawMeters);
+    const barPx = Math.max(40, (niceMeters / metersPerPixel) * pixelScale);
+
+    const padding = 18;
+    const barHeight = 10;
+    const minHeight = padding + barHeight + 28;
+    if (targetHeight < minHeight) {
+      return;
+    }
+
+    const x = padding;
+    const y = targetHeight - padding - 24;
+
+    ctx.save();
+
+    // Background
+    const bgW = barPx + 16;
+    const bgH = barHeight + 28;
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.rect(x - 8, y - 8, bgW, bgH);
+    ctx.fill();
+    ctx.stroke();
+
+    // Alternating black/white bar (2 segments)
+    ctx.fillStyle = "#111";
+    ctx.fillRect(x, y, barPx / 2, barHeight);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(x + barPx / 2, y, barPx / 2, barHeight);
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, barPx, barHeight);
+
+    // Label
+    const label =
+      niceMeters >= 1000
+        ? `${(niceMeters / 1000).toFixed(niceMeters % 1000 === 0 ? 0 : 1)} km`
+        : niceMeters >= 1
+          ? `${Math.round(niceMeters)} m`
+          : `${Math.round(niceMeters * 100)} cm`;
+    ctx.fillStyle = "#111";
+    ctx.font = "600 12px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText(label, x + barPx / 2, y + barHeight + 4);
+
+    ctx.restore();
+  }
+
+  /**
    * Create the export canvas from the map.
    */
   private async _createExportCanvas(): Promise<HTMLCanvasElement | null> {
@@ -625,23 +803,40 @@ export class PrintControl implements IControl {
 
       // Draw title overlay if set
       const title = this._state.title.trim();
+      let titleBarHeight = 0;
       if (title) {
         const fontSize = this._options.titleFontSize;
         ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
         const metrics = ctx.measureText(title);
         const textHeight = fontSize;
         const padding = fontSize * 0.6;
-        const barHeight = textHeight + padding * 2;
+        titleBarHeight = textHeight + padding * 2;
 
         // Draw title background
         ctx.fillStyle = this._options.titleBackground;
-        ctx.fillRect(0, 0, targetWidth, barHeight);
+        ctx.fillRect(0, 0, targetWidth, titleBarHeight);
 
         // Draw title text
         ctx.fillStyle = this._options.titleFontColor;
         ctx.textBaseline = "middle";
         const x = (targetWidth - metrics.width) / 2;
-        ctx.fillText(title, x, barHeight / 2);
+        ctx.fillText(title, x, titleBarHeight / 2);
+      }
+
+      if (this._state.includeNorthArrow) {
+        const arrowSize = Math.max(44, Math.min(72, targetWidth * 0.07));
+        const minCanvasWidthForArrow = arrowSize + 18;
+
+        if (targetWidth >= minCanvasWidthForArrow) {
+          const arrowX = targetWidth - arrowSize - 18;
+          const arrowY = Math.max(18, titleBarHeight + 8);
+          const bearing = this._map.getBearing();
+          this._drawNorthArrow(ctx, arrowX, arrowY, arrowSize, bearing);
+        }
+      }
+
+      if (this._state.includeScaleBar) {
+        this._drawScaleBar(ctx, targetWidth, targetHeight, mapCanvas.width);
       }
 
       return exportCanvas;
@@ -862,6 +1057,8 @@ export class PrintControl implements IControl {
     quality?: number;
     filename?: string;
     title?: string;
+    includeNorthArrow?: boolean;
+    includeScaleBar?: boolean;
     width?: number;
     height?: number;
   }): Promise<string> {
@@ -871,6 +1068,12 @@ export class PrintControl implements IControl {
     if (options?.quality) this._state.quality = options.quality;
     if (options?.filename) this._state.filename = options.filename;
     if (options?.title !== undefined) this._state.title = options.title;
+    if (options?.includeNorthArrow !== undefined) {
+      this._state.includeNorthArrow = options.includeNorthArrow;
+    }
+    if (options?.includeScaleBar !== undefined) {
+      this._state.includeScaleBar = options.includeScaleBar;
+    }
     if (options?.width) this._state.width = options.width;
     if (options?.height) this._state.height = options.height;
 
@@ -900,6 +1103,8 @@ export class PrintControl implements IControl {
       this._state.quality = prevState.quality;
       this._state.filename = prevState.filename;
       this._state.title = prevState.title;
+      this._state.includeNorthArrow = prevState.includeNorthArrow;
+      this._state.includeScaleBar = prevState.includeScaleBar;
       this._state.width = prevState.width;
       this._state.height = prevState.height;
     }

@@ -199,6 +199,27 @@
   accent-color: #3b82f6;
 }
 
+.maplibre-gl-print-control .print-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #374151;
+  margin-bottom: 6px;
+  text-transform: none;
+  font-weight: normal;
+  letter-spacing: normal;
+  cursor: pointer;
+}
+
+.maplibre-gl-print-control .print-checkbox-label:last-child {
+  margin-bottom: 0;
+}
+
+.maplibre-gl-print-control .print-checkbox-label input[type="checkbox"] {
+  accent-color: #3b82f6;
+}
+
 .maplibre-gl-print-control .print-custom-size {
   display: flex;
   gap: 8px;

@@ -2531,6 +2531,10 @@ export interface PrintControlOptions {
   filename?: string;
   /** Optional title text rendered on the exported image. */
   title?: string;
+  /** Whether to include a north arrow in exports. Default: false. */
+  includeNorthArrow?: boolean;
+  /** Whether to include a scale bar in exports. Default: false. */
+  includeScaleBar?: boolean;
   /** Title font size in pixels. Default: 24. */
   titleFontSize?: number;
   /** Title font color. Default: '#333333'. */
@@ -2579,6 +2583,10 @@ export interface PrintControlState {
   filename: string;
   /** Title text for export. */
   title: string;
+  /** Whether to include a north arrow in exports. */
+  includeNorthArrow: boolean;
+  /** Whether to include a scale bar in exports. */
+  includeScaleBar: boolean;
   /** Whether an export is in progress. */
   exporting: boolean;
   /** Custom width (null = use current canvas size). */
