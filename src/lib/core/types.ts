@@ -2512,6 +2512,34 @@ export type BookmarkEventHandler = (event: {
 // ============================================================================
 
 /**
+ * Colorbar configuration for print export.
+ */
+export interface PrintColorbarConfig {
+  /** Whether to include the colorbar. Default: false. */
+  enabled?: boolean;
+  /** Colormap name or array of colors. */
+  colormap?: ColormapName | string[];
+  /** Minimum value for the colorbar. */
+  vmin?: number;
+  /** Maximum value for the colorbar. */
+  vmax?: number;
+  /** Label/title for the colorbar. */
+  label?: string;
+  /** Units to display after values. */
+  units?: string;
+  /** Orientation of the colorbar. Default: 'vertical'. */
+  orientation?: "horizontal" | "vertical";
+  /** Position of the colorbar on the exported image. Default: 'bottom-right'. */
+  position?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  /** Width of the gradient bar in pixels. Default: 20. */
+  barThickness?: number;
+  /** Length of the gradient bar in pixels. Default: 150. */
+  barLength?: number;
+  /** Number of tick marks. Default: 5. */
+  tickCount?: number;
+}
+
+/**
  * Options for configuring the PrintControl.
  */
 export interface PrintControlOptions {
@@ -2535,6 +2563,8 @@ export interface PrintControlOptions {
   includeNorthArrow?: boolean;
   /** Whether to include a scale bar in exports. Default: false. */
   includeScaleBar?: boolean;
+  /** Colorbar configuration for exports. */
+  colorbar?: PrintColorbarConfig;
   /** Title font size in pixels. Default: 24. */
   titleFontSize?: number;
   /** Title font color. Default: '#333333'. */
@@ -2587,6 +2617,8 @@ export interface PrintControlState {
   includeNorthArrow: boolean;
   /** Whether to include a scale bar in exports. */
   includeScaleBar: boolean;
+  /** Colorbar configuration for exports. */
+  colorbar: PrintColorbarConfig;
   /** Whether an export is in progress. */
   exporting: boolean;
   /** Custom width (null = use current canvas size). */

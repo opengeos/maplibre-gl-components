@@ -274,6 +274,7 @@ export type {
   MapBookmark,
   PrintControlOptions,
   PrintControlState,
+  PrintColorbarConfig,
   PrintEvent,
   PrintEventHandler,
   MinimapControlOptions,

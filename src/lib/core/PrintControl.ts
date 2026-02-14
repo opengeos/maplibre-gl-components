@@ -10,12 +10,35 @@ import type {
   PrintControlState,
   PrintEvent,
   PrintEventHandler,
+  PrintColorbarConfig,
+  ColormapName,
+  ColorStop,
 } from "./types";
+import { getColormap, isValidColormap, getColormapNames } from "../colormaps";
+
+/**
+ * Default colorbar configuration.
+ */
+const DEFAULT_COLORBAR: Required<PrintColorbarConfig> = {
+  enabled: false,
+  colormap: "viridis",
+  vmin: 0,
+  vmax: 1,
+  label: "",
+  units: "",
+  orientation: "vertical",
+  position: "bottom-right",
+  barThickness: 20,
+  barLength: 150,
+  tickCount: 5,
+};
 
 /**
  * Default options for the PrintControl.
  */
-const DEFAULT_OPTIONS: Required<PrintControlOptions> = {
+const DEFAULT_OPTIONS: Required<Omit<PrintControlOptions, "colorbar">> & {
+  colorbar: Required<PrintColorbarConfig>;
+} = {
   position: "top-right",
   className: "",
   visible: true,
@@ -26,6 +49,7 @@ const DEFAULT_OPTIONS: Required<PrintControlOptions> = {
   title: "",
   includeNorthArrow: false,
   includeScaleBar: false,
+  colorbar: DEFAULT_COLORBAR,
   titleFontSize: 24,
   titleFontColor: "#333333",
   titleBackground: "rgba(255,255,255,0.8)",
@@ -83,7 +107,9 @@ export class PrintControl implements IControl {
   private _container?: HTMLElement;
   private _button?: HTMLButtonElement;
   private _panel?: HTMLElement;
-  private _options: Required<PrintControlOptions>;
+  private _options: Required<Omit<PrintControlOptions, "colorbar">> & {
+    colorbar: Required<PrintColorbarConfig>;
+  };
   private _state: PrintControlState;
   private _eventHandlers: Map<PrintEvent, Set<PrintEventHandler>> = new Map();
   private _map?: MapLibreMap;
@@ -94,6 +120,14 @@ export class PrintControl implements IControl {
   private _titleInput?: HTMLInputElement;
   private _northArrowInput?: HTMLInputElement;
   private _scaleBarInput?: HTMLInputElement;
+  private _colorbarInput?: HTMLInputElement;
+  private _colorbarSettingsDiv?: HTMLElement;
+  private _colorbarColormapSelect?: HTMLSelectElement;
+  private _colorbarOrientationSelect?: HTMLSelectElement;
+  private _colorbarVminInput?: HTMLInputElement;
+  private _colorbarVmaxInput?: HTMLInputElement;
+  private _colorbarLabelInput?: HTMLInputElement;
+  private _colorbarUnitsInput?: HTMLInputElement;
   private _filenameInput?: HTMLInputElement;
   private _formatSelect?: HTMLSelectElement;
   private _qualityInput?: HTMLInputElement;
@@ -112,7 +146,8 @@ export class PrintControl implements IControl {
    * Creates a new PrintControl instance.
    */
   constructor(options?: PrintControlOptions) {
-    this._options = { ...DEFAULT_OPTIONS, ...options };
+    const colorbar = { ...DEFAULT_COLORBAR, ...options?.colorbar };
+    this._options = { ...DEFAULT_OPTIONS, ...options, colorbar };
     this._state = {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
@@ -122,6 +157,7 @@ export class PrintControl implements IControl {
       title: this._options.title,
       includeNorthArrow: this._options.includeNorthArrow,
       includeScaleBar: this._options.includeScaleBar,
+      colorbar: { ...colorbar },
       exporting: false,
       width: this._options.width || null,
       height: this._options.height || null,
@@ -298,9 +334,149 @@ export class PrintControl implements IControl {
     scaleBarLabel.appendChild(this._scaleBarInput);
     scaleBarLabel.appendChild(document.createTextNode(" Include scale bar"));
 
+    const colorbarLabel = document.createElement("label");
+    colorbarLabel.className = "print-checkbox-label";
+    this._colorbarInput = document.createElement("input");
+    this._colorbarInput.type = "checkbox";
+    this._colorbarInput.checked = this._state.colorbar.enabled ?? false;
+    this._colorbarInput.addEventListener("change", () => {
+      this._state.colorbar.enabled = !!this._colorbarInput?.checked;
+      this._updateColorbarSettingsVisibility();
+    });
+    colorbarLabel.appendChild(this._colorbarInput);
+    colorbarLabel.appendChild(document.createTextNode(" Include colorbar"));
+
     elementsField.appendChild(northArrowLabel);
     elementsField.appendChild(scaleBarLabel);
+    elementsField.appendChild(colorbarLabel);
     content.appendChild(elementsField);
+
+    // Colorbar settings (collapsible)
+    this._colorbarSettingsDiv = document.createElement("div");
+    this._colorbarSettingsDiv.className = "print-field print-colorbar-settings";
+    this._colorbarSettingsDiv.innerHTML = `<label>Colorbar Settings</label>`;
+
+    // Colormap select
+    const colormapRow = document.createElement("div");
+    colormapRow.className = "print-colorbar-row";
+    const colormapLabel = document.createElement("span");
+    colormapLabel.textContent = "Colormap:";
+    colormapLabel.className = "print-colorbar-sublabel";
+    this._colorbarColormapSelect = document.createElement("select");
+    this._colorbarColormapSelect.className = "print-select print-colorbar-select";
+    this._colorbarColormapSelect.style.color = "#000";
+    const colormapNames = getColormapNames();
+    colormapNames.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      opt.selected = name === this._state.colorbar.colormap;
+      this._colorbarColormapSelect!.appendChild(opt);
+    });
+    this._colorbarColormapSelect.addEventListener("change", () => {
+      this._state.colorbar.colormap = this._colorbarColormapSelect!
+        .value as ColormapName;
+    });
+    colormapRow.appendChild(colormapLabel);
+    colormapRow.appendChild(this._colorbarColormapSelect);
+    this._colorbarSettingsDiv.appendChild(colormapRow);
+
+    // Orientation row
+    const orientationRow = document.createElement("div");
+    orientationRow.className = "print-colorbar-row";
+    const orientationLabel = document.createElement("span");
+    orientationLabel.textContent = "Orientation:";
+    orientationLabel.className = "print-colorbar-sublabel";
+    this._colorbarOrientationSelect = document.createElement("select");
+    this._colorbarOrientationSelect.className = "print-select print-colorbar-select";
+    this._colorbarOrientationSelect.style.color = "#000";
+    const orientations: Array<"horizontal" | "vertical"> = ["horizontal", "vertical"];
+    orientations.forEach((orient) => {
+      const opt = document.createElement("option");
+      opt.value = orient;
+      opt.textContent = orient.charAt(0).toUpperCase() + orient.slice(1);
+      opt.selected = orient === (this._state.colorbar.orientation ?? "vertical");
+      this._colorbarOrientationSelect!.appendChild(opt);
+    });
+    this._colorbarOrientationSelect.addEventListener("change", () => {
+      this._state.colorbar.orientation = this._colorbarOrientationSelect!
+        .value as "horizontal" | "vertical";
+    });
+    orientationRow.appendChild(orientationLabel);
+    orientationRow.appendChild(this._colorbarOrientationSelect);
+    this._colorbarSettingsDiv.appendChild(orientationRow);
+
+    // Vmin/Vmax row
+    const rangeRow = document.createElement("div");
+    rangeRow.className = "print-colorbar-row";
+    const vminLabel = document.createElement("span");
+    vminLabel.textContent = "Min:";
+    vminLabel.className = "print-colorbar-sublabel";
+    this._colorbarVminInput = document.createElement("input");
+    this._colorbarVminInput.type = "number";
+    this._colorbarVminInput.className = "print-input print-colorbar-num";
+    this._colorbarVminInput.style.color = "#000";
+    this._colorbarVminInput.value = String(this._state.colorbar.vmin ?? 0);
+    this._colorbarVminInput.addEventListener("input", () => {
+      this._state.colorbar.vmin = parseFloat(this._colorbarVminInput!.value) || 0;
+    });
+    const vmaxLabel = document.createElement("span");
+    vmaxLabel.textContent = "Max:";
+    vmaxLabel.className = "print-colorbar-sublabel";
+    this._colorbarVmaxInput = document.createElement("input");
+    this._colorbarVmaxInput.type = "number";
+    this._colorbarVmaxInput.className = "print-input print-colorbar-num";
+    this._colorbarVmaxInput.style.color = "#000";
+    this._colorbarVmaxInput.value = String(this._state.colorbar.vmax ?? 1);
+    this._colorbarVmaxInput.addEventListener("input", () => {
+      this._state.colorbar.vmax = parseFloat(this._colorbarVmaxInput!.value) || 1;
+    });
+    rangeRow.appendChild(vminLabel);
+    rangeRow.appendChild(this._colorbarVminInput);
+    rangeRow.appendChild(vmaxLabel);
+    rangeRow.appendChild(this._colorbarVmaxInput);
+    this._colorbarSettingsDiv.appendChild(rangeRow);
+
+    // Label row
+    const labelRow = document.createElement("div");
+    labelRow.className = "print-colorbar-row";
+    const labelLabel = document.createElement("span");
+    labelLabel.textContent = "Label:";
+    labelLabel.className = "print-colorbar-sublabel";
+    this._colorbarLabelInput = document.createElement("input");
+    this._colorbarLabelInput.type = "text";
+    this._colorbarLabelInput.className = "print-input";
+    this._colorbarLabelInput.style.color = "#000";
+    this._colorbarLabelInput.placeholder = "e.g., Temperature";
+    this._colorbarLabelInput.value = this._state.colorbar.label ?? "";
+    this._colorbarLabelInput.addEventListener("input", () => {
+      this._state.colorbar.label = this._colorbarLabelInput!.value;
+    });
+    labelRow.appendChild(labelLabel);
+    labelRow.appendChild(this._colorbarLabelInput);
+    this._colorbarSettingsDiv.appendChild(labelRow);
+
+    // Units row
+    const unitsRow = document.createElement("div");
+    unitsRow.className = "print-colorbar-row";
+    const unitsLabel = document.createElement("span");
+    unitsLabel.textContent = "Units:";
+    unitsLabel.className = "print-colorbar-sublabel";
+    this._colorbarUnitsInput = document.createElement("input");
+    this._colorbarUnitsInput.type = "text";
+    this._colorbarUnitsInput.className = "print-input print-colorbar-units";
+    this._colorbarUnitsInput.style.color = "#000";
+    this._colorbarUnitsInput.placeholder = "e.g., °C";
+    this._colorbarUnitsInput.value = this._state.colorbar.units ?? "";
+    this._colorbarUnitsInput.addEventListener("input", () => {
+      this._state.colorbar.units = this._colorbarUnitsInput!.value;
+    });
+    unitsRow.appendChild(unitsLabel);
+    unitsRow.appendChild(this._colorbarUnitsInput);
+    this._colorbarSettingsDiv.appendChild(unitsRow);
+
+    content.appendChild(this._colorbarSettingsDiv);
+    this._updateColorbarSettingsVisibility();
 
     // Filename field
     const filenameField = document.createElement("div");
@@ -548,6 +724,232 @@ export class PrintControl implements IControl {
         ? ""
         : "none";
     }
+  }
+
+  /**
+   * Toggle colorbar settings visibility.
+   */
+  private _updateColorbarSettingsVisibility(): void {
+    if (this._colorbarSettingsDiv) {
+      this._colorbarSettingsDiv.style.display = this._state.colorbar.enabled
+        ? ""
+        : "none";
+    }
+  }
+
+  /**
+   * Get color stops from colormap configuration.
+   */
+  private _getColorStops(colormap: ColormapName | string[]): ColorStop[] {
+    if (Array.isArray(colormap)) {
+      return colormap.map((color, i) => ({
+        position: i / (colormap.length - 1),
+        color,
+      }));
+    }
+
+    if (typeof colormap === "string" && isValidColormap(colormap)) {
+      return getColormap(colormap);
+    }
+
+    return getColormap("viridis");
+  }
+
+  /**
+   * Draw a colorbar on the export canvas.
+   */
+  private _drawColorbar(
+    ctx: CanvasRenderingContext2D,
+    targetWidth: number,
+    targetHeight: number,
+    titleBarHeight: number,
+  ): void {
+    const config = this._state.colorbar;
+    const colormap = config.colormap ?? "viridis";
+    const vmin = config.vmin ?? 0;
+    const vmax = config.vmax ?? 1;
+    const label = config.label ?? "";
+    const units = config.units ?? "";
+    const orientation = config.orientation ?? "vertical";
+    const position = config.position ?? "bottom-right";
+    const barThickness = config.barThickness ?? 20;
+    const barLength = config.barLength ?? 150;
+    const tickCount = config.tickCount ?? 5;
+
+    const isVertical = orientation === "vertical";
+    const padding = 16;
+    const fontSize = 11;
+    const labelFontSize = 12;
+    const tickLength = 4;
+    // Inner padding for horizontal colorbar to prevent tick labels from being clipped
+    const horizontalInnerPadding = isVertical ? 0 : 24;
+
+    // Calculate total dimensions
+    const tickLabelWidth = 50;
+    const totalWidth = isVertical
+      ? barThickness + tickLength + tickLabelWidth + (label ? labelFontSize + 6 : 0)
+      : barLength + horizontalInnerPadding * 2;
+    const totalHeight = isVertical
+      ? barLength + (label ? labelFontSize + 6 : 0)
+      : barThickness + tickLength + fontSize + 6 + (label ? labelFontSize + 6 : 0);
+
+    // Determine position
+    let x: number, y: number;
+    if (position.includes("left")) {
+      x = padding;
+    } else {
+      x = targetWidth - totalWidth - padding;
+    }
+    if (position.includes("top")) {
+      y = Math.max(padding, titleBarHeight + padding);
+    } else {
+      y = targetHeight - totalHeight - padding;
+    }
+
+    ctx.save();
+
+    // Draw background
+    const bgPadding = 8;
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.strokeStyle = "rgba(0,0,0,0.2)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(
+      x - bgPadding,
+      y - bgPadding,
+      totalWidth + bgPadding * 2,
+      totalHeight + bgPadding * 2,
+      4,
+    );
+    ctx.fill();
+    ctx.stroke();
+
+    // Draw label if provided
+    let labelOffset = 0;
+    if (label) {
+      ctx.fillStyle = "#333";
+      ctx.font = `600 ${labelFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+      ctx.textAlign = isVertical ? "left" : "center";
+      ctx.textBaseline = "top";
+      if (isVertical) {
+        ctx.fillText(label, x, y);
+      } else {
+        ctx.fillText(label, x + horizontalInnerPadding + barLength / 2, y);
+      }
+      labelOffset = labelFontSize + 6;
+    }
+
+    // Bar x offset for horizontal orientation
+    const barX = isVertical ? x : x + horizontalInnerPadding;
+
+    // Get color stops
+    const stops = this._getColorStops(colormap);
+
+    // Create gradient
+    let gradient: CanvasGradient;
+    if (isVertical) {
+      // Vertical: gradient goes from bottom (vmin) to top (vmax)
+      gradient = ctx.createLinearGradient(
+        barX,
+        y + labelOffset + barLength,
+        barX,
+        y + labelOffset,
+      );
+    } else {
+      // Horizontal: gradient goes from left (vmin) to right (vmax)
+      gradient = ctx.createLinearGradient(
+        barX,
+        y + labelOffset,
+        barX + barLength,
+        y + labelOffset,
+      );
+    }
+
+    stops.forEach((stop) => {
+      gradient.addColorStop(stop.position, stop.color);
+    });
+
+    // Draw gradient bar
+    ctx.fillStyle = gradient;
+    if (isVertical) {
+      ctx.fillRect(barX, y + labelOffset, barThickness, barLength);
+      ctx.strokeStyle = "rgba(0,0,0,0.3)";
+      ctx.strokeRect(barX, y + labelOffset, barThickness, barLength);
+    } else {
+      ctx.fillRect(barX, y + labelOffset, barLength, barThickness);
+      ctx.strokeStyle = "rgba(0,0,0,0.3)";
+      ctx.strokeRect(barX, y + labelOffset, barLength, barThickness);
+    }
+
+    // Draw ticks and labels
+    ctx.fillStyle = "#333";
+    ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 1;
+
+    for (let i = 0; i < tickCount; i++) {
+      const ratio = i / (tickCount - 1);
+      const value = vmin + ratio * (vmax - vmin);
+      const formattedValue = this._formatTickValue(value, vmax - vmin);
+      const labelText = units ? `${formattedValue}${units}` : formattedValue;
+
+      if (isVertical) {
+        // Vertical: ticks on the right side of the bar
+        const tickY = y + labelOffset + barLength - ratio * barLength;
+        ctx.beginPath();
+        ctx.moveTo(barX + barThickness, tickY);
+        ctx.lineTo(barX + barThickness + tickLength, tickY);
+        ctx.stroke();
+
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText(labelText, barX + barThickness + tickLength + 4, tickY);
+      } else {
+        // Horizontal: ticks below the bar
+        const tickX = barX + ratio * barLength;
+        ctx.beginPath();
+        ctx.moveTo(tickX, y + labelOffset + barThickness);
+        ctx.lineTo(tickX, y + labelOffset + barThickness + tickLength);
+        ctx.stroke();
+
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText(labelText, tickX, y + labelOffset + barThickness + tickLength + 2);
+      }
+    }
+
+    ctx.restore();
+  }
+
+  /**
+   * Format a tick value for display.
+   */
+  private _formatTickValue(value: number, range: number): string {
+    if (range === 0) return "0";
+
+    const absValue = Math.abs(value);
+    const absRange = Math.abs(range);
+
+    // Determine precision based on range
+    let decimals: number;
+    if (absRange >= 100) {
+      decimals = 0;
+    } else if (absRange >= 10) {
+      decimals = 1;
+    } else if (absRange >= 1) {
+      decimals = 2;
+    } else if (absRange >= 0.1) {
+      decimals = 3;
+    } else {
+      decimals = 4;
+    }
+
+    // Use scientific notation for very large or very small values
+    if (absValue >= 1e6 || (absValue > 0 && absValue < 1e-4)) {
+      return value.toExponential(2);
+    }
+
+    return value.toFixed(decimals);
   }
 
   /**
@@ -839,6 +1241,10 @@ export class PrintControl implements IControl {
         this._drawScaleBar(ctx, targetWidth, targetHeight, mapCanvas.width);
       }
 
+      if (this._state.colorbar.enabled) {
+        this._drawColorbar(ctx, targetWidth, targetHeight, titleBarHeight);
+      }
+
       return exportCanvas;
     } catch (err) {
       const errorMsg =
@@ -1059,11 +1465,12 @@ export class PrintControl implements IControl {
     title?: string;
     includeNorthArrow?: boolean;
     includeScaleBar?: boolean;
+    colorbar?: PrintColorbarConfig;
     width?: number;
     height?: number;
   }): Promise<string> {
     // Apply temporary overrides
-    const prevState = { ...this._state };
+    const prevState = { ...this._state, colorbar: { ...this._state.colorbar } };
     if (options?.format) this._state.format = options.format;
     if (options?.quality) this._state.quality = options.quality;
     if (options?.filename) this._state.filename = options.filename;
@@ -1073,6 +1480,9 @@ export class PrintControl implements IControl {
     }
     if (options?.includeScaleBar !== undefined) {
       this._state.includeScaleBar = options.includeScaleBar;
+    }
+    if (options?.colorbar !== undefined) {
+      this._state.colorbar = { ...this._state.colorbar, ...options.colorbar };
     }
     if (options?.width) this._state.width = options.width;
     if (options?.height) this._state.height = options.height;
@@ -1105,8 +1515,41 @@ export class PrintControl implements IControl {
       this._state.title = prevState.title;
       this._state.includeNorthArrow = prevState.includeNorthArrow;
       this._state.includeScaleBar = prevState.includeScaleBar;
+      this._state.colorbar = prevState.colorbar;
       this._state.width = prevState.width;
       this._state.height = prevState.height;
     }
+  }
+
+  /**
+   * Set the colorbar configuration.
+   */
+  setColorbar(config: PrintColorbarConfig): this {
+    this._state.colorbar = { ...this._state.colorbar, ...config };
+    // Update UI if panel is open
+    if (this._colorbarInput) {
+      this._colorbarInput.checked = this._state.colorbar.enabled ?? false;
+    }
+    if (this._colorbarColormapSelect && typeof this._state.colorbar.colormap === "string") {
+      this._colorbarColormapSelect.value = this._state.colorbar.colormap;
+    }
+    if (this._colorbarOrientationSelect) {
+      this._colorbarOrientationSelect.value = this._state.colorbar.orientation ?? "vertical";
+    }
+    if (this._colorbarVminInput) {
+      this._colorbarVminInput.value = String(this._state.colorbar.vmin ?? 0);
+    }
+    if (this._colorbarVmaxInput) {
+      this._colorbarVmaxInput.value = String(this._state.colorbar.vmax ?? 1);
+    }
+    if (this._colorbarLabelInput) {
+      this._colorbarLabelInput.value = this._state.colorbar.label ?? "";
+    }
+    if (this._colorbarUnitsInput) {
+      this._colorbarUnitsInput.value = this._state.colorbar.units ?? "";
+    }
+    this._updateColorbarSettingsVisibility();
+    this._emit("update");
+    return this;
   }
 }

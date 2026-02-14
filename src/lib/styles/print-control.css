@@ -334,3 +334,50 @@
 .maplibre-gl-print-control .print-feedback.visible {
   opacity: 1;
 }
+
+/* Colorbar settings */
+.maplibre-gl-print-control .print-colorbar-settings {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 8px;
+  margin-top: 8px;
+}
+
+.maplibre-gl-print-control .print-colorbar-settings > label {
+  margin-bottom: 8px;
+}
+
+.maplibre-gl-print-control .print-colorbar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.maplibre-gl-print-control .print-colorbar-row:last-child {
+  margin-bottom: 0;
+}
+
+.maplibre-gl-print-control .print-colorbar-sublabel {
+  font-size: 11px;
+  color: #6b7280;
+  min-width: 36px;
+}
+
+.maplibre-gl-print-control .print-colorbar-select {
+  flex: 1;
+  padding: 6px 8px;
+}
+
+.maplibre-gl-print-control .print-colorbar-num {
+  width: 70px;
+  padding: 6px 8px;
+  flex: none;
+}
+
+.maplibre-gl-print-control .print-colorbar-units {
+  width: 60px;
+  padding: 6px 8px;
+  flex: none;
+}
