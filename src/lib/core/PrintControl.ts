@@ -658,15 +658,6 @@ export class PrintControl implements IControl {
     // Keep north arrow aligned to true north when map is rotated.
     ctx.rotate((-bearing * Math.PI) / 180);
 
-    // Background box
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.strokeStyle = "rgba(0,0,0,0.5)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.rect(-half, -half, size, size);
-    ctx.fill();
-    ctx.stroke();
-
     // Arrow
     ctx.fillStyle = "#111";
     ctx.beginPath();
