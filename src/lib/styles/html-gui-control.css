@@ -30,6 +30,11 @@
   color: white;
 }
 
+.maplibre-gl-html-gui-control .html-gui-button.active:hover {
+  background-color: #2563eb;
+  color: white;
+}
+
 .maplibre-gl-html-gui-control .html-gui-button svg {
   width: 18px;
   height: 18px;

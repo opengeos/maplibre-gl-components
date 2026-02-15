@@ -181,8 +181,8 @@ describe("addControlGrid", () => {
 });
 
 describe("ALL_DEFAULT_CONTROLS", () => {
-  it("should contain 26 control names", () => {
-    expect(ALL_DEFAULT_CONTROLS.length).toBe(26);
+  it("should contain 29 control names", () => {
+    expect(ALL_DEFAULT_CONTROLS.length).toBe(29);
   });
 
   it("should contain all expected controls", () => {
@@ -213,6 +213,9 @@ describe("ALL_DEFAULT_CONTROLS", () => {
       "streetView",
       "swipe",
       "usgsLidar",
+      "colorbarGui",
+      "legendGui",
+      "htmlGui",
     ];
     for (const name of expected) {
       expect(ALL_DEFAULT_CONTROLS).toContain(name);

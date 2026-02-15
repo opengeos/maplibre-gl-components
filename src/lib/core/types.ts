@@ -1124,8 +1124,12 @@ export interface ColorbarGuiControlState {
   visible: boolean;
   /** Whether the panel is collapsed. */
   collapsed: boolean;
-  /** Selected colormap name. */
+  /** Colorbar mode: 'named' for predefined colormaps, 'custom' for user-defined colors. */
+  mode: "named" | "custom";
+  /** Selected colormap name (used when mode is 'named'). */
   colormap: ColormapName;
+  /** Custom color list as comma-separated color names or hex codes (used when mode is 'custom'). */
+  customColors: string;
   /** Minimum value. */
   vmin: number;
   /** Maximum value. */

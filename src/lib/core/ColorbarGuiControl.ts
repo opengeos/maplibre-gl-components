@@ -35,8 +35,8 @@ const DEFAULT_OPTIONS: Required<ColorbarGuiControlOptions> = {
   maxzoom: 24,
 };
 
-/** SVG icon for the colorbar button. */
-const COLORBAR_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="4" height="18" rx="1" fill="url(#cbg)"/><defs><linearGradient id="cbg" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#440154"/><stop offset="50%" stop-color="#21918c"/><stop offset="100%" stop-color="#fde725"/></linearGradient></defs><line x1="10" y1="5" x2="21" y2="5"/><line x1="10" y1="12" x2="18" y2="12"/><line x1="10" y1="19" x2="15" y2="19"/></svg>`;
+/** SVG icon for the colorbar button – gradient bar only, no lines. */
+const COLORBAR_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="none"><defs><linearGradient id="cbg" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#440154"/><stop offset="25%" stop-color="#31688e"/><stop offset="50%" stop-color="#21918c"/><stop offset="75%" stop-color="#90d743"/><stop offset="100%" stop-color="#fde725"/></linearGradient></defs><rect x="8" y="2" width="8" height="20" rx="2" fill="url(#cbg)" stroke="currentColor" stroke-width="1.5"/></svg>`;
 
 /** Close icon. */
 const CLOSE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
@@ -85,12 +85,21 @@ export class ColorbarGuiControl implements IControl {
   private _removeBtn?: HTMLButtonElement;
   private _previewEl?: HTMLElement;
 
+  // DOM refs for custom mode
+  private _customColorsTextarea?: HTMLTextAreaElement;
+  private _modeNamedRadio?: HTMLInputElement;
+  private _modeCustomRadio?: HTMLInputElement;
+  private _namedSection?: HTMLElement;
+  private _customSection?: HTMLElement;
+
   constructor(options?: ColorbarGuiControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
     this._state = {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
+      mode: "named",
       colormap: "viridis",
+      customColors: "#440154, #31688e, #21918c, #90d743, #fde725",
       vmin: 0,
       vmax: 100,
       label: "",
@@ -229,7 +238,42 @@ export class ColorbarGuiControl implements IControl {
     const content = document.createElement("div");
     content.className = "colorbar-gui-content";
 
-    // Colormap select
+    // Mode selector
+    const modeField = this._createField("Color Source");
+    const modeRow = document.createElement("div");
+    modeRow.className = "colorbar-gui-mode-row";
+
+    const namedLabel = document.createElement("label");
+    namedLabel.className = "colorbar-gui-radio-label";
+    this._modeNamedRadio = document.createElement("input");
+    this._modeNamedRadio.type = "radio";
+    this._modeNamedRadio.name = "colorbar-mode";
+    this._modeNamedRadio.checked = this._state.mode === "named";
+    this._modeNamedRadio.addEventListener("change", () => {
+      if (this._modeNamedRadio!.checked) this._setMode("named");
+    });
+    namedLabel.appendChild(this._modeNamedRadio);
+    namedLabel.appendChild(document.createTextNode(" Named Colormap"));
+    modeRow.appendChild(namedLabel);
+
+    const customLabel = document.createElement("label");
+    customLabel.className = "colorbar-gui-radio-label";
+    this._modeCustomRadio = document.createElement("input");
+    this._modeCustomRadio.type = "radio";
+    this._modeCustomRadio.name = "colorbar-mode";
+    this._modeCustomRadio.checked = this._state.mode === "custom";
+    this._modeCustomRadio.addEventListener("change", () => {
+      if (this._modeCustomRadio!.checked) this._setMode("custom");
+    });
+    customLabel.appendChild(this._modeCustomRadio);
+    customLabel.appendChild(document.createTextNode(" Custom Colors"));
+    modeRow.appendChild(customLabel);
+
+    modeField.appendChild(modeRow);
+    content.appendChild(modeField);
+
+    // Named colormap section
+    this._namedSection = document.createElement("div");
     const colormapField = this._createField("Colormap");
     this._colormapSelect = document.createElement("select");
     this._colormapSelect.className = "colorbar-gui-select";
@@ -247,7 +291,29 @@ export class ColorbarGuiControl implements IControl {
       if (this._state.hasColorbar) this._updateColorbar();
     });
     colormapField.appendChild(this._colormapSelect);
-    content.appendChild(colormapField);
+    this._namedSection.appendChild(colormapField);
+    content.appendChild(this._namedSection);
+
+    // Custom colors section
+    this._customSection = document.createElement("div");
+    const customField = this._createField("Colors (comma-separated)");
+    this._customColorsTextarea = document.createElement("textarea");
+    this._customColorsTextarea.className = "colorbar-gui-textarea";
+    this._customColorsTextarea.rows = 3;
+    this._customColorsTextarea.value = this._state.customColors;
+    this._customColorsTextarea.placeholder = "e.g., red, #00ff00, blue, yellow\nor #440154, #21918c, #fde725";
+    this._customColorsTextarea.addEventListener("input", () => {
+      this._state.customColors = this._customColorsTextarea!.value;
+      this._updatePreview();
+      if (this._state.hasColorbar) this._updateColorbar();
+    });
+    customField.appendChild(this._customColorsTextarea);
+    this._customSection.appendChild(customField);
+    content.appendChild(this._customSection);
+
+    // Show/hide sections based on mode
+    this._namedSection.style.display = this._state.mode === "named" ? "" : "none";
+    this._customSection.style.display = this._state.mode === "custom" ? "" : "none";
 
     // Preview
     this._previewEl = document.createElement("div");
@@ -395,21 +461,65 @@ export class ColorbarGuiControl implements IControl {
     return field;
   }
 
+  private _setMode(mode: "named" | "custom"): void {
+    this._state.mode = mode;
+    if (this._namedSection) {
+      this._namedSection.style.display = mode === "named" ? "" : "none";
+    }
+    if (this._customSection) {
+      this._customSection.style.display = mode === "custom" ? "" : "none";
+    }
+    this._updatePreview();
+    if (this._state.hasColorbar) this._updateColorbar();
+  }
+
+  private _parseCustomColors(): string[] {
+    return this._state.customColors
+      .split(/[,\n]+/)
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0);
+  }
+
   private _updatePreview(): void {
     if (!this._previewEl) return;
-    const name = this._state.colormap;
-    const stops = getColormap(name);
-    const gradientStops = stops
-      .map((s) => `${s.color} ${s.position * 100}%`)
-      .join(", ");
-    this._previewEl.style.background = `linear-gradient(to right, ${gradientStops})`;
+    if (this._state.mode === "custom") {
+      const colors = this._parseCustomColors();
+      if (colors.length === 0) {
+        this._previewEl.style.background = "#e5e7eb";
+        return;
+      }
+      if (colors.length === 1) {
+        this._previewEl.style.background = colors[0];
+        return;
+      }
+      const step = 100 / (colors.length - 1);
+      const gradientStops = colors
+        .map((c, i) => `${c} ${(i * step).toFixed(1)}%`)
+        .join(", ");
+      this._previewEl.style.background = `linear-gradient(to right, ${gradientStops})`;
+    } else {
+      const name = this._state.colormap;
+      const stops = getColormap(name);
+      const gradientStops = stops
+        .map((s) => `${s.color} ${s.position * 100}%`)
+        .join(", ");
+      this._previewEl.style.background = `linear-gradient(to right, ${gradientStops})`;
+    }
+  }
+
+  private _getColormapValue(): ColormapName | string[] {
+    if (this._state.mode === "custom") {
+      const colors = this._parseCustomColors();
+      return colors.length > 0 ? colors : ["#440154", "#21918c", "#fde725"];
+    }
+    return this._state.colormap;
   }
 
   private _addColorbar(): void {
     if (!this._map) return;
     this._removeColorbar();
     this._colorbar = new Colorbar({
-      colormap: this._state.colormap,
+      colormap: this._getColormapValue(),
       vmin: this._state.vmin,
       vmax: this._state.vmax,
       label: this._state.label,
@@ -426,7 +536,7 @@ export class ColorbarGuiControl implements IControl {
   private _updateColorbar(): void {
     if (!this._colorbar) return;
     this._colorbar.update({
-      colormap: this._state.colormap,
+      colormap: this._getColormapValue(),
       vmin: this._state.vmin,
       vmax: this._state.vmax,
       label: this._state.label,

@@ -30,6 +30,11 @@
   color: white;
 }
 
+.maplibre-gl-colorbar-gui-control .colorbar-gui-button.active:hover {
+  background-color: #2563eb;
+  color: white;
+}
+
 .maplibre-gl-colorbar-gui-control .colorbar-gui-button svg {
   width: 18px;
   height: 18px;
@@ -162,6 +167,53 @@
   border-radius: 3px;
   border: 1px solid rgba(0, 0, 0, 0.15);
   margin-bottom: 10px;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-mode-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  text-transform: none;
+  font-weight: normal;
+  letter-spacing: normal;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-radio-label input[type="radio"] {
+  accent-color: #3b82f6;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
+  color: #374151;
+  background: #fff;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 50px;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-textarea::placeholder {
+  color: #9ca3af;
 }
 
 .maplibre-gl-colorbar-gui-control .colorbar-gui-add-btn {

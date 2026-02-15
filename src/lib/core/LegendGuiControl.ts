@@ -32,8 +32,8 @@ const DEFAULT_OPTIONS: Required<LegendGuiControlOptions> = {
   maxzoom: 24,
 };
 
-/** SVG icon for the legend button. */
-const LEGEND_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5" rx="1" fill="#ff6b6b" stroke="#ff6b6b"/><line x1="12" y1="5.5" x2="21" y2="5.5"/><rect x="3" y="10" width="5" height="5" rx="1" fill="#4ecdc4" stroke="#4ecdc4"/><line x1="12" y1="12.5" x2="21" y2="12.5"/><rect x="3" y="17" width="5" height="5" rx="1" fill="#95a5a6" stroke="#95a5a6"/><line x1="12" y1="19.5" x2="18" y2="19.5"/></svg>`;
+/** SVG icon for the legend button – grayscale, same-width lines. */
+const LEGEND_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5" rx="1" fill="#555" stroke="#555"/><line x1="12" y1="5.5" x2="21" y2="5.5"/><rect x="3" y="10" width="5" height="5" rx="1" fill="#999" stroke="#999"/><line x1="12" y1="12.5" x2="21" y2="12.5"/><rect x="3" y="17" width="5" height="5" rx="1" fill="#ccc" stroke="#ccc"/><line x1="12" y1="19.5" x2="21" y2="19.5"/></svg>`;
 
 /** Close icon. */
 const CLOSE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
@@ -79,6 +79,8 @@ export class LegendGuiControl implements IControl {
   private _titleInput?: HTMLInputElement;
   private _positionSelect?: HTMLSelectElement;
   private _itemsContainer?: HTMLElement;
+  private _dictTextarea?: HTMLTextAreaElement;
+  private _dictErrorEl?: HTMLElement;
   private _addBtn?: HTMLButtonElement;
   private _removeBtn?: HTMLButtonElement;
 
@@ -203,7 +205,9 @@ export class LegendGuiControl implements IControl {
   private _createPanel(): HTMLElement {
     const panel = document.createElement("div");
     panel.className = `legend-gui-panel ${this._options.position.includes("left") ? "right" : "left"}`;
-    panel.style.width = `${this._options.panelWidth}px`;
+    panel.style.minWidth = `${this._options.panelWidth}px`;
+    panel.style.width = "auto";
+    panel.style.maxWidth = "400px";
     if (this._options.maxHeight > 0) {
       panel.style.maxHeight = `${this._options.maxHeight}px`;
       panel.style.overflowY = "auto";
@@ -293,6 +297,27 @@ export class LegendGuiControl implements IControl {
     this._itemsContainer.className = "legend-gui-items";
     this._renderItems();
     content.appendChild(this._itemsContainer);
+
+    // Import from Dictionary section
+    const dictField = this._createField("Import from Dictionary");
+    this._dictTextarea = document.createElement("textarea");
+    this._dictTextarea.className = "legend-gui-textarea";
+    this._dictTextarea.rows = 4;
+    this._dictTextarea.placeholder = '{"Label A": "#ff6b6b", "Label B": "#4ecdc4"}';
+    dictField.appendChild(this._dictTextarea);
+
+    const importBtn = document.createElement("button");
+    importBtn.type = "button";
+    importBtn.className = "legend-gui-import-btn";
+    importBtn.textContent = "Import Items from Dictionary";
+    importBtn.addEventListener("click", () => this._importFromDict());
+    dictField.appendChild(importBtn);
+
+    this._dictErrorEl = document.createElement("div");
+    this._dictErrorEl.className = "legend-gui-import-error";
+    this._dictErrorEl.style.display = "none";
+    dictField.appendChild(this._dictErrorEl);
+    content.appendChild(dictField);
 
     // Add/Update button
     this._addBtn = document.createElement("button");
@@ -414,6 +439,42 @@ export class LegendGuiControl implements IControl {
     });
     this._renderItems();
     if (this._state.hasLegend) this._updateLegend();
+  }
+
+  private _importFromDict(): void {
+    if (!this._dictTextarea || !this._dictErrorEl) return;
+    const text = this._dictTextarea.value.trim();
+    if (!text) {
+      this._dictErrorEl.textContent = "Please paste a JSON dictionary.";
+      this._dictErrorEl.style.display = "";
+      return;
+    }
+    try {
+      const dict = JSON.parse(text);
+      if (typeof dict !== "object" || dict === null || Array.isArray(dict)) {
+        throw new Error("Expected a JSON object like {\"label\": \"color\"}");
+      }
+      const entries = Object.entries(dict);
+      if (entries.length === 0) {
+        throw new Error("Dictionary is empty.");
+      }
+      const newItems: { label: string; color: string; shape: "square" | "circle" | "line" }[] = [];
+      for (const [label, color] of entries) {
+        if (typeof color !== "string") {
+          throw new Error(`Value for "${label}" must be a color string.`);
+        }
+        newItems.push({ label, color, shape: "square" });
+      }
+      this._state.items = newItems;
+      this._renderItems();
+      if (this._state.hasLegend) this._updateLegend();
+      this._dictErrorEl.style.display = "none";
+      this._dictTextarea.value = "";
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Invalid JSON";
+      this._dictErrorEl.textContent = msg;
+      this._dictErrorEl.style.display = "";
+    }
   }
 
   private _addLegend(): void {

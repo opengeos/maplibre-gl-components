@@ -30,6 +30,11 @@
   color: white;
 }
 
+.maplibre-gl-legend-gui-control .legend-gui-button.active:hover {
+  background-color: #2563eb;
+  color: white;
+}
+
 .maplibre-gl-legend-gui-control .legend-gui-button svg {
   width: 18px;
   height: 18px;
@@ -191,6 +196,59 @@
 
 .maplibre-gl-legend-gui-control .legend-gui-items {
   margin-bottom: 10px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
+  color: #374151;
+  background: #fff;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-import-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background-color: transparent;
+  color: #4b5563;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-top: 6px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-import-btn:hover {
+  background-color: #f3f4f6;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-import-error {
+  font-size: 11px;
+  color: #dc2626;
+  margin-top: 4px;
 }
 
 .maplibre-gl-legend-gui-control .legend-gui-item-row {
