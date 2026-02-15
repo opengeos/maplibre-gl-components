@@ -20,6 +20,9 @@ import "./lib/styles/measure-control.css";
 import "./lib/styles/bookmark-control.css";
 import "./lib/styles/print-control.css";
 import "./lib/styles/minimap-control.css";
+import "./lib/styles/colorbar-gui-control.css";
+import "./lib/styles/legend-gui-control.css";
+import "./lib/styles/html-gui-control.css";
 
 // Plugin CSS
 import "maplibre-gl-geo-editor/style.css";
@@ -58,6 +61,9 @@ export { MeasureControl } from "./lib/core/MeasureControl";
 export { BookmarkControl } from "./lib/core/BookmarkControl";
 export { PrintControl } from "./lib/core/PrintControl";
 export { MinimapControl } from "./lib/core/MinimapControl";
+export { ColorbarGuiControl } from "./lib/core/ColorbarGuiControl";
+export { LegendGuiControl } from "./lib/core/LegendGuiControl";
+export { HtmlGuiControl } from "./lib/core/HtmlGuiControl";
 
 
 // Adapters for layer control integration
@@ -289,6 +295,18 @@ export type {
   ComponentEvent,
   ComponentEventHandler,
   ColormapDefinition,
+  ColorbarGuiControlOptions,
+  ColorbarGuiControlState,
+  ColorbarGuiEvent,
+  ColorbarGuiEventHandler,
+  LegendGuiControlOptions,
+  LegendGuiControlState,
+  LegendGuiEvent,
+  LegendGuiEventHandler,
+  HtmlGuiControlOptions,
+  HtmlGuiControlState,
+  HtmlGuiEvent,
+  HtmlGuiEventHandler,
 } from "./lib/core/types";
 
 // Converter types

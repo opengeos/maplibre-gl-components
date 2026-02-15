@@ -1080,6 +1080,229 @@ export type ViewStateEventHandler = (event: {
   bbox?: [number, number, number, number];
 }) => void;
 
+// =============================================================================
+// ColorbarGuiControl Types
+// =============================================================================
+
+/**
+ * Options for the ColorbarGuiControl (GUI wrapper for adding colorbars).
+ */
+export interface ColorbarGuiControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether the panel starts collapsed (button only). Default: true. */
+  collapsed?: boolean;
+  /** Panel width in pixels. Default: 280. */
+  panelWidth?: number;
+  /** Maximum height of the panel. Default: 500. */
+  maxHeight?: number;
+  /** Background color. */
+  backgroundColor?: string;
+  /** Border radius. */
+  borderRadius?: number;
+  /** Opacity (0-1). */
+  opacity?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom. */
+  minzoom?: number;
+  /** Maximum zoom. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the ColorbarGuiControl.
+ */
+export interface ColorbarGuiControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Selected colormap name. */
+  colormap: ColormapName;
+  /** Minimum value. */
+  vmin: number;
+  /** Maximum value. */
+  vmax: number;
+  /** Label text. */
+  label: string;
+  /** Units text. */
+  units: string;
+  /** Orientation. */
+  orientation: ColorbarOrientation;
+  /** Position of the colorbar on the map. */
+  colorbarPosition: ControlPosition;
+  /** Whether a colorbar is currently active on the map. */
+  hasColorbar: boolean;
+}
+
+/**
+ * ColorbarGuiControl event types.
+ */
+export type ColorbarGuiEvent =
+  | ComponentEvent
+  | "colorbaradd"
+  | "colorbarremove"
+  | "colorbarupdate";
+
+/**
+ * ColorbarGuiControl event handler function type.
+ */
+export type ColorbarGuiEventHandler = (event: {
+  type: ColorbarGuiEvent;
+  state: ColorbarGuiControlState;
+}) => void;
+
+// =============================================================================
+// LegendGuiControl Types
+// =============================================================================
+
+/**
+ * Options for the LegendGuiControl (GUI wrapper for adding legends).
+ */
+export interface LegendGuiControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether the panel starts collapsed (button only). Default: true. */
+  collapsed?: boolean;
+  /** Panel width in pixels. Default: 280. */
+  panelWidth?: number;
+  /** Maximum height of the panel. Default: 500. */
+  maxHeight?: number;
+  /** Background color. */
+  backgroundColor?: string;
+  /** Border radius. */
+  borderRadius?: number;
+  /** Opacity (0-1). */
+  opacity?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom. */
+  minzoom?: number;
+  /** Maximum zoom. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the LegendGuiControl.
+ */
+export interface LegendGuiControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Legend title. */
+  title: string;
+  /** Current legend items. */
+  items: LegendItem[];
+  /** Position of the legend on the map. */
+  legendPosition: ControlPosition;
+  /** Whether a legend is currently active on the map. */
+  hasLegend: boolean;
+}
+
+/**
+ * LegendGuiControl event types.
+ */
+export type LegendGuiEvent =
+  | ComponentEvent
+  | "legendadd"
+  | "legendremove"
+  | "legendupdate";
+
+/**
+ * LegendGuiControl event handler function type.
+ */
+export type LegendGuiEventHandler = (event: {
+  type: LegendGuiEvent;
+  state: LegendGuiControlState;
+}) => void;
+
+// =============================================================================
+// HtmlGuiControl Types
+// =============================================================================
+
+/**
+ * Options for the HtmlGuiControl (GUI wrapper for adding HTML content controls).
+ */
+export interface HtmlGuiControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether the panel starts collapsed (button only). Default: true. */
+  collapsed?: boolean;
+  /** Panel width in pixels. Default: 280. */
+  panelWidth?: number;
+  /** Maximum height of the panel. Default: 500. */
+  maxHeight?: number;
+  /** Background color. */
+  backgroundColor?: string;
+  /** Border radius. */
+  borderRadius?: number;
+  /** Opacity (0-1). */
+  opacity?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom. */
+  minzoom?: number;
+  /** Maximum zoom. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the HtmlGuiControl.
+ */
+export interface HtmlGuiControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Title for the HTML control. */
+  title: string;
+  /** Current HTML content. */
+  html: string;
+  /** Position of the HTML control on the map. */
+  htmlPosition: ControlPosition;
+  /** Whether the HTML control is collapsible. */
+  collapsible: boolean;
+  /** Whether an HTML control is currently active on the map. */
+  hasHtmlControl: boolean;
+}
+
+/**
+ * HtmlGuiControl event types.
+ */
+export type HtmlGuiEvent =
+  | ComponentEvent
+  | "htmladd"
+  | "htmlremove"
+  | "htmlupdate";
+
+/**
+ * HtmlGuiControl event handler function type.
+ */
+export type HtmlGuiEventHandler = (event: {
+  type: HtmlGuiEvent;
+  state: HtmlGuiControlState;
+}) => void;
+
 /**
  * Names of built-in controls that can be added to a ControlGrid via `defaultControls`.
  */
@@ -1109,7 +1332,10 @@ export type DefaultControlName =
   | "gaussianSplat"
   | "streetView"
   | "swipe"
-  | "usgsLidar";
+  | "usgsLidar"
+  | "colorbarGui"
+  | "legendGui"
+  | "htmlGui";
 
 /**
  * Options for configuring the ControlGrid.

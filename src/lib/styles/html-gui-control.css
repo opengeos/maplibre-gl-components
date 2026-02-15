@@ -1,0 +1,252 @@
+/* HtmlGuiControl styles */
+
+.maplibre-gl-html-gui-control {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, sans-serif;
+}
+
+.maplibre-gl-html-gui-control .html-gui-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.15s ease;
+}
+
+.maplibre-gl-html-gui-control .html-gui-button:hover {
+  background-color: #f3f4f6;
+}
+
+.maplibre-gl-html-gui-control .html-gui-button.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.maplibre-gl-html-gui-control .html-gui-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.maplibre-gl-html-gui-control .html-gui-panel {
+  position: absolute;
+  top: 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.maplibre-gl-html-gui-control .html-gui-panel.left {
+  right: calc(100% + 8px);
+}
+
+.maplibre-gl-html-gui-control .html-gui-panel.right {
+  left: calc(100% + 8px);
+}
+
+.maplibre-gl-html-gui-control .html-gui-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+}
+
+.maplibre-gl-html-gui-control .html-gui-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  color: #6b7280;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-html-gui-control .html-gui-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.maplibre-gl-html-gui-control .html-gui-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.maplibre-gl-html-gui-control .html-gui-content {
+  padding: 10px;
+}
+
+.maplibre-gl-html-gui-control .html-gui-field {
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-html-gui-control .html-gui-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.maplibre-gl-html-gui-control .html-gui-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-html-gui-control .html-gui-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-html-gui-control .html-gui-input::placeholder {
+  color: #9ca3af;
+}
+
+.maplibre-gl-html-gui-control .html-gui-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  background: #fff;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-html-gui-control .html-gui-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-html-gui-control .html-gui-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
+  color: #374151;
+  background: #fff;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-html-gui-control .html-gui-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-html-gui-control .html-gui-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.maplibre-gl-html-gui-control .html-gui-row {
+  display: flex;
+  gap: 10px;
+}
+
+.maplibre-gl-html-gui-control .html-gui-row .html-gui-field {
+  flex: 1;
+}
+
+.maplibre-gl-html-gui-control .html-gui-preview {
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 8px;
+  background: #fff;
+  min-height: 30px;
+  max-height: 120px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+.maplibre-gl-html-gui-control .html-gui-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #374151;
+  text-transform: none;
+  font-weight: normal;
+  letter-spacing: normal;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.maplibre-gl-html-gui-control .html-gui-checkbox-label input[type="checkbox"] {
+  accent-color: #3b82f6;
+}
+
+.maplibre-gl-html-gui-control .html-gui-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: #3b82f6;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  margin-bottom: 6px;
+}
+
+.maplibre-gl-html-gui-control .html-gui-add-btn:hover {
+  background-color: #2563eb;
+}
+
+.maplibre-gl-html-gui-control .html-gui-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #fca5a5;
+  border-radius: 4px;
+  background-color: transparent;
+  color: #dc2626;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-html-gui-control .html-gui-remove-btn:hover {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+}

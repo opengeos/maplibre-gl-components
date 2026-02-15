@@ -1,0 +1,206 @@
+/* ColorbarGuiControl styles */
+
+.maplibre-gl-colorbar-gui-control {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, sans-serif;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.15s ease;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-button:hover {
+  background-color: #f3f4f6;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-button.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-panel {
+  position: absolute;
+  top: 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-panel.left {
+  right: calc(100% + 8px);
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-panel.right {
+  left: calc(100% + 8px);
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  color: #6b7280;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-content {
+  padding: 10px;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-field {
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-input::placeholder {
+  color: #9ca3af;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  background: #fff;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-row {
+  display: flex;
+  gap: 10px;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-row .colorbar-gui-field {
+  flex: 1;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-preview {
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: #3b82f6;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  margin-bottom: 6px;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-add-btn:hover {
+  background-color: #2563eb;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #fca5a5;
+  border-radius: 4px;
+  background-color: transparent;
+  color: #dc2626;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-colorbar-gui-control .colorbar-gui-remove-btn:hover {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+}

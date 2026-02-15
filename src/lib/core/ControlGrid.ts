@@ -29,6 +29,9 @@ import { PMTilesLayerControl } from "./PMTilesLayer";
 import { StacLayerControl } from "./StacLayer";
 import { StacSearchControl } from "./StacSearch";
 import { AddVectorControl } from "./AddVector";
+import { ColorbarGuiControl } from "./ColorbarGuiControl";
+import { LegendGuiControl } from "./LegendGuiControl";
+import { HtmlGuiControl } from "./HtmlGuiControl";
 import { CogLayerAdapter } from "../adapters/CogLayerAdapter";
 import { ZarrLayerAdapter } from "../adapters/ZarrLayerAdapter";
 import { PMTilesLayerAdapter } from "../adapters/PMTilesLayerAdapter";
@@ -221,6 +224,9 @@ const DEFAULT_CONTROL_TOOLTIPS: Record<string, string> = {
   streetView: "Street View",
   swipe: "Layer Swipe",
   usgsLidar: "USGS LiDAR",
+  colorbarGui: "Colorbar",
+  legendGui: "Legend",
+  htmlGui: "HTML Control",
 };
 
 /**
@@ -453,6 +459,12 @@ export class ControlGrid implements IControl {
         }) as unknown as IControl;
       case "usgsLidar":
         return new UsgsLidarControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+      case "colorbarGui":
+        return new ColorbarGuiControl({ collapsed: true });
+      case "legendGui":
+        return new LegendGuiControl({ collapsed: true });
+      case "htmlGui":
+        return new HtmlGuiControl({ collapsed: true });
       default:
         return null;
     }

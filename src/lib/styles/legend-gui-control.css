@@ -1,0 +1,294 @@
+/* LegendGuiControl styles */
+
+.maplibre-gl-legend-gui-control {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, sans-serif;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.15s ease;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-button:hover {
+  background-color: #f3f4f6;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-button.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-panel {
+  position: absolute;
+  top: 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-panel.left {
+  right: calc(100% + 8px);
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-panel.right {
+  left: calc(100% + 8px);
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  color: #6b7280;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-content {
+  padding: 10px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-field {
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-input::placeholder {
+  color: #9ca3af;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  background: #fff;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-row {
+  display: flex;
+  gap: 10px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-row .legend-gui-field {
+  flex: 1;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-items-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-add-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-add-item-btn:hover {
+  background-color: #f3f4f6;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-add-item-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-items {
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-item-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-item-row:last-child {
+  margin-bottom: 0;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-color-input {
+  width: 32px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-item-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-item-shape {
+  width: 72px;
+  flex: none;
+  padding: 6px 4px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-delete-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-delete-item-btn:hover {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-delete-item-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: #3b82f6;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  margin-bottom: 6px;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-add-btn:hover {
+  background-color: #2563eb;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #fca5a5;
+  border-radius: 4px;
+  background-color: transparent;
+  color: #dc2626;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-legend-gui-control .legend-gui-remove-btn:hover {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+}

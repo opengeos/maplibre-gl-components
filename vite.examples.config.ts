@@ -85,6 +85,18 @@ export default defineConfig({
           __dirname,
           "examples/three-plugin/index.html",
         ),
+        colorbarControl: resolve(
+          __dirname,
+          "examples/colorbar-control/index.html",
+        ),
+        legendControl: resolve(
+          __dirname,
+          "examples/legend-control/index.html",
+        ),
+        htmlControl: resolve(
+          __dirname,
+          "examples/html-control/index.html",
+        ),
       },
     },
   },

@@ -32,6 +32,9 @@ export const ALL_DEFAULT_CONTROLS: readonly DefaultControlName[] = [
   "gaussianSplat",
   "lidar",
   "usgsLidar",
+  "colorbarGui",
+  "legendGui",
+  "htmlGui",
 ] as const;
 
 /**
