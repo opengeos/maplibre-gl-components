@@ -20,6 +20,8 @@ const map = new maplibregl.Map({
 // Add navigation control
 map.addControl(new maplibregl.NavigationControl(), 'top-left');
 
+map.addControl(new maplibregl.GlobeControl(), 'top-right');
+
 // Add Choropleth control with sample data pre-filled
 const choroplethControl = new ChoroplethControl({
   collapsed: false,

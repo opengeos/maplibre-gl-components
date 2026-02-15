@@ -1354,6 +1354,7 @@ export class ChoroplethControl implements IControl {
                   fillExtrusionColorExpr as maplibregl.ExpressionSpecification,
                 "fill-extrusion-height":
                   fillExtrusionHeightExpr as maplibregl.ExpressionSpecification,
+                "fill-extrusion-base": 10, // Small offset to avoid z-fighting on globe projection
                 "fill-extrusion-opacity": opacity,
               },
             },
