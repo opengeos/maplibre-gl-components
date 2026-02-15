@@ -29,6 +29,7 @@ import { PMTilesLayerControl } from "./PMTilesLayer";
 import { StacLayerControl } from "./StacLayer";
 import { StacSearchControl } from "./StacSearch";
 import { AddVectorControl } from "./AddVector";
+import { ChoroplethControl } from "./ChoroplethControl";
 import { ColorbarGuiControl } from "./ColorbarGuiControl";
 import { LegendGuiControl } from "./LegendGuiControl";
 import { HtmlGuiControl } from "./HtmlGuiControl";
@@ -414,6 +415,15 @@ export class ControlGrid implements IControl {
           collapsed: true,
           defaultUrl:
             "https://flatgeobuf.org/test/data/UScounties.fgb",
+        });
+      case "choropleth":
+        return new ChoroplethControl({
+          collapsed: true,
+          defaultUrl:
+            "https://data.source.coop/giswqs/opengeos/h3_res4_geo.parquet",
+          defaultColormap: "viridis",
+          defaultScheme: "quantile",
+          defaultK: 5,
         });
       case "geoEditor":
         return new GeoEditor({ collapsed: true, columns: 2 }) as unknown as IControl;

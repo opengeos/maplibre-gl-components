@@ -58,6 +58,7 @@ export default defineConfig({
         zarrLayer: resolve(__dirname, "examples/zarr-layer/index.html"),
         pmtilesLayer: resolve(__dirname, "examples/pmtiles-layer/index.html"),
         addVector: resolve(__dirname, "examples/add-vector/index.html"),
+        choropleth: resolve(__dirname, "examples/choropleth/index.html"),
         stacLayer: resolve(__dirname, "examples/stac-layer/index.html"),
         stacSearch: resolve(__dirname, "examples/stac-search/index.html"),
         measureControl: resolve(

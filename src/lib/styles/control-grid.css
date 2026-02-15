@@ -176,6 +176,12 @@
     color: white;
   }
 
+  /* Choropleth primary button (Load Data) */
+  .maplibregl-ctrl .maplibre-gl-choropleth-btn--primary:not(:disabled):hover {
+    background-color: #006cbd;
+    color: white;
+  }
+
   /* USGS LiDAR primary buttons */
   .maplibregl-ctrl .usgs-lidar-btn-primary:not(:disabled):hover {
     background-color: #3a7fc8;

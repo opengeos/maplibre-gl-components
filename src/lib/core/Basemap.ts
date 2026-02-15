@@ -839,8 +839,18 @@ export class BasemapControl implements IControl {
     });
 
     input.addEventListener("input", (e) => {
-      this._state.searchText = (e.target as HTMLInputElement).value;
+      const target = e.target as HTMLInputElement;
+      this._state.searchText = target.value;
+      const cursorPos = target.selectionStart ?? target.value.length;
       this._render();
+      // Refocus the new search input and restore cursor position
+      const newInput = this._container?.querySelector(
+        ".maplibre-gl-basemap-search",
+      ) as HTMLInputElement;
+      if (newInput) {
+        newInput.focus();
+        newInput.setSelectionRange(cursorPos, cursorPos);
+      }
     });
 
     input.addEventListener("click", (e) => {
