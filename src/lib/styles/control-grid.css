@@ -156,6 +156,57 @@
   cursor: pointer;
 }
 
+/**
+ * Override MapLibre's default button hover style:
+ *   @media (hover:hover) { .maplibregl-ctrl button:not(:disabled):hover { background-color: rgba(0,0,0,.05) } }
+ * This gray overlay interferes with custom blue button hover states.
+ * We use higher specificity selectors to preserve intended hover colors.
+ */
+@media (hover: hover) {
+  /* Planetary Computer primary buttons */
+  .maplibregl-ctrl .pc-btn-primary:not(:disabled):hover {
+    background-color: #006cbd;
+    color: white;
+  }
+
+  /* Planetary Computer active nav tab (Collections/Layers) */
+  .maplibregl-ctrl .pc-nav-btn.active:not(:disabled):hover {
+    background-color: #006cbd;
+    border-color: #006cbd;
+    color: white;
+  }
+
+  /* USGS LiDAR primary buttons */
+  .maplibregl-ctrl .usgs-lidar-btn-primary:not(:disabled):hover {
+    background-color: #3a7fc8;
+    color: white;
+  }
+
+  /* Colorbar GUI add button */
+  .maplibregl-ctrl .colorbar-gui-panel .colorbar-gui-add-btn:not(:disabled):hover {
+    background-color: #2563eb;
+    color: white;
+  }
+
+  /* Legend GUI add button */
+  .maplibregl-ctrl .legend-gui-panel .legend-gui-add-btn:not(:disabled):hover {
+    background-color: #2563eb;
+    color: white;
+  }
+
+  /* HTML GUI add button */
+  .maplibregl-ctrl .html-gui-panel .html-gui-add-btn:not(:disabled):hover {
+    background-color: #2563eb;
+    color: white;
+  }
+
+  /* Print control export button */
+  .maplibregl-ctrl .print-panel .print-export-btn:not(:disabled):hover {
+    background-color: #2563eb;
+    color: white;
+  }
+}
+
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   .maplibre-gl-control-grid {
