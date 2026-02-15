@@ -310,7 +310,7 @@
   height: 14px;
 }
 
-.maplibre-gl-legend-gui-control .legend-gui-add-btn {
+.maplibre-gl-legend-gui-control .legend-gui-panel .legend-gui-add-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -327,11 +327,12 @@
   margin-bottom: 6px;
 }
 
-.maplibre-gl-legend-gui-control .legend-gui-add-btn:hover {
+.maplibre-gl-legend-gui-control .legend-gui-panel .legend-gui-add-btn:hover {
   background-color: #2563eb;
+  color: white;
 }
 
-.maplibre-gl-legend-gui-control .legend-gui-remove-btn {
+.maplibre-gl-legend-gui-control .legend-gui-panel .legend-gui-remove-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -346,7 +347,7 @@
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-legend-gui-control .legend-gui-remove-btn:hover {
+.maplibre-gl-legend-gui-control .legend-gui-panel .legend-gui-remove-btn:hover {
   background-color: #fef2f2;
   border-color: #ef4444;
 }

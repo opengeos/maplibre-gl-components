@@ -216,7 +216,7 @@
   color: #9ca3af;
 }
 
-.maplibre-gl-colorbar-gui-control .colorbar-gui-add-btn {
+.maplibre-gl-colorbar-gui-control .colorbar-gui-panel .colorbar-gui-add-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -233,11 +233,12 @@
   margin-bottom: 6px;
 }
 
-.maplibre-gl-colorbar-gui-control .colorbar-gui-add-btn:hover {
+.maplibre-gl-colorbar-gui-control .colorbar-gui-panel .colorbar-gui-add-btn:hover {
   background-color: #2563eb;
+  color: white;
 }
 
-.maplibre-gl-colorbar-gui-control .colorbar-gui-remove-btn {
+.maplibre-gl-colorbar-gui-control .colorbar-gui-panel .colorbar-gui-remove-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -252,7 +253,7 @@
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-colorbar-gui-control .colorbar-gui-remove-btn:hover {
+.maplibre-gl-colorbar-gui-control .colorbar-gui-panel .colorbar-gui-remove-btn:hover {
   background-color: #fef2f2;
   border-color: #ef4444;
 }

@@ -215,7 +215,7 @@
   accent-color: #3b82f6;
 }
 
-.maplibre-gl-html-gui-control .html-gui-add-btn {
+.maplibre-gl-html-gui-control .html-gui-panel .html-gui-add-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -232,11 +232,12 @@
   margin-bottom: 6px;
 }
 
-.maplibre-gl-html-gui-control .html-gui-add-btn:hover {
+.maplibre-gl-html-gui-control .html-gui-panel .html-gui-add-btn:hover {
   background-color: #2563eb;
+  color: white;
 }
 
-.maplibre-gl-html-gui-control .html-gui-remove-btn {
+.maplibre-gl-html-gui-control .html-gui-panel .html-gui-remove-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -251,7 +252,7 @@
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-html-gui-control .html-gui-remove-btn:hover {
+.maplibre-gl-html-gui-control .html-gui-panel .html-gui-remove-btn:hover {
   background-color: #fef2f2;
   border-color: #ef4444;
 }
