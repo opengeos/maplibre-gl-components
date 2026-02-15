@@ -26,6 +26,7 @@ export const ALL_DEFAULT_CONTROLS: readonly DefaultControlName[] = [
   "htmlGui",
   "streetView",
   "addVector",
+  "choropleth",
   "cogLayer",
   "zarrLayer",
   "pmtilesLayer",

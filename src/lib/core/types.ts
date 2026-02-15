@@ -1330,6 +1330,7 @@ export type DefaultControlName =
   | "stacLayer"
   | "stacSearch"
   | "addVector"
+  | "choropleth"
   | "geoEditor"
   | "lidar"
   | "planetaryComputer"
@@ -2070,6 +2071,194 @@ export type AddVectorEvent =
 export type AddVectorEventHandler = (event: {
   type: AddVectorEvent;
   state: AddVectorControlState;
+  url?: string;
+  error?: string;
+  layerId?: string;
+}) => void;
+
+// ============================================================================
+// ChoroplethControl Types
+// ============================================================================
+
+/**
+ * Classification scheme for choropleth maps.
+ */
+export type ChoroplethClassificationScheme =
+  | "quantile"
+  | "equal_interval"
+  | "natural_breaks"
+  | "std_mean"
+  | "head_tail";
+
+/**
+ * Information about a single choropleth layer.
+ */
+export interface ChoroplethLayerInfo {
+  /** Unique layer identifier. */
+  id: string;
+  /** Data URL. */
+  url: string;
+  /** Source ID in MapLibre. */
+  sourceId: string;
+  /** Array of layer IDs created for this dataset. */
+  layerIds: string[];
+  /** GeoJSON feature count. */
+  featureCount: number;
+  /** Geometry types present. */
+  geometryTypes: string[];
+  /** Column used for classification. */
+  column: string;
+  /** Classification scheme used. */
+  scheme: ChoroplethClassificationScheme;
+  /** Number of classes. */
+  k: number;
+  /** Colormap name used. */
+  colormap: ColormapName;
+  /** Break values. */
+  breaks: number[];
+  /** Colors for legend. */
+  legendColors: string[];
+  /** Labels for legend. */
+  legendLabels: string[];
+  /** Layer opacity. */
+  opacity: number;
+  /** Whether 3D extrusion was used. */
+  extrude: boolean;
+  /** Scale factor for extrusion. */
+  scaleFactor: number;
+}
+
+/**
+ * Options for configuring the ChoroplethControl.
+ */
+export interface ChoroplethControlOptions {
+  /** Position on the map. Default: 'top-right'. */
+  position?: ControlPosition;
+  /** Custom CSS class name. */
+  className?: string;
+  /** Whether the control is initially visible. Default: true. */
+  visible?: boolean;
+  /** Whether the panel starts collapsed. Default: true. */
+  collapsed?: boolean;
+  /** Layer ID to insert layers before. */
+  beforeId?: string;
+  /** Default data URL to pre-fill. */
+  defaultUrl?: string;
+  /** Default layer name. */
+  defaultLayerName?: string;
+  /** Whether to automatically load the defaultUrl. Default: false. */
+  loadDefaultUrl?: boolean;
+  /** Default format. Default: 'auto'. */
+  defaultFormat?: RemoteVectorFormat;
+  /** Default column for classification. */
+  defaultColumn?: string;
+  /** Default colormap. Default: 'viridis'. */
+  defaultColormap?: ColormapName;
+  /** Default classification scheme. Default: 'quantile'. */
+  defaultScheme?: ChoroplethClassificationScheme;
+  /** Default number of classes. Default: 5. */
+  defaultK?: number;
+  /** Default opacity (0-1). Default: 0.8. */
+  defaultOpacity?: number;
+  /** Default outline color. Default: '#ffffff'. */
+  defaultOutlineColor?: string;
+  /** Default extrusion mode. Default: false. */
+  defaultExtrude?: boolean;
+  /** Default scale factor for extrusion height. Default: 1.0. */
+  defaultScaleFactor?: number;
+  /** Whether features are pickable. Default: true. */
+  defaultPickable?: boolean;
+  /** Whether to fit map bounds to data. Default: true. */
+  fitBounds?: boolean;
+  /** Padding for fitBounds. Default: 50. */
+  fitBoundsPadding?: number;
+  /** Panel width in pixels. Default: 320. */
+  panelWidth?: number;
+  /** Maximum height of the panel. Default: 500. */
+  maxHeight?: number;
+  /** Background color. */
+  backgroundColor?: string;
+  /** Border radius. */
+  borderRadius?: number;
+  /** Opacity of the container (0-1). */
+  opacity?: number;
+  /** Font size in pixels. */
+  fontSize?: number;
+  /** Font color. */
+  fontColor?: string;
+  /** Minimum zoom level. */
+  minzoom?: number;
+  /** Maximum zoom level. */
+  maxzoom?: number;
+}
+
+/**
+ * Internal state of the ChoroplethControl.
+ */
+export interface ChoroplethControlState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
+  /** Current data URL. */
+  url: string;
+  /** Current layer name. */
+  layerName: string;
+  /** Current beforeId. */
+  beforeId: string;
+  /** Current format. */
+  format: RemoteVectorFormat;
+  /** Selected column for classification. */
+  column: string;
+  /** Current colormap. */
+  colormap: ColormapName;
+  /** Current classification scheme. */
+  scheme: ChoroplethClassificationScheme;
+  /** Number of classes. */
+  k: number;
+  /** Current opacity. */
+  opacity: number;
+  /** Whether to show outline. */
+  showOutline: boolean;
+  /** Outline color. */
+  outlineColor: string;
+  /** Whether 3D extrusion is enabled. */
+  extrude: boolean;
+  /** Scale factor for extrusion. */
+  scaleFactor: number;
+  /** Whether features are pickable. */
+  pickable: boolean;
+  /** Whether any layer is active. */
+  hasLayer: boolean;
+  /** Number of active layers. */
+  layerCount: number;
+  /** Active layer info. */
+  layers: ChoroplethLayerInfo[];
+  /** Loading state. */
+  loading: boolean;
+  /** Error message. */
+  error: string | null;
+  /** Status message. */
+  status: string | null;
+  /** Available numeric columns from loaded data. */
+  availableColumns: string[];
+}
+
+/**
+ * Choropleth-specific event types.
+ */
+export type ChoroplethEvent =
+  | ComponentEvent
+  | "layeradd"
+  | "layerremove"
+  | "error";
+
+/**
+ * Choropleth event handler function type.
+ */
+export type ChoroplethEventHandler = (event: {
+  type: ChoroplethEvent;
+  state: ChoroplethControlState;
   url?: string;
   error?: string;
   layerId?: string;
