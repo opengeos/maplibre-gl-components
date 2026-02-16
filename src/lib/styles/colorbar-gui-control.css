@@ -187,7 +187,9 @@
   letter-spacing: normal;
 }
 
-.maplibre-gl-colorbar-gui-control .colorbar-gui-radio-label input[type="radio"] {
+.maplibre-gl-colorbar-gui-control
+  .colorbar-gui-radio-label
+  input[type="radio"] {
   accent-color: #3b82f6;
 }
 
@@ -233,7 +235,9 @@
   margin-bottom: 6px;
 }
 
-.maplibre-gl-colorbar-gui-control .colorbar-gui-panel .colorbar-gui-add-btn:hover {
+.maplibre-gl-colorbar-gui-control
+  .colorbar-gui-panel
+  .colorbar-gui-add-btn:hover {
   background-color: #2563eb;
   color: white;
 }
@@ -253,7 +257,9 @@
   transition: all 0.15s ease;
 }
 
-.maplibre-gl-colorbar-gui-control .colorbar-gui-panel .colorbar-gui-remove-btn:hover {
+.maplibre-gl-colorbar-gui-control
+  .colorbar-gui-panel
+  .colorbar-gui-remove-btn:hover {
   background-color: #fef2f2;
   border-color: #ef4444;
 }

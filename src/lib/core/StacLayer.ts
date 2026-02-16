@@ -546,7 +546,9 @@ export class StacLayerControl implements IControl {
     if (!this._container) return;
 
     // Save scroll position before clearing content
-    const panelEl = this._container.querySelector(".maplibre-gl-stac-layer-panel");
+    const panelEl = this._container.querySelector(
+      ".maplibre-gl-stac-layer-panel",
+    );
     const scrollTop = panelEl ? panelEl.scrollTop : 0;
 
     this._container.innerHTML = "";
@@ -559,7 +561,9 @@ export class StacLayerControl implements IControl {
 
     // Restore scroll position
     if (scrollTop > 0) {
-      const newPanelEl = this._container.querySelector(".maplibre-gl-stac-layer-panel");
+      const newPanelEl = this._container.querySelector(
+        ".maplibre-gl-stac-layer-panel",
+      );
       if (newPanelEl) {
         newPanelEl.scrollTop = scrollTop;
       }
@@ -1575,7 +1579,12 @@ export class StacLayerControl implements IControl {
       this._state.status = `Added layer: ${asset.title || asset.key}`;
       this._state.layerName = "";
       this._render();
-      this._emit("layeradd", { layerId, assetKey: asset.key, url: asset.href, layerName: customName || undefined });
+      this._emit("layeradd", {
+        layerId,
+        assetKey: asset.key,
+        url: asset.href,
+        layerName: customName || undefined,
+      });
     } catch (err) {
       this._state.loading = false;
       this._state.error = `Failed to add layer: ${err instanceof Error ? err.message : String(err)}`;

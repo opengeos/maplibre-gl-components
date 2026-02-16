@@ -109,7 +109,9 @@
 
 /* Override minimap panel positioning inside the floating panel so it flows
    below the button instead of using bottom:36px (which would go behind the grid). */
-.maplibre-gl-control-grid-floating-panel .maplibre-gl-minimap-control .minimap-panel {
+.maplibre-gl-control-grid-floating-panel
+  .maplibre-gl-minimap-control
+  .minimap-panel {
   position: relative;
   bottom: auto;
   left: auto;
@@ -122,7 +124,6 @@
 .maplibre-gl-control-grid-floating-panel .maplibre-gl-minimap-control {
   margin-right: 8px !important;
 }
-
 
 /* Relocated external panel: strip absolute positioning when moved into floating panel */
 .maplibre-gl-control-grid-relocated {
@@ -189,7 +190,9 @@
   }
 
   /* Colorbar GUI add button */
-  .maplibregl-ctrl .colorbar-gui-panel .colorbar-gui-add-btn:not(:disabled):hover {
+  .maplibregl-ctrl
+    .colorbar-gui-panel
+    .colorbar-gui-add-btn:not(:disabled):hover {
     background-color: #2563eb;
     color: white;
   }
@@ -250,10 +253,22 @@
     color: #1a1a1a;
   }
 
-  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-globe .maplibregl-ctrl-icon,
-  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-fullscreen .maplibregl-ctrl-icon,
-  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-compass .maplibregl-ctrl-icon,
-  .maplibre-gl-control-grid .maplibregl-ctrl button.maplibregl-ctrl-terrain .maplibregl-ctrl-icon {
+  .maplibre-gl-control-grid
+    .maplibregl-ctrl
+    button.maplibregl-ctrl-globe
+    .maplibregl-ctrl-icon,
+  .maplibre-gl-control-grid
+    .maplibregl-ctrl
+    button.maplibregl-ctrl-fullscreen
+    .maplibregl-ctrl-icon,
+  .maplibre-gl-control-grid
+    .maplibregl-ctrl
+    button.maplibregl-ctrl-compass
+    .maplibregl-ctrl-icon,
+  .maplibre-gl-control-grid
+    .maplibregl-ctrl
+    button.maplibregl-ctrl-terrain
+    .maplibregl-ctrl-icon {
     filter: none;
   }
 

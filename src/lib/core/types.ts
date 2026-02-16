@@ -1938,6 +1938,18 @@ export interface AddVectorLayerInfo {
   strokeColor: string;
   /** Whether the layer is pickable (clickable). */
   pickable?: boolean;
+  /** Whether viewport-based loading is enabled for this layer. */
+  viewportLoading?: boolean;
+  /** DuckDB registered filename for viewport loading. */
+  duckdbFileName?: string;
+  /** Geometry column name for spatial queries. */
+  geometryColumn?: string;
+  /** Geometry column type (for WKB handling). */
+  geometryColumnType?: string;
+  /** Property column names for spatial queries. */
+  propertyColumns?: string[];
+  /** Minimum zoom level for viewport loading (layer will be hidden below this). */
+  viewportMinZoom?: number;
 }
 
 /**
@@ -1996,6 +2008,26 @@ export interface AddVectorControlOptions {
   minzoom?: number;
   /** Maximum zoom level at which the control is visible. */
   maxzoom?: number;
+  /**
+   * Enable viewport-based loading for GeoParquet files.
+   * When enabled, only features within the current map bounds are loaded using HTTP range requests.
+   * This is ideal for large GeoParquet files (100MB+) as it avoids downloading the entire file.
+   * Default: false.
+   */
+  geoparquetViewportLoading?: boolean;
+  /**
+   * Minimum zoom level for viewport-based GeoParquet loading.
+   * The layer will be hidden below this zoom level to prevent loading too many features.
+   * Only applies when geoparquetViewportLoading is enabled.
+   * Default: 8.
+   */
+  geoparquetMinZoom?: number;
+  /**
+   * Debounce delay in milliseconds for viewport updates when panning/zooming.
+   * Only applies when geoparquetViewportLoading is enabled.
+   * Default: 300.
+   */
+  geoparquetDebounceMs?: number;
 }
 
 /**
@@ -2033,6 +2065,10 @@ export interface AddVectorControlState {
   circleColor: string;
   /** Whether layers are pickable (clickable). */
   pickable: boolean;
+  /** Whether viewport-based GeoParquet loading is enabled. */
+  viewportLoading: boolean;
+  /** Minimum zoom for viewport loading. */
+  viewportMinZoom: number;
   /** Whether any vector layer is currently active. */
   hasLayer: boolean;
   /** Number of active vector layers. */
@@ -3140,4 +3176,3 @@ export type MinimapEventHandler = (event: {
   type: MinimapEvent;
   state: MinimapControlState;
 }) => void;
-

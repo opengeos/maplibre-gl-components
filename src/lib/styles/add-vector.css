@@ -345,7 +345,9 @@
   border-right: 1px solid #ddd;
 }
 
-.maplibre-gl-add-vector-mode-btn:not(.maplibre-gl-add-vector-mode-btn--active):hover {
+.maplibre-gl-add-vector-mode-btn:not(
+    .maplibre-gl-add-vector-mode-btn--active
+  ):hover {
   background: #e0e0e0;
   color: #333;
 }
@@ -366,12 +368,16 @@
  * This gray overlay interferes with our custom button hover states.
  */
 @media (hover: hover) {
-  .maplibregl-ctrl .maplibre-gl-add-vector-mode-btn--active:not(:disabled):hover {
+  .maplibregl-ctrl
+    .maplibre-gl-add-vector-mode-btn--active:not(:disabled):hover {
     background-color: #006bc1;
     color: white;
   }
 
-  .maplibregl-ctrl .maplibre-gl-add-vector-mode-btn:not(.maplibre-gl-add-vector-mode-btn--active):not(:disabled):hover {
+  .maplibregl-ctrl
+    .maplibre-gl-add-vector-mode-btn:not(
+      .maplibre-gl-add-vector-mode-btn--active
+    ):not(:disabled):hover {
     background-color: #e0e0e0;
     color: #333;
   }
@@ -458,4 +464,59 @@
 .maplibre-gl-add-vector-popup-table td:last-child {
   color: #333;
   word-break: break-word;
+}
+
+/* Viewport loading indicator */
+.maplibre-gl-add-vector-viewport-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #1565c0;
+  margin-top: 8px;
+}
+
+.maplibre-gl-add-vector-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #1565c0;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: maplibre-gl-add-vector-spin 0.8s linear infinite;
+}
+
+@keyframes maplibre-gl-add-vector-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Viewport loading badge */
+.maplibre-gl-add-vector-badge--viewport {
+  background: #e8eaf6;
+  color: #3949ab;
+}
+
+/* Viewport loading checkbox */
+.maplibre-gl-add-vector-viewport-checkbox-group {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e0e0e0;
+}
+
+.maplibre-gl-add-vector-minzoom-input {
+  width: 60px;
+  padding: 4px 6px;
+  font-size: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.maplibre-gl-add-vector-minzoom-input:focus {
+  outline: none;
+  border-color: #0078d7;
 }

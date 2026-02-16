@@ -579,7 +579,10 @@ export class InspectControl implements IControl {
           },
         });
         this._highlightLayerIds.push(layerId);
-      } else if (geometryType === "Polygon" || geometryType === "MultiPolygon") {
+      } else if (
+        geometryType === "Polygon" ||
+        geometryType === "MultiPolygon"
+      ) {
         // Fill layer
         const fillLayerId = `${this._highlightSourceId}-fill`;
         map.addLayer({
