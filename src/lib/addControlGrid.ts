@@ -35,7 +35,7 @@ export const ALL_DEFAULT_CONTROLS: readonly DefaultControlName[] = [
   "planetaryComputer",
   "gaussianSplat",
   "lidar",
-  "usgsLidar"
+  "usgsLidar",
 ] as const;
 
 /**
@@ -180,9 +180,9 @@ declare module "maplibre-gl" {
  * Install the `addControlGrid` method on the MapLibre `Map` prototype.
  * This is called automatically when importing from `maplibre-gl-components`.
  */
-export function installAddControlGrid(
-  MapClass: { prototype: MapLibreMap },
-): void {
+export function installAddControlGrid(MapClass: {
+  prototype: MapLibreMap;
+}): void {
   if (
     !(MapClass.prototype as MapLibreMap & Record<string, unknown>)
       .addControlGrid

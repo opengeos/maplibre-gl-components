@@ -319,6 +319,89 @@
   margin-top: 4px;
 }
 
+/* Input mode toggle (URL vs Text) */
+.maplibre-gl-add-vector-input-mode {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.maplibre-gl-add-vector-mode-btn {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  background: #f8f8f8;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-add-vector-mode-btn:not(:last-child) {
+  border-right: 1px solid #ddd;
+}
+
+.maplibre-gl-add-vector-mode-btn:not(.maplibre-gl-add-vector-mode-btn--active):hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.maplibre-gl-add-vector-mode-btn--active {
+  background: #0078d7;
+  color: white;
+}
+
+.maplibre-gl-add-vector-mode-btn--active:hover {
+  background: #006bc1;
+  color: white;
+}
+
+/**
+ * Override MapLibre's default button hover style which applies:
+ *   @media (hover:hover) { .maplibregl-ctrl button:not(:disabled):hover { background-color: rgba(0,0,0,.05) } }
+ * This gray overlay interferes with our custom button hover states.
+ */
+@media (hover: hover) {
+  .maplibregl-ctrl .maplibre-gl-add-vector-mode-btn--active:not(:disabled):hover {
+    background-color: #006bc1;
+    color: white;
+  }
+
+  .maplibregl-ctrl .maplibre-gl-add-vector-mode-btn:not(.maplibre-gl-add-vector-mode-btn--active):not(:disabled):hover {
+    background-color: #e0e0e0;
+    color: #333;
+  }
+}
+
+/* GeoJSON textarea */
+.maplibre-gl-add-vector-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: monospace;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color 0.15s ease;
+  color: #000;
+}
+
+.maplibre-gl-add-vector-textarea:focus {
+  outline: none;
+  border-color: #0078d7;
+}
+
+.maplibre-gl-add-vector-textarea::placeholder {
+  color: #999;
+  font-family: inherit;
+}
+
 /* Color picker styles */
 .maplibre-gl-add-vector-color-row {
   display: flex;
