@@ -67,7 +67,6 @@ export { ColorbarGuiControl } from "./lib/core/ColorbarGuiControl";
 export { LegendGuiControl } from "./lib/core/LegendGuiControl";
 export { HtmlGuiControl } from "./lib/core/HtmlGuiControl";
 
-
 // Adapters for layer control integration
 export {
   CogLayerAdapter,
@@ -81,12 +80,26 @@ export type { CustomLayerAdapter } from "./lib/adapters";
 // Plugin re-exports
 export { GeoEditor, GeoEditorLayerAdapter } from "maplibre-gl-geo-editor";
 export { LidarControl, LidarLayerAdapter } from "maplibre-gl-lidar";
-export { PlanetaryComputerControl, PlanetaryComputerLayerAdapter } from "maplibre-gl-planetary-computer";
-export { GaussianSplatControl, GaussianSplatLayerAdapter } from "maplibre-gl-splat";
+export {
+  PlanetaryComputerControl,
+  PlanetaryComputerLayerAdapter,
+} from "maplibre-gl-planetary-computer";
+export {
+  GaussianSplatControl,
+  GaussianSplatLayerAdapter,
+} from "maplibre-gl-splat";
 export { StreetViewControl } from "maplibre-gl-streetview";
 export { SwipeControl } from "maplibre-gl-swipe";
-export { UsgsLidarControl, UsgsLidarLayerAdapter } from "maplibre-gl-usgs-lidar";
-export { MapScene, SceneTransform, Sun, Creator } from "@dvt3d/maplibre-three-plugin";
+export {
+  UsgsLidarControl,
+  UsgsLidarLayerAdapter,
+} from "maplibre-gl-usgs-lidar";
+export {
+  MapScene,
+  SceneTransform,
+  Sun,
+  Creator,
+} from "@dvt3d/maplibre-three-plugin";
 
 // Provider utilities
 export {
@@ -252,6 +265,7 @@ export type {
   AddVectorControlState,
   AddVectorEvent,
   AddVectorEventHandler,
+  AddVectorInputMode,
   AddVectorLayerInfo,
   RemoteVectorFormat,
   ChoroplethControlOptions,

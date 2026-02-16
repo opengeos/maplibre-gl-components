@@ -107,9 +107,7 @@ export class CogLayerAdapter implements CustomLayerAdapter {
       const layerId = event.layerId;
       if (layerId) {
         // Use custom name from layer info if available, otherwise extract from URL
-        const layerInfo = event.state?.layers?.find(
-          (l) => l.id === layerId,
-        );
+        const layerInfo = event.state?.layers?.find((l) => l.id === layerId);
         let displayName = layerInfo?.name || layerId;
         if (!layerInfo?.name && event.url) {
           try {

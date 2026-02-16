@@ -1999,6 +1999,11 @@ export interface AddVectorControlOptions {
 }
 
 /**
+ * Input mode for AddVectorControl - URL or inline GeoJSON text.
+ */
+export type AddVectorInputMode = "url" | "text";
+
+/**
  * Internal state of the AddVectorControl.
  */
 export interface AddVectorControlState {
@@ -2006,8 +2011,12 @@ export interface AddVectorControlState {
   visible: boolean;
   /** Whether the panel is collapsed. */
   collapsed: boolean;
+  /** Input mode: 'url' for URL input, 'text' for pasting GeoJSON directly. */
+  inputMode: AddVectorInputMode;
   /** Current vector URL. */
   url: string;
+  /** Current GeoJSON text (when inputMode is 'text'). */
+  geojsonText: string;
   /** Current layer name (optional, auto-generated if empty). */
   layerName: string;
   /** Current beforeId for layer ordering. */

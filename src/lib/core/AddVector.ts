@@ -121,7 +121,9 @@ export class AddVectorControl implements IControl {
     this._state = {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
+      inputMode: "url",
       url: this._options.defaultUrl,
+      geojsonText: "",
       layerName: this._options.defaultLayerName,
       beforeId: this._options.beforeId,
       format: this._options.defaultFormat,
@@ -502,55 +504,113 @@ export class AddVectorControl implements IControl {
     header.appendChild(closeBtn);
     panel.appendChild(header);
 
-    // URL input
-    const urlGroup = this._createFormGroup("Vector URL", "url");
-    const urlInput = document.createElement("input");
-    urlInput.type = "text";
-    urlInput.id = "add-vector-url";
-    urlInput.className = "maplibre-gl-add-vector-input";
-    urlInput.style.color = "#000";
-    urlInput.placeholder = "https://flatgeobuf.org/test/data/UScounties.fgb";
-    urlInput.value = this._state.url;
-    urlInput.addEventListener("input", () => {
-      this._state.url = urlInput.value;
-      // Auto-detect format for UI display only (don't mutate state.format)
-      if (this._state.format === "auto" && urlInput.value) {
-        const detected = detectFormatFromUrl(urlInput.value);
-        formatSelect.value = detected;
+    // Input mode toggle (URL vs Text)
+    const inputModeGroup = document.createElement("div");
+    inputModeGroup.className = "maplibre-gl-add-vector-input-mode";
+    const urlModeBtn = document.createElement("button");
+    urlModeBtn.type = "button";
+    urlModeBtn.className = `maplibre-gl-add-vector-mode-btn${this._state.inputMode === "url" ? " maplibre-gl-add-vector-mode-btn--active" : ""}`;
+    urlModeBtn.textContent = "URL";
+    urlModeBtn.addEventListener("click", () => {
+      if (this._state.inputMode !== "url") {
+        this._state.inputMode = "url";
+        this._render();
       }
     });
-    urlGroup.appendChild(urlInput);
-
-    const formatHint = document.createElement("div");
-    formatHint.className = "maplibre-gl-add-vector-format-hint";
-    formatHint.textContent = "Supports GeoJSON, GeoParquet, and FlatGeobuf";
-    urlGroup.appendChild(formatHint);
-    panel.appendChild(urlGroup);
-
-    // Format selector
-    const formatGroup = this._createFormGroup("Format", "format");
-    const formatSelect = document.createElement("select");
-    formatSelect.id = "add-vector-format";
-    formatSelect.className = "maplibre-gl-add-vector-select";
-    formatSelect.style.color = "#000";
-    const formats: { value: RemoteVectorFormat; label: string }[] = [
-      { value: "auto", label: "Auto-detect" },
-      { value: "geojson", label: "GeoJSON" },
-      { value: "geoparquet", label: "GeoParquet" },
-      { value: "flatgeobuf", label: "FlatGeobuf" },
-    ];
-    for (const fmt of formats) {
-      const option = document.createElement("option");
-      option.value = fmt.value;
-      option.textContent = fmt.label;
-      option.selected = fmt.value === this._state.format;
-      formatSelect.appendChild(option);
-    }
-    formatSelect.addEventListener("change", () => {
-      this._state.format = formatSelect.value as RemoteVectorFormat;
+    const textModeBtn = document.createElement("button");
+    textModeBtn.type = "button";
+    textModeBtn.className = `maplibre-gl-add-vector-mode-btn${this._state.inputMode === "text" ? " maplibre-gl-add-vector-mode-btn--active" : ""}`;
+    textModeBtn.textContent = "GeoJSON Text";
+    textModeBtn.addEventListener("click", () => {
+      if (this._state.inputMode !== "text") {
+        this._state.inputMode = "text";
+        this._render();
+      }
     });
-    formatGroup.appendChild(formatSelect);
-    panel.appendChild(formatGroup);
+    inputModeGroup.appendChild(urlModeBtn);
+    inputModeGroup.appendChild(textModeBtn);
+    panel.appendChild(inputModeGroup);
+
+    // Format selector (only shown for URL mode - text mode is always GeoJSON)
+    // Defined first so it can be referenced in URL input handler
+    let formatSelect: HTMLSelectElement | undefined;
+
+    // URL input (shown when inputMode is 'url')
+    if (this._state.inputMode === "url") {
+      const urlGroup = this._createFormGroup("Vector URL", "url");
+      const urlInput = document.createElement("input");
+      urlInput.type = "text";
+      urlInput.id = "add-vector-url";
+      urlInput.className = "maplibre-gl-add-vector-input";
+      urlInput.style.color = "#000";
+      urlInput.placeholder = "https://flatgeobuf.org/test/data/UScounties.fgb";
+      urlInput.value = this._state.url;
+      urlInput.addEventListener("input", () => {
+        this._state.url = urlInput.value;
+        // Auto-detect format for UI display only (don't mutate state.format)
+        if (this._state.format === "auto" && urlInput.value && formatSelect) {
+          const detected = detectFormatFromUrl(urlInput.value);
+          formatSelect.value = detected;
+        }
+      });
+      urlGroup.appendChild(urlInput);
+
+      const formatHint = document.createElement("div");
+      formatHint.className = "maplibre-gl-add-vector-format-hint";
+      formatHint.textContent = "Supports GeoJSON, GeoParquet, and FlatGeobuf";
+      urlGroup.appendChild(formatHint);
+      panel.appendChild(urlGroup);
+
+      // Format selector
+      const formatGroup = this._createFormGroup("Format", "format");
+      formatSelect = document.createElement("select");
+      formatSelect.id = "add-vector-format";
+      formatSelect.className = "maplibre-gl-add-vector-select";
+      formatSelect.style.color = "#000";
+      const formats: { value: RemoteVectorFormat; label: string }[] = [
+        { value: "auto", label: "Auto-detect" },
+        { value: "geojson", label: "GeoJSON" },
+        { value: "geoparquet", label: "GeoParquet" },
+        { value: "flatgeobuf", label: "FlatGeobuf" },
+      ];
+      for (const fmt of formats) {
+        const option = document.createElement("option");
+        option.value = fmt.value;
+        option.textContent = fmt.label;
+        option.selected = fmt.value === this._state.format;
+        formatSelect.appendChild(option);
+      }
+      formatSelect.addEventListener("change", () => {
+        this._state.format = formatSelect!.value as RemoteVectorFormat;
+      });
+      formatGroup.appendChild(formatSelect);
+      panel.appendChild(formatGroup);
+    }
+
+    // GeoJSON text input (shown when inputMode is 'text')
+    if (this._state.inputMode === "text") {
+      const textGroup = this._createFormGroup("GeoJSON", "geojson-text");
+      const textArea = document.createElement("textarea");
+      textArea.id = "add-vector-geojson-text";
+      textArea.className = "maplibre-gl-add-vector-textarea";
+      textArea.placeholder = `Paste GeoJSON content here, e.g.:
+{
+  "type": "FeatureCollection",
+  "features": [...]
+}`;
+      textArea.value = this._state.geojsonText;
+      textArea.rows = 6;
+      textArea.addEventListener("input", () => {
+        this._state.geojsonText = textArea.value;
+      });
+      textGroup.appendChild(textArea);
+
+      const textHint = document.createElement("div");
+      textHint.className = "maplibre-gl-add-vector-format-hint";
+      textHint.textContent = "Paste a valid GeoJSON FeatureCollection, Feature, or Geometry";
+      textGroup.appendChild(textHint);
+      panel.appendChild(textGroup);
+    }
 
     // Fill color
     const fillColorGroup = this._createFormGroup("Fill Color", "fill-color");
@@ -791,11 +851,25 @@ export class AddVectorControl implements IControl {
   }
 
   private async _addLayer(): Promise<void> {
-    if (!this._map || !this._state.url) {
+    // Validate map is initialized
+    if (!this._map) {
+      this._state.error = "Map not initialized.";
+      this._render();
+      return;
+    }
+    // Validate input based on mode
+    if (this._state.inputMode === "url" && !this._state.url) {
       this._state.error = "Please enter a vector URL.";
       this._render();
       return;
     }
+    if (this._state.inputMode === "text" && !this._state.geojsonText.trim()) {
+      this._state.error = "Please paste GeoJSON content.";
+      this._render();
+      return;
+    }
+
+    const map = this._map;
 
     this._state.loading = true;
     this._state.error = null;
@@ -803,44 +877,60 @@ export class AddVectorControl implements IControl {
     this._render();
 
     try {
-      // Determine format
-      let format = this._state.format;
-      if (format === "auto") {
-        format = detectFormatFromUrl(this._state.url);
-      }
-
       let geojson: GeoJSON.FeatureCollection;
+      let format: RemoteVectorFormat = "geojson";
+      let sourceUrl = "";
 
-      if (format === "geojson") {
-        // Fetch GeoJSON directly
-        let response: Response;
+      if (this._state.inputMode === "text") {
+        // Parse inline GeoJSON text
         try {
-          response = await fetch(this._state.url);
-        } catch {
+          const data = JSON.parse(this._state.geojsonText);
+          geojson = this._normalizeGeoJSON(data);
+          sourceUrl = "inline-geojson";
+        } catch (parseError) {
           throw new Error(
-            `CORS error: The server doesn't allow cross-origin requests. Try using a CORS-enabled URL.`,
+            `Invalid GeoJSON: ${parseError instanceof Error ? parseError.message : "Failed to parse JSON"}`,
           );
         }
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch: ${response.status} ${response.statusText}`,
-          );
-        }
-        const data = await response.json();
-        geojson = this._normalizeGeoJSON(data);
-      } else if (format === "geoparquet") {
-        // Use hyparquet or parquet-wasm to read GeoParquet
-        geojson = await this._loadGeoParquet(this._state.url);
-      } else if (format === "flatgeobuf") {
-        // Use flatgeobuf library
-        geojson = await this._loadFlatGeobuf(this._state.url);
       } else {
-        throw new Error(`Unsupported format: ${format}`);
+        // URL mode - determine format and fetch
+        sourceUrl = this._state.url;
+        format = this._state.format;
+        if (format === "auto") {
+          format = detectFormatFromUrl(this._state.url);
+        }
+
+        if (format === "geojson") {
+          // Fetch GeoJSON directly
+          let response: Response;
+          try {
+            response = await fetch(this._state.url);
+          } catch {
+            throw new Error(
+              `CORS error: The server doesn't allow cross-origin requests. Try using a CORS-enabled URL.`,
+            );
+          }
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch: ${response.status} ${response.statusText}`,
+            );
+          }
+          const data = await response.json();
+          geojson = this._normalizeGeoJSON(data);
+        } else if (format === "geoparquet") {
+          // Use hyparquet or parquet-wasm to read GeoParquet
+          geojson = await this._loadGeoParquet(this._state.url);
+        } else if (format === "flatgeobuf") {
+          // Use flatgeobuf library
+          geojson = await this._loadFlatGeobuf(this._state.url);
+        } else {
+          throw new Error(`Unsupported format: ${format}`);
+        }
       }
 
       // Generate layer ID: custom name > filename from URL > random ID
       let layerId = this._state.layerName?.trim();
-      if (!layerId) {
+      if (!layerId && this._state.inputMode === "url") {
         // Try to extract filename without extension from URL
         try {
           const urlPath = new URL(this._state.url).pathname;
@@ -865,7 +955,7 @@ export class AddVectorControl implements IControl {
       }
 
       // Add source
-      this._map.addSource(sourceId, {
+      map.addSource(sourceId, {
         type: "geojson",
         data: geojson,
         generateId: true,
@@ -877,14 +967,14 @@ export class AddVectorControl implements IControl {
       const optionsBeforeId = this._options.beforeId;
       const beforeIdToUse = stateBeforeId || optionsBeforeId;
       const beforeId =
-        beforeIdToUse && this._map.getLayer(beforeIdToUse)
+        beforeIdToUse && map.getLayer(beforeIdToUse)
           ? beforeIdToUse
           : undefined;
 
       // Add polygon fill layer
       if (geometryTypes.has("Polygon") || geometryTypes.has("MultiPolygon")) {
         const fillLayerId = `${layerId}-fill`;
-        this._map.addLayer(
+        map.addLayer(
           {
             id: fillLayerId,
             type: "fill",
@@ -905,7 +995,7 @@ export class AddVectorControl implements IControl {
 
         // Add polygon outline
         const outlineLayerId = `${layerId}-outline`;
-        this._map.addLayer(
+        map.addLayer(
           {
             id: outlineLayerId,
             type: "line",
@@ -932,7 +1022,7 @@ export class AddVectorControl implements IControl {
         geometryTypes.has("MultiLineString")
       ) {
         const lineLayerId = `${layerId}-line`;
-        this._map.addLayer(
+        map.addLayer(
           {
             id: lineLayerId,
             type: "line",
@@ -956,7 +1046,7 @@ export class AddVectorControl implements IControl {
       // Add point layer
       if (geometryTypes.has("Point") || geometryTypes.has("MultiPoint")) {
         const pointLayerId = `${layerId}-point`;
-        this._map.addLayer(
+        map.addLayer(
           {
             id: pointLayerId,
             type: "circle",
@@ -980,8 +1070,7 @@ export class AddVectorControl implements IControl {
       }
 
       // Set up pickable interactions if enabled
-      if (this._state.pickable && this._map) {
-        const map = this._map;
+      if (this._state.pickable) {
         for (const lid of layerIds) {
           // Change cursor on hover
           map.on("mouseenter", lid, () => {
@@ -1027,7 +1116,7 @@ export class AddVectorControl implements IControl {
       // Store layer info
       const layerInfo: AddVectorLayerInfo = {
         id: layerId,
-        url: this._state.url,
+        url: sourceUrl,
         format,
         sourceId,
         layerIds,
@@ -1044,7 +1133,8 @@ export class AddVectorControl implements IControl {
       this._state.layerCount = this._vectorLayers.size;
       this._state.layers = Array.from(this._vectorLayers.values());
       this._state.loading = false;
-      this._state.status = `Added ${geojson.features.length} features (${format}).`;
+      const modeLabel = this._state.inputMode === "text" ? "inline GeoJSON" : format;
+      this._state.status = `Added ${geojson.features.length} features (${modeLabel}).`;
 
       // Fit bounds if enabled
       if (this._options.fitBounds && geojson.features.length > 0) {
@@ -1052,7 +1142,7 @@ export class AddVectorControl implements IControl {
       }
 
       this._render();
-      this._emit("layeradd", { url: this._state.url, layerId });
+      this._emit("layeradd", { url: sourceUrl, layerId });
     } catch (err) {
       this._state.loading = false;
       this._state.error = `Failed to load: ${err instanceof Error ? err.message : String(err)}`;

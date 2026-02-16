@@ -77,8 +77,7 @@ export class PMTilesLayerAdapter implements CustomLayerAdapter {
           );
           if (sublayers.length > 0) {
             newGroups.set(groupId, {
-              name:
-                sourceLayer.charAt(0).toUpperCase() + sourceLayer.slice(1),
+              name: sourceLayer.charAt(0).toUpperCase() + sourceLayer.slice(1),
               sublayers,
               visible: true,
               opacity: layerInfo.opacity,
