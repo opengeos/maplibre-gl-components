@@ -544,7 +544,9 @@ export class PMTilesLayerControl implements IControl {
     if (!this._container) return;
 
     // Save scroll position before clearing content
-    const panelEl = this._container.querySelector(".maplibre-gl-pmtiles-layer-panel");
+    const panelEl = this._container.querySelector(
+      ".maplibre-gl-pmtiles-layer-panel",
+    );
     const scrollTop = panelEl ? panelEl.scrollTop : 0;
 
     this._container.innerHTML = "";
@@ -559,7 +561,9 @@ export class PMTilesLayerControl implements IControl {
 
     // Restore scroll position
     if (scrollTop > 0) {
-      const newPanelEl = this._container.querySelector(".maplibre-gl-pmtiles-layer-panel");
+      const newPanelEl = this._container.querySelector(
+        ".maplibre-gl-pmtiles-layer-panel",
+      );
       if (newPanelEl) {
         newPanelEl.scrollTop = scrollTop;
       }

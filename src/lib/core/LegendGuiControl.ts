@@ -265,8 +265,8 @@ export class LegendGuiControl implements IControl {
       this._positionSelect!.appendChild(opt);
     });
     this._positionSelect.addEventListener("change", () => {
-      this._state.legendPosition =
-        this._positionSelect!.value as ControlPosition;
+      this._state.legendPosition = this._positionSelect!
+        .value as ControlPosition;
       if (this._state.hasLegend) {
         this._removeLegend();
         this._addLegend();
@@ -303,7 +303,8 @@ export class LegendGuiControl implements IControl {
     this._dictTextarea = document.createElement("textarea");
     this._dictTextarea.className = "legend-gui-textarea";
     this._dictTextarea.rows = 4;
-    this._dictTextarea.placeholder = '{"Label A": "#ff6b6b", "Label B": "#4ecdc4"}';
+    this._dictTextarea.placeholder =
+      '{"Label A": "#ff6b6b", "Label B": "#4ecdc4"}';
     dictField.appendChild(this._dictTextarea);
 
     const importBtn = document.createElement("button");
@@ -452,13 +453,17 @@ export class LegendGuiControl implements IControl {
     try {
       const dict = JSON.parse(text);
       if (typeof dict !== "object" || dict === null || Array.isArray(dict)) {
-        throw new Error("Expected a JSON object like {\"label\": \"color\"}");
+        throw new Error('Expected a JSON object like {"label": "color"}');
       }
       const entries = Object.entries(dict);
       if (entries.length === 0) {
         throw new Error("Dictionary is empty.");
       }
-      const newItems: { label: string; color: string; shape: "square" | "circle" | "line" }[] = [];
+      const newItems: {
+        label: string;
+        color: string;
+        shape: "square" | "circle" | "line";
+      }[] = [];
       for (const [label, color] of entries) {
         if (typeof color !== "string") {
           throw new Error(`Value for "${label}" must be a color string.`);

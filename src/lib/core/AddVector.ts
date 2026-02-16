@@ -12,7 +12,7 @@ import type {
   AddVectorLayerInfo,
   RemoteVectorFormat,
 } from "./types";
-import { generateId } from "../utils/helpers";
+import { generateId, debounce } from "../utils/helpers";
 
 /**
  * Vector/polygon icon for the control button.
@@ -36,7 +36,7 @@ const DEFAULT_OPTIONS: Required<AddVectorControlOptions> = {
   defaultLayerName: "",
   loadDefaultUrl: false,
   defaultFormat: "auto",
-  defaultOpacity: 1,
+  defaultOpacity: 0.8,
   defaultFillColor: "#3388ff",
   defaultStrokeColor: "#2266cc",
   defaultCircleColor: "#3388ff",
@@ -53,6 +53,9 @@ const DEFAULT_OPTIONS: Required<AddVectorControlOptions> = {
   fontColor: "#333",
   minzoom: 0,
   maxzoom: 24,
+  geoparquetViewportLoading: false,
+  geoparquetMinZoom: 8,
+  geoparquetDebounceMs: 300,
 };
 
 /**
@@ -115,6 +118,9 @@ export class AddVectorControl implements IControl {
   private _zoomVisible: boolean = true;
   private _vectorLayers: Map<string, AddVectorLayerInfo> = new Map();
   private _activePopup?: maplibregl.Popup;
+  private _viewportLoadingLayers: Set<string> = new Set();
+  private _viewportHandler?: () => void;
+  private _viewportLoadingState: Map<string, boolean> = new Map();
 
   constructor(options?: AddVectorControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -132,6 +138,8 @@ export class AddVectorControl implements IControl {
       strokeColor: this._options.defaultStrokeColor,
       circleColor: this._options.defaultCircleColor,
       pickable: this._options.defaultPickable,
+      viewportLoading: this._options.geoparquetViewportLoading,
+      viewportMinZoom: this._options.geoparquetMinZoom,
       hasLayer: false,
       layerCount: 0,
       layers: [],
@@ -167,6 +175,7 @@ export class AddVectorControl implements IControl {
 
   onRemove(): void {
     this._removeAllLayers();
+    this._cleanupViewportLoading();
 
     if (this._map && this._handleZoom) {
       this._map.off("zoom", this._handleZoom);
@@ -440,8 +449,18 @@ export class AddVectorControl implements IControl {
     if (!this._container) return;
 
     // Save scroll position before clearing content
-    const panelEl = this._container.querySelector(".maplibre-gl-add-vector-panel");
+    const panelEl = this._container.querySelector(
+      ".maplibre-gl-add-vector-panel",
+    );
     const scrollTop = panelEl ? panelEl.scrollTop : 0;
+
+    // Cleanup any zoom listeners before re-rendering
+    const currentZoomLabel = this._container.querySelector(
+      "[data-zoom-label]",
+    ) as HTMLElement & { _cleanup?: () => void };
+    if (currentZoomLabel?._cleanup) {
+      currentZoomLabel._cleanup();
+    }
 
     this._container.innerHTML = "";
 
@@ -455,7 +474,9 @@ export class AddVectorControl implements IControl {
 
     // Restore scroll position
     if (scrollTop > 0) {
-      const newPanelEl = this._container.querySelector(".maplibre-gl-add-vector-panel");
+      const newPanelEl = this._container.querySelector(
+        ".maplibre-gl-add-vector-panel",
+      );
       if (newPanelEl) {
         newPanelEl.scrollTop = scrollTop;
       }
@@ -582,9 +603,95 @@ export class AddVectorControl implements IControl {
       }
       formatSelect.addEventListener("change", () => {
         this._state.format = formatSelect!.value as RemoteVectorFormat;
+        // Re-render to show/hide viewport loading options based on format
+        this._render();
       });
       formatGroup.appendChild(formatSelect);
       panel.appendChild(formatGroup);
+
+      // Viewport loading checkbox (only for GeoParquet format)
+      const currentFormat =
+        this._state.format === "auto"
+          ? detectFormatFromUrl(this._state.url)
+          : this._state.format;
+      if (currentFormat === "geoparquet") {
+        const viewportGroup = document.createElement("div");
+        viewportGroup.className =
+          "maplibre-gl-add-vector-form-group maplibre-gl-add-vector-viewport-checkbox-group";
+        const viewportLabel = document.createElement("label");
+        viewportLabel.className = "maplibre-gl-add-vector-checkbox-label";
+        const viewportCheckbox = document.createElement("input");
+        viewportCheckbox.type = "checkbox";
+        viewportCheckbox.id = "add-vector-viewport-loading";
+        viewportCheckbox.className = "maplibre-gl-add-vector-checkbox";
+        viewportCheckbox.checked = this._state.viewportLoading;
+        viewportCheckbox.style.marginRight = "6px";
+        viewportCheckbox.addEventListener("change", () => {
+          this._state.viewportLoading = viewportCheckbox.checked;
+          this._render();
+        });
+        viewportLabel.appendChild(viewportCheckbox);
+        const viewportLabelText = document.createElement("span");
+        viewportLabelText.textContent = "Viewport loading (large files)";
+        viewportLabel.appendChild(viewportLabelText);
+        viewportGroup.appendChild(viewportLabel);
+
+        // Min zoom input (only shown if viewport loading is enabled)
+        if (this._state.viewportLoading) {
+          const minZoomRow = document.createElement("div");
+          minZoomRow.style.cssText =
+            "display: flex; align-items: center; margin-top: 8px; font-size: 12px; gap: 8px;";
+          const minZoomLabel = document.createElement("span");
+          minZoomLabel.textContent = "Min zoom:";
+          minZoomLabel.style.color = "#555";
+          minZoomRow.appendChild(minZoomLabel);
+          const minZoomInput = document.createElement("input");
+          minZoomInput.type = "number";
+          minZoomInput.id = "add-vector-min-zoom";
+          minZoomInput.className = "maplibre-gl-add-vector-minzoom-input";
+          minZoomInput.min = "0";
+          minZoomInput.max = "22";
+          minZoomInput.value = String(this._state.viewportMinZoom);
+          minZoomInput.addEventListener("change", () => {
+            this._state.viewportMinZoom = Math.max(
+              0,
+              Math.min(22, Number(minZoomInput.value) || 8),
+            );
+          });
+          minZoomRow.appendChild(minZoomInput);
+
+          // Show current zoom level (updates dynamically)
+          const currentZoom = this._map?.getZoom() ?? 0;
+          const currentZoomLabel = document.createElement("span");
+          currentZoomLabel.setAttribute("data-zoom-label", "true");
+          currentZoomLabel.style.cssText = "color: #888; font-size: 11px;";
+          currentZoomLabel.textContent = `(current: ${currentZoom.toFixed(1)})`;
+          minZoomRow.appendChild(currentZoomLabel);
+
+          // Update current zoom label dynamically when zoom changes
+          if (this._map) {
+            const updateZoomLabel = () => {
+              const zoom = this._map?.getZoom() ?? 0;
+              currentZoomLabel.textContent = `(current: ${zoom.toFixed(1)})`;
+            };
+            this._map.on("zoom", updateZoomLabel);
+            // Store cleanup function on the element for later removal
+            (currentZoomLabel as HTMLElement & { _cleanup?: () => void })._cleanup = () => {
+              this._map?.off("zoom", updateZoomLabel);
+            };
+          }
+
+          viewportGroup.appendChild(minZoomRow);
+
+          const viewportHint = document.createElement("div");
+          viewportHint.className = "maplibre-gl-add-vector-format-hint";
+          viewportHint.textContent =
+            "Only loads features in view. Ideal for files >100MB.";
+          viewportGroup.appendChild(viewportHint);
+        }
+
+        panel.appendChild(viewportGroup);
+      }
     }
 
     // GeoJSON text input (shown when inputMode is 'text')
@@ -607,7 +714,8 @@ export class AddVectorControl implements IControl {
 
       const textHint = document.createElement("div");
       textHint.className = "maplibre-gl-add-vector-format-hint";
-      textHint.textContent = "Paste a valid GeoJSON FeatureCollection, Feature, or Geometry";
+      textHint.textContent =
+        "Paste a valid GeoJSON FeatureCollection, Feature, or Geometry";
       textGroup.appendChild(textHint);
       panel.appendChild(textGroup);
     }
@@ -807,6 +915,16 @@ export class AddVectorControl implements IControl {
         badge.textContent = info.format === "auto" ? "geojson" : info.format;
         label.appendChild(badge);
 
+        // Add viewport loading badge if enabled
+        if (info.viewportLoading) {
+          const viewportBadge = document.createElement("span");
+          viewportBadge.className =
+            "maplibre-gl-add-vector-badge maplibre-gl-add-vector-badge--viewport";
+          viewportBadge.textContent = "viewport";
+          viewportBadge.title = `Min zoom: ${info.viewportMinZoom ?? this._state.viewportMinZoom}`;
+          label.appendChild(viewportBadge);
+        }
+
         item.appendChild(label);
 
         const removeBtn = document.createElement("button");
@@ -918,8 +1036,14 @@ export class AddVectorControl implements IControl {
           const data = await response.json();
           geojson = this._normalizeGeoJSON(data);
         } else if (format === "geoparquet") {
-          // Use hyparquet or parquet-wasm to read GeoParquet
-          geojson = await this._loadGeoParquet(this._state.url);
+          if (this._state.viewportLoading) {
+            // Viewport loading mode - start with empty FeatureCollection
+            // Data will be loaded via _setupViewportLoading after layer creation
+            geojson = { type: "FeatureCollection", features: [] };
+          } else {
+            // Full download mode - load entire file
+            geojson = await this._loadGeoParquet(this._state.url);
+          }
         } else if (format === "flatgeobuf") {
           // Use flatgeobuf library
           geojson = await this._loadFlatGeobuf(this._state.url);
@@ -971,8 +1095,17 @@ export class AddVectorControl implements IControl {
           ? beforeIdToUse
           : undefined;
 
+      // For viewport loading, create all layer types upfront since we don't know
+      // what geometry types will be present until the first query completes
+      const isViewportLoading =
+        format === "geoparquet" && this._state.viewportLoading;
+
       // Add polygon fill layer
-      if (geometryTypes.has("Polygon") || geometryTypes.has("MultiPolygon")) {
+      if (
+        isViewportLoading ||
+        geometryTypes.has("Polygon") ||
+        geometryTypes.has("MultiPolygon")
+      ) {
         const fillLayerId = `${layerId}-fill`;
         map.addLayer(
           {
@@ -1018,6 +1151,7 @@ export class AddVectorControl implements IControl {
 
       // Add line layer
       if (
+        isViewportLoading ||
         geometryTypes.has("LineString") ||
         geometryTypes.has("MultiLineString")
       ) {
@@ -1044,7 +1178,11 @@ export class AddVectorControl implements IControl {
       }
 
       // Add point layer
-      if (geometryTypes.has("Point") || geometryTypes.has("MultiPoint")) {
+      if (
+        isViewportLoading ||
+        geometryTypes.has("Point") ||
+        geometryTypes.has("MultiPoint")
+      ) {
         const pointLayerId = `${layerId}-point`;
         map.addLayer(
           {
@@ -1126,6 +1264,11 @@ export class AddVectorControl implements IControl {
         fillColor: this._state.fillColor,
         strokeColor: this._state.strokeColor,
         pickable: this._state.pickable,
+        viewportLoading: format === "geoparquet" && this._state.viewportLoading,
+        viewportMinZoom:
+          format === "geoparquet" && this._state.viewportLoading
+            ? this._state.viewportMinZoom
+            : undefined,
       };
       this._vectorLayers.set(layerId, layerInfo);
 
@@ -1133,11 +1276,44 @@ export class AddVectorControl implements IControl {
       this._state.layerCount = this._vectorLayers.size;
       this._state.layers = Array.from(this._vectorLayers.values());
       this._state.loading = false;
-      const modeLabel = this._state.inputMode === "text" ? "inline GeoJSON" : format;
-      this._state.status = `Added ${geojson.features.length} features (${modeLabel}).`;
 
-      // Fit bounds if enabled
-      if (this._options.fitBounds && geojson.features.length > 0) {
+      // Setup viewport loading for GeoParquet if enabled
+      if (format === "geoparquet" && this._state.viewportLoading) {
+        try {
+          await this._setupViewportLoading(layerId, sourceUrl, sourceId);
+          const updatedInfo = this._vectorLayers.get(layerId);
+          const featureCount = updatedInfo?.featureCount ?? 0;
+          this._state.status = `Viewport loading enabled (${featureCount} features in view, minzoom: ${this._state.viewportMinZoom}).`;
+          this._state.layers = Array.from(this._vectorLayers.values());
+        } catch (setupError) {
+          // Viewport loading failed - fall back to full download
+          console.warn(
+            "Viewport loading setup failed, falling back to full download:",
+            setupError,
+          );
+          layerInfo.viewportLoading = false;
+          layerInfo.viewportMinZoom = undefined;
+          const fullGeojson = await this._loadGeoParquet(sourceUrl);
+          const source = this._map!.getSource(sourceId);
+          if (source && source.type === "geojson") {
+            (source as maplibregl.GeoJSONSource).setData(fullGeojson);
+          }
+          layerInfo.featureCount = fullGeojson.features.length;
+          this._state.layers = Array.from(this._vectorLayers.values());
+          this._state.status = `Added ${fullGeojson.features.length} features (${format}, viewport loading failed).`;
+        }
+      } else {
+        const modeLabel =
+          this._state.inputMode === "text" ? "inline GeoJSON" : format;
+        this._state.status = `Added ${geojson.features.length} features (${modeLabel}).`;
+      }
+
+      // Fit bounds if enabled (skip for viewport loading as data may be partial)
+      if (
+        this._options.fitBounds &&
+        geojson.features.length > 0 &&
+        !layerInfo.viewportLoading
+      ) {
         this._fitToData(geojson);
       }
 
@@ -1324,12 +1500,231 @@ export class AddVectorControl implements IControl {
     }
   }
 
+  /**
+   * Sets up viewport-based loading for a GeoParquet layer.
+   */
+  private async _setupViewportLoading(
+    layerId: string,
+    url: string,
+    _sourceId: string,
+  ): Promise<void> {
+    if (!this._map) return;
+
+    const { getDuckDBConverter } =
+      await import("../converters/DuckDBConverter");
+    const converter = getDuckDBConverter();
+
+    // Generate unique filename for this layer
+    const fileName = `${layerId}.parquet`;
+
+    try {
+      // Register the remote file for HTTP range requests
+      await converter.registerRemoteParquet(url, fileName);
+
+      // Get the schema to identify geometry and property columns
+      const schema = await converter.getParquetSchema(fileName);
+
+      if (!schema.geometryColumn) {
+        throw new Error("No geometry column found in parquet file");
+      }
+
+      // Update layer info with viewport loading details
+      const layerInfo = this._vectorLayers.get(layerId);
+      if (layerInfo) {
+        layerInfo.viewportLoading = true;
+        layerInfo.duckdbFileName = fileName;
+        layerInfo.geometryColumn = schema.geometryColumn ?? undefined;
+        layerInfo.geometryColumnType = schema.geometryColumnType ?? undefined;
+        layerInfo.propertyColumns = schema.propertyColumns;
+      }
+
+      // Add to viewport loading layers set
+      this._viewportLoadingLayers.add(layerId);
+
+      // Create debounced update function for this layer
+      const debouncedUpdate = debounce(() => {
+        this._updateViewportData(layerId);
+      }, this._options.geoparquetDebounceMs);
+
+      // Set up moveend listener if not already set
+      // Note: Each layer gets its own debounced update via closure
+      const currentHandler = this._viewportHandler;
+      this._viewportHandler = () => {
+        // Call previous handler if any
+        if (currentHandler) currentHandler();
+        // Update this layer
+        debouncedUpdate();
+      };
+
+      // Register the new handler
+      if (currentHandler) {
+        this._map.off("moveend", currentHandler);
+      }
+      this._map.on("moveend", this._viewportHandler);
+
+      // Initial data load
+      await this._updateViewportData(layerId);
+    } catch (error) {
+      console.error("Failed to setup viewport loading:", error);
+      // Fall back to non-viewport loading by cleaning up
+      await converter.unregisterFile(fileName);
+      throw error;
+    }
+  }
+
+  /**
+   * Updates the data for a viewport-loading layer based on current bounds.
+   */
+  private async _updateViewportData(layerId: string): Promise<void> {
+    if (!this._map) return;
+
+    const layerInfo = this._vectorLayers.get(layerId);
+    if (
+      !layerInfo ||
+      !layerInfo.viewportLoading ||
+      !layerInfo.duckdbFileName ||
+      !layerInfo.geometryColumn
+    ) {
+      return;
+    }
+
+    // Check zoom level - hide layer if below min zoom
+    // Use layer-specific minZoom if available, otherwise fall back to state/default
+    const minZoom =
+      layerInfo.viewportMinZoom ?? this._state.viewportMinZoom ?? 8;
+    const zoom = this._map.getZoom();
+    if (zoom < minZoom) {
+      // Hide layers when below min zoom
+      for (const lid of layerInfo.layerIds) {
+        if (this._map.getLayer(lid)) {
+          this._map.setLayoutProperty(lid, "visibility", "none");
+        }
+      }
+      return;
+    }
+
+    // Show layers if they were hidden
+    for (const lid of layerInfo.layerIds) {
+      if (this._map.getLayer(lid)) {
+        this._map.setLayoutProperty(lid, "visibility", "visible");
+      }
+    }
+
+    // Mark as loading
+    this._viewportLoadingState.set(layerId, true);
+
+    try {
+      const { getDuckDBConverter } =
+        await import("../converters/DuckDBConverter");
+      const converter = getDuckDBConverter();
+
+      // Get current bounds
+      const bounds = this._map.getBounds();
+      const boundsArray: [number, number, number, number] = [
+        bounds.getWest(),
+        bounds.getSouth(),
+        bounds.getEast(),
+        bounds.getNorth(),
+      ];
+
+      // Query features within bounds
+      const geojson = await converter.queryByBounds(
+        layerInfo.duckdbFileName,
+        boundsArray,
+        layerInfo.geometryColumn,
+        layerInfo.propertyColumns || [],
+        layerInfo.geometryColumnType,
+      );
+
+      // Update source data
+      const source = this._map.getSource(layerInfo.sourceId);
+      if (source && source.type === "geojson") {
+        (source as maplibregl.GeoJSONSource).setData(geojson);
+      }
+
+      // Update feature count in layer info
+      layerInfo.featureCount = geojson.features.length;
+      this._state.layers = Array.from(this._vectorLayers.values());
+    } catch (error) {
+      console.error("Failed to update viewport data:", error);
+    } finally {
+      this._viewportLoadingState.set(layerId, false);
+    }
+  }
+
+  /**
+   * Cleans up viewport loading resources.
+   */
+  private async _cleanupViewportLoading(): Promise<void> {
+    // Remove moveend listener
+    if (this._map && this._viewportHandler) {
+      this._map.off("moveend", this._viewportHandler);
+      this._viewportHandler = undefined;
+    }
+
+    // Unregister all files from DuckDB
+    if (this._viewportLoadingLayers.size > 0) {
+      try {
+        const { getDuckDBConverter } =
+          await import("../converters/DuckDBConverter");
+        const converter = getDuckDBConverter();
+
+        for (const layerId of this._viewportLoadingLayers) {
+          const layerInfo = this._vectorLayers.get(layerId);
+          if (layerInfo?.duckdbFileName) {
+            await converter.unregisterFile(layerInfo.duckdbFileName);
+          }
+        }
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+
+    this._viewportLoadingLayers.clear();
+    this._viewportLoadingState.clear();
+  }
+
+  /**
+   * Cleans up viewport loading for a specific layer.
+   */
+  private async _cleanupLayerViewportLoading(layerId: string): Promise<void> {
+    const layerInfo = this._vectorLayers.get(layerId);
+    if (!layerInfo?.viewportLoading || !layerInfo.duckdbFileName) {
+      return;
+    }
+
+    try {
+      const { getDuckDBConverter } =
+        await import("../converters/DuckDBConverter");
+      const converter = getDuckDBConverter();
+      await converter.unregisterFile(layerInfo.duckdbFileName);
+    } catch {
+      // Ignore cleanup errors
+    }
+
+    this._viewportLoadingLayers.delete(layerId);
+    this._viewportLoadingState.delete(layerId);
+
+    // Remove moveend listener if no more viewport loading layers
+    if (this._viewportLoadingLayers.size === 0 && this._viewportHandler) {
+      if (this._map) {
+        this._map.off("moveend", this._viewportHandler);
+      }
+      this._viewportHandler = undefined;
+    }
+  }
+
   private _removeLayer(id?: string): void {
     if (!this._map) return;
 
     if (id) {
       const info = this._vectorLayers.get(id);
       if (info) {
+        // Clean up viewport loading resources first
+        if (info.viewportLoading) {
+          this._cleanupLayerViewportLoading(id);
+        }
+
         for (const layerId of info.layerIds) {
           try {
             if (this._map.getLayer(layerId)) {

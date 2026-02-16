@@ -321,7 +321,9 @@ export class PrintControl implements IControl {
       this._state.includeNorthArrow = !!this._northArrowInput?.checked;
     });
     northArrowLabel.appendChild(this._northArrowInput);
-    northArrowLabel.appendChild(document.createTextNode(" Include north arrow"));
+    northArrowLabel.appendChild(
+      document.createTextNode(" Include north arrow"),
+    );
 
     const scaleBarLabel = document.createElement("label");
     scaleBarLabel.className = "print-checkbox-label";
@@ -363,7 +365,8 @@ export class PrintControl implements IControl {
     colormapLabel.textContent = "Colormap:";
     colormapLabel.className = "print-colorbar-sublabel";
     this._colorbarColormapSelect = document.createElement("select");
-    this._colorbarColormapSelect.className = "print-select print-colorbar-select";
+    this._colorbarColormapSelect.className =
+      "print-select print-colorbar-select";
     this._colorbarColormapSelect.style.color = "#000";
     const colormapNames = getColormapNames();
     colormapNames.forEach((name) => {
@@ -388,14 +391,19 @@ export class PrintControl implements IControl {
     orientationLabel.textContent = "Orientation:";
     orientationLabel.className = "print-colorbar-sublabel";
     this._colorbarOrientationSelect = document.createElement("select");
-    this._colorbarOrientationSelect.className = "print-select print-colorbar-select";
+    this._colorbarOrientationSelect.className =
+      "print-select print-colorbar-select";
     this._colorbarOrientationSelect.style.color = "#000";
-    const orientations: Array<"horizontal" | "vertical"> = ["horizontal", "vertical"];
+    const orientations: Array<"horizontal" | "vertical"> = [
+      "horizontal",
+      "vertical",
+    ];
     orientations.forEach((orient) => {
       const opt = document.createElement("option");
       opt.value = orient;
       opt.textContent = orient.charAt(0).toUpperCase() + orient.slice(1);
-      opt.selected = orient === (this._state.colorbar.orientation ?? "vertical");
+      opt.selected =
+        orient === (this._state.colorbar.orientation ?? "vertical");
       this._colorbarOrientationSelect!.appendChild(opt);
     });
     this._colorbarOrientationSelect.addEventListener("change", () => {
@@ -418,7 +426,8 @@ export class PrintControl implements IControl {
     this._colorbarVminInput.style.color = "#000";
     this._colorbarVminInput.value = String(this._state.colorbar.vmin ?? 0);
     this._colorbarVminInput.addEventListener("input", () => {
-      this._state.colorbar.vmin = parseFloat(this._colorbarVminInput!.value) || 0;
+      this._state.colorbar.vmin =
+        parseFloat(this._colorbarVminInput!.value) || 0;
     });
     const vmaxLabel = document.createElement("span");
     vmaxLabel.textContent = "Max:";
@@ -429,7 +438,8 @@ export class PrintControl implements IControl {
     this._colorbarVmaxInput.style.color = "#000";
     this._colorbarVmaxInput.value = String(this._state.colorbar.vmax ?? 1);
     this._colorbarVmaxInput.addEventListener("input", () => {
-      this._state.colorbar.vmax = parseFloat(this._colorbarVmaxInput!.value) || 1;
+      this._state.colorbar.vmax =
+        parseFloat(this._colorbarVmaxInput!.value) || 1;
     });
     rangeRow.appendChild(vminLabel);
     rangeRow.appendChild(this._colorbarVminInput);
@@ -787,11 +797,18 @@ export class PrintControl implements IControl {
     // Calculate total dimensions
     const tickLabelWidth = 50;
     const totalWidth = isVertical
-      ? barThickness + tickLength + tickLabelWidth + (label ? labelFontSize + 6 : 0)
+      ? barThickness +
+        tickLength +
+        tickLabelWidth +
+        (label ? labelFontSize + 6 : 0)
       : barLength + horizontalInnerPadding * 2;
     const totalHeight = isVertical
       ? barLength + (label ? labelFontSize + 6 : 0)
-      : barThickness + tickLength + fontSize + 6 + (label ? labelFontSize + 6 : 0);
+      : barThickness +
+        tickLength +
+        fontSize +
+        6 +
+        (label ? labelFontSize + 6 : 0);
 
     // Determine position
     let x: number, y: number;
@@ -914,7 +931,11 @@ export class PrintControl implements IControl {
 
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        ctx.fillText(labelText, tickX, y + labelOffset + barThickness + tickLength + 2);
+        ctx.fillText(
+          labelText,
+          tickX,
+          y + labelOffset + barThickness + tickLength + 2,
+        );
       }
     }
 
@@ -1123,8 +1144,7 @@ export class PrintControl implements IControl {
 
     // Meters per pixel for Web Mercator at current latitude.
     const metersPerPixel =
-      (156543.03392804097 * Math.cos((center.lat * Math.PI) / 180)) /
-      2 ** zoom;
+      (156543.03392804097 * Math.cos((center.lat * Math.PI) / 180)) / 2 ** zoom;
     if (!Number.isFinite(metersPerPixel) || metersPerPixel <= 0) return;
 
     const scaleX = targetWidth / mapCanvasWidth;
@@ -1175,7 +1195,8 @@ export class PrintControl implements IControl {
           ? `${Math.round(niceMeters)} m`
           : `${Math.round(niceMeters * 100)} cm`;
     ctx.fillStyle = "#111";
-    ctx.font = "600 12px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif";
+    ctx.font =
+      '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     ctx.fillText(label, x + barPx / 2, y + barHeight + 4);
@@ -1530,11 +1551,15 @@ export class PrintControl implements IControl {
     if (this._colorbarInput) {
       this._colorbarInput.checked = this._state.colorbar.enabled ?? false;
     }
-    if (this._colorbarColormapSelect && typeof this._state.colorbar.colormap === "string") {
+    if (
+      this._colorbarColormapSelect &&
+      typeof this._state.colorbar.colormap === "string"
+    ) {
       this._colorbarColormapSelect.value = this._state.colorbar.colormap;
     }
     if (this._colorbarOrientationSelect) {
-      this._colorbarOrientationSelect.value = this._state.colorbar.orientation ?? "vertical";
+      this._colorbarOrientationSelect.value =
+        this._state.colorbar.orientation ?? "vertical";
     }
     if (this._colorbarVminInput) {
       this._colorbarVminInput.value = String(this._state.colorbar.vmin ?? 0);

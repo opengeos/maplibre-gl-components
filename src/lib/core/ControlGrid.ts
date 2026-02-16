@@ -41,19 +41,34 @@ import { StacLayerAdapter } from "../adapters/StacLayerAdapter";
 import type { CustomLayerAdapter } from "../adapters/CogLayerAdapter";
 import { GeoEditor, GeoEditorLayerAdapter } from "maplibre-gl-geo-editor";
 import { LidarControl, LidarLayerAdapter } from "maplibre-gl-lidar";
-import { PlanetaryComputerControl, PlanetaryComputerLayerAdapter } from "maplibre-gl-planetary-computer";
-import { GaussianSplatControl, GaussianSplatLayerAdapter } from "maplibre-gl-splat";
+import {
+  PlanetaryComputerControl,
+  PlanetaryComputerLayerAdapter,
+} from "maplibre-gl-planetary-computer";
+import {
+  GaussianSplatControl,
+  GaussianSplatLayerAdapter,
+} from "maplibre-gl-splat";
 import { StreetViewControl } from "maplibre-gl-streetview";
 import { SwipeControl } from "maplibre-gl-swipe";
-import { UsgsLidarControl, UsgsLidarLayerAdapter } from "maplibre-gl-usgs-lidar";
-
+import {
+  UsgsLidarControl,
+  UsgsLidarLayerAdapter,
+} from "maplibre-gl-usgs-lidar";
 
 /** Optional fields that should not be made required */
-type OptionalControlGridFields = "controls" | "defaultControls" | "basemapStyleUrl" | "excludeLayers" | "streetViewOptions";
+type OptionalControlGridFields =
+  | "controls"
+  | "defaultControls"
+  | "basemapStyleUrl"
+  | "excludeLayers"
+  | "streetViewOptions";
 
 /** ControlGrid options with required fields except for optional ones */
-type ResolvedControlGridOptions = Required<Omit<ControlGridOptions, OptionalControlGridFields>>
-  & Pick<ControlGridOptions, OptionalControlGridFields>;
+type ResolvedControlGridOptions = Required<
+  Omit<ControlGridOptions, OptionalControlGridFields>
+> &
+  Pick<ControlGridOptions, OptionalControlGridFields>;
 
 /**
  * Default options for the ControlGrid.
@@ -314,9 +329,7 @@ export class ControlGrid implements IControl {
     this._autoGrowRows();
   }
 
-  private _createDefaultControl(
-    name: DefaultControlName,
-  ): IControl | null {
+  private _createDefaultControl(name: DefaultControlName): IControl | null {
     switch (name) {
       case "fullscreen":
         return new FullscreenControl();
@@ -413,8 +426,7 @@ export class ControlGrid implements IControl {
       case "addVector":
         return new AddVectorControl({
           collapsed: true,
-          defaultUrl:
-            "https://flatgeobuf.org/test/data/UScounties.fgb",
+          defaultUrl: "https://flatgeobuf.org/test/data/UScounties.fgb",
         });
       case "choropleth":
         return new ChoroplethControl({
@@ -426,15 +438,31 @@ export class ControlGrid implements IControl {
           defaultK: 5,
         });
       case "geoEditor":
-        return new GeoEditor({ collapsed: true, columns: 2 }) as unknown as IControl;
+        return new GeoEditor({
+          collapsed: true,
+          columns: 2,
+        }) as unknown as IControl;
       case "lidar":
-        return new LidarControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+        return new LidarControl({
+          collapsed: true,
+          maxHeight: 500,
+        }) as unknown as IControl;
       case "planetaryComputer":
-        return new PlanetaryComputerControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+        return new PlanetaryComputerControl({
+          collapsed: true,
+          maxHeight: 500,
+        }) as unknown as IControl;
       case "gaussianSplat":
-        return new GaussianSplatControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+        return new GaussianSplatControl({
+          collapsed: true,
+          maxHeight: 500,
+        }) as unknown as IControl;
       case "streetView": {
-        const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+        const env = (
+          import.meta as ImportMeta & {
+            env?: Record<string, string | undefined>;
+          }
+        ).env;
         const googleApiKey = env?.VITE_GOOGLE_MAPS_API_KEY;
         const mapillaryAccessToken = env?.VITE_MAPILLARY_ACCESS_TOKEN;
         const defaultProvider: "google" | "mapillary" =
@@ -468,7 +496,10 @@ export class ControlGrid implements IControl {
           excludeLayers: this._options.excludeLayers,
         }) as unknown as IControl;
       case "usgsLidar":
-        return new UsgsLidarControl({ collapsed: true, maxHeight: 500 }) as unknown as IControl;
+        return new UsgsLidarControl({
+          collapsed: true,
+          maxHeight: 500,
+        }) as unknown as IControl;
       case "colorbarGui":
         return new ColorbarGuiControl({ collapsed: true });
       case "legendGui":
@@ -561,9 +592,7 @@ export class ControlGrid implements IControl {
     if (this._map && this._gridEl) {
       entry.element = control.onAdd(this._map);
       if (entry.expandable) {
-        entry.collapsedSnapshot = entry.element.cloneNode(
-          true,
-        ) as HTMLElement;
+        entry.collapsedSnapshot = entry.element.cloneNode(true) as HTMLElement;
         this._attachExpandListeners(entry);
       }
       this._gridEl.appendChild(entry.element);
@@ -859,10 +888,7 @@ export class ControlGrid implements IControl {
 
   private _isExpandable(control: IControl): boolean {
     const ctrl = control as any;
-    return (
-      typeof ctrl.on === "function" &&
-      typeof ctrl.collapse === "function"
-    );
+    return typeof ctrl.on === "function" && typeof ctrl.collapse === "function";
   }
 
   private _attachExpandListeners(entry: ChildEntry): void {
@@ -999,13 +1025,10 @@ export class ControlGrid implements IControl {
   private _ensureFloatingPanel(): HTMLElement {
     if (!this._floatingPanel) {
       this._floatingPanel = document.createElement("div");
-      this._floatingPanel.className =
-        "maplibre-gl-control-grid-floating-panel";
+      this._floatingPanel.className = "maplibre-gl-control-grid-floating-panel";
       // Prevent clicks inside the floating panel from reaching document-level
       // click-outside handlers that upstream plugins use to auto-collapse.
-      this._floatingPanel.addEventListener("click", (e) =>
-        e.stopPropagation(),
-      );
+      this._floatingPanel.addEventListener("click", (e) => e.stopPropagation());
     }
     // Always re-attach to container (it may have been removed by _render's innerHTML="")
     if (this._container && this._floatingPanel.parentNode !== this._container) {
@@ -1060,8 +1083,9 @@ export class ControlGrid implements IControl {
       if (entry.element) {
         // Remove maplibregl-ctrl-group which constrains width and clips
         // overflow, preventing the inner panel from sizing correctly.
-        const hasCtrlGroup =
-          entry.element.classList.contains("maplibregl-ctrl-group");
+        const hasCtrlGroup = entry.element.classList.contains(
+          "maplibregl-ctrl-group",
+        );
         if (hasCtrlGroup) {
           entry.element.classList.remove("maplibregl-ctrl-group");
           entry.element.dataset.hadCtrlGroup = "1";

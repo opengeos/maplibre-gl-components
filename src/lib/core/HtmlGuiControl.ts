@@ -278,8 +278,7 @@ export class HtmlGuiControl implements IControl {
       this._positionSelect!.appendChild(opt);
     });
     this._positionSelect.addEventListener("change", () => {
-      this._state.htmlPosition =
-        this._positionSelect!.value as ControlPosition;
+      this._state.htmlPosition = this._positionSelect!.value as ControlPosition;
       if (this._state.hasHtmlControl) {
         this._removeHtmlControl();
         this._addHtmlControl();

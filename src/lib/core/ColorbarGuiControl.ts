@@ -301,7 +301,8 @@ export class ColorbarGuiControl implements IControl {
     this._customColorsTextarea.className = "colorbar-gui-textarea";
     this._customColorsTextarea.rows = 3;
     this._customColorsTextarea.value = this._state.customColors;
-    this._customColorsTextarea.placeholder = "e.g., red, #00ff00, blue, yellow\nor #440154, #21918c, #fde725";
+    this._customColorsTextarea.placeholder =
+      "e.g., red, #00ff00, blue, yellow\nor #440154, #21918c, #fde725";
     this._customColorsTextarea.addEventListener("input", () => {
       this._state.customColors = this._customColorsTextarea!.value;
       this._updatePreview();
@@ -312,8 +313,10 @@ export class ColorbarGuiControl implements IControl {
     content.appendChild(this._customSection);
 
     // Show/hide sections based on mode
-    this._namedSection.style.display = this._state.mode === "named" ? "" : "none";
-    this._customSection.style.display = this._state.mode === "custom" ? "" : "none";
+    this._namedSection.style.display =
+      this._state.mode === "named" ? "" : "none";
+    this._customSection.style.display =
+      this._state.mode === "custom" ? "" : "none";
 
     // Preview
     this._previewEl = document.createElement("div");
@@ -393,7 +396,8 @@ export class ColorbarGuiControl implements IControl {
       this._orientationSelect!.appendChild(opt);
     });
     this._orientationSelect.addEventListener("change", () => {
-      this._state.orientation = this._orientationSelect!.value as ColorbarOrientation;
+      this._state.orientation = this._orientationSelect!
+        .value as ColorbarOrientation;
       if (this._state.hasColorbar) this._updateColorbar();
     });
     orientField.appendChild(this._orientationSelect);
@@ -416,7 +420,8 @@ export class ColorbarGuiControl implements IControl {
       this._positionSelect!.appendChild(opt);
     });
     this._positionSelect.addEventListener("change", () => {
-      this._state.colorbarPosition = this._positionSelect!.value as ControlPosition;
+      this._state.colorbarPosition = this._positionSelect!
+        .value as ControlPosition;
       if (this._state.hasColorbar) {
         this._removeColorbar();
         this._addColorbar();
@@ -430,7 +435,9 @@ export class ColorbarGuiControl implements IControl {
     this._addBtn = document.createElement("button");
     this._addBtn.type = "button";
     this._addBtn.className = "colorbar-gui-add-btn";
-    this._addBtn.textContent = this._state.hasColorbar ? "Update Colorbar" : "Add Colorbar";
+    this._addBtn.textContent = this._state.hasColorbar
+      ? "Update Colorbar"
+      : "Add Colorbar";
     this._addBtn.addEventListener("click", () => {
       if (this._state.hasColorbar) {
         this._updateColorbar();

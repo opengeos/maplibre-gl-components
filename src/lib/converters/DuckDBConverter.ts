@@ -17,6 +17,12 @@ type DuckDBModule = any;
 interface DuckDBInstance {
   connect(): Promise<DuckDBConnection>;
   registerFileBuffer(name: string, buffer: Uint8Array): Promise<void>;
+  registerFileURL(
+    name: string,
+    url: string,
+    protocol: number,
+    directIO: boolean,
+  ): Promise<void>;
   dropFile(name: string): Promise<void>;
   terminate(): Promise<void>;
   open(config?: Record<string, unknown>): Promise<void>;
@@ -545,6 +551,209 @@ export class DuckDBConverter implements VectorConverter {
         return "dxf";
       default:
         return "unknown";
+    }
+  }
+
+  /**
+   * Registers a remote parquet file for HTTP range request access.
+   * This allows querying the file without downloading it entirely.
+   *
+   * @param url - The URL of the remote parquet file.
+   * @param fileName - The internal filename to use for queries.
+   */
+  async registerRemoteParquet(url: string, fileName: string): Promise<void> {
+    if (!this.isReady()) {
+      await this.initialize();
+    }
+
+    if (!this._db || !this._duckdb) {
+      throw new Error("DuckDB not initialized");
+    }
+
+    // Use DuckDB's HTTP protocol for range requests
+    // The registerFileURL method with HTTP protocol enables range requests
+    await this._db.registerFileURL(
+      fileName,
+      url,
+      this._duckdb.DuckDBDataProtocol.HTTP,
+      false, // not direct IO
+    );
+  }
+
+  /**
+   * Gets the schema of a parquet file, identifying geometry and property columns.
+   *
+   * @param fileName - The registered filename to analyze.
+   * @returns Schema information with geometry and property columns.
+   */
+  async getParquetSchema(fileName: string): Promise<{
+    geometryColumn: string | null;
+    geometryColumnType: string | null;
+    propertyColumns: string[];
+    allColumns: { name: string; type: string }[];
+  }> {
+    if (!this._db) {
+      throw new Error("DuckDB not initialized");
+    }
+
+    const conn = await this._db.connect();
+
+    try {
+      // Get column information
+      const columnsResult = await conn.query<{
+        column_name: string;
+        column_type: string;
+      }>(`DESCRIBE SELECT * FROM read_parquet('${fileName}')`);
+
+      const columns = columnsResult.toArray();
+      const allColumns = columns.map((c) => ({
+        name: c.column_name,
+        type: c.column_type,
+      }));
+
+      // Find geometry column
+      let geometryColumn: string | null = null;
+      let geometryColumnType: string | null = null;
+      const propertyColumns: string[] = [];
+      const geomNames = [
+        "geom",
+        "geometry",
+        "wkb_geometry",
+        "the_geom",
+        "shape",
+      ];
+
+      for (const col of columns) {
+        const colName = col.column_name;
+        const colType = col.column_type?.toUpperCase() || "";
+        const colNameLower = colName.toLowerCase();
+
+        const isGeomByType = colType.includes("GEOMETRY");
+        const isGeomByName = geomNames.includes(colNameLower);
+        const isWkbBlob = colType.includes("BLOB") && isGeomByName;
+
+        if ((isGeomByType || isGeomByName || isWkbBlob) && !geometryColumn) {
+          geometryColumn = colName;
+          geometryColumnType = colType;
+        } else {
+          propertyColumns.push(colName);
+        }
+      }
+
+      return {
+        geometryColumn,
+        geometryColumnType,
+        propertyColumns,
+        allColumns,
+      };
+    } finally {
+      await conn.close();
+    }
+  }
+
+  /**
+   * Queries features from a registered parquet file within the given bounds.
+   *
+   * @param fileName - The registered filename to query.
+   * @param bounds - The bounding box [west, south, east, north].
+   * @param geometryColumn - The name of the geometry column.
+   * @param propertyColumns - The property columns to include.
+   * @param geometryColumnType - The type of the geometry column (for WKB handling).
+   * @returns A GeoJSON FeatureCollection with features in the bounds.
+   */
+  async queryByBounds(
+    fileName: string,
+    bounds: [number, number, number, number],
+    geometryColumn: string,
+    propertyColumns: string[],
+    geometryColumnType?: string,
+  ): Promise<GeoJSON.FeatureCollection> {
+    if (!this._db) {
+      throw new Error("DuckDB not initialized");
+    }
+
+    const conn = await this._db.connect();
+    const [west, south, east, north] = bounds;
+
+    try {
+      // Build properties JSON object
+      const propsExpr =
+        propertyColumns.length > 0
+          ? `json_object(${propertyColumns.map((c) => `'${c}', "${c}"`).join(", ")})`
+          : `'{}'::JSON`;
+
+      // Determine geometry expression based on column type
+      // WKB stored as BLOB needs conversion, GEOMETRY type can be used directly
+      const colType = geometryColumnType?.toUpperCase() || "";
+      const isWkbBlob = colType.includes("BLOB");
+
+      let geomExpr: string;
+      let geomForIntersect: string;
+
+      if (isWkbBlob) {
+        // WKB stored as BLOB - need to convert from WKB first
+        geomExpr = `ST_AsGeoJSON(ST_GeomFromWKB("${geometryColumn}"))`;
+        geomForIntersect = `ST_GeomFromWKB("${geometryColumn}")`;
+      } else {
+        // Already a GEOMETRY type - use directly
+        geomExpr = `ST_AsGeoJSON("${geometryColumn}")`;
+        geomForIntersect = `"${geometryColumn}"`;
+      }
+
+      // Use ST_Intersects with ST_MakeEnvelope for spatial filtering
+      const query = `
+        SELECT json_object(
+          'type', 'Feature',
+          'geometry', ${geomExpr}::JSON,
+          'properties', ${propsExpr}
+        ) as feature
+        FROM read_parquet('${fileName}')
+        WHERE "${geometryColumn}" IS NOT NULL
+          AND ST_Intersects(
+            ${geomForIntersect},
+            ST_MakeEnvelope(${west}, ${south}, ${east}, ${north})
+          )
+      `;
+
+      const result = await conn.query<{ feature: string }>(query);
+      const rows = result.toArray();
+
+      const features: GeoJSON.Feature[] = [];
+      for (const row of rows) {
+        if (row.feature) {
+          try {
+            const feature =
+              typeof row.feature === "string"
+                ? JSON.parse(row.feature)
+                : row.feature;
+            features.push(feature);
+          } catch (e) {
+            console.warn("Failed to parse feature:", e);
+          }
+        }
+      }
+
+      return {
+        type: "FeatureCollection",
+        features,
+      };
+    } finally {
+      await conn.close();
+    }
+  }
+
+  /**
+   * Unregisters a file from DuckDB.
+   *
+   * @param fileName - The filename to unregister.
+   */
+  async unregisterFile(fileName: string): Promise<void> {
+    if (!this._db) return;
+
+    try {
+      await this._db.dropFile(fileName);
+    } catch {
+      // File may not be registered, ignore error
     }
   }
 

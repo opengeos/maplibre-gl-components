@@ -12,7 +12,6 @@ export { ControlGridReact } from "./lib/core/ControlGridReact";
 export { CogLayerReact } from "./lib/core/CogLayerReact";
 export { MinimapControlReact } from "./lib/core/MinimapControlReact";
 
-
 // React hooks
 export {
   useColorbar,

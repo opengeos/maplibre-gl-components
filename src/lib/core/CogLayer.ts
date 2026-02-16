@@ -532,7 +532,9 @@ export class CogLayerControl implements IControl {
     if (!this._container) return;
 
     // Save scroll position before clearing content
-    const panelEl = this._container.querySelector(".maplibre-gl-cog-layer-panel");
+    const panelEl = this._container.querySelector(
+      ".maplibre-gl-cog-layer-panel",
+    );
     const scrollTop = panelEl ? panelEl.scrollTop : 0;
 
     this._container.innerHTML = "";
@@ -547,7 +549,9 @@ export class CogLayerControl implements IControl {
 
     // Restore scroll position
     if (scrollTop > 0) {
-      const newPanelEl = this._container.querySelector(".maplibre-gl-cog-layer-panel");
+      const newPanelEl = this._container.querySelector(
+        ".maplibre-gl-cog-layer-panel",
+      );
       if (newPanelEl) {
         newPanelEl.scrollTop = scrollTop;
       }
@@ -1090,7 +1094,11 @@ export class CogLayerControl implements IControl {
         // Uint path: inject user-specified nodata filtering after successful parse
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const userNodata = (this as any).props._nodata;
-        if (userNodata !== undefined && userNodata !== null && !isNaN(userNodata)) {
+        if (
+          userNodata !== undefined &&
+          userNodata !== null &&
+          !isNaN(userNodata)
+        ) {
           const { FilterNoDataVal } =
             await import("@developmentseed/deck.gl-raster/gpu-modules");
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1277,7 +1285,9 @@ export class CogLayerControl implements IControl {
 
           // Filter nodata pixels: prefer user-specified nodata over GDAL_NODATA
           const effectiveNodata =
-            self.props._nodata !== undefined && self.props._nodata !== null && !isNaN(self.props._nodata)
+            self.props._nodata !== undefined &&
+            self.props._nodata !== null &&
+            !isNaN(self.props._nodata)
               ? self.props._nodata
               : noDataVal;
           if (effectiveNodata !== null) {

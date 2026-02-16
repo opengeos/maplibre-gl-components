@@ -145,8 +145,7 @@ function classify(
     }
     case "std_mean": {
       const mean = sorted.reduce((s, v) => s + v, 0) / n;
-      const variance =
-        sorted.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
+      const variance = sorted.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
       const std = Math.sqrt(variance);
       breaks = [min];
       // Create breaks at mean - 2*std, mean - std, mean, mean + std, mean + 2*std
@@ -162,8 +161,7 @@ function classify(
       breaks = [min];
       let remaining = sorted;
       while (breaks.length < k && remaining.length > 1) {
-        const mean =
-          remaining.reduce((s, v) => s + v, 0) / remaining.length;
+        const mean = remaining.reduce((s, v) => s + v, 0) / remaining.length;
         if (mean <= breaks[breaks.length - 1]) break;
         breaks.push(mean);
         remaining = remaining.filter((v) => v > mean);
@@ -1154,10 +1152,7 @@ export class ChoroplethControl implements IControl {
       this._state.availableColumns = numericCols;
 
       // Auto-select first column if none specified
-      if (
-        !this._state.column &&
-        numericCols.length > 0
-      ) {
+      if (!this._state.column && numericCols.length > 0) {
         this._state.column = numericCols[0];
       }
 
@@ -1175,9 +1170,7 @@ export class ChoroplethControl implements IControl {
   /**
    * Detect numeric columns from GeoJSON features.
    */
-  private _detectNumericColumns(
-    geojson: GeoJSON.FeatureCollection,
-  ): string[] {
+  private _detectNumericColumns(geojson: GeoJSON.FeatureCollection): string[] {
     const columnStats = new Map<
       string,
       { numericCount: number; totalCount: number }
@@ -1203,10 +1196,7 @@ export class ChoroplethControl implements IControl {
     // A column is numeric if >80% of sampled values are numbers
     const numericCols: string[] = [];
     for (const [key, stats] of columnStats) {
-      if (
-        stats.totalCount > 0 &&
-        stats.numericCount / stats.totalCount > 0.8
-      ) {
+      if (stats.totalCount > 0 && stats.numericCount / stats.totalCount > 0.8) {
         numericCols.push(key);
       }
     }
@@ -1237,7 +1227,9 @@ export class ChoroplethControl implements IControl {
       const colormapName = this._state.colormap;
       const opacity = this._state.opacity;
       const showOutline = this._state.showOutline;
-      const outlineColor = showOutline ? this._state.outlineColor : "transparent";
+      const outlineColor = showOutline
+        ? this._state.outlineColor
+        : "transparent";
       const extrude = this._state.extrude;
       const scaleFactor = this._state.scaleFactor;
 
@@ -1310,8 +1302,7 @@ export class ChoroplethControl implements IControl {
       const hasPolygons =
         geometryTypes.has("Polygon") || geometryTypes.has("MultiPolygon");
       const hasLines =
-        geometryTypes.has("LineString") ||
-        geometryTypes.has("MultiLineString");
+        geometryTypes.has("LineString") || geometryTypes.has("MultiLineString");
       const hasPoints =
         geometryTypes.has("Point") || geometryTypes.has("MultiPoint");
 
@@ -1332,10 +1323,7 @@ export class ChoroplethControl implements IControl {
           for (let i = 0; i < breaks.length; i++) {
             const colorIdx = Math.min(i, colors.length - 1);
             fillExtrusionColorExpr.push(breaks[i], colors[colorIdx]);
-            fillExtrusionHeightExpr.push(
-              breaks[i],
-              breaks[i] / scaleFactor,
-            );
+            fillExtrusionHeightExpr.push(breaks[i], breaks[i] / scaleFactor);
           }
 
           const extrusionLayerId = `${layerId}-extrusion`;
@@ -1482,14 +1470,12 @@ export class ChoroplethControl implements IControl {
             const feature = e.features[0];
             const props = feature.properties || {};
             const entries = Object.entries(props).filter(
-              ([key]) =>
-                !key.startsWith("_choropleth_"),
+              ([key]) => !key.startsWith("_choropleth_"),
             );
             if (entries.length === 0) return;
 
             let html = '<div class="maplibre-gl-choropleth-popup">';
-            html +=
-              '<table class="maplibre-gl-choropleth-popup-table">';
+            html += '<table class="maplibre-gl-choropleth-popup-table">';
             for (const [key, value] of entries) {
               const displayValue =
                 typeof value === "number"
@@ -1767,10 +1753,7 @@ export class ChoroplethControl implements IControl {
   /**
    * Add a Legend control to the map for a given choropleth layer.
    */
-  private _addLegendControl(
-    layerId: string,
-    info: ChoroplethLayerInfo,
-  ): void {
+  private _addLegendControl(layerId: string, info: ChoroplethLayerInfo): void {
     if (!this._map || this._legendControls.has(layerId)) return;
 
     const items = info.legendColors.map((color, i) => ({
