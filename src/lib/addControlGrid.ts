@@ -7,6 +7,7 @@ import type { DefaultControlName, ControlGridOptions } from "./core/types";
  */
 export const ALL_DEFAULT_CONTROLS: readonly DefaultControlName[] = [
   "globe",
+  "spinGlobe",
   "fullscreen",
   "north",
   "terrain",

@@ -98,6 +98,10 @@ export default defineConfig({
           __dirname,
           "examples/html-control/index.html",
         ),
+        spinGlobe: resolve(
+          __dirname,
+          "examples/spin-globe/index.html",
+        ),
       },
     },
   },

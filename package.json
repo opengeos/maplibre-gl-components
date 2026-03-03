@@ -73,12 +73,33 @@
     "url": "https://github.com/opengeos/maplibre-gl-components/issues"
   },
   "peerDependencies": {
+    "@carbonplan/zarr-layer": "^0.3.1",
+    "@deck.gl/core": "^9.2.6",
+    "@deck.gl/mapbox": "^9.2.6",
+    "@developmentseed/deck.gl-geotiff": "^0.2.0",
+    "@dvt3d/maplibre-three-plugin": "^1.3.0",
     "jspdf": ">=2.5.0",
     "maplibre-gl": ">=5.16.0",
     "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react-dom": ">=18.0.0",
+    "three": "^0.178.0"
   },
   "peerDependenciesMeta": {
+    "@carbonplan/zarr-layer": {
+      "optional": true
+    },
+    "@deck.gl/core": {
+      "optional": true
+    },
+    "@deck.gl/mapbox": {
+      "optional": true
+    },
+    "@developmentseed/deck.gl-geotiff": {
+      "optional": true
+    },
+    "@dvt3d/maplibre-three-plugin": {
+      "optional": true
+    },
     "react": {
       "optional": true
     },
@@ -87,10 +108,18 @@
     },
     "jspdf": {
       "optional": true
+    },
+    "three": {
+      "optional": true
     }
   },
   "devDependencies": {
+    "@carbonplan/zarr-layer": "^0.3.1",
+    "@deck.gl/core": "^9.2.6",
+    "@deck.gl/mapbox": "^9.2.6",
+    "@developmentseed/deck.gl-geotiff": "^0.2.0",
     "@duckdb/duckdb-wasm": "^1.32.0",
+    "@dvt3d/maplibre-three-plugin": "^1.3.0",
     "@geoman-io/maplibre-geoman-free": "^0.6.2",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -109,6 +138,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "shpjs": "^6.2.0",
+    "three": "^0.178.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-dts": "^4.5.4",
@@ -116,11 +146,6 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@carbonplan/zarr-layer": "^0.3.1",
-    "@deck.gl/core": "^9.2.6",
-    "@deck.gl/mapbox": "^9.2.6",
-    "@developmentseed/deck.gl-geotiff": "^0.2.0",
-    "@dvt3d/maplibre-three-plugin": "^1.3.0",
     "flatgeobuf": "^4.4.0",
     "geotiff-geokeys-to-proj4": "^2024.4.13",
     "maplibre-gl-geo-editor": "^0.7.3",
@@ -131,7 +156,6 @@
     "maplibre-gl-streetview": "^0.3.1",
     "maplibre-gl-swipe": "^0.6.0",
     "maplibre-gl-usgs-lidar": "^0.7.2",
-    "pmtiles": "^4.4.0",
-    "three": "^0.178.0"
+    "pmtiles": "^4.4.0"
   }
 }

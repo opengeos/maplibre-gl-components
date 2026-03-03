@@ -1340,7 +1340,8 @@ export type DefaultControlName =
   | "usgsLidar"
   | "colorbarGui"
   | "legendGui"
-  | "htmlGui";
+  | "htmlGui"
+  | "spinGlobe";
 
 /**
  * Options for configuring the ControlGrid.
@@ -3176,3 +3177,43 @@ export type MinimapEventHandler = (event: {
   type: MinimapEvent;
   state: MinimapControlState;
 }) => void;
+
+/**
+ * Options for configuring the SpinGlobeControl.
+ */
+export interface SpinGlobeControlOptions {
+  /** Rotation speed in degrees per second. Default: 10. */
+  speed?: number;
+  /** Whether to start spinning automatically when added to the map. Default: false. */
+  spinOnLoad?: boolean;
+  /** Whether to pause spinning while the user interacts (drag, touch, wheel). Default: true. */
+  pauseOnInteraction?: boolean;
+}
+
+/**
+ * Internal state of the SpinGlobeControl.
+ */
+export interface SpinGlobeControlState {
+  /** Whether the globe is currently spinning. */
+  spinning: boolean;
+}
+
+/**
+ * SpinGlobeControl event types.
+ */
+export type SpinGlobeEvent = "spinstart" | "spinstop";
+
+/**
+ * Data passed to SpinGlobeControl event handlers.
+ */
+export interface SpinGlobeEventData {
+  /** The event type. */
+  type: SpinGlobeEvent;
+  /** Current control state at the time of the event. */
+  state: SpinGlobeControlState;
+}
+
+/**
+ * SpinGlobeControl event handler function type.
+ */
+export type SpinGlobeEventHandler = (event: SpinGlobeEventData) => void;

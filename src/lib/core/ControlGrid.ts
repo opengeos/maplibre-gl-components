@@ -33,6 +33,7 @@ import { ChoroplethControl } from "./ChoroplethControl";
 import { ColorbarGuiControl } from "./ColorbarGuiControl";
 import { LegendGuiControl } from "./LegendGuiControl";
 import { HtmlGuiControl } from "./HtmlGuiControl";
+import { SpinGlobeControl } from "./SpinGlobeControl";
 import { CogLayerAdapter } from "../adapters/CogLayerAdapter";
 import { ZarrLayerAdapter } from "../adapters/ZarrLayerAdapter";
 import { PMTilesLayerAdapter } from "../adapters/PMTilesLayerAdapter";
@@ -216,6 +217,7 @@ interface ChildEntry {
 const DEFAULT_CONTROL_TOOLTIPS: Record<string, string> = {
   fullscreen: "Toggle fullscreen",
   globe: "Toggle globe projection",
+  spinGlobe: "Spin globe",
   north: "Reset bearing to north",
   terrain: "Toggle terrain",
   search: "Search places",
@@ -335,6 +337,8 @@ export class ControlGrid implements IControl {
         return new FullscreenControl();
       case "globe":
         return new GlobeControl();
+      case "spinGlobe":
+        return new SpinGlobeControl();
       case "north":
         return new NorthControl();
       case "terrain":

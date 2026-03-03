@@ -181,14 +181,15 @@ describe("addControlGrid", () => {
 });
 
 describe("ALL_DEFAULT_CONTROLS", () => {
-  it("should contain 30 control names", () => {
-    expect(ALL_DEFAULT_CONTROLS.length).toBe(30);
+  it("should contain 31 control names", () => {
+    expect(ALL_DEFAULT_CONTROLS.length).toBe(31);
   });
 
   it("should contain all expected controls", () => {
     const expected = [
       "fullscreen",
       "globe",
+      "spinGlobe",
       "north",
       "terrain",
       "search",
