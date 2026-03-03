@@ -66,6 +66,7 @@ export { MinimapControl } from "./lib/core/MinimapControl";
 export { ColorbarGuiControl } from "./lib/core/ColorbarGuiControl";
 export { LegendGuiControl } from "./lib/core/LegendGuiControl";
 export { HtmlGuiControl } from "./lib/core/HtmlGuiControl";
+export { SpinGlobeControl } from "./lib/core/SpinGlobeControl";
 
 // Adapters for layer control integration
 export {
@@ -329,6 +330,11 @@ export type {
   HtmlGuiControlState,
   HtmlGuiEvent,
   HtmlGuiEventHandler,
+  SpinGlobeControlOptions,
+  SpinGlobeControlState,
+  SpinGlobeEvent,
+  SpinGlobeEventData,
+  SpinGlobeEventHandler,
 } from "./lib/core/types";
 
 // Converter types

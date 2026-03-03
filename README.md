@@ -1,6 +1,6 @@
 # maplibre-gl-components
 
-Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, feature inspector, measurement tools, coordinate display, bookmarks, minimap, and more for MapLibre GL JS maps.
+Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, feature inspector, measurement tools, coordinate display, bookmarks, minimap, spinning globe, and more for MapLibre GL JS maps.
 
 [![npm version](https://badge.fury.io/js/maplibre-gl-components.svg)](https://badge.fury.io/js/maplibre-gl-components)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -27,6 +27,7 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **BookmarkControl** - Save and restore map views with localStorage persistence
 - **PrintControl** - Export the map as PNG, JPEG, or PDF with optional title overlay
 - **MinimapControl** - Inset overview map showing the current viewport extent with optional click-to-navigate
+- **SpinGlobeControl** - Automatically spin the globe at a configurable speed with pause-on-interaction support
 - **ControlGrid** - Collapsible toolbar grid that hosts any combination of built-in and plugin controls
 - **addControlGrid** - One-call convenience function to add all default controls with customization
 - **Three.js Integration** - Re-exported helpers (`MapScene`, `SceneTransform`, `Sun`, `Creator`) from `@dvt3d/maplibre-three-plugin`
@@ -1462,6 +1463,59 @@ minimapControl.on("expand", (event) => {
 
 See the [minimap-control example](./examples/minimap-control/) for a complete working example.
 
+### SpinGlobeControl
+
+A control that automatically spins the globe by continuously shifting the map center longitude. Works in both globe and flat map projections — in globe projection it resembles a physical globe spinning on its axis.
+
+```typescript
+interface SpinGlobeControlOptions {
+  speed?: number;               // Rotation speed in degrees per second (default: 10)
+  spinOnLoad?: boolean;         // Auto-start spinning when added to the map (default: false)
+  pauseOnInteraction?: boolean; // Pause on drag/touch/wheel, resume on release (default: true)
+}
+```
+
+```typescript
+// Methods
+spinControl.startSpin()
+spinControl.stopSpin()
+spinControl.toggleSpin()
+spinControl.isSpinning()              // Returns true if currently spinning
+spinControl.getState()                // Returns { spinning: boolean }
+spinControl.update(options)           // Update speed or other options at runtime
+spinControl.on(event, handler)        // 'spinstart' | 'spinstop'
+spinControl.off(event, handler)
+```
+
+**Usage:**
+
+```typescript
+import { SpinGlobeControl } from "maplibre-gl-components";
+
+const spinControl = new SpinGlobeControl({
+  speed: 10,
+  spinOnLoad: true,
+  pauseOnInteraction: true,
+});
+map.addControl(spinControl, "top-right");
+
+spinControl.on("spinstart", () => console.log("Spinning"));
+spinControl.on("spinstop", () => console.log("Stopped"));
+
+// Change speed at runtime
+spinControl.update({ speed: 30 });
+```
+
+**Features:**
+
+- Toggle button with active state indicator
+- Configurable speed (degrees per second)
+- Pauses automatically when the user drags, touches, or scrolls, then resumes on release
+- `spinOnLoad` option to auto-start when added to the map
+- Works standalone or as a `"spinGlobe"` default control in `ControlGrid` / `addControlGrid`
+
+See the [spin-globe example](./examples/spin-globe/) for a complete working example.
+
 ### ControlGrid
 
 A collapsible toolbar grid that organizes multiple controls (built-in and plugin) in a configurable rows × columns layout.
@@ -1491,7 +1545,7 @@ interface ControlGridOptions {
 }
 ```
 
-**Available default controls:** `fullscreen`, `globe`, `north`, `terrain`, `search`, `viewState`, `inspect`, `vectorDataset`, `basemap`, `cogLayer`, `minimap`, `measure`, `bookmark`, `print`, `zarrLayer`, `pmtilesLayer`, `stacLayer`, `stacSearch`, `addVector`, `geoEditor`, `lidar`, `planetaryComputer`, `gaussianSplat`, `streetView`, `swipe`, `usgsLidar`
+**Available default controls:** `fullscreen`, `globe`, `spinGlobe`, `north`, `terrain`, `search`, `viewState`, `inspect`, `vectorDataset`, `basemap`, `cogLayer`, `minimap`, `measure`, `bookmark`, `print`, `zarrLayer`, `pmtilesLayer`, `stacLayer`, `stacSearch`, `addVector`, `geoEditor`, `lidar`, `planetaryComputer`, `gaussianSplat`, `streetView`, `swipe`, `usgsLidar`
 
 **StreetView env setup (for `streetView` default control):**
 
