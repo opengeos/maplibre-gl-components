@@ -16,6 +16,7 @@ export const ALL_DEFAULT_CONTROLS: readonly DefaultControlName[] = [
   "inspect",
   "vectorDataset",
   "basemap",
+  "tileLayer",
   "measure",
   "geoEditor",
   "bookmark",

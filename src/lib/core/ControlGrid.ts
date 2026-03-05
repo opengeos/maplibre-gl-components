@@ -34,6 +34,7 @@ import { ColorbarGuiControl } from "./ColorbarGuiControl";
 import { LegendGuiControl } from "./LegendGuiControl";
 import { HtmlGuiControl } from "./HtmlGuiControl";
 import { SpinGlobeControl } from "./SpinGlobeControl";
+import { TileLayerControl } from "./TileLayerControl";
 import { CogLayerAdapter } from "../adapters/CogLayerAdapter";
 import { ZarrLayerAdapter } from "../adapters/ZarrLayerAdapter";
 import { PMTilesLayerAdapter } from "../adapters/PMTilesLayerAdapter";
@@ -245,6 +246,7 @@ const DEFAULT_CONTROL_TOOLTIPS: Record<string, string> = {
   colorbarGui: "Colorbar",
   legendGui: "Legend",
   htmlGui: "HTML Control",
+  tileLayer: "Tile Layer",
 };
 
 /**
@@ -510,6 +512,8 @@ export class ControlGrid implements IControl {
         return new LegendGuiControl({ collapsed: true });
       case "htmlGui":
         return new HtmlGuiControl({ collapsed: true });
+      case "tileLayer":
+        return new TileLayerControl({ collapsed: true });
       default:
         return null;
     }
