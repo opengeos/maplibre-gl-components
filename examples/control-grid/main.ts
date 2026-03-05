@@ -68,6 +68,7 @@ const controlGrid = new ControlGrid({
   },
   defaultControls: [
     'globe',
+    'spinGlobe',
     'fullscreen',
     'north',
     'terrain',
@@ -101,3 +102,28 @@ map.addControl(controlGrid, 'top-right');
 for (const adapter of controlGrid.getAdapters()) {
   layerControl.registerCustomAdapter(adapter);
 }
+
+// Add USGS Imagery basemap as a WMS raster layer
+map.on('load', () => {
+  map.addSource('usgs-imagery', {
+    type: 'raster',
+    tiles: [
+      'https://basemap.nationalmap.gov/arcgis/services/USGSImageryOnly/MapServer/WMSServer?service=WMS&request=GetMap&layers=0&styles=&format=image/png&transparent=true&version=1.1.1&width=256&height=256&srs=EPSG:3857&bbox={bbox-epsg-3857}',
+    ],
+    tileSize: 256,
+    attribution: '&copy; <a href="https://basemap.nationalmap.gov/">USGS</a>',
+  });
+
+  // const firstSymbol = map.getStyle().layers.find((l) => l.type === 'symbol');
+  map.addLayer(
+    {
+      id: 'USGS-imagery-layer',
+      type: 'raster',
+      source: 'usgs-imagery',
+      paint: {
+        'raster-opacity': 0.8,
+      },
+    },
+    // firstSymbol?.id,
+  );
+});
