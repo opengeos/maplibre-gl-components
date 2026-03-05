@@ -14,12 +14,13 @@ const DEFAULT_OPTIONS: Required<SpinGlobeControlOptions> = {
   speed: 10,
   spinOnLoad: false,
   pauseOnInteraction: true,
+  collapsed: true,
 };
 
 /**
- * SVG icon: globe with a circular rotation arrow.
+ * SVG icon: circular arrow (refresh/rotate) to represent globe spinning.
  */
-const SPIN_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8"/><path d="M11.5 3a17 17 0 0 0 0 18M12.5 3a17 17 0 0 1 0 18"/><path d="M19 8l2.5 1.5L19 11"/></svg>`;
+const SPIN_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.636-6.364"/><polyline points="21 3 21 9 15 9"/></svg>`;
 
 /**
  * A control that spins the globe by continuously shifting the map center longitude.
@@ -39,15 +40,22 @@ const SPIN_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20
 export class SpinGlobeControl implements IControl {
   private _map?: MapLibreMap;
   private _container?: HTMLElement;
-  private _button?: HTMLButtonElement;
+  _button?: HTMLButtonElement;
+  private _panel?: HTMLElement;
   private _options: Required<SpinGlobeControlOptions>;
   private _spinning = false;
   /** True when paused due to user interaction (but _spinning remains true). */
   private _paused = false;
+  private _collapsed: boolean;
   private _animationId?: number;
   private _lastTime?: number;
   private _eventHandlers: Map<SpinGlobeEvent, Set<SpinGlobeEventHandler>> =
     new Map();
+
+  // DOM refs for the panel
+  private _speedInput?: HTMLInputElement;
+  private _speedValueEl?: HTMLElement;
+  private _toggleBtn?: HTMLButtonElement;
 
   // Bound handlers for interaction pause/resume
   private _onInteractionStart?: () => void;
@@ -55,13 +63,15 @@ export class SpinGlobeControl implements IControl {
 
   constructor(options?: SpinGlobeControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
+    this._collapsed = this._options.collapsed;
   }
 
   onAdd(map: MapLibreMap): HTMLElement {
     this._map = map;
 
     this._container = document.createElement("div");
-    this._container.className = "maplibregl-ctrl maplibregl-ctrl-group";
+    this._container.className =
+      "maplibregl-ctrl maplibregl-ctrl-group maplibre-gl-spin-globe-control";
 
     this._button = document.createElement("button");
     this._button.type = "button";
@@ -71,7 +81,7 @@ export class SpinGlobeControl implements IControl {
     this._button.innerHTML = SPIN_ICON;
     this._button.style.cssText =
       "display:flex;align-items:center;justify-content:center;width:29px;height:29px;cursor:pointer;";
-    this._button.addEventListener("click", () => this.toggleSpin());
+    this._button.addEventListener("click", () => this._togglePanel());
 
     this._container.appendChild(this._button);
 
@@ -92,6 +102,10 @@ export class SpinGlobeControl implements IControl {
       } else {
         map.once("load", () => this.startSpin());
       }
+    }
+
+    if (!this._collapsed) {
+      this._showPanel();
     }
 
     return this._container;
@@ -116,6 +130,10 @@ export class SpinGlobeControl implements IControl {
     this._map = undefined;
     this._container = undefined;
     this._button = undefined;
+    this._panel = undefined;
+    this._speedInput = undefined;
+    this._speedValueEl = undefined;
+    this._toggleBtn = undefined;
     this._eventHandlers.clear();
   }
 
@@ -129,6 +147,7 @@ export class SpinGlobeControl implements IControl {
     this._lastTime = undefined;
     this._animationId = requestAnimationFrame((t) => this._animate(t));
     this._updateButton();
+    this._updateToggleBtn();
     this._emit("spinstart");
   }
 
@@ -145,6 +164,7 @@ export class SpinGlobeControl implements IControl {
     }
     this._lastTime = undefined;
     this._updateButton();
+    this._updateToggleBtn();
     this._emit("spinstop");
   }
 
@@ -171,7 +191,7 @@ export class SpinGlobeControl implements IControl {
    * Get the current control state.
    */
   getState(): SpinGlobeControlState {
-    return { spinning: this._spinning };
+    return { spinning: this._spinning, collapsed: this._collapsed };
   }
 
   /**
@@ -179,6 +199,32 @@ export class SpinGlobeControl implements IControl {
    */
   update(options: Partial<SpinGlobeControlOptions>): void {
     this._options = { ...this._options, ...options };
+    if (options.speed !== undefined && this._speedInput) {
+      this._speedInput.value = String(options.speed);
+      if (this._speedValueEl) {
+        this._speedValueEl.textContent = `${options.speed}`;
+      }
+    }
+  }
+
+  /**
+   * Expand the settings panel.
+   */
+  expand(): void {
+    if (!this._collapsed) return;
+    this._collapsed = false;
+    this._showPanel();
+    this._emit("expand");
+  }
+
+  /**
+   * Collapse the settings panel.
+   */
+  collapse(): void {
+    if (this._collapsed) return;
+    this._collapsed = true;
+    this._hidePanel();
+    this._emit("collapse");
   }
 
   /**
@@ -196,6 +242,118 @@ export class SpinGlobeControl implements IControl {
    */
   off(event: SpinGlobeEvent, handler: SpinGlobeEventHandler): void {
     this._eventHandlers.get(event)?.delete(handler);
+  }
+
+  private _togglePanel(): void {
+    if (this._collapsed) {
+      this.expand();
+    } else {
+      this.collapse();
+    }
+  }
+
+  private _showPanel(): void {
+    if (!this._panel && this._container) {
+      this._panel = this._createPanel();
+      this._container.appendChild(this._panel);
+    }
+    this._button?.classList.add("active");
+  }
+
+  private _hidePanel(): void {
+    this._panel?.remove();
+    this._panel = undefined;
+    this._speedInput = undefined;
+    this._speedValueEl = undefined;
+    this._toggleBtn = undefined;
+    this._button?.classList.remove("active");
+  }
+
+  private _createPanel(): HTMLElement {
+    const panel = document.createElement("div");
+    panel.className = "spin-globe-panel";
+    panel.style.cssText =
+      "position:absolute;top:0;right:calc(100% + 0px);background:#fff;color:#000;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);padding:12px;z-index:1;white-space:nowrap;min-width:180px;";
+
+    // Header
+    const header = document.createElement("div");
+    header.style.cssText =
+      "display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-weight:600;font-size:13px;color:#000;";
+    header.textContent = "Spin Globe";
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.title = "Close";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.textContent = "\u00d7";
+    closeBtn.style.cssText =
+      "background:none;border:none;font-size:18px;cursor:pointer;color:#000;padding:0 0 0 8px;line-height:1;";
+    closeBtn.addEventListener("click", () => this.collapse());
+    header.appendChild(closeBtn);
+    panel.appendChild(header);
+
+    // Speed slider
+    const speedRow = document.createElement("div");
+    speedRow.style.cssText =
+      "display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px;color:#000;";
+
+    const speedLabel = document.createElement("label");
+    speedLabel.textContent = "Speed";
+    speedLabel.style.cssText = "flex-shrink:0;font-weight:500;";
+
+    this._speedInput = document.createElement("input");
+    this._speedInput.type = "range";
+    this._speedInput.min = "1";
+    this._speedInput.max = "60";
+    this._speedInput.step = "1";
+    this._speedInput.value = String(this._options.speed);
+    this._speedInput.style.cssText =
+      "flex:1;min-width:80px;cursor:pointer;accent-color:#2563eb;";
+
+    this._speedValueEl = document.createElement("span");
+    this._speedValueEl.textContent = `${this._options.speed}`;
+    this._speedValueEl.style.cssText =
+      "min-width:20px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;";
+
+    const unitLabel = document.createElement("span");
+    unitLabel.textContent = "\u00b0/s";
+    unitLabel.style.cssText = "flex-shrink:0;color:#000;";
+
+    this._speedInput.addEventListener("input", () => {
+      const speed = Number(this._speedInput!.value);
+      this._options.speed = speed;
+      if (this._speedValueEl) {
+        this._speedValueEl.textContent = `${speed}`;
+      }
+    });
+
+    speedRow.appendChild(speedLabel);
+    speedRow.appendChild(this._speedInput);
+    speedRow.appendChild(this._speedValueEl);
+    speedRow.appendChild(unitLabel);
+    panel.appendChild(speedRow);
+
+    // Start/Stop button
+    this._toggleBtn = document.createElement("button");
+    this._toggleBtn.type = "button";
+    this._updateToggleBtn();
+    this._toggleBtn.style.cssText =
+      "width:100%;padding:6px 0;border:1px solid #333;border-radius:4px;background:#fff;font-size:12px;font-weight:500;color:#000;cursor:pointer;";
+    this._toggleBtn.addEventListener("mouseenter", () => {
+      if (this._toggleBtn)
+        this._toggleBtn.style.backgroundColor = "#f0f0f0";
+    });
+    this._toggleBtn.addEventListener("mouseleave", () => {
+      if (this._toggleBtn) this._toggleBtn.style.backgroundColor = "#fff";
+    });
+    this._toggleBtn.addEventListener("click", () => this.toggleSpin());
+    panel.appendChild(this._toggleBtn);
+
+    return panel;
+  }
+
+  private _updateToggleBtn(): void {
+    if (!this._toggleBtn) return;
+    this._toggleBtn.textContent = this._spinning ? "Stop" : "Start";
   }
 
   private _animate(time: number): void {

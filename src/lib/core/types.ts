@@ -3188,6 +3188,8 @@ export interface SpinGlobeControlOptions {
   spinOnLoad?: boolean;
   /** Whether to pause spinning while the user interacts (drag, touch, wheel). Default: true. */
   pauseOnInteraction?: boolean;
+  /** Whether the settings panel starts collapsed. Default: true. */
+  collapsed?: boolean;
 }
 
 /**
@@ -3196,12 +3198,14 @@ export interface SpinGlobeControlOptions {
 export interface SpinGlobeControlState {
   /** Whether the globe is currently spinning. */
   spinning: boolean;
+  /** Whether the settings panel is collapsed. */
+  collapsed: boolean;
 }
 
 /**
  * SpinGlobeControl event types.
  */
-export type SpinGlobeEvent = "spinstart" | "spinstop";
+export type SpinGlobeEvent = ComponentEvent | "spinstart" | "spinstop";
 
 /**
  * Data passed to SpinGlobeControl event handlers.
