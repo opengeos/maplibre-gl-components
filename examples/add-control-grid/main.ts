@@ -19,9 +19,13 @@ const BASEMAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.
 const map = new maplibregl.Map({
   container: 'map',
   style: BASEMAP_STYLE,
-  center: [-98, 38.5],
-  zoom: 4,
+  center: [-100, 40],
+  zoom: 3,
   maxPitch: 85,
+});
+
+map.once('load', () => {
+  map.setProjection({ type: 'globe' });
 });
 
 // Add layer control
@@ -59,7 +63,7 @@ map.on('load', () => {
   // const firstSymbol = map.getStyle().layers.find((l) => l.type === 'symbol');
   map.addLayer(
     {
-      id: 'usgs-imagery-layer',
+      id: 'USGS-imagery-layer',
       type: 'raster',
       source: 'usgs-imagery',
       paint: {
