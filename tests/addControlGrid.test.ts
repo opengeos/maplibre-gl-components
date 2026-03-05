@@ -181,8 +181,8 @@ describe("addControlGrid", () => {
 });
 
 describe("ALL_DEFAULT_CONTROLS", () => {
-  it("should contain 31 control names", () => {
-    expect(ALL_DEFAULT_CONTROLS.length).toBe(31);
+  it("should contain 32 control names", () => {
+    expect(ALL_DEFAULT_CONTROLS.length).toBe(32);
   });
 
   it("should contain all expected controls", () => {

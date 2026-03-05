@@ -102,6 +102,10 @@ export default defineConfig({
           __dirname,
           "examples/spin-globe/index.html",
         ),
+        tileLayer: resolve(
+          __dirname,
+          "examples/tile-layer/index.html",
+        ),
       },
     },
   },

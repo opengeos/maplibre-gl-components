@@ -1341,7 +1341,8 @@ export type DefaultControlName =
   | "colorbarGui"
   | "legendGui"
   | "htmlGui"
-  | "spinGlobe";
+  | "spinGlobe"
+  | "tileLayer";
 
 /**
  * Options for configuring the ControlGrid.
@@ -3221,3 +3222,89 @@ export interface SpinGlobeEventData {
  * SpinGlobeControl event handler function type.
  */
 export type SpinGlobeEventHandler = (event: SpinGlobeEventData) => void;
+
+/**
+ * Tile layer type: XYZ or WMS.
+ */
+export type TileLayerType = "xyz" | "wms";
+
+/**
+ * Describes a single raster tile layer added via TileLayerControl.
+ */
+export interface TileLayerInfo {
+  /** Unique ID used for the MapLibre source and layer. */
+  id: string;
+  /** Display name shown in the layer list. */
+  name: string;
+  /** The tile URL template. */
+  url: string;
+  /** Tile type: XYZ or WMS. */
+  type: TileLayerType;
+  /** WMS layers parameter (only for WMS type). */
+  wmsLayers?: string;
+  /** Current opacity (0-1). */
+  opacity: number;
+  /** Whether the layer is currently visible. */
+  visible: boolean;
+}
+
+/**
+ * Options for configuring the TileLayerControl.
+ */
+export interface TileLayerControlOptions {
+  /** Whether the settings panel starts collapsed. Default: true. */
+  collapsed?: boolean;
+  /** Default tile type selection. Default: "xyz". */
+  defaultType?: TileLayerType;
+  /** Default tile URL to pre-fill (used when type is XYZ). */
+  defaultUrl?: string;
+  /** Default WMS endpoint URL (used when type switches to WMS). */
+  defaultWmsUrl?: string;
+  /** Default layer name to pre-fill. */
+  defaultName?: string;
+  /** Default WMS layers parameter. */
+  defaultWmsLayers?: string;
+  /** Default opacity for new layers. Default: 0.8. */
+  defaultOpacity?: number;
+  /** Tile size for raster sources. Default: 256. */
+  tileSize?: number;
+  /** Attribution string for sources. */
+  attribution?: string;
+}
+
+/**
+ * Internal state of the TileLayerControl.
+ */
+export interface TileLayerControlState {
+  /** Whether the settings panel is collapsed. */
+  collapsed: boolean;
+  /** Currently added tile layers. */
+  layers: TileLayerInfo[];
+}
+
+/**
+ * TileLayerControl event types.
+ */
+export type TileLayerEvent =
+  | ComponentEvent
+  | "layeradd"
+  | "layerremove"
+  | "layervisibility"
+  | "layeropacity";
+
+/**
+ * Data passed to TileLayerControl event handlers.
+ */
+export interface TileLayerEventData {
+  /** The event type. */
+  type: TileLayerEvent;
+  /** Current control state at the time of the event. */
+  state: TileLayerControlState;
+  /** The layer affected by this event (if applicable). */
+  layer?: TileLayerInfo;
+}
+
+/**
+ * TileLayerControl event handler function type.
+ */
+export type TileLayerEventHandler = (event: TileLayerEventData) => void;

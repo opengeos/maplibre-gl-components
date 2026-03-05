@@ -67,6 +67,7 @@ export { ColorbarGuiControl } from "./lib/core/ColorbarGuiControl";
 export { LegendGuiControl } from "./lib/core/LegendGuiControl";
 export { HtmlGuiControl } from "./lib/core/HtmlGuiControl";
 export { SpinGlobeControl } from "./lib/core/SpinGlobeControl";
+export { TileLayerControl } from "./lib/core/TileLayerControl";
 
 // Adapters for layer control integration
 export {
@@ -335,6 +336,13 @@ export type {
   SpinGlobeEvent,
   SpinGlobeEventData,
   SpinGlobeEventHandler,
+  TileLayerType,
+  TileLayerInfo,
+  TileLayerControlOptions,
+  TileLayerControlState,
+  TileLayerEvent,
+  TileLayerEventData,
+  TileLayerEventHandler,
 } from "./lib/core/types";
 
 // Converter types

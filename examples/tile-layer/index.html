@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TileLayerControl Example</title>
+  <link href="https://unpkg.com/maplibre-gl@5.17.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+
+    #info-toggle {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 30px;
+      height: 30px;
+      background: white;
+      border: none;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      color: #555;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #info-toggle:hover { background: #f0f0f0; }
+
+    .info-panel {
+      position: absolute;
+      top: 48px;
+      left: 10px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      max-width: 300px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      z-index: 1;
+      display: none;
+    }
+    .info-panel.visible { display: block; }
+    .info-panel h3 { margin: 0 0 10px 0; }
+    .info-panel p { margin: 0 0 8px 0; color: #666; }
+    #status { margin-top: 8px; font-weight: 600; color: #333; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <button id="info-toggle" title="Toggle info panel">i</button>
+  <div class="info-panel" id="info-panel">
+    <h3>TileLayerControl</h3>
+    <p>Click the layers button (top-right) to open the panel and add XYZ or WMS tile layers.</p>
+    <p><strong>XYZ:</strong> Enter a URL with <code>{x}</code>, <code>{y}</code>, <code>{z}</code> placeholders.</p>
+    <p><strong>WMS:</strong> Enter a WMS GetMap URL with <code>{bbox-epsg-3857}</code> placeholder.</p>
+    <div id="status">Layers: 0</div>
+  </div>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>
