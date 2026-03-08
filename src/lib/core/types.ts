@@ -1398,6 +1398,19 @@ export interface ControlGridOptions {
    * from Vite env vars (`VITE_GOOGLE_MAPS_API_KEY`, `VITE_MAPILLARY_ACCESS_TOKEN`).
    */
   streetViewOptions?: Partial<StreetViewControlOptions>;
+  /**
+   * Optional Bookmark control options (e.g. preloaded bookmarks).
+   *
+   * @example
+   * ```typescript
+   * bookmarkOptions: {
+   *   bookmarks: [
+   *     { id: 'nyc', name: 'New York', lng: -74.006, lat: 40.7128, zoom: 12, pitch: 0, bearing: 0, createdAt: Date.now() },
+   *   ],
+   * }
+   * ```
+   */
+  bookmarkOptions?: Partial<BookmarkControlOptions>;
 }
 
 /**

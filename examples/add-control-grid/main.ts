@@ -42,7 +42,63 @@ const layerControl = new LayerControl({
 map.addControl(layerControl, 'top-right');
 
 // Add a ControlGrid with all default controls in one call
-const controlGrid = addControlGrid(map, { basemapStyleUrl: BASEMAP_STYLE });
+const controlGrid = addControlGrid(map, {
+  basemapStyleUrl: BASEMAP_STYLE,
+  bookmarkOptions: {
+    bookmarks: [
+      {
+        id: "san-francisco",
+        name: "San Francisco",
+        lng: -122.4194,
+        lat: 37.7749,
+        zoom: 12,
+        pitch: 0,
+        bearing: 0,
+        createdAt: Date.now(),
+      },
+      {
+        id: "new-york",
+        name: "New York City",
+        lng: -74.006,
+        lat: 40.7128,
+        zoom: 12,
+        pitch: 0,
+        bearing: 0,
+        createdAt: Date.now(),
+      },
+      {
+        id: "london",
+        name: "London",
+        lng: -0.1276,
+        lat: 51.5074,
+        zoom: 11,
+        pitch: 0,
+        bearing: 0,
+        createdAt: Date.now(),
+      },
+      {
+        id: "tokyo",
+        name: "Tokyo",
+        lng: 139.6917,
+        lat: 35.6895,
+        zoom: 11,
+        pitch: 0,
+        bearing: 0,
+        createdAt: Date.now(),
+      },
+      {
+        id: "paris",
+        name: "Paris",
+        lng: 2.3522,
+        lat: 48.8566,
+        zoom: 12,
+        pitch: 0,
+        bearing: 0,
+        createdAt: Date.now(),
+      },
+    ],
+  },
+});
 
 // Register data-layer adapters so COG, Zarr, PMTiles layers appear in the LayerControl
 for (const adapter of controlGrid.getAdapters()) {

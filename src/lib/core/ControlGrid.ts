@@ -64,7 +64,8 @@ type OptionalControlGridFields =
   | "defaultControls"
   | "basemapStyleUrl"
   | "excludeLayers"
-  | "streetViewOptions";
+  | "streetViewOptions"
+  | "bookmarkOptions";
 
 /** ControlGrid options with required fields except for optional ones */
 type ResolvedControlGridOptions = Required<
@@ -96,6 +97,7 @@ const DEFAULT_OPTIONS: ResolvedControlGridOptions = {
   basemapStyleUrl: undefined,
   excludeLayers: undefined,
   streetViewOptions: undefined,
+  bookmarkOptions: undefined,
 };
 
 /** Wrench icon SVG for collapsed state – stroke style matching MapLibre globe icon. */
@@ -369,7 +371,10 @@ export class ControlGrid implements IControl {
       case "measure":
         return new MeasureControl({ collapsed: true });
       case "bookmark":
-        return new BookmarkControl({ collapsed: true });
+        return new BookmarkControl({
+          collapsed: true,
+          ...this._options.bookmarkOptions,
+        });
       case "print":
         return new PrintControl({ collapsed: true });
       case "zarrLayer":
