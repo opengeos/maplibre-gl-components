@@ -1792,6 +1792,8 @@ export interface PMTilesLayerInfo {
   opacity: number;
   /** Whether features are pickable (clickable). */
   pickable: boolean;
+  /** Map of source layer names to their assigned colors. */
+  sourceLayerColors?: Record<string, string>;
 }
 
 /**

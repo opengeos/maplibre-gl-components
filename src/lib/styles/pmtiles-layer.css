@@ -339,44 +339,56 @@
 }
 
 .maplibre-gl-pmtiles-popup-header {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 13px;
-  padding-bottom: 6px;
-  margin-bottom: 6px;
-  border-bottom: 1px solid #e0e0e0;
-  color: #0078d7;
+  padding: 6px 8px 4px 8px;
+  color: #111;
+  text-transform: capitalize;
+  background: #f0f0f0;
+  border-bottom: 1px solid #ddd;
 }
 
 .maplibre-gl-pmtiles-popup-content {
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
 .maplibre-gl-pmtiles-popup-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+  background: #fff;
 }
 
-.maplibre-gl-pmtiles-popup-table tr:nth-child(even) {
-  background: #f9f9f9;
+.maplibre-gl-pmtiles-popup-table tr {
+  background: #fff;
+}
+
+.maplibre-gl-pmtiles-popup-table tr:last-child td {
+  border-bottom: none;
 }
 
 .maplibre-gl-pmtiles-popup-key {
-  font-weight: 500;
-  color: #555;
-  padding: 3px 8px 3px 0;
+  font-weight: 600;
+  color: #222;
+  padding: 4px 8px;
   vertical-align: top;
   white-space: nowrap;
+  width: 40%;
+  border-bottom: 1px solid #eee;
 }
 
 .maplibre-gl-pmtiles-popup-value {
-  color: #333;
-  padding: 3px 0;
+  color: #444;
+  padding: 4px 8px;
   word-break: break-word;
+  overflow-wrap: break-word;
+  width: 60%;
+  border-bottom: 1px solid #eee;
 }
 
 .maplibre-gl-pmtiles-popup-empty {
   color: #999;
   font-style: italic;
-  padding: 8px 0;
+  padding: 8px;
 }

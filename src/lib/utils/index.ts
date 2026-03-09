@@ -13,6 +13,7 @@ export {
   interpolateColor,
   getColorAtPosition,
   generateGradientCSS,
+  generateDistinctColors,
 } from "./color";
 
 export {
