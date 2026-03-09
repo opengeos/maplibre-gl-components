@@ -6,6 +6,7 @@ import {
   type MapMouseEvent,
   Popup,
 } from "maplibre-gl";
+import { generateDistinctColors } from "../utils/color";
 import type {
   PMTilesLayerControlOptions,
   PMTilesLayerControlState,
@@ -449,40 +450,60 @@ export class PMTilesLayerControl implements IControl {
 
       if (pickableLayerIds.length === 0) return;
 
-      // Query features at click point
-      const features = this._map.queryRenderedFeatures(e.point, {
-        layers: pickableLayerIds,
-      });
+      // Query all features at click point, grouped by source layer
+      const seenSourceLayers = new Set<string>();
+      const layerFeatures: Array<{
+        sourceLayer: string;
+        properties: Record<string, unknown>;
+      }> = [];
 
-      if (features.length === 0) {
-        // Close popup if clicking on empty area
+      for (const layerId of pickableLayerIds) {
+        if (!this._map.getLayer(layerId)) continue;
+        const features = this._map.queryRenderedFeatures(e.point, {
+          layers: [layerId],
+        });
+        if (features.length > 0) {
+          const sl = features[0].sourceLayer || layerId;
+          if (!seenSourceLayers.has(sl)) {
+            seenSourceLayers.add(sl);
+            layerFeatures.push({
+              sourceLayer: sl,
+              properties: features[0].properties || {},
+            });
+          }
+        }
+      }
+
+      if (layerFeatures.length === 0) {
         if (this._popup) {
           this._popup.remove();
         }
         return;
       }
 
-      // Get the first feature
-      const feature = features[0];
-      const properties = feature.properties || {};
-
-      // Build popup content
+      // Build combined popup content for all layers at this point
       let html = '<div class="maplibre-gl-pmtiles-popup">';
-      html += `<div class="maplibre-gl-pmtiles-popup-header">${feature.sourceLayer || "Feature"}</div>`;
       html += '<div class="maplibre-gl-pmtiles-popup-content">';
 
-      const propEntries = Object.entries(properties);
-      if (propEntries.length === 0) {
-        html +=
-          '<div class="maplibre-gl-pmtiles-popup-empty">No properties</div>';
-      } else {
-        html += '<table class="maplibre-gl-pmtiles-popup-table">';
-        for (const [key, value] of propEntries) {
-          const displayValue =
-            typeof value === "object" ? JSON.stringify(value) : String(value);
-          html += `<tr><td class="maplibre-gl-pmtiles-popup-key">${key}</td><td class="maplibre-gl-pmtiles-popup-value">${displayValue}</td></tr>`;
+      for (const { sourceLayer, properties } of layerFeatures) {
+        const friendlyName = sourceLayer.replace(/[-_]/g, " ");
+        html += `<div class="maplibre-gl-pmtiles-popup-header">${friendlyName}</div>`;
+
+        const propEntries = Object.entries(properties);
+        if (propEntries.length === 0) {
+          html +=
+            '<div class="maplibre-gl-pmtiles-popup-empty">No properties</div>';
+        } else {
+          html += '<table class="maplibre-gl-pmtiles-popup-table">';
+          for (const [key, value] of propEntries) {
+            const displayValue =
+              typeof value === "object"
+                ? JSON.stringify(value)
+                : String(value);
+            html += `<tr><td class="maplibre-gl-pmtiles-popup-key">${key}</td><td class="maplibre-gl-pmtiles-popup-value">${displayValue}</td></tr>`;
+          }
+          html += "</table>";
         }
-        html += "</table>";
       }
 
       html += "</div></div>";
@@ -1054,6 +1075,9 @@ export class PMTilesLayerControl implements IControl {
           ? this._options.beforeId
           : undefined;
 
+      // Track per-source-layer colors for this PMTiles source
+      const sourceLayerColors: Record<string, string> = {};
+
       if (tileType === "vector") {
         // Use selected source layers if available, otherwise use all
         const layersToRender =
@@ -1061,8 +1085,15 @@ export class PMTilesLayerControl implements IControl {
             ? this._state.selectedSourceLayers
             : sourceLayers;
 
+        // Generate distinct colors for each source layer
+        const colors = generateDistinctColors(layersToRender.length);
+
         // Add layers for each source layer
-        for (const sourceLayer of layersToRender) {
+        for (let i = 0; i < layersToRender.length; i++) {
+          const sourceLayer = layersToRender[i];
+          const color = colors[i];
+          sourceLayerColors[sourceLayer] = color;
+
           // Determine layer type based on geometry (simplified - add all types)
           const fillLayerId = `${sourceId}-${sourceLayer}-fill`;
           const lineLayerId = `${sourceId}-${sourceLayer}-line`;
@@ -1076,7 +1107,7 @@ export class PMTilesLayerControl implements IControl {
               source: sourceId,
               "source-layer": sourceLayer,
               paint: {
-                "fill-color": this._options.defaultFillColor,
+                "fill-color": color,
                 "fill-opacity": this._state.layerOpacity * 0.6,
               },
               filter: ["==", ["geometry-type"], "Polygon"],
@@ -1093,7 +1124,7 @@ export class PMTilesLayerControl implements IControl {
               source: sourceId,
               "source-layer": sourceLayer,
               paint: {
-                "line-color": this._options.defaultLineColor,
+                "line-color": color,
                 "line-opacity": this._state.layerOpacity,
                 "line-width": 1,
               },
@@ -1115,9 +1146,11 @@ export class PMTilesLayerControl implements IControl {
               source: sourceId,
               "source-layer": sourceLayer,
               paint: {
-                "circle-color": this._options.defaultCircleColor,
+                "circle-color": color,
                 "circle-opacity": this._state.layerOpacity,
-                "circle-radius": 4,
+                "circle-radius": 2,
+                "circle-stroke-color": color,
+                "circle-stroke-width": 0.5,
               },
               filter: ["==", ["geometry-type"], "Point"],
             },
@@ -1180,6 +1213,7 @@ export class PMTilesLayerControl implements IControl {
         layerIds,
         opacity: this._state.layerOpacity,
         pickable: this._state.pickable,
+        sourceLayerColors,
       };
       this._pmtilesLayers.set(sourceId, layerInfo);
 
