@@ -38,3 +38,4 @@ dist-examples/
 .vite/
 
 CLAUDE.md
+.playwright-cli/*
