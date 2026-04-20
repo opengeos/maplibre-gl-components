@@ -8,74 +8,10 @@
   <style>
     body { margin: 0; padding: 0; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-
-    #info-toggle {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      width: 30px;
-      height: 30px;
-      background: white;
-      border: none;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 700;
-      color: #555;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #info-toggle:hover { background: #f0f0f0; }
-
-    .info-panel {
-      position: absolute;
-      top: 48px;
-      left: 10px;
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      max-width: 280px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 14px;
-      z-index: 1;
-      display: none;
-    }
-    .info-panel.visible { display: block; }
-    .info-panel h3 { margin: 0 0 10px 0; }
-    .info-panel p { margin: 0 0 8px 0; color: #666; }
-    .speed-controls { display: flex; gap: 6px; margin-top: 10px; }
-    .speed-controls button {
-      flex: 1;
-      padding: 5px 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background: #f5f5f5;
-      cursor: pointer;
-      font-size: 12px;
-    }
-    .speed-controls button:hover { background: #e0e0e0; }
-    #status { margin-top: 8px; font-weight: 600; color: #333; }
   </style>
 </head>
 <body>
   <div id="map"></div>
-  <button id="info-toggle" title="Toggle info panel">i</button>
-  <div class="info-panel" id="info-panel">
-    <h3>SpinGlobeControl</h3>
-    <p>Click the spin button (top-right) to rotate the globe automatically.</p>
-    <p><strong>Drag:</strong> Dragging the map pauses the spin and resumes when released.</p>
-    <p><strong>Speed:</strong></p>
-    <div class="speed-controls">
-      <button id="slow">Slow (5°/s)</button>
-      <button id="medium">Medium (15°/s)</button>
-      <button id="fast">Fast (40°/s)</button>
-    </div>
-    <div id="status">Status: stopped</div>
-  </div>
   <script type="module" src="./main.ts"></script>
 </body>
 </html>
