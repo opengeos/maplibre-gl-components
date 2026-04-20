@@ -41,6 +41,7 @@ map.on("load", () => {
     .querySelector(".maplibregl-ctrl-attrib")
     ?.classList.remove("maplibregl-compact-show");
 });
+map.addControl(new maplibregl.FullscreenControl(), "top-right");
 map.addControl(new maplibregl.GlobeControl());
 
 const spinControl = new SpinGlobeControl({
