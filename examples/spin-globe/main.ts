@@ -27,12 +27,20 @@ const map = new maplibregl.Map({
   pitch: -45,
   bearing: -15,
   maxPitch: 85,
+  attributionControl: false,
 });
 
 map.on("style.load", () => {
   map.setProjection({ type: "globe" });
 });
 
+map.addControl(new maplibregl.AttributionControl({ compact: true }));
+map.on("load", () => {
+  map
+    .getContainer()
+    .querySelector(".maplibregl-ctrl-attrib")
+    ?.classList.remove("maplibregl-compact-show");
+});
 map.addControl(new maplibregl.GlobeControl());
 
 const spinControl = new SpinGlobeControl({
