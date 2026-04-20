@@ -23,7 +23,9 @@ const map = new maplibregl.Map({
   container: "map",
   style: BASEMAP_STYLE,
   center: [0, 20],
-  zoom: 2.5,
+  zoom: 1.5,
+  pitch: -45,
+  bearing: -15,
   maxPitch: 85,
 });
 
