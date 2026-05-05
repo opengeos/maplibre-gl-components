@@ -68,6 +68,7 @@ export class SpinGlobeControl implements IControl {
   private _onInteractionStart?: () => void;
   private _onDoubleClick?: () => void;
   private _wheelTarget?: HTMLElement;
+  private _doubleClickTimeoutId?: ReturnType<typeof setTimeout>;
 
   constructor(options?: SpinGlobeControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -129,6 +130,11 @@ export class SpinGlobeControl implements IControl {
 
   onRemove(): void {
     this.stopSpin();
+
+    if (this._doubleClickTimeoutId !== undefined) {
+      clearTimeout(this._doubleClickTimeoutId);
+      this._doubleClickTimeoutId = undefined;
+    }
 
     if (this._map) {
       if (this._onInteractionStart) {
@@ -394,7 +400,14 @@ export class SpinGlobeControl implements IControl {
   }
 
   private _startSpinAfterDoubleClick(): void {
-    window.setTimeout(() => this.startSpin(), 0);
+    if (this._doubleClickTimeoutId !== undefined) {
+      clearTimeout(this._doubleClickTimeoutId);
+    }
+    this._doubleClickTimeoutId = setTimeout(() => {
+      this._doubleClickTimeoutId = undefined;
+      if (!this._map) return;
+      this.startSpin();
+    }, 0);
   }
 
   private _updateButton(): void {

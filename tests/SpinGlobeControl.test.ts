@@ -26,6 +26,7 @@ describe("SpinGlobeControl", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -87,7 +88,6 @@ describe("SpinGlobeControl", () => {
     vi.runOnlyPendingTimers();
 
     expect(control.isSpinning()).toBe(true);
-    vi.useRealTimers();
   });
 
   it("does not bind interaction stop handlers when pauseOnInteraction is false", () => {
@@ -114,11 +114,11 @@ describe("SpinGlobeControl", () => {
     vi.runOnlyPendingTimers();
 
     expect(control.isSpinning()).toBe(true);
-    vi.useRealTimers();
   });
 
   it("removes interaction handlers on remove", () => {
-    const { map } = createMockMap();
+    const { map, canvas } = createMockMap();
+    const removeListenerSpy = vi.spyOn(canvas, "removeEventListener");
     const control = new SpinGlobeControl();
 
     control.onAdd(map);
@@ -131,5 +131,9 @@ describe("SpinGlobeControl", () => {
     expect(map.off).toHaveBeenCalledWith("boxzoomstart", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("touchstart", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("dblclick", expect.any(Function));
+    expect(removeListenerSpy).toHaveBeenCalledWith(
+      "wheel",
+      expect.any(Function),
+    );
   });
 });
