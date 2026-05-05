@@ -27,7 +27,7 @@ Legend, colorbar, basemap switcher, terrain toggle, search, vector data loader, 
 - **BookmarkControl** - Save and restore map views with localStorage persistence
 - **PrintControl** - Export the map as PNG, JPEG, or PDF with optional title overlay
 - **MinimapControl** - Inset overview map showing the current viewport extent with optional click-to-navigate
-- **SpinGlobeControl** - Automatically spin the globe at a configurable speed with pause-on-interaction support
+- **SpinGlobeControl** - Automatically spin the globe at a configurable speed with stop-on-interaction support
 - **ControlGrid** - Collapsible toolbar grid that hosts any combination of built-in and plugin controls
 - **addControlGrid** - One-call convenience function to add all default controls with customization
 - **Three.js Integration** - Re-exported helpers (`MapScene`, `SceneTransform`, `Sun`, `Creator`) from `@dvt3d/maplibre-three-plugin`
@@ -1471,7 +1471,7 @@ A control that automatically spins the globe by continuously shifting the map ce
 interface SpinGlobeControlOptions {
   speed?: number;               // Rotation speed in degrees per second (default: 10)
   spinOnLoad?: boolean;         // Auto-start spinning when added to the map (default: false)
-  pauseOnInteraction?: boolean; // Pause on drag/touch/wheel, resume on release (default: true)
+  pauseOnInteraction?: boolean; // Stop on drag/zoom/touch/rotate/pitch/wheel (default: true)
 }
 ```
 
@@ -1510,7 +1510,8 @@ spinControl.update({ speed: 30 });
 
 - Toggle button with active state indicator
 - Configurable speed (degrees per second)
-- Pauses automatically when the user drags, touches, or scrolls, then resumes on release
+- Stops automatically when the user drags, zooms, touches, rotates, pitches, or scrolls
+- Double-clicking the globe starts spinning again
 - `spinOnLoad` option to auto-start when added to the map
 - Works standalone or as a `"spinGlobe"` default control in `ControlGrid` / `addControlGrid`
 

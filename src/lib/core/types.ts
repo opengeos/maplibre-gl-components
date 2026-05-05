@@ -3202,7 +3202,7 @@ export interface SpinGlobeControlOptions {
   speed?: number;
   /** Whether to start spinning automatically when added to the map. Default: false. */
   spinOnLoad?: boolean;
-  /** Whether to pause spinning while the user interacts (drag, touch, wheel). Default: true. */
+  /** Whether to stop spinning when the user interacts with the map. Default: true. */
   pauseOnInteraction?: boolean;
   /** Whether the settings panel starts collapsed. Default: true. */
   collapsed?: boolean;
