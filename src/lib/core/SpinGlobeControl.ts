@@ -17,6 +17,15 @@ const DEFAULT_OPTIONS: Required<SpinGlobeControlOptions> = {
   collapsed: true,
 };
 
+const INTERACTION_START_EVENTS = [
+  "dragstart",
+  "zoomstart",
+  "rotatestart",
+  "pitchstart",
+  "boxzoomstart",
+  "touchstart",
+] as const;
+
 /**
  * SVG icon: circular arrow (refresh/rotate) to represent globe spinning.
  */
@@ -44,8 +53,6 @@ export class SpinGlobeControl implements IControl {
   private _panel?: HTMLElement;
   private _options: Required<SpinGlobeControlOptions>;
   private _spinning = false;
-  /** True when paused due to user interaction (but _spinning remains true). */
-  private _paused = false;
   private _collapsed: boolean;
   private _animationId?: number;
   private _lastTime?: number;
@@ -57,9 +64,11 @@ export class SpinGlobeControl implements IControl {
   private _speedValueEl?: HTMLElement;
   private _toggleBtn?: HTMLButtonElement;
 
-  // Bound handlers for interaction pause/resume
+  // Bound handler for stopping spin when the map receives direct user input.
   private _onInteractionStart?: () => void;
-  private _onInteractionEnd?: () => void;
+  private _onDoubleClick?: () => void;
+  private _wheelTarget?: HTMLElement;
+  private _doubleClickTimeoutId?: ReturnType<typeof setTimeout>;
 
   constructor(options?: SpinGlobeControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -85,15 +94,23 @@ export class SpinGlobeControl implements IControl {
 
     this._container.appendChild(this._button);
 
-    if (this._options.pauseOnInteraction) {
-      this._onInteractionStart = () => this._pauseSpin();
-      this._onInteractionEnd = () => this._resumeSpin();
+    this._onDoubleClick = () => this._startSpinAfterDoubleClick();
+    map.on("dblclick", this._onDoubleClick);
 
-      map.on("dragstart", this._onInteractionStart);
-      map.on("touchstart", this._onInteractionStart);
-      map.on("wheel", this._onInteractionStart);
-      map.on("dragend", this._onInteractionEnd);
-      map.on("touchend", this._onInteractionEnd);
+    if (this._options.pauseOnInteraction) {
+      this._onInteractionStart = () => this._stopSpinForInteraction();
+
+      INTERACTION_START_EVENTS.forEach((eventName) => {
+        map.on(eventName, this._onInteractionStart!);
+      });
+
+      const canvas = map.getCanvas?.();
+      if (canvas?.addEventListener) {
+        this._wheelTarget = canvas;
+        canvas.addEventListener("wheel", this._onInteractionStart, {
+          passive: true,
+        });
+      }
     }
 
     if (this._options.spinOnLoad) {
@@ -114,16 +131,23 @@ export class SpinGlobeControl implements IControl {
   onRemove(): void {
     this.stopSpin();
 
+    if (this._doubleClickTimeoutId !== undefined) {
+      clearTimeout(this._doubleClickTimeoutId);
+      this._doubleClickTimeoutId = undefined;
+    }
+
     if (this._map) {
       if (this._onInteractionStart) {
-        this._map.off("dragstart", this._onInteractionStart);
-        this._map.off("touchstart", this._onInteractionStart);
-        this._map.off("wheel", this._onInteractionStart);
+        INTERACTION_START_EVENTS.forEach((eventName) => {
+          this._map!.off(eventName, this._onInteractionStart!);
+        });
       }
-      if (this._onInteractionEnd) {
-        this._map.off("dragend", this._onInteractionEnd);
-        this._map.off("touchend", this._onInteractionEnd);
+      if (this._onDoubleClick) {
+        this._map.off("dblclick", this._onDoubleClick);
       }
+    }
+    if (this._wheelTarget && this._onInteractionStart) {
+      this._wheelTarget.removeEventListener("wheel", this._onInteractionStart);
     }
 
     this._container?.parentNode?.removeChild(this._container);
@@ -134,6 +158,9 @@ export class SpinGlobeControl implements IControl {
     this._speedInput = undefined;
     this._speedValueEl = undefined;
     this._toggleBtn = undefined;
+    this._onInteractionStart = undefined;
+    this._onDoubleClick = undefined;
+    this._wheelTarget = undefined;
     this._eventHandlers.clear();
   }
 
@@ -143,7 +170,6 @@ export class SpinGlobeControl implements IControl {
   startSpin(): void {
     if (this._spinning) return;
     this._spinning = true;
-    this._paused = false;
     this._lastTime = undefined;
     this._animationId = requestAnimationFrame((t) => this._animate(t));
     this._updateButton();
@@ -157,7 +183,6 @@ export class SpinGlobeControl implements IControl {
   stopSpin(): void {
     if (!this._spinning) return;
     this._spinning = false;
-    this._paused = false;
     if (this._animationId !== undefined) {
       cancelAnimationFrame(this._animationId);
       this._animationId = undefined;
@@ -180,8 +205,7 @@ export class SpinGlobeControl implements IControl {
   }
 
   /**
-   * Returns true if the globe is currently spinning (including when temporarily
-   * paused due to user interaction).
+   * Returns true if the globe is currently spinning.
    */
   isSpinning(): boolean {
     return this._spinning;
@@ -370,21 +394,20 @@ export class SpinGlobeControl implements IControl {
     this._animationId = requestAnimationFrame((t) => this._animate(t));
   }
 
-  private _pauseSpin(): void {
-    if (!this._spinning || this._paused) return;
-    this._paused = true;
-    if (this._animationId !== undefined) {
-      cancelAnimationFrame(this._animationId);
-      this._animationId = undefined;
-    }
-    this._lastTime = undefined;
+  private _stopSpinForInteraction(): void {
+    if (!this._spinning) return;
+    this.stopSpin();
   }
 
-  private _resumeSpin(): void {
-    if (!this._spinning || !this._paused) return;
-    this._paused = false;
-    this._lastTime = undefined;
-    this._animationId = requestAnimationFrame((t) => this._animate(t));
+  private _startSpinAfterDoubleClick(): void {
+    if (this._doubleClickTimeoutId !== undefined) {
+      clearTimeout(this._doubleClickTimeoutId);
+    }
+    this._doubleClickTimeoutId = setTimeout(() => {
+      this._doubleClickTimeoutId = undefined;
+      if (!this._map) return;
+      this.startSpin();
+    }, 0);
   }
 
   private _updateButton(): void {
