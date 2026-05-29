@@ -43,6 +43,11 @@ export default defineConfig({
     },
   },
   base: "/maplibre-gl-components/",
+  worker: {
+    // Emit workers as ES modules so top-level await in worker deps
+    // (e.g. @developmentseed/geotiff pool) is supported under rolldown.
+    format: "es",
+  },
   build: {
     target: "es2022",
     outDir: "dist-examples",

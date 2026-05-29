@@ -75,7 +75,9 @@
   "peerDependencies": {
     "@carbonplan/zarr-layer": ">=0.5.0",
     "@deck.gl/core": ">=9.3.2",
+    "@deck.gl/geo-layers": ">=9.3.2",
     "@deck.gl/mapbox": ">=9.3.2",
+    "@deck.gl/mesh-layers": ">=9.3.2",
     "@developmentseed/deck.gl-geotiff": ">=0.7.0",
     "@dvt3d/maplibre-three-plugin": ">=1.6.0",
     "jspdf": ">=4.2.1",
@@ -91,7 +93,13 @@
     "@deck.gl/core": {
       "optional": true
     },
+    "@deck.gl/geo-layers": {
+      "optional": true
+    },
     "@deck.gl/mapbox": {
+      "optional": true
+    },
+    "@deck.gl/mesh-layers": {
       "optional": true
     },
     "@developmentseed/deck.gl-geotiff": {
@@ -116,7 +124,9 @@
   "devDependencies": {
     "@carbonplan/zarr-layer": ">=0.5.0",
     "@deck.gl/core": ">=9.3.2",
+    "@deck.gl/geo-layers": ">=9.3.2",
     "@deck.gl/mapbox": ">=9.3.2",
+    "@deck.gl/mesh-layers": ">=9.3.2",
     "@developmentseed/deck.gl-geotiff": ">=0.7.0",
     "@duckdb/duckdb-wasm": ">=1.33.1-dev45.0",
     "@dvt3d/maplibre-three-plugin": ">=1.6.0",
