@@ -1130,11 +1130,19 @@ export class CogLayerControl implements IControl {
           throw err;
         }
 
+        const { parseCOGTileMatrixSet, texture } = (await import(
+          "@developmentseed/deck.gl-geotiff"
+        )) as any;
+        if (
+          typeof parseCOGTileMatrixSet !== "function" ||
+          typeof texture?.inferTextureFormat !== "function"
+        ) {
+          throw err;
+        }
+
         // Float fallback: re-do the GeoTIFF parsing with a custom pipeline.
-        // We use the public exports from the library plus `geotiff` (transitive dep).
+        // We use the public exports from the library plus direct `geotiff`.
         const { fromUrl } = await import("geotiff");
-        const { parseCOGTileMatrixSet, texture } =
-          await import("@developmentseed/deck.gl-geotiff");
         const { CreateTexture, FilterNoDataVal } =
           await import("@developmentseed/deck.gl-raster/gpu-modules");
         const proj4Module = await import("proj4");

@@ -1680,13 +1680,23 @@ export class StacLayerControl implements IControl {
       return applyOpacity(layers, Math.max(0, Math.min(1, opacity)));
     };
 
+    const originalParseGeoTIFF = COGLayerClass.prototype._parseGeoTIFF;
+
     COGLayerClass.prototype._parseGeoTIFF = async function () {
       // Always use custom handling to properly support uint16/float data
       // The original library has issues with single-band uint16 textures
       // Custom handling for grayscale/float/uint16 data
+      const { parseCOGTileMatrixSet, texture } = (await import(
+        "@developmentseed/deck.gl-geotiff"
+      )) as any;
+      if (
+        typeof parseCOGTileMatrixSet !== "function" ||
+        typeof texture?.inferTextureFormat !== "function"
+      ) {
+        return originalParseGeoTIFF.call(this);
+      }
+
       const { fromUrl } = await import("geotiff");
-      const { parseCOGTileMatrixSet, texture } =
-        await import("@developmentseed/deck.gl-geotiff");
       const { CreateTexture, FilterNoDataVal, Colormap } =
         await import("@developmentseed/deck.gl-raster/gpu-modules");
       const proj4Module = await import("proj4");
