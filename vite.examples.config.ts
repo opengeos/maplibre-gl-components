@@ -4,6 +4,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { copyFileSync, mkdirSync } from "node:fs";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
+import { createFilteredViteLogger } from "./vite.logger";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -22,6 +23,7 @@ function copyStaticCdnExample(): Plugin {
 }
 
 export default defineConfig({
+  customLogger: createFilteredViteLogger(),
   plugins: [
     react(),
     copyStaticCdnExample(),

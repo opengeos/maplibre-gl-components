@@ -1995,7 +1995,7 @@ export class StacLayerControl implements IControl {
           });
         }
 
-        return pipeline;
+        return { renderPipeline: pipeline };
       };
 
       self.setState({
