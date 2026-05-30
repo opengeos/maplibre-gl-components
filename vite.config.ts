@@ -2,11 +2,13 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import dts from 'vite-plugin-dts';
+import { createFilteredViteLogger } from './vite.logger';
 
 // Use DEBUG=1 to generate sourcemaps and disable minification for debugging
 const isDebug = process.env.DEBUG === '1';
 
 export default defineConfig({
+  customLogger: createFilteredViteLogger(),
   plugins: [
     react(),
     dts({

@@ -76,6 +76,26 @@ function applyOpacity(layers: any, opacity: number): any {
 }
 
 /**
+ * Update a renderTile result while preserving the dependency's return shape.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function updateRenderPipeline(
+  result: any,
+  update: (pipeline: any[]) => any[],
+): any {
+  if (Array.isArray(result)) {
+    return update(result);
+  }
+  if (result && Array.isArray(result.renderPipeline)) {
+    return {
+      ...result,
+      renderPipeline: update(result.renderPipeline),
+    };
+  }
+  return result;
+}
+
+/**
  * Parse a CSS hex color (#RGB or #RRGGBB) to [r, g, b] values (0-255).
  */
 function parseHexColor(hex: string): [number, number, number] {
@@ -1106,19 +1126,23 @@ export class CogLayerControl implements IControl {
           if (typeof origRenderTile === "function") {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const wrappedRenderTile = (tileData: any) => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const pipeline: any[] = origRenderTile(tileData);
-              // Remove any existing FilterNoDataVal entries
-              const filtered = pipeline.filter(
+              return updateRenderPipeline(
+                origRenderTile(tileData),
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (step: any) => step.module !== FilterNoDataVal,
+                (pipeline: any[]) => {
+                  // Remove any existing FilterNoDataVal entries
+                  const filtered = pipeline.filter(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (step: any) => step.module !== FilterNoDataVal,
+                  );
+                  // Insert FilterNoDataVal after CreateTexture (index 1)
+                  filtered.splice(1, 0, {
+                    module: FilterNoDataVal,
+                    props: { value: userNodata },
+                  });
+                  return filtered;
+                },
               );
-              // Insert FilterNoDataVal after CreateTexture (index 1)
-              filtered.splice(1, 0, {
-                module: FilterNoDataVal,
-                props: { value: userNodata },
-              });
-              return filtered;
             };
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (this as any).setState({ defaultRenderTile: wrappedRenderTile });
@@ -1343,7 +1367,7 @@ export class CogLayerControl implements IControl {
             });
           }
 
-          return pipeline;
+          return { renderPipeline: pipeline };
         };
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
