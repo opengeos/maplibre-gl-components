@@ -141,6 +141,114 @@ function colormapToImageData(stops: ColorStop[]): ImageData {
   return new ImageData(rgba, size, 1);
 }
 
+function isUnsignedCog(sampleFormat: ArrayLike<number> | null | undefined) {
+  return sampleFormat?.[0] === 1;
+}
+
+type ResolvedCogLayerControlOptions = Omit<
+  Required<CogLayerControlOptions>,
+  "defaultNodata"
+> & {
+  defaultNodata?: number;
+};
+
+function isDefinedNodata(value: unknown): value is number {
+  return typeof value === "number";
+}
+
+function isNodataValue(value: number, nodata: number): boolean {
+  return Number.isNaN(nodata) ? Number.isNaN(value) : value === nodata;
+}
+
+function buildInvalidFloatMask(
+  data: ArrayLike<number>,
+  samplesPerPixel: number,
+  nodata: number | undefined,
+): Uint8Array | null {
+  const pixelCount = Math.floor(data.length / samplesPerPixel);
+  const mask = new Uint8Array(pixelCount);
+  mask.fill(255);
+
+  let hasInvalid = false;
+  const hasNodata = isDefinedNodata(nodata);
+  for (let pixel = 0; pixel < pixelCount; pixel++) {
+    const offset = pixel * samplesPerPixel;
+    let hasNonFinite = false;
+    let allSamplesMatchNodata = hasNodata;
+
+    for (let sample = 0; sample < samplesPerPixel; sample++) {
+      const value = data[offset + sample];
+      if (!Number.isFinite(value)) {
+        hasNonFinite = true;
+      }
+      if (hasNodata && allSamplesMatchNodata && !isNodataValue(value, nodata)) {
+        allSamplesMatchNodata = false;
+      }
+    }
+
+    if (hasNonFinite || allSamplesMatchNodata) {
+      mask[pixel] = 0;
+      hasInvalid = true;
+    }
+  }
+
+  return hasInvalid ? mask : null;
+}
+
+function sanitizeMaskedFloatData(
+  data: ArrayLike<number>,
+  mask: Uint8Array | null,
+  samplesPerPixel: number,
+): void {
+  if (!mask || !("set" in data)) return;
+  const writable = data as unknown as { [index: number]: number };
+  for (let pixel = 0; pixel < mask.length; pixel++) {
+    if (mask[pixel] !== 0) continue;
+    const offset = pixel * samplesPerPixel;
+    for (let sample = 0; sample < samplesPerPixel; sample++) {
+      writable[offset + sample] = 0;
+    }
+  }
+}
+
+function mergeMasks(
+  sourceMask: Uint8Array | null | undefined,
+  invalidMask: Uint8Array | null,
+): Uint8Array | null | undefined {
+  if (!sourceMask) return invalidMask;
+  if (!invalidMask) return sourceMask;
+
+  const merged = new Uint8Array(sourceMask.length);
+  for (let i = 0; i < sourceMask.length; i++) {
+    merged[i] = sourceMask[i] === 0 || invalidMask[i] === 0 ? 0 : 255;
+  }
+  return merged;
+}
+
+function createColormapTexture(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  device: any,
+  colormap: ColormapName,
+) {
+  const imageData = colormapToImageData(getColormap(colormap));
+  return device.createTexture({
+    data: imageData.data,
+    dimension: "2d-array",
+    format: "rgba8unorm",
+    width: imageData.width,
+    height: imageData.height,
+    depth: 1,
+    mipLevels: 1,
+    sampler: {
+      minFilter: "linear",
+      magFilter: "linear",
+      addressModeU: "clamp-to-edge",
+      addressModeV: "clamp-to-edge",
+      addressModeW: "clamp-to-edge",
+    },
+  });
+}
+
 /**
  * All available colormap names for the dropdown (sorted alphabetically, 'none' first).
  */
@@ -174,7 +282,7 @@ const COLORMAP_NAMES: (ColormapName | "none")[] = [
 /**
  * Default options for the CogLayerControl.
  */
-const DEFAULT_OPTIONS: Required<CogLayerControlOptions> = {
+const DEFAULT_OPTIONS: ResolvedCogLayerControlOptions = {
   position: "top-right",
   className: "",
   visible: true,
@@ -186,7 +294,7 @@ const DEFAULT_OPTIONS: Required<CogLayerControlOptions> = {
   defaultColormap: "none",
   defaultRescaleMin: 0,
   defaultRescaleMax: 255,
-  defaultNodata: 0,
+  defaultNodata: undefined,
   defaultLayerName: "",
   defaultOpacity: 1,
   defaultPickable: true,
@@ -232,7 +340,7 @@ export class CogLayerControl implements IControl {
   private _container?: HTMLElement;
   private _button?: HTMLButtonElement;
   private _panel?: HTMLElement;
-  private _options: Required<CogLayerControlOptions>;
+  private _options: ResolvedCogLayerControlOptions;
   private _state: CogLayerControlState;
   private _eventHandlers: Map<CogLayerEvent, Set<CogLayerEventHandler>> =
     new Map();
@@ -496,7 +604,11 @@ export class CogLayerControl implements IControl {
    */
   getLayerUrl(layerId: string): string | null {
     const props = this._cogLayerPropsMap.get(layerId);
-    return (props?.geotiff as string) ?? null;
+    if (!props) return null;
+    return (
+      (props._sourceUrl as string | undefined) ??
+      (typeof props.geotiff === "string" ? props.geotiff : null)
+    );
   }
 
   private _emit(
@@ -839,7 +951,9 @@ export class CogLayerControl implements IControl {
         const label = document.createElement("span");
         label.className = "maplibre-gl-cog-layer-list-label";
         // Use custom name if provided, otherwise extract filename from URL
-        const url = props.geotiff as string;
+        const url =
+          (props._sourceUrl as string | undefined) ??
+          (typeof props.geotiff === "string" ? props.geotiff : "");
         const customName = props._layerName as string | undefined;
         let displayName: string;
         if (customName) {
@@ -1167,7 +1281,7 @@ export class CogLayerControl implements IControl {
         // Float fallback: re-do the GeoTIFF parsing with a custom pipeline.
         // We use the public exports from the library plus direct `geotiff`.
         const { fromUrl } = await import("geotiff");
-        const { CreateTexture, FilterNoDataVal } =
+        const { CreateTexture, FilterNoDataVal, MaskTexture } =
           await import("@developmentseed/deck.gl-raster/gpu-modules");
         const proj4Module = await import("proj4");
         const proj4Fn = proj4Module.default || proj4Module;
@@ -1245,6 +1359,9 @@ export class CogLayerControl implements IControl {
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const self = this as any;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const defaultGetTileData = async (geotiffImage: any, options: any) => {
           const { device } = options;
           const rasterData = await geotiffImage.readRasters({
@@ -1254,6 +1371,16 @@ export class CogLayerControl implements IControl {
 
           let data = rasterData;
           let numSamples = SamplesPerPixel;
+
+          const effectiveNodata = isDefinedNodata(self.props._nodata)
+            ? self.props._nodata
+            : noDataVal;
+          const invalidMask = buildInvalidFloatMask(
+            data,
+            numSamples,
+            isDefinedNodata(effectiveNodata) ? effectiveNodata : undefined,
+          );
+          sanitizeMaskedFloatData(data, invalidMask, numSamples);
 
           // WebGL2 has no RGB-only float format; expand 3-band to RGBA
           if (SamplesPerPixel === 3) {
@@ -1287,15 +1414,25 @@ export class CogLayerControl implements IControl {
             sampler: { magFilter: "nearest", minFilter: "nearest" },
           });
 
+          let maskTexture;
+          if (invalidMask) {
+            maskTexture = device.createTexture({
+              data: invalidMask,
+              format: "r8unorm",
+              width: rasterData.width,
+              height: rasterData.height,
+              sampler: { magFilter: "nearest", minFilter: "nearest" },
+            });
+          }
+
           return {
             texture: tex,
             height: rasterData.height,
+            mask: maskTexture,
             width: rasterData.width,
           };
         };
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const self = this as any;
         // Cache colormap texture to avoid recreating per tile
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let cachedCmapName: string | null = null;
@@ -1315,6 +1452,13 @@ export class CogLayerControl implements IControl {
             },
           ];
 
+          if (tileData.mask) {
+            pipeline.push({
+              module: MaskTexture,
+              props: { maskTexture: tileData.mask },
+            });
+          }
+
           // Filter nodata pixels: prefer user-specified nodata over GDAL_NODATA
           const effectiveNodata =
             self.props._nodata !== undefined &&
@@ -1322,7 +1466,7 @@ export class CogLayerControl implements IControl {
             !isNaN(self.props._nodata)
               ? self.props._nodata
               : noDataVal;
-          if (effectiveNodata !== null) {
+          if (isDefinedNodata(effectiveNodata) && !Number.isNaN(effectiveNodata)) {
             pipeline.push({
               module: FilterNoDataVal,
               props: { value: effectiveNodata },
@@ -1345,20 +1489,10 @@ export class CogLayerControl implements IControl {
           const cmapName = self.props._colormap;
           if (cmapName && cmapName !== "none") {
             if (cmapName !== cachedCmapName) {
-              const stops = getColormap(cmapName);
-              const imageData = colormapToImageData(stops);
-              cachedCmapTexture = self.context.device.createTexture({
-                data: imageData.data,
-                format: "rgba8unorm",
-                width: imageData.width,
-                height: imageData.height,
-                sampler: {
-                  minFilter: "linear",
-                  magFilter: "linear",
-                  addressModeU: "clamp-to-edge",
-                  addressModeV: "clamp-to-edge",
-                },
-              });
+              cachedCmapTexture = createColormapTexture(
+                self.context.device,
+                cmapName,
+              );
               cachedCmapName = cmapName;
             }
             pipeline.push({
@@ -1405,6 +1539,175 @@ export class CogLayerControl implements IControl {
     };
   }
 
+  private async _createFloatCogLayerProps(
+    url: string,
+  ): Promise<Record<string, unknown> | null> {
+    const { GeoTIFF } = await import("@developmentseed/geotiff");
+    const geotiff = await GeoTIFF.fromUrl(url);
+    if (isUnsignedCog(geotiff.cachedTags.sampleFormat)) {
+      // Reuse the already-opened GeoTIFF so COGLayer's default render path
+      // doesn't re-fetch and re-parse the same URL for the common unsigned case.
+      return { geotiff };
+    }
+
+    const { texture } = (await import("@developmentseed/deck.gl-geotiff")) as any;
+    const { CreateTexture, FilterNoDataVal, MaskTexture, Colormap } =
+      await import("@developmentseed/deck.gl-raster/gpu-modules");
+    const colormap = this._state.colormap;
+    const nodata = this._state.nodata;
+    const rescaleMax = this._state.rescaleMax;
+    const rescaleMin = this._state.rescaleMin;
+
+    const getTileData = async (image: any, options: any) => {
+      const { device, pool, signal, x, y } = options;
+      const tile = await image.fetchTile(x, y, {
+        boundless: false,
+        pool,
+        signal,
+      });
+      const { array } = tile;
+      if (array.layout === "band-separate") {
+        throw new Error("Band-separate images are not yet implemented.");
+      }
+
+      const tags = image.cachedTags;
+      let data = array.data;
+      let samplesPerPixel = tags.samplesPerPixel;
+      let bitsPerSample = tags.bitsPerSample;
+      let sampleFormat = tags.sampleFormat;
+      const effectiveNodata = isDefinedNodata(nodata) ? nodata : tags.nodata;
+
+      if (data instanceof Float64Array) {
+        data = new Float32Array(data);
+        bitsPerSample = Array.from({ length: samplesPerPixel }, () => 32);
+      }
+
+      const invalidMask = buildInvalidFloatMask(
+        data,
+        samplesPerPixel,
+        isDefinedNodata(effectiveNodata) ? effectiveNodata : undefined,
+      );
+      sanitizeMaskedFloatData(data, invalidMask, samplesPerPixel);
+
+      if (samplesPerPixel === 3) {
+        const pixelCount = array.width * array.height;
+        const rgba = new Float32Array(pixelCount * 4);
+        for (let i = 0; i < pixelCount; i++) {
+          rgba[i * 4] = data[i * 3];
+          rgba[i * 4 + 1] = data[i * 3 + 1];
+          rgba[i * 4 + 2] = data[i * 3 + 2];
+          rgba[i * 4 + 3] = 1;
+        }
+        data = rgba;
+        samplesPerPixel = 4;
+        bitsPerSample = [32, 32, 32, 32];
+        sampleFormat = [3, 3, 3, 3];
+      }
+
+      const textureFormat = texture.inferTextureFormat(
+        samplesPerPixel,
+        bitsPerSample,
+        sampleFormat,
+      );
+      let byteLength = data.byteLength;
+      const rasterTexture = device.createTexture({
+        data,
+        format: textureFormat,
+        width: array.width,
+        height: array.height,
+        sampler: {
+          magFilter: "nearest",
+          minFilter: "nearest",
+        },
+      });
+
+      let maskTexture;
+      const mergedMask = mergeMasks(array.mask, invalidMask);
+      if (mergedMask) {
+        maskTexture = device.createTexture({
+          data: mergedMask,
+          format: "r8unorm",
+          width: array.width,
+          height: array.height,
+          sampler: {
+            magFilter: "nearest",
+            minFilter: "nearest",
+          },
+        });
+        byteLength += mergedMask.byteLength;
+      }
+
+      return {
+        byteLength,
+        device,
+        height: array.height,
+        mask: maskTexture,
+        nodata: effectiveNodata,
+        samplesPerPixel,
+        texture: rasterTexture,
+        width: array.width,
+      };
+    };
+
+    let cachedColormapName: string | null = null;
+    let cachedColormapTexture: unknown = null;
+
+    const renderTile = (tileData: any) => {
+      const pipeline: any[] = [
+        {
+          module: CreateTexture,
+          props: { textureName: tileData.texture },
+        },
+      ];
+
+      if (tileData.mask) {
+        pipeline.push({
+          module: MaskTexture,
+          props: { maskTexture: tileData.mask },
+        });
+      }
+
+      const effectiveNodata = tileData.nodata;
+      if (isDefinedNodata(effectiveNodata) && !Number.isNaN(effectiveNodata)) {
+        pipeline.push({
+          module: FilterNoDataVal,
+          props: { value: effectiveNodata },
+        });
+      }
+
+      pipeline.push({
+        module: RescaleFloat,
+        props: {
+          minVal: rescaleMin,
+          maxVal: rescaleMax,
+          isSingleBand: tileData.samplesPerPixel === 1 ? 1 : 0,
+        },
+      });
+
+      if (colormap && colormap !== "none") {
+        if (cachedColormapName !== colormap) {
+          cachedColormapTexture = createColormapTexture(
+            tileData.device,
+            colormap,
+          );
+          cachedColormapName = colormap;
+        }
+        pipeline.push({
+          module: Colormap,
+          props: { colormapTexture: cachedColormapTexture },
+        });
+      }
+
+      return { renderPipeline: pipeline };
+    };
+
+    return {
+      geotiff,
+      getTileData,
+      renderTile,
+    };
+  }
+
   private async _addLayer(): Promise<void> {
     if (!this._map || !this._state.url) {
       this._state.error = "Please enter a COG URL.";
@@ -1427,16 +1730,21 @@ export class CogLayerControl implements IControl {
       this._patchCOGLayerForOpacity(COGLayer);
 
       const map = this._map;
+      const floatCogLayerProps = await this._createFloatCogLayerProps(
+        this._state.url,
+      );
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const layerProps: Record<string, any> = {
         geotiff: this._state.url,
+        _sourceUrl: this._state.url,
         opacity: this._state.layerOpacity,
         pickable: this._state.pickable,
         _rescaleMin: this._state.rescaleMin,
         _rescaleMax: this._state.rescaleMax,
         _colormap: this._state.colormap,
         _nodata: this._state.nodata,
+        ...(floatCogLayerProps ?? {}),
         // Add beforeId for layer ordering (only if specified and layer exists)
         ...(() => {
           if (this._options.beforeId) {
@@ -1567,7 +1875,9 @@ export class CogLayerControl implements IControl {
       list.push({
         id: layerId,
         name: (props._layerName as string) || undefined,
-        url: props.geotiff as string,
+        url:
+          (props._sourceUrl as string | undefined) ??
+          (typeof props.geotiff === "string" ? props.geotiff : ""),
         bands: "1", // bands are baked into COGLayer at creation
         colormap: (props._colormap as ColormapName | "none") || "none",
         rescaleMin: (props._rescaleMin as number) ?? 0,

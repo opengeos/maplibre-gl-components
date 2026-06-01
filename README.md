@@ -941,7 +941,7 @@ interface CogLayerControlOptions {
   defaultColormap?: ColormapName | 'none';  // Colormap name. Default: 'none'
   defaultRescaleMin?: number;          // Min value for rescaling. Default: 0
   defaultRescaleMax?: number;          // Max value for rescaling. Default: 255
-  defaultNodata?: number;              // Nodata value to mask
+  defaultNodata?: number;              // Nodata value to mask. Defaults to TIFF metadata
   defaultOpacity?: number;             // Layer opacity. Default: 1
   panelWidth?: number;                 // Panel width in pixels. Default: 300
   backgroundColor?: string;
