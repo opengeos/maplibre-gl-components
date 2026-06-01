@@ -145,6 +145,110 @@ function isUnsignedCog(sampleFormat: ArrayLike<number> | null | undefined) {
   return sampleFormat?.[0] === 1;
 }
 
+type ResolvedCogLayerControlOptions = Omit<
+  Required<CogLayerControlOptions>,
+  "defaultNodata"
+> & {
+  defaultNodata?: number;
+};
+
+function isDefinedNodata(value: unknown): value is number {
+  return typeof value === "number";
+}
+
+function isNodataValue(value: number, nodata: number): boolean {
+  return Number.isNaN(nodata) ? Number.isNaN(value) : value === nodata;
+}
+
+function buildInvalidFloatMask(
+  data: ArrayLike<number>,
+  samplesPerPixel: number,
+  nodata: number | undefined,
+): Uint8Array | null {
+  const pixelCount = Math.floor(data.length / samplesPerPixel);
+  const mask = new Uint8Array(pixelCount);
+  mask.fill(255);
+
+  let hasInvalid = false;
+  const hasNodata = isDefinedNodata(nodata);
+  for (let pixel = 0; pixel < pixelCount; pixel++) {
+    const offset = pixel * samplesPerPixel;
+    let hasNonFinite = false;
+    let allSamplesMatchNodata = hasNodata;
+
+    for (let sample = 0; sample < samplesPerPixel; sample++) {
+      const value = data[offset + sample];
+      if (!Number.isFinite(value)) {
+        hasNonFinite = true;
+      }
+      if (hasNodata && allSamplesMatchNodata && !isNodataValue(value, nodata)) {
+        allSamplesMatchNodata = false;
+      }
+    }
+
+    if (hasNonFinite || allSamplesMatchNodata) {
+      mask[pixel] = 0;
+      hasInvalid = true;
+    }
+  }
+
+  return hasInvalid ? mask : null;
+}
+
+function sanitizeMaskedFloatData(
+  data: ArrayLike<number>,
+  mask: Uint8Array | null,
+  samplesPerPixel: number,
+): void {
+  if (!mask || !("set" in data)) return;
+  const writable = data as unknown as { [index: number]: number };
+  for (let pixel = 0; pixel < mask.length; pixel++) {
+    if (mask[pixel] !== 0) continue;
+    const offset = pixel * samplesPerPixel;
+    for (let sample = 0; sample < samplesPerPixel; sample++) {
+      writable[offset + sample] = 0;
+    }
+  }
+}
+
+function mergeMasks(
+  sourceMask: Uint8Array | null | undefined,
+  invalidMask: Uint8Array | null,
+): Uint8Array | null | undefined {
+  if (!sourceMask) return invalidMask;
+  if (!invalidMask) return sourceMask;
+
+  const merged = new Uint8Array(sourceMask.length);
+  for (let i = 0; i < sourceMask.length; i++) {
+    merged[i] = sourceMask[i] === 0 || invalidMask[i] === 0 ? 0 : 255;
+  }
+  return merged;
+}
+
+function createColormapTexture(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  device: any,
+  colormap: ColormapName,
+) {
+  const imageData = colormapToImageData(getColormap(colormap));
+  return device.createTexture({
+    data: imageData.data,
+    dimension: "2d-array",
+    format: "rgba8unorm",
+    width: imageData.width,
+    height: imageData.height,
+    depth: 1,
+    mipLevels: 1,
+    sampler: {
+      minFilter: "linear",
+      magFilter: "linear",
+      addressModeU: "clamp-to-edge",
+      addressModeV: "clamp-to-edge",
+      addressModeW: "clamp-to-edge",
+    },
+  });
+}
+
 /**
  * All available colormap names for the dropdown (sorted alphabetically, 'none' first).
  */
@@ -178,7 +282,7 @@ const COLORMAP_NAMES: (ColormapName | "none")[] = [
 /**
  * Default options for the CogLayerControl.
  */
-const DEFAULT_OPTIONS: Required<CogLayerControlOptions> = {
+const DEFAULT_OPTIONS: ResolvedCogLayerControlOptions = {
   position: "top-right",
   className: "",
   visible: true,
@@ -190,7 +294,7 @@ const DEFAULT_OPTIONS: Required<CogLayerControlOptions> = {
   defaultColormap: "none",
   defaultRescaleMin: 0,
   defaultRescaleMax: 255,
-  defaultNodata: 0,
+  defaultNodata: undefined,
   defaultLayerName: "",
   defaultOpacity: 1,
   defaultPickable: true,
@@ -236,7 +340,7 @@ export class CogLayerControl implements IControl {
   private _container?: HTMLElement;
   private _button?: HTMLButtonElement;
   private _panel?: HTMLElement;
-  private _options: Required<CogLayerControlOptions>;
+  private _options: ResolvedCogLayerControlOptions;
   private _state: CogLayerControlState;
   private _eventHandlers: Map<CogLayerEvent, Set<CogLayerEventHandler>> =
     new Map();
@@ -1177,7 +1281,7 @@ export class CogLayerControl implements IControl {
         // Float fallback: re-do the GeoTIFF parsing with a custom pipeline.
         // We use the public exports from the library plus direct `geotiff`.
         const { fromUrl } = await import("geotiff");
-        const { CreateTexture, FilterNoDataVal } =
+        const { CreateTexture, FilterNoDataVal, MaskTexture } =
           await import("@developmentseed/deck.gl-raster/gpu-modules");
         const proj4Module = await import("proj4");
         const proj4Fn = proj4Module.default || proj4Module;
@@ -1255,6 +1359,9 @@ export class CogLayerControl implements IControl {
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const self = this as any;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const defaultGetTileData = async (geotiffImage: any, options: any) => {
           const { device } = options;
           const rasterData = await geotiffImage.readRasters({
@@ -1264,6 +1371,16 @@ export class CogLayerControl implements IControl {
 
           let data = rasterData;
           let numSamples = SamplesPerPixel;
+
+          const effectiveNodata = isDefinedNodata(self.props._nodata)
+            ? self.props._nodata
+            : noDataVal;
+          const invalidMask = buildInvalidFloatMask(
+            data,
+            numSamples,
+            isDefinedNodata(effectiveNodata) ? effectiveNodata : undefined,
+          );
+          sanitizeMaskedFloatData(data, invalidMask, numSamples);
 
           // WebGL2 has no RGB-only float format; expand 3-band to RGBA
           if (SamplesPerPixel === 3) {
@@ -1297,15 +1414,25 @@ export class CogLayerControl implements IControl {
             sampler: { magFilter: "nearest", minFilter: "nearest" },
           });
 
+          let maskTexture;
+          if (invalidMask) {
+            maskTexture = device.createTexture({
+              data: invalidMask,
+              format: "r8unorm",
+              width: rasterData.width,
+              height: rasterData.height,
+              sampler: { magFilter: "nearest", minFilter: "nearest" },
+            });
+          }
+
           return {
             texture: tex,
             height: rasterData.height,
+            mask: maskTexture,
             width: rasterData.width,
           };
         };
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const self = this as any;
         // Cache colormap texture to avoid recreating per tile
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let cachedCmapName: string | null = null;
@@ -1325,6 +1452,13 @@ export class CogLayerControl implements IControl {
             },
           ];
 
+          if (tileData.mask) {
+            pipeline.push({
+              module: MaskTexture,
+              props: { maskTexture: tileData.mask },
+            });
+          }
+
           // Filter nodata pixels: prefer user-specified nodata over GDAL_NODATA
           const effectiveNodata =
             self.props._nodata !== undefined &&
@@ -1332,7 +1466,7 @@ export class CogLayerControl implements IControl {
             !isNaN(self.props._nodata)
               ? self.props._nodata
               : noDataVal;
-          if (effectiveNodata !== null) {
+          if (isDefinedNodata(effectiveNodata) && !Number.isNaN(effectiveNodata)) {
             pipeline.push({
               module: FilterNoDataVal,
               props: { value: effectiveNodata },
@@ -1355,20 +1489,10 @@ export class CogLayerControl implements IControl {
           const cmapName = self.props._colormap;
           if (cmapName && cmapName !== "none") {
             if (cmapName !== cachedCmapName) {
-              const stops = getColormap(cmapName);
-              const imageData = colormapToImageData(stops);
-              cachedCmapTexture = self.context.device.createTexture({
-                data: imageData.data,
-                format: "rgba8unorm",
-                width: imageData.width,
-                height: imageData.height,
-                sampler: {
-                  minFilter: "linear",
-                  magFilter: "linear",
-                  addressModeU: "clamp-to-edge",
-                  addressModeV: "clamp-to-edge",
-                },
-              });
+              cachedCmapTexture = createColormapTexture(
+                self.context.device,
+                cmapName,
+              );
               cachedCmapName = cmapName;
             }
             pipeline.push({
@@ -1447,11 +1571,19 @@ export class CogLayerControl implements IControl {
       let samplesPerPixel = tags.samplesPerPixel;
       let bitsPerSample = tags.bitsPerSample;
       let sampleFormat = tags.sampleFormat;
+      const effectiveNodata = isDefinedNodata(nodata) ? nodata : tags.nodata;
 
       if (data instanceof Float64Array) {
         data = new Float32Array(data);
         bitsPerSample = Array.from({ length: samplesPerPixel }, () => 32);
       }
+
+      const invalidMask = buildInvalidFloatMask(
+        data,
+        samplesPerPixel,
+        isDefinedNodata(effectiveNodata) ? effectiveNodata : undefined,
+      );
+      sanitizeMaskedFloatData(data, invalidMask, samplesPerPixel);
 
       if (samplesPerPixel === 3) {
         const pixelCount = array.width * array.height;
@@ -1486,9 +1618,10 @@ export class CogLayerControl implements IControl {
       });
 
       let maskTexture;
-      if (array.mask !== null) {
+      const mergedMask = mergeMasks(array.mask, invalidMask);
+      if (mergedMask) {
         maskTexture = device.createTexture({
-          data: array.mask,
+          data: mergedMask,
           format: "r8unorm",
           width: array.width,
           height: array.height,
@@ -1497,7 +1630,7 @@ export class CogLayerControl implements IControl {
             minFilter: "nearest",
           },
         });
-        byteLength += array.mask.byteLength;
+        byteLength += mergedMask.byteLength;
       }
 
       return {
@@ -1505,7 +1638,7 @@ export class CogLayerControl implements IControl {
         device,
         height: array.height,
         mask: maskTexture,
-        nodata: tags.nodata,
+        nodata: effectiveNodata,
         samplesPerPixel: tags.samplesPerPixel,
         texture: rasterTexture,
         width: array.width,
@@ -1530,11 +1663,8 @@ export class CogLayerControl implements IControl {
         });
       }
 
-      const effectiveNodata =
-        nodata !== undefined && nodata !== null && !isNaN(nodata)
-          ? nodata
-          : tileData.nodata;
-      if (effectiveNodata !== null && effectiveNodata !== undefined) {
+      const effectiveNodata = tileData.nodata;
+      if (isDefinedNodata(effectiveNodata) && !Number.isNaN(effectiveNodata)) {
         pipeline.push({
           module: FilterNoDataVal,
           props: { value: effectiveNodata },
@@ -1552,19 +1682,10 @@ export class CogLayerControl implements IControl {
 
       if (colormap && colormap !== "none") {
         if (cachedColormapName !== colormap) {
-          const imageData = colormapToImageData(getColormap(colormap));
-          cachedColormapTexture = tileData.device.createTexture({
-            data: imageData.data,
-            format: "rgba8unorm",
-            width: imageData.width,
-            height: imageData.height,
-            sampler: {
-              addressModeU: "clamp-to-edge",
-              addressModeV: "clamp-to-edge",
-              magFilter: "linear",
-              minFilter: "linear",
-            },
-          });
+          cachedColormapTexture = createColormapTexture(
+            tileData.device,
+            colormap,
+          );
           cachedColormapName = colormap;
         }
         pipeline.push({

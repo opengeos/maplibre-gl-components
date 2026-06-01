@@ -1501,7 +1501,7 @@ export interface CogLayerControlOptions {
   defaultRescaleMin?: number;
   /** Default rescale maximum. Default: 255. */
   defaultRescaleMax?: number;
-  /** Default nodata value. */
+  /** Default nodata value. If omitted, TIFF metadata is used when available. */
   defaultNodata?: number;
   /** Default opacity (0-1). Default: 1. */
   defaultOpacity?: number;

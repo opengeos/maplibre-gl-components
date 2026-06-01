@@ -9,7 +9,7 @@ const DEFAULT_STATE: CogLayerControlState = {
   colormap: "viridis",
   rescaleMin: 0,
   rescaleMax: 255,
-  nodata: 0,
+  nodata: undefined,
   layerOpacity: 1,
   pickable: true,
   hasLayer: false,
