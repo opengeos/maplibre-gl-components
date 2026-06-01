@@ -1544,7 +1544,11 @@ export class CogLayerControl implements IControl {
   ): Promise<Record<string, unknown> | null> {
     const { GeoTIFF } = await import("@developmentseed/geotiff");
     const geotiff = await GeoTIFF.fromUrl(url);
-    if (isUnsignedCog(geotiff.cachedTags.sampleFormat)) return null;
+    if (isUnsignedCog(geotiff.cachedTags.sampleFormat)) {
+      // Reuse the already-opened GeoTIFF so COGLayer's default render path
+      // doesn't re-fetch and re-parse the same URL for the common unsigned case.
+      return { geotiff };
+    }
 
     const { texture } = (await import("@developmentseed/deck.gl-geotiff")) as any;
     const { CreateTexture, FilterNoDataVal, MaskTexture, Colormap } =
@@ -1639,7 +1643,7 @@ export class CogLayerControl implements IControl {
         height: array.height,
         mask: maskTexture,
         nodata: effectiveNodata,
-        samplesPerPixel: tags.samplesPerPixel,
+        samplesPerPixel,
         texture: rasterTexture,
         width: array.width,
       };
