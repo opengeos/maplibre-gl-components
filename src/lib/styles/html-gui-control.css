@@ -1,6 +1,14 @@
 /* HtmlGuiControl styles */
 
 .maplibre-gl-html-gui-control {
+  --maplibre-gl-gui-border-color: #e5e7eb;
+  --maplibre-gl-gui-focus-color: #3b82f6;
+  --maplibre-gl-gui-input-background: #fff;
+  --maplibre-gl-gui-input-color: #374151;
+  --maplibre-gl-gui-muted-color: currentColor;
+  --maplibre-gl-gui-placeholder-color: #9ca3af;
+  --maplibre-gl-gui-hover-background: #f3f4f6;
+
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
     Cantarell, sans-serif;
@@ -64,10 +72,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--maplibre-gl-gui-border-color);
   font-weight: 600;
   font-size: 13px;
-  color: #374151;
+  color: inherit;
 }
 
 .maplibre-gl-html-gui-control .html-gui-close {
@@ -80,14 +88,14 @@
   border: none;
   background-color: transparent;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--maplibre-gl-gui-muted-color);
   border-radius: 3px;
   transition: all 0.15s ease;
 }
 
 .maplibre-gl-html-gui-control .html-gui-close:hover {
-  background-color: #f3f4f6;
-  color: #374151;
+  background-color: var(--maplibre-gl-gui-hover-background);
+  color: inherit;
 }
 
 .maplibre-gl-html-gui-control .html-gui-close svg {
@@ -107,7 +115,7 @@
   display: block;
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--maplibre-gl-gui-muted-color);
   margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -116,33 +124,33 @@
 .maplibre-gl-html-gui-control .html-gui-input {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--maplibre-gl-gui-border-color);
   border-radius: 4px;
   font-size: 12px;
-  color: #374151;
-  background: #fff;
+  color: var(--maplibre-gl-gui-input-color);
+  background: var(--maplibre-gl-gui-input-background);
   box-sizing: border-box;
   transition: border-color 0.15s ease;
 }
 
 .maplibre-gl-html-gui-control .html-gui-input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--maplibre-gl-gui-focus-color);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .maplibre-gl-html-gui-control .html-gui-input::placeholder {
-  color: #9ca3af;
+  color: var(--maplibre-gl-gui-placeholder-color);
 }
 
 .maplibre-gl-html-gui-control .html-gui-select {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--maplibre-gl-gui-border-color);
   border-radius: 4px;
   font-size: 12px;
-  color: #374151;
-  background: #fff;
+  color: var(--maplibre-gl-gui-input-color);
+  background: var(--maplibre-gl-gui-input-background);
   box-sizing: border-box;
   cursor: pointer;
   transition: border-color 0.15s ease;
@@ -150,19 +158,19 @@
 
 .maplibre-gl-html-gui-control .html-gui-select:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--maplibre-gl-gui-focus-color);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .maplibre-gl-html-gui-control .html-gui-textarea {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--maplibre-gl-gui-border-color);
   border-radius: 4px;
   font-size: 11px;
   font-family: "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
-  color: #374151;
-  background: #fff;
+  color: var(--maplibre-gl-gui-input-color);
+  background: var(--maplibre-gl-gui-input-background);
   box-sizing: border-box;
   resize: vertical;
   min-height: 80px;
@@ -171,12 +179,12 @@
 
 .maplibre-gl-html-gui-control .html-gui-textarea:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--maplibre-gl-gui-focus-color);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .maplibre-gl-html-gui-control .html-gui-textarea::placeholder {
-  color: #9ca3af;
+  color: var(--maplibre-gl-gui-placeholder-color);
 }
 
 .maplibre-gl-html-gui-control .html-gui-row {
@@ -189,10 +197,11 @@
 }
 
 .maplibre-gl-html-gui-control .html-gui-preview {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--maplibre-gl-gui-border-color);
   border-radius: 4px;
   padding: 8px;
-  background: #fff;
+  background: var(--maplibre-gl-gui-input-background);
+  color: var(--maplibre-gl-gui-input-color);
   min-height: 30px;
   max-height: 120px;
   overflow-y: auto;
@@ -204,7 +213,7 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #374151;
+  color: inherit;
   text-transform: none;
   font-weight: normal;
   letter-spacing: normal;
