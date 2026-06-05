@@ -2,6 +2,8 @@ import "../styles/common.css";
 import "../styles/legend.css";
 import type { IControl, Map as MapLibreMap } from "maplibre-gl";
 import type {
+  LegendItemOptions,
+  LegendItemState,
   LegendOptions,
   LegendState,
   LegendItem,
@@ -12,10 +14,11 @@ import type {
 /**
  * Default options for the Legend control.
  */
-const DEFAULT_OPTIONS: Required<LegendOptions> = {
+type ResolvedLegendOptions = Required<LegendItemOptions>;
+
+const DEFAULT_OPTIONS: ResolvedLegendOptions = {
   title: "",
   items: [],
-  position: "bottom-left",
   className: "",
   visible: true,
   collapsible: false,
@@ -53,7 +56,9 @@ const DEFAULT_OPTIONS: Required<LegendOptions> = {
  */
 export class Legend implements IControl {
   private _container?: HTMLElement;
-  private _options: Required<LegendOptions>;
+  private _options: ResolvedLegendOptions;
+  private _legendOptions?: LegendItemOptions[];
+  private _legends: ResolvedLegendOptions[];
   private _state: LegendState;
   private _eventHandlers: Map<
     ComponentEvent,
@@ -69,12 +74,12 @@ export class Legend implements IControl {
    * @param options - Configuration options for the legend.
    */
   constructor(options?: LegendOptions) {
-    this._options = { ...DEFAULT_OPTIONS, ...options };
-    this._state = {
-      visible: this._options.visible,
-      collapsed: this._options.collapsed,
-      items: [...this._options.items],
-    };
+    const { legends, position: _position, ...entryOptions } = options ?? {};
+    void _position;
+    this._options = { ...DEFAULT_OPTIONS, ...entryOptions };
+    this._legendOptions = legends;
+    this._legends = this._resolveLegends();
+    this._state = this._createState();
   }
 
   /**
@@ -117,7 +122,8 @@ export class Legend implements IControl {
    */
   show(): void {
     if (!this._state.visible) {
-      this._state.visible = true;
+      this._options.visible = true;
+      this._state = this._createState();
       this._updateDisplayState();
       this._emit("show");
     }
@@ -128,7 +134,8 @@ export class Legend implements IControl {
    */
   hide(): void {
     if (this._state.visible) {
-      this._state.visible = false;
+      this._options.visible = false;
+      this._state = this._createState();
       this._updateDisplayState();
       this._emit("hide");
     }
@@ -139,7 +146,12 @@ export class Legend implements IControl {
    */
   expand(): void {
     if (this._state.collapsed) {
-      this._state.collapsed = false;
+      this._options.collapsed = false;
+      this._legends[0].collapsed = false;
+      if (this._legendOptions?.[0]) {
+        this._legendOptions[0].collapsed = false;
+      }
+      this._state = this._createState();
       this._render();
       this._emit("expand");
     }
@@ -150,7 +162,12 @@ export class Legend implements IControl {
    */
   collapse(): void {
     if (!this._state.collapsed) {
-      this._state.collapsed = true;
+      this._options.collapsed = true;
+      this._legends[0].collapsed = true;
+      if (this._legendOptions?.[0]) {
+        this._legendOptions[0].collapsed = true;
+      }
+      this._state = this._createState();
       this._render();
       this._emit("collapse");
     }
@@ -173,8 +190,12 @@ export class Legend implements IControl {
    * @param items - New legend items.
    */
   setItems(items: LegendItem[]): void {
-    this._state.items = [...items];
     this._options.items = [...items];
+    this._legends[0].items = [...items];
+    if (this._legendOptions?.[0]) {
+      this._legendOptions[0].items = [...items];
+    }
+    this._state = this._createState();
     this._render();
     this._emit("update");
   }
@@ -185,8 +206,15 @@ export class Legend implements IControl {
    * @param item - Legend item to add.
    */
   addItem(item: LegendItem): void {
-    this._state.items.push(item);
     this._options.items.push(item);
+    this._legends[0].items.push(item);
+    if (this._legendOptions?.[0]) {
+      this._legendOptions[0].items = [
+        ...(this._legendOptions[0].items ?? []),
+        item,
+      ];
+    }
+    this._state = this._createState();
     this._render();
     this._emit("update");
   }
@@ -197,10 +225,15 @@ export class Legend implements IControl {
    * @param label - Label of the item to remove.
    */
   removeItem(label: string): void {
-    this._state.items = this._state.items.filter(
+    const items = this._legends[0].items.filter(
       (item) => item.label !== label,
     );
-    this._options.items = [...this._state.items];
+    this._options.items = [...items];
+    this._legends[0].items = [...items];
+    if (this._legendOptions?.[0]) {
+      this._legendOptions[0].items = [...items];
+    }
+    this._state = this._createState();
     this._render();
     this._emit("update");
   }
@@ -211,11 +244,14 @@ export class Legend implements IControl {
    * @param options - Partial options to update.
    */
   update(options: Partial<LegendOptions>): void {
-    this._options = { ...this._options, ...options };
-    if (options.items) this._state.items = [...options.items];
-    if (options.visible !== undefined) this._state.visible = options.visible;
-    if (options.collapsed !== undefined)
-      this._state.collapsed = options.collapsed;
+    const { legends, position: _position, ...entryOptions } = options;
+    void _position;
+    this._options = { ...this._options, ...entryOptions };
+    if (legends !== undefined) {
+      this._legendOptions = legends;
+    }
+    this._legends = this._resolveLegends();
+    this._state = this._createState();
     this._render();
     this._emit("update");
   }
@@ -226,7 +262,14 @@ export class Legend implements IControl {
    * @returns The current legend state.
    */
   getState(): LegendState {
-    return { ...this._state, items: [...this._state.items] };
+    return {
+      ...this._state,
+      items: [...this._state.items],
+      legends: this._state.legends?.map((legend) => ({
+        ...legend,
+        items: [...legend.items],
+      })),
+    };
   }
 
   /**
@@ -256,6 +299,68 @@ export class Legend implements IControl {
   }
 
   /**
+   * Resolves configured legend entries against the control defaults.
+   *
+   * @returns Array of resolved legend options.
+   */
+  private _resolveLegends(): ResolvedLegendOptions[] {
+    if (this._legendOptions && this._legendOptions.length > 0) {
+      return this._legendOptions.map((legend) => ({
+        ...this._options,
+        ...legend,
+        items: legend.items ? [...legend.items] : [...this._options.items],
+      }));
+    }
+
+    return [{ ...this._options, items: [...this._options.items] }];
+  }
+
+  /**
+   * Creates public state from the current legend entries.
+   *
+   * @returns The current legend state.
+   */
+  private _createState(): LegendState {
+    const legends = this._legends.map((legend, index) =>
+      this._createLegendState(legend, index),
+    );
+    return { ...legends[0], visible: this._options.visible, legends };
+  }
+
+  /**
+   * Creates public state for a single legend entry.
+   *
+   * @param legend - The resolved legend options.
+   * @param index - The legend entry index.
+   * @returns The current legend entry state.
+   */
+  private _createLegendState(
+    legend: ResolvedLegendOptions,
+    index: number,
+  ): LegendItemState {
+    return {
+      visible: this._getLegendEntryVisible(index, legend.visible),
+      collapsed: legend.collapsed,
+      items: [...legend.items],
+    };
+  }
+
+  /**
+   * Gets an entry's configured visibility.
+   *
+   * @param index - The entry index.
+   * @param fallback - The fallback visibility value.
+   * @returns Whether the entry is configured as visible.
+   */
+  private _getLegendEntryVisible(index: number, fallback: boolean): boolean {
+    if (this._legendOptions && this._legendOptions.length > 0) {
+      return this._legendOptions[index]?.visible ?? true;
+    }
+
+    return fallback;
+  }
+
+  /**
    * Emits an event to all registered handlers.
    *
    * @param event - The event type to emit.
@@ -272,15 +377,11 @@ export class Legend implements IControl {
    * Checks if the current zoom level is within the visibility range.
    */
   private _checkZoomVisibility(): void {
-    if (!this._map) return;
-
-    const zoom = this._map.getZoom();
-    const { minzoom, maxzoom } = this._options;
-    const inRange = zoom >= minzoom && zoom <= maxzoom;
+    const inRange = this._hasVisibleLegends();
 
     if (inRange !== this._zoomVisible) {
       this._zoomVisible = inRange;
-      this._updateDisplayState();
+      this._render();
     }
   }
 
@@ -289,8 +390,38 @@ export class Legend implements IControl {
    */
   private _updateDisplayState(): void {
     if (!this._container) return;
-    const shouldShow = this._state.visible && this._zoomVisible;
-    this._container.style.display = shouldShow ? "block" : "none";
+    const shouldShow = this._state.visible && this._hasVisibleLegends();
+    this._container.style.display = shouldShow ? "flex" : "none";
+  }
+
+  /**
+   * Checks whether a legend entry is visible at the current zoom.
+   *
+   * @param legend - The resolved legend options.
+   * @param index - The legend entry index.
+   * @returns Whether the legend should be rendered.
+   */
+  private _isLegendVisible(
+    legend: ResolvedLegendOptions,
+    index: number,
+  ): boolean {
+    if (!this._getLegendEntryVisible(index, legend.visible)) return false;
+    if (!this._map) return true;
+
+    const zoom = this._map.getZoom();
+    return zoom >= legend.minzoom && zoom <= legend.maxzoom;
+  }
+
+  /**
+   * Checks whether any legend entry should be visible.
+   *
+   * @returns Whether at least one legend should be visible.
+   */
+  private _hasVisibleLegends(): boolean {
+    if (!this._state.visible) return false;
+    return this._legends.some((legend, index) =>
+      this._isLegendVisible(legend, index),
+    );
   }
 
   /**
@@ -316,10 +447,14 @@ export class Legend implements IControl {
    * Creates a color swatch element.
    *
    * @param item - Legend item configuration.
+   * @param legend - The resolved legend options.
    * @returns The swatch element.
    */
-  private _createSwatch(item: LegendItem): HTMLElement {
-    const { swatchSize = 16 } = this._options;
+  private _createSwatch(
+    item: LegendItem,
+    legend: ResolvedLegendOptions,
+  ): HTMLElement {
+    const { swatchSize = 16 } = legend;
     const shape = item.shape || "square";
     const swatch = document.createElement("span");
     swatch.className = `maplibre-gl-legend-swatch maplibre-gl-legend-swatch-${shape}`;
@@ -385,11 +520,37 @@ export class Legend implements IControl {
   }
 
   /**
-   * Renders the legend content.
+   * Toggles a legend entry.
+   *
+   * @param index - The legend entry index.
    */
-  private _render(): void {
-    if (!this._container) return;
+  private _toggleLegend(index: number): void {
+    const legend = this._legends[index];
+    if (!legend) return;
 
+    legend.collapsed = !legend.collapsed;
+    if (index === 0) {
+      this._options.collapsed = legend.collapsed;
+      if (this._legendOptions?.[0]) {
+        this._legendOptions[0].collapsed = legend.collapsed;
+      }
+    }
+    this._state = this._createState();
+    this._render();
+    this._emit(legend.collapsed ? "collapse" : "expand");
+  }
+
+  /**
+   * Creates a legend entry element.
+   *
+   * @param legend - The resolved legend options.
+   * @param index - The legend entry index.
+   * @returns The legend entry element.
+   */
+  private _createLegendElement(
+    legend: ResolvedLegendOptions,
+    index: number,
+  ): HTMLElement {
     const {
       title,
       backgroundColor,
@@ -401,18 +562,18 @@ export class Legend implements IControl {
       width,
       maxHeight,
       collapsible,
-    } = this._options;
-
-    // Clear existing content
-    this._container.innerHTML = "";
+      className,
+    } = legend;
+    const legendEl = document.createElement("div");
+    legendEl.className = `maplibre-gl-legend-entry${
+      className ? ` ${className}` : ""
+    }`;
 
     // Apply container styles
     // When collapsed with header, use minimal vertical padding to match HtmlControl
-    const isCollapsedWithHeader =
-      this._state.collapsed && (title || collapsible);
+    const isCollapsedWithHeader = legend.collapsed && (title || collapsible);
     const vertPadding = isCollapsedWithHeader ? 4 : padding;
-    const shouldShow = this._state.visible && this._zoomVisible;
-    Object.assign(this._container.style, {
+    Object.assign(legendEl.style, {
       backgroundColor,
       opacity: opacity.toString(),
       borderRadius: `${borderRadius}px`,
@@ -422,7 +583,7 @@ export class Legend implements IControl {
       width: isCollapsedWithHeader ? "auto" : `${width}px`,
       maxWidth: `${width}px`,
       boxShadow: "0 0 0 2px rgba(0, 0, 0, 0.1)",
-      display: shouldShow ? "block" : "none",
+      display: "block",
       fontFamily:
         '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     });
@@ -435,7 +596,7 @@ export class Legend implements IControl {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingBottom: this._state.collapsed ? "0" : "4px",
+        paddingBottom: legend.collapsed ? "0" : "4px",
         cursor: collapsible ? "pointer" : "default",
       });
 
@@ -450,13 +611,13 @@ export class Legend implements IControl {
       if (collapsible) {
         const toggleBtn = document.createElement("span");
         toggleBtn.className = "maplibre-gl-legend-toggle";
-        toggleBtn.innerHTML = this._state.collapsed ? "&#9654;" : "&#9660;";
+        toggleBtn.innerHTML = legend.collapsed ? "&#9654;" : "&#9660;";
         toggleBtn.style.marginLeft = "8px";
         header.appendChild(toggleBtn);
-        header.addEventListener("click", () => this.toggle());
+        header.addEventListener("click", () => this._toggleLegend(index));
       }
 
-      this._container.appendChild(header);
+      legendEl.appendChild(header);
     }
 
     // Content area
@@ -465,11 +626,11 @@ export class Legend implements IControl {
     Object.assign(content.style, {
       maxHeight: `${maxHeight}px`,
       overflowY: "auto",
-      display: this._state.collapsed ? "none" : "block",
+      display: legend.collapsed ? "none" : "block",
     });
 
     // Render legend items
-    this._state.items.forEach((item) => {
+    legend.items.forEach((item) => {
       const row = document.createElement("div");
       row.className = "maplibre-gl-legend-item";
       Object.assign(row.style, {
@@ -479,7 +640,7 @@ export class Legend implements IControl {
         padding: "4px 0",
       });
 
-      const swatch = this._createSwatch(item);
+      const swatch = this._createSwatch(item, legend);
       const label = document.createElement("span");
       label.className = "maplibre-gl-legend-label";
       label.textContent = item.label;
@@ -489,6 +650,34 @@ export class Legend implements IControl {
       content.appendChild(row);
     });
 
-    this._container.appendChild(content);
+    legendEl.appendChild(content);
+
+    return legendEl;
+  }
+
+  /**
+   * Renders the legend content.
+   */
+  private _render(): void {
+    if (!this._container) return;
+
+    this._container.innerHTML = "";
+
+    const shouldShow = this._hasVisibleLegends();
+    Object.assign(this._container.style, {
+      display: shouldShow ? "flex" : "none",
+      flexDirection: "column",
+      alignItems: "flex-start",
+      gap: "8px",
+      background: "transparent",
+      boxShadow: "none",
+      padding: "0",
+    });
+
+    this._legends.forEach((legend, index) => {
+      if (this._isLegendVisible(legend, index)) {
+        this._container?.appendChild(this._createLegendElement(legend, index));
+      }
+    });
   }
 }

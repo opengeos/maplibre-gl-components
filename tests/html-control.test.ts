@@ -47,6 +47,23 @@ describe('HtmlControl', () => {
       const container = control.onAdd(mockMap);
       expect(container.innerHTML).toContain('Test content');
     });
+
+    it('should render multiple HTML entries', () => {
+      const ctrl = new HtmlControl({
+        htmls: [
+          { title: 'Summary', html: '<div>Summary content</div>' },
+          { title: 'Details', html: '<div>Details content</div>' },
+        ],
+      });
+
+      const container = ctrl.onAdd(mockMap);
+
+      expect(container.querySelectorAll('.maplibre-gl-html-control-entry').length).toBe(2);
+      expect(container.innerHTML).toContain('Summary content');
+      expect(container.innerHTML).toContain('Details content');
+      expect(ctrl.getElements().length).toBe(2);
+      expect(ctrl.getState().htmls?.length).toBe(2);
+    });
   });
 
   describe('show/hide', () => {

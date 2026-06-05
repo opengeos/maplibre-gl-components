@@ -79,6 +79,7 @@ export function HtmlControlReact({
     if (controlRef.current) {
       // Only pass defined values to avoid overwriting defaults with undefined
       const updates: Partial<typeof options> = {};
+      if (options.htmls !== undefined) updates.htmls = options.htmls;
       if (options.visible !== undefined) updates.visible = options.visible;
       if (options.title !== undefined) updates.title = options.title;
       if (options.collapsible !== undefined)
@@ -106,6 +107,7 @@ export function HtmlControlReact({
     }
   }, [
     options.visible,
+    options.htmls,
     options.title,
     options.collapsible,
     options.collapsed,

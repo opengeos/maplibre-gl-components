@@ -82,6 +82,7 @@ export function LegendReact({
     }
   }, [
     options.items,
+    options.legends,
     options.title,
     options.visible,
     options.collapsed,

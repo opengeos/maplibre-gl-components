@@ -47,6 +47,27 @@ describe('Legend', () => {
       expect(container.classList.contains('maplibregl-ctrl')).toBe(true);
       expect(container.classList.contains('maplibre-gl-legend')).toBe(true);
     });
+
+    it('should render multiple legends', () => {
+      const lg = new Legend({
+        legends: [
+          {
+            title: 'Land Cover',
+            items: [{ label: 'Forest', color: '#228B22' }],
+          },
+          {
+            title: 'Roads',
+            items: [{ label: 'Highway', color: '#ff0000', shape: 'line' }],
+          },
+        ],
+      });
+
+      const container = lg.onAdd(mockMap);
+
+      expect(container.querySelectorAll('.maplibre-gl-legend-entry').length).toBe(2);
+      expect(lg.getState().legends?.length).toBe(2);
+      expect(lg.getState().legends?.[1].items[0].label).toBe('Highway');
+    });
   });
 
   describe('show/hide', () => {

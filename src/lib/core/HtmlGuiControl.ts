@@ -8,6 +8,7 @@ import type {
 import type {
   HtmlGuiControlOptions,
   HtmlGuiControlState,
+  HtmlGuiEntryState,
   HtmlGuiEvent,
   HtmlGuiEventHandler,
 } from "./types";
@@ -67,15 +68,19 @@ export class HtmlGuiControl implements IControl {
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
 
-  // Active HTML control instance
+  // Active HTML control instances
   private _htmlControl?: HtmlControl;
+  private _htmlControls: HtmlControl[] = [];
+  private _htmlEntries: HtmlGuiEntryState[] = [];
 
   // DOM refs
+  private _htmlSelect?: HTMLSelectElement;
   private _titleInput?: HTMLInputElement;
   private _htmlTextarea?: HTMLTextAreaElement;
   private _positionSelect?: HTMLSelectElement;
   private _collapsibleCheckbox?: HTMLInputElement;
   private _addBtn?: HTMLButtonElement;
+  private _updateBtn?: HTMLButtonElement;
   private _removeBtn?: HTMLButtonElement;
   private _previewEl?: HTMLElement;
 
@@ -89,6 +94,8 @@ export class HtmlGuiControl implements IControl {
       htmlPosition: "top-left",
       collapsible: true,
       hasHtmlControl: false,
+      selectedHtmlIndex: -1,
+      htmls: [],
     };
   }
 
@@ -106,7 +113,7 @@ export class HtmlGuiControl implements IControl {
     if (this._handleZoom && this._map) {
       this._map.off("zoom", this._handleZoom);
     }
-    this._removeHtmlControl();
+    this._removeAllHtmlControls();
     this._container?.remove();
     this._container = undefined;
     this._map = undefined;
@@ -170,7 +177,10 @@ export class HtmlGuiControl implements IControl {
   }
 
   getState(): HtmlGuiControlState {
-    return { ...this._state };
+    return {
+      ...this._state,
+      htmls: this._htmlEntries.map((entry) => ({ ...entry })),
+    };
   }
 
   private _createContainer(): HTMLElement {
@@ -220,6 +230,16 @@ export class HtmlGuiControl implements IControl {
     const content = document.createElement("div");
     content.className = "html-gui-content";
 
+    const selectorField = this._createField("HTML Control");
+    this._htmlSelect = document.createElement("select");
+    this._htmlSelect.className = "html-gui-select";
+    this._htmlSelect.addEventListener("change", () => {
+      this._selectHtmlControl(parseInt(this._htmlSelect!.value, 10));
+    });
+    selectorField.appendChild(this._htmlSelect);
+    content.appendChild(selectorField);
+    this._renderHtmlSelect();
+
     // Title
     const titleField = this._createField("Title");
     this._titleInput = document.createElement("input");
@@ -229,7 +249,6 @@ export class HtmlGuiControl implements IControl {
     this._titleInput.value = this._state.title;
     this._titleInput.addEventListener("input", () => {
       this._state.title = this._titleInput!.value;
-      if (this._state.hasHtmlControl) this._updateHtmlControl();
     });
     titleField.appendChild(this._titleInput);
     content.appendChild(titleField);
@@ -244,7 +263,6 @@ export class HtmlGuiControl implements IControl {
     this._htmlTextarea.addEventListener("input", () => {
       this._state.html = this._htmlTextarea!.value;
       this._updatePreviewContent();
-      if (this._state.hasHtmlControl) this._updateHtmlControl();
     });
     htmlField.appendChild(this._htmlTextarea);
     content.appendChild(htmlField);
@@ -279,10 +297,6 @@ export class HtmlGuiControl implements IControl {
     });
     this._positionSelect.addEventListener("change", () => {
       this._state.htmlPosition = this._positionSelect!.value as ControlPosition;
-      if (this._state.hasHtmlControl) {
-        this._removeHtmlControl();
-        this._addHtmlControl();
-      }
     });
     posField.appendChild(this._positionSelect);
     optRow.appendChild(posField);
@@ -295,10 +309,6 @@ export class HtmlGuiControl implements IControl {
     this._collapsibleCheckbox.checked = this._state.collapsible;
     this._collapsibleCheckbox.addEventListener("change", () => {
       this._state.collapsible = !!this._collapsibleCheckbox?.checked;
-      if (this._state.hasHtmlControl) {
-        this._removeHtmlControl();
-        this._addHtmlControl();
-      }
     });
     collapsibleLabel.appendChild(this._collapsibleCheckbox);
     collapsibleLabel.appendChild(document.createTextNode(" Collapsible"));
@@ -310,17 +320,17 @@ export class HtmlGuiControl implements IControl {
     this._addBtn = document.createElement("button");
     this._addBtn.type = "button";
     this._addBtn.className = "html-gui-add-btn";
-    this._addBtn.textContent = this._state.hasHtmlControl
-      ? "Update Control"
-      : "Add HTML Control";
-    this._addBtn.addEventListener("click", () => {
-      if (this._state.hasHtmlControl) {
-        this._updateHtmlControl();
-      } else {
-        this._addHtmlControl();
-      }
-    });
+    this._addBtn.textContent = "Add HTML Control";
+    this._addBtn.addEventListener("click", () => this._addHtmlControl());
     content.appendChild(this._addBtn);
+
+    this._updateBtn = document.createElement("button");
+    this._updateBtn.type = "button";
+    this._updateBtn.className = "html-gui-add-btn";
+    this._updateBtn.textContent = "Update Selected Control";
+    this._updateBtn.style.display = this._state.hasHtmlControl ? "" : "none";
+    this._updateBtn.addEventListener("click", () => this._updateHtmlControl());
+    content.appendChild(this._updateBtn);
 
     // Remove button
     this._removeBtn = document.createElement("button");
@@ -349,50 +359,160 @@ export class HtmlGuiControl implements IControl {
     this._previewEl.innerHTML = this._state.html;
   }
 
-  private _addHtmlControl(): void {
-    if (!this._map) return;
-    this._removeHtmlControl();
-    this._htmlControl = new HtmlControl({
+  private _getFormEntry(): HtmlGuiEntryState {
+    return {
       title: this._state.title,
       html: this._state.html,
+      htmlPosition: this._state.htmlPosition,
       collapsible: this._state.collapsible,
+    };
+  }
+
+  private _applyEntryToForm(entry: HtmlGuiEntryState): void {
+    this._state.title = entry.title;
+    this._state.html = entry.html;
+    this._state.htmlPosition = entry.htmlPosition;
+    this._state.collapsible = entry.collapsible;
+    if (this._titleInput) this._titleInput.value = entry.title;
+    if (this._htmlTextarea) this._htmlTextarea.value = entry.html;
+    if (this._positionSelect) this._positionSelect.value = entry.htmlPosition;
+    if (this._collapsibleCheckbox) {
+      this._collapsibleCheckbox.checked = entry.collapsible;
+    }
+    this._updatePreviewContent();
+  }
+
+  private _createHtmlControl(entry: HtmlGuiEntryState): HtmlControl {
+    return new HtmlControl({
+      title: entry.title,
+      html: entry.html,
+      collapsible: entry.collapsible,
       collapsed: false,
     });
-    this._map.addControl(this._htmlControl, this._state.htmlPosition);
+  }
+
+  private _selectHtmlControl(index: number): void {
+    if (index < 0) {
+      this._state.selectedHtmlIndex = -1;
+      this._htmlControl = undefined;
+      this._updateButtonStates();
+      return;
+    }
+    if (index >= this._htmlEntries.length) return;
+    this._state.selectedHtmlIndex = index;
+    this._htmlControl = this._htmlControls[index];
+    this._applyEntryToForm(this._htmlEntries[index]);
+    this._updateButtonStates();
+  }
+
+  private _renderHtmlSelect(): void {
+    if (!this._htmlSelect) return;
+    this._htmlSelect.innerHTML = "";
+
+    const newOpt = document.createElement("option");
+    newOpt.value = "-1";
+    newOpt.textContent = "New HTML control";
+    this._htmlSelect.appendChild(newOpt);
+
+    this._htmlEntries.forEach((entry, index) => {
+      const opt = document.createElement("option");
+      opt.value = String(index);
+      opt.textContent = entry.title || `HTML ${index + 1}`;
+      this._htmlSelect!.appendChild(opt);
+    });
+    this._htmlSelect.value =
+      this._state.selectedHtmlIndex >= 0
+        ? String(this._state.selectedHtmlIndex)
+        : "-1";
+  }
+
+  private _addHtmlControl(): void {
+    if (!this._map) return;
+    const entry = this._getFormEntry();
+    const htmlControl = this._createHtmlControl(entry);
+    this._map.addControl(htmlControl, entry.htmlPosition);
+    this._htmlControls.push(htmlControl);
+    this._htmlEntries.push(entry);
+    this._htmlControl = htmlControl;
     this._state.hasHtmlControl = true;
+    this._state.selectedHtmlIndex = this._htmlControls.length - 1;
+    this._state.htmls = this._htmlEntries.map((item) => ({ ...item }));
     this._updateButtonStates();
     this._emit("htmladd");
   }
 
   private _updateHtmlControl(): void {
-    if (!this._htmlControl) return;
-    this._htmlControl.update({
-      title: this._state.title,
-      html: this._state.html,
-      collapsible: this._state.collapsible,
-    });
+    if (!this._map) return;
+    const index = this._state.selectedHtmlIndex;
+    if (index < 0 || index >= this._htmlControls.length) {
+      this._addHtmlControl();
+      return;
+    }
+
+    const entry = this._getFormEntry();
+    this._map.removeControl(this._htmlControls[index]);
+    const htmlControl = this._createHtmlControl(entry);
+    this._map.addControl(htmlControl, entry.htmlPosition);
+    this._htmlControls[index] = htmlControl;
+    this._htmlEntries[index] = entry;
+    this._htmlControl = htmlControl;
+    this._state.htmls = this._htmlEntries.map((item) => ({ ...item }));
     this._emit("htmlupdate");
+    this._updateButtonStates();
   }
 
   private _removeHtmlControl(): void {
-    if (this._htmlControl && this._map) {
-      this._map.removeControl(this._htmlControl);
-      this._htmlControl = undefined;
-      this._state.hasHtmlControl = false;
-      this._updateButtonStates();
-      this._emit("htmlremove");
+    if (!this._map) return;
+    const index = this._state.selectedHtmlIndex;
+    if (index < 0 || index >= this._htmlControls.length) return;
+
+    this._map.removeControl(this._htmlControls[index]);
+    this._htmlControls.splice(index, 1);
+    this._htmlEntries.splice(index, 1);
+    this._state.hasHtmlControl = this._htmlControls.length > 0;
+    this._state.selectedHtmlIndex = this._state.hasHtmlControl
+      ? Math.min(index, this._htmlControls.length - 1)
+      : -1;
+    this._htmlControl =
+      this._state.selectedHtmlIndex >= 0
+        ? this._htmlControls[this._state.selectedHtmlIndex]
+        : undefined;
+    this._state.htmls = this._htmlEntries.map((item) => ({ ...item }));
+    if (this._state.selectedHtmlIndex >= 0) {
+      this._applyEntryToForm(
+        this._htmlEntries[this._state.selectedHtmlIndex],
+      );
     }
+    this._updateButtonStates();
+    this._emit("htmlremove");
   }
 
   private _updateButtonStates(): void {
     if (this._addBtn) {
-      this._addBtn.textContent = this._state.hasHtmlControl
-        ? "Update Control"
-        : "Add HTML Control";
+      this._addBtn.textContent = "Add HTML Control";
+    }
+    const hasSelection = this._state.selectedHtmlIndex >= 0;
+    if (this._updateBtn) {
+      this._updateBtn.style.display = hasSelection ? "" : "none";
     }
     if (this._removeBtn) {
-      this._removeBtn.style.display = this._state.hasHtmlControl ? "" : "none";
+      this._removeBtn.style.display = hasSelection ? "" : "none";
     }
+    this._renderHtmlSelect();
+  }
+
+  private _removeAllHtmlControls(): void {
+    if (!this._map) return;
+    this._htmlControls.forEach((htmlControl) => {
+      this._map!.removeControl(htmlControl);
+    });
+    this._htmlControls = [];
+    this._htmlEntries = [];
+    this._htmlControl = undefined;
+    this._state.hasHtmlControl = false;
+    this._state.selectedHtmlIndex = -1;
+    this._state.htmls = [];
+    this._updateButtonStates();
   }
 
   private _togglePanel(): void {

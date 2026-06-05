@@ -69,9 +69,9 @@ export interface TickConfig {
 }
 
 /**
- * Options for configuring the Colorbar control.
+ * Options for configuring a single colorbar entry.
  */
-export interface ColorbarOptions {
+export interface ColorbarItemOptions {
   /** Colormap name or custom color array. */
   colormap?: ColormapName | string[];
   /** Custom color stops for fine-grained control. */
@@ -86,8 +86,6 @@ export interface ColorbarOptions {
   units?: string;
   /** Orientation of the colorbar. */
   orientation?: ColorbarOrientation;
-  /** Position on the map. */
-  position?: ControlPosition;
   /** Width in pixels (for vertical) or height (for horizontal) of the gradient bar. */
   barThickness?: number;
   /** Length of the colorbar in pixels. */
@@ -117,9 +115,19 @@ export interface ColorbarOptions {
 }
 
 /**
- * Internal state of the Colorbar control.
+ * Options for configuring the Colorbar control.
  */
-export interface ColorbarState {
+export interface ColorbarOptions extends ColorbarItemOptions {
+  /** Position on the map. */
+  position?: ControlPosition;
+  /** Multiple colorbar entries to display in this control. */
+  colorbars?: ColorbarItemOptions[];
+}
+
+/**
+ * Internal state of a single colorbar entry.
+ */
+export interface ColorbarItemState {
   /** Whether the colorbar is visible. */
   visible: boolean;
   /** Current vmin value. */
@@ -128,6 +136,14 @@ export interface ColorbarState {
   vmax: number;
   /** Current colormap. */
   colormap: ColormapName | string[];
+}
+
+/**
+ * Internal state of the Colorbar control.
+ */
+export interface ColorbarState extends ColorbarItemState {
+  /** State for all rendered colorbar entries. */
+  colorbars?: ColorbarItemState[];
 }
 
 /**
@@ -157,15 +173,13 @@ export interface LegendItem {
 }
 
 /**
- * Options for configuring the Legend control.
+ * Options for configuring a single legend entry.
  */
-export interface LegendOptions {
+export interface LegendItemOptions {
   /** Legend title. */
   title?: string;
   /** Legend items to display. */
   items?: LegendItem[];
-  /** Position on the map. */
-  position?: ControlPosition;
   /** Custom CSS class name. */
   className?: string;
   /** Whether the legend is initially visible. */
@@ -199,15 +213,33 @@ export interface LegendOptions {
 }
 
 /**
- * Internal state of the Legend control.
+ * Options for configuring the Legend control.
  */
-export interface LegendState {
+export interface LegendOptions extends LegendItemOptions {
+  /** Position on the map. */
+  position?: ControlPosition;
+  /** Multiple legend entries to display in this control. */
+  legends?: LegendItemOptions[];
+}
+
+/**
+ * Internal state of a single legend entry.
+ */
+export interface LegendItemState {
   /** Whether the legend is visible. */
   visible: boolean;
   /** Whether the legend is collapsed. */
   collapsed: boolean;
   /** Current legend items. */
   items: LegendItem[];
+}
+
+/**
+ * Internal state of the Legend control.
+ */
+export interface LegendState extends LegendItemState {
+  /** State for all rendered legend entries. */
+  legends?: LegendItemState[];
 }
 
 /**
@@ -221,17 +253,15 @@ export interface LegendReactProps extends LegendOptions {
 }
 
 /**
- * Options for configuring the HtmlControl.
+ * Options for configuring a single HtmlControl entry.
  */
-export interface HtmlControlOptions {
+export interface HtmlControlItemOptions {
   /** HTML content string. */
   html?: string;
   /** Or provide an element directly. */
   element?: HTMLElement;
   /** Title for the control header (shown when collapsible). */
   title?: string;
-  /** Position on the map. */
-  position?: ControlPosition;
   /** Custom CSS class name. */
   className?: string;
   /** Whether the control is initially visible. */
@@ -263,15 +293,33 @@ export interface HtmlControlOptions {
 }
 
 /**
- * Internal state of the HtmlControl.
+ * Options for configuring the HtmlControl.
  */
-export interface HtmlControlState {
+export interface HtmlControlOptions extends HtmlControlItemOptions {
+  /** Position on the map. */
+  position?: ControlPosition;
+  /** Multiple HTML entries to display in this control. */
+  htmls?: HtmlControlItemOptions[];
+}
+
+/**
+ * Internal state of a single HtmlControl entry.
+ */
+export interface HtmlControlItemState {
   /** Whether the control is visible. */
   visible: boolean;
   /** Whether the control is collapsed. */
   collapsed: boolean;
   /** Current HTML content. */
   html: string;
+}
+
+/**
+ * Internal state of the HtmlControl.
+ */
+export interface HtmlControlState extends HtmlControlItemState {
+  /** State for all rendered HTML entries. */
+  htmls?: HtmlControlItemState[];
 }
 
 /**
@@ -1117,13 +1165,9 @@ export interface ColorbarGuiControlOptions {
 }
 
 /**
- * Internal state of the ColorbarGuiControl.
+ * Configured colorbar entry managed by the ColorbarGuiControl.
  */
-export interface ColorbarGuiControlState {
-  /** Whether the control is visible. */
-  visible: boolean;
-  /** Whether the panel is collapsed. */
-  collapsed: boolean;
+export interface ColorbarGuiEntryState {
   /** Colorbar mode: 'named' for predefined colormaps, 'custom' for user-defined colors. */
   mode: "named" | "custom";
   /** Selected colormap name (used when mode is 'named'). */
@@ -1142,8 +1186,22 @@ export interface ColorbarGuiControlState {
   orientation: ColorbarOrientation;
   /** Position of the colorbar on the map. */
   colorbarPosition: ControlPosition;
+}
+
+/**
+ * Internal state of the ColorbarGuiControl.
+ */
+export interface ColorbarGuiControlState extends ColorbarGuiEntryState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
   /** Whether a colorbar is currently active on the map. */
   hasColorbar: boolean;
+  /** Index of the selected colorbar entry. */
+  selectedColorbarIndex: number;
+  /** Configured colorbars currently active on the map. */
+  colorbars: ColorbarGuiEntryState[];
 }
 
 /**
@@ -1200,21 +1258,31 @@ export interface LegendGuiControlOptions {
 }
 
 /**
- * Internal state of the LegendGuiControl.
+ * Configured legend entry managed by the LegendGuiControl.
  */
-export interface LegendGuiControlState {
-  /** Whether the control is visible. */
-  visible: boolean;
-  /** Whether the panel is collapsed. */
-  collapsed: boolean;
+export interface LegendGuiEntryState {
   /** Legend title. */
   title: string;
   /** Current legend items. */
   items: LegendItem[];
   /** Position of the legend on the map. */
   legendPosition: ControlPosition;
+}
+
+/**
+ * Internal state of the LegendGuiControl.
+ */
+export interface LegendGuiControlState extends LegendGuiEntryState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
   /** Whether a legend is currently active on the map. */
   hasLegend: boolean;
+  /** Index of the selected legend entry. */
+  selectedLegendIndex: number;
+  /** Configured legends currently active on the map. */
+  legends: LegendGuiEntryState[];
 }
 
 /**
@@ -1271,13 +1339,9 @@ export interface HtmlGuiControlOptions {
 }
 
 /**
- * Internal state of the HtmlGuiControl.
+ * Configured HTML entry managed by the HtmlGuiControl.
  */
-export interface HtmlGuiControlState {
-  /** Whether the control is visible. */
-  visible: boolean;
-  /** Whether the panel is collapsed. */
-  collapsed: boolean;
+export interface HtmlGuiEntryState {
   /** Title for the HTML control. */
   title: string;
   /** Current HTML content. */
@@ -1286,8 +1350,22 @@ export interface HtmlGuiControlState {
   htmlPosition: ControlPosition;
   /** Whether the HTML control is collapsible. */
   collapsible: boolean;
+}
+
+/**
+ * Internal state of the HtmlGuiControl.
+ */
+export interface HtmlGuiControlState extends HtmlGuiEntryState {
+  /** Whether the control is visible. */
+  visible: boolean;
+  /** Whether the panel is collapsed. */
+  collapsed: boolean;
   /** Whether an HTML control is currently active on the map. */
   hasHtmlControl: boolean;
+  /** Index of the selected HTML entry. */
+  selectedHtmlIndex: number;
+  /** Configured HTML controls currently active on the map. */
+  htmls: HtmlGuiEntryState[];
 }
 
 /**

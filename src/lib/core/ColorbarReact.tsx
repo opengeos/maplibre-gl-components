@@ -83,6 +83,7 @@ export function ColorbarReact({
     }
   }, [
     options.colormap,
+    options.colorbars,
     options.colorStops,
     options.vmin,
     options.vmax,
