@@ -8,6 +8,7 @@ import type {
 import type {
   ColorbarGuiControlOptions,
   ColorbarGuiControlState,
+  ColorbarGuiEntryState,
   ColorbarGuiEvent,
   ColorbarGuiEventHandler,
   ColormapName,
@@ -70,10 +71,13 @@ export class ColorbarGuiControl implements IControl {
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
 
-  // Active colorbar instance
+  // Active colorbar instances
   private _colorbar?: Colorbar;
+  private _colorbars: Colorbar[] = [];
+  private _colorbarEntries: ColorbarGuiEntryState[] = [];
 
   // DOM refs
+  private _colorbarSelect?: HTMLSelectElement;
   private _colormapSelect?: HTMLSelectElement;
   private _vminInput?: HTMLInputElement;
   private _vmaxInput?: HTMLInputElement;
@@ -82,6 +86,7 @@ export class ColorbarGuiControl implements IControl {
   private _orientationSelect?: HTMLSelectElement;
   private _positionSelect?: HTMLSelectElement;
   private _addBtn?: HTMLButtonElement;
+  private _updateBtn?: HTMLButtonElement;
   private _removeBtn?: HTMLButtonElement;
   private _previewEl?: HTMLElement;
 
@@ -107,6 +112,8 @@ export class ColorbarGuiControl implements IControl {
       orientation: "vertical",
       colorbarPosition: "bottom-right",
       hasColorbar: false,
+      selectedColorbarIndex: -1,
+      colorbars: [],
     };
   }
 
@@ -124,7 +131,7 @@ export class ColorbarGuiControl implements IControl {
     if (this._handleZoom && this._map) {
       this._map.off("zoom", this._handleZoom);
     }
-    this._removeColorbar();
+    this._removeAllColorbars();
     this._container?.remove();
     this._container = undefined;
     this._map = undefined;
@@ -188,7 +195,10 @@ export class ColorbarGuiControl implements IControl {
   }
 
   getState(): ColorbarGuiControlState {
-    return { ...this._state };
+    return {
+      ...this._state,
+      colorbars: this._colorbarEntries.map((entry) => ({ ...entry })),
+    };
   }
 
   private _createContainer(): HTMLElement {
@@ -237,6 +247,16 @@ export class ColorbarGuiControl implements IControl {
     // Content
     const content = document.createElement("div");
     content.className = "colorbar-gui-content";
+
+    const selectorField = this._createField("Colorbar");
+    this._colorbarSelect = document.createElement("select");
+    this._colorbarSelect.className = "colorbar-gui-select";
+    this._colorbarSelect.addEventListener("change", () => {
+      this._selectColorbar(parseInt(this._colorbarSelect!.value, 10));
+    });
+    selectorField.appendChild(this._colorbarSelect);
+    content.appendChild(selectorField);
+    this._renderColorbarSelect();
 
     // Mode selector
     const modeField = this._createField("Color Source");
@@ -288,7 +308,6 @@ export class ColorbarGuiControl implements IControl {
     this._colormapSelect.addEventListener("change", () => {
       this._state.colormap = this._colormapSelect!.value as ColormapName;
       this._updatePreview();
-      if (this._state.hasColorbar) this._updateColorbar();
     });
     colormapField.appendChild(this._colormapSelect);
     this._namedSection.appendChild(colormapField);
@@ -306,7 +325,6 @@ export class ColorbarGuiControl implements IControl {
     this._customColorsTextarea.addEventListener("input", () => {
       this._state.customColors = this._customColorsTextarea!.value;
       this._updatePreview();
-      if (this._state.hasColorbar) this._updateColorbar();
     });
     customField.appendChild(this._customColorsTextarea);
     this._customSection.appendChild(customField);
@@ -335,7 +353,6 @@ export class ColorbarGuiControl implements IControl {
     this._vminInput.value = String(this._state.vmin);
     this._vminInput.addEventListener("input", () => {
       this._state.vmin = parseFloat(this._vminInput!.value) || 0;
-      if (this._state.hasColorbar) this._updateColorbar();
     });
     vminField.appendChild(this._vminInput);
     rangeRow.appendChild(vminField);
@@ -347,7 +364,6 @@ export class ColorbarGuiControl implements IControl {
     this._vmaxInput.value = String(this._state.vmax);
     this._vmaxInput.addEventListener("input", () => {
       this._state.vmax = parseFloat(this._vmaxInput!.value) || 1;
-      if (this._state.hasColorbar) this._updateColorbar();
     });
     vmaxField.appendChild(this._vmaxInput);
     rangeRow.appendChild(vmaxField);
@@ -362,7 +378,6 @@ export class ColorbarGuiControl implements IControl {
     this._labelInput.value = this._state.label;
     this._labelInput.addEventListener("input", () => {
       this._state.label = this._labelInput!.value;
-      if (this._state.hasColorbar) this._updateColorbar();
     });
     labelField.appendChild(this._labelInput);
     content.appendChild(labelField);
@@ -376,7 +391,6 @@ export class ColorbarGuiControl implements IControl {
     this._unitsInput.value = this._state.units;
     this._unitsInput.addEventListener("input", () => {
       this._state.units = this._unitsInput!.value;
-      if (this._state.hasColorbar) this._updateColorbar();
     });
     unitsField.appendChild(this._unitsInput);
     content.appendChild(unitsField);
@@ -398,7 +412,6 @@ export class ColorbarGuiControl implements IControl {
     this._orientationSelect.addEventListener("change", () => {
       this._state.orientation = this._orientationSelect!
         .value as ColorbarOrientation;
-      if (this._state.hasColorbar) this._updateColorbar();
     });
     orientField.appendChild(this._orientationSelect);
     optRow.appendChild(orientField);
@@ -422,10 +435,6 @@ export class ColorbarGuiControl implements IControl {
     this._positionSelect.addEventListener("change", () => {
       this._state.colorbarPosition = this._positionSelect!
         .value as ControlPosition;
-      if (this._state.hasColorbar) {
-        this._removeColorbar();
-        this._addColorbar();
-      }
     });
     posField.appendChild(this._positionSelect);
     optRow.appendChild(posField);
@@ -435,17 +444,18 @@ export class ColorbarGuiControl implements IControl {
     this._addBtn = document.createElement("button");
     this._addBtn.type = "button";
     this._addBtn.className = "colorbar-gui-add-btn";
-    this._addBtn.textContent = this._state.hasColorbar
-      ? "Update Colorbar"
-      : "Add Colorbar";
-    this._addBtn.addEventListener("click", () => {
-      if (this._state.hasColorbar) {
-        this._updateColorbar();
-      } else {
-        this._addColorbar();
-      }
-    });
+    this._addBtn.textContent = "Add Colorbar";
+    this._addBtn.addEventListener("click", () => this._addColorbar());
     content.appendChild(this._addBtn);
+
+    const updateBtn = document.createElement("button");
+    updateBtn.type = "button";
+    updateBtn.className = "colorbar-gui-add-btn";
+    updateBtn.textContent = "Update Selected Colorbar";
+    updateBtn.style.display = this._state.hasColorbar ? "" : "none";
+    updateBtn.addEventListener("click", () => this._updateColorbar());
+    content.appendChild(updateBtn);
+    this._updateBtn = updateBtn;
 
     this._removeBtn = document.createElement("button");
     this._removeBtn.type = "button";
@@ -477,7 +487,6 @@ export class ColorbarGuiControl implements IControl {
       this._customSection.style.display = mode === "custom" ? "" : "none";
     }
     this._updatePreview();
-    if (this._state.hasColorbar) this._updateColorbar();
   }
 
   private _parseCustomColors(): string[] {
@@ -514,64 +523,200 @@ export class ColorbarGuiControl implements IControl {
     }
   }
 
-  private _getColormapValue(): ColormapName | string[] {
-    if (this._state.mode === "custom") {
-      const colors = this._parseCustomColors();
-      return colors.length > 0 ? colors : ["#440154", "#21918c", "#fde725"];
-    }
-    return this._state.colormap;
-  }
-
-  private _addColorbar(): void {
-    if (!this._map) return;
-    this._removeColorbar();
-    this._colorbar = new Colorbar({
-      colormap: this._getColormapValue(),
+  private _getFormEntry(): ColorbarGuiEntryState {
+    return {
+      mode: this._state.mode,
+      colormap: this._state.colormap,
+      customColors: this._state.customColors,
       vmin: this._state.vmin,
       vmax: this._state.vmax,
       label: this._state.label,
       units: this._state.units,
       orientation: this._state.orientation,
-      position: this._state.colorbarPosition,
+      colorbarPosition: this._state.colorbarPosition,
+    };
+  }
+
+  private _applyEntryToForm(entry: ColorbarGuiEntryState): void {
+    this._state.mode = entry.mode;
+    this._state.colormap = entry.colormap;
+    this._state.customColors = entry.customColors;
+    this._state.vmin = entry.vmin;
+    this._state.vmax = entry.vmax;
+    this._state.label = entry.label;
+    this._state.units = entry.units;
+    this._state.orientation = entry.orientation;
+    this._state.colorbarPosition = entry.colorbarPosition;
+
+    if (this._modeNamedRadio) this._modeNamedRadio.checked = entry.mode === "named";
+    if (this._modeCustomRadio)
+      this._modeCustomRadio.checked = entry.mode === "custom";
+    if (this._namedSection) {
+      this._namedSection.style.display = entry.mode === "named" ? "" : "none";
+    }
+    if (this._customSection) {
+      this._customSection.style.display =
+        entry.mode === "custom" ? "" : "none";
+    }
+    if (this._colormapSelect) this._colormapSelect.value = entry.colormap;
+    if (this._customColorsTextarea)
+      this._customColorsTextarea.value = entry.customColors;
+    if (this._vminInput) this._vminInput.value = String(entry.vmin);
+    if (this._vmaxInput) this._vmaxInput.value = String(entry.vmax);
+    if (this._labelInput) this._labelInput.value = entry.label;
+    if (this._unitsInput) this._unitsInput.value = entry.units;
+    if (this._orientationSelect)
+      this._orientationSelect.value = entry.orientation;
+    if (this._positionSelect)
+      this._positionSelect.value = entry.colorbarPosition;
+    this._updatePreview();
+  }
+
+  private _createColorbar(entry: ColorbarGuiEntryState): Colorbar {
+    const colormap =
+      entry.mode === "custom"
+        ? entry.customColors
+            .split(/[,\n]+/)
+            .map((color) => color.trim())
+            .filter((color) => color.length > 0)
+        : entry.colormap;
+
+    return new Colorbar({
+      colormap:
+        Array.isArray(colormap) && colormap.length === 0
+          ? ["#440154", "#21918c", "#fde725"]
+          : colormap,
+      vmin: entry.vmin,
+      vmax: entry.vmax,
+      label: entry.label,
+      units: entry.units,
+      orientation: entry.orientation,
+      position: entry.colorbarPosition,
     });
-    this._map.addControl(this._colorbar, this._state.colorbarPosition);
+  }
+
+  private _selectColorbar(index: number): void {
+    if (index < 0) {
+      this._state.selectedColorbarIndex = -1;
+      this._colorbar = undefined;
+      this._updateButtonStates();
+      return;
+    }
+    if (index >= this._colorbarEntries.length) return;
+    this._state.selectedColorbarIndex = index;
+    this._colorbar = this._colorbars[index];
+    this._applyEntryToForm(this._colorbarEntries[index]);
+    this._updateButtonStates();
+  }
+
+  private _renderColorbarSelect(): void {
+    if (!this._colorbarSelect) return;
+    this._colorbarSelect.innerHTML = "";
+
+    const newOpt = document.createElement("option");
+    newOpt.value = "-1";
+    newOpt.textContent = "New colorbar";
+    this._colorbarSelect.appendChild(newOpt);
+
+    this._colorbarEntries.forEach((entry, index) => {
+      const opt = document.createElement("option");
+      opt.value = String(index);
+      opt.textContent = entry.label || `Colorbar ${index + 1}`;
+      this._colorbarSelect!.appendChild(opt);
+    });
+    this._colorbarSelect.value =
+      this._state.selectedColorbarIndex >= 0
+        ? String(this._state.selectedColorbarIndex)
+        : "-1";
+  }
+
+  private _addColorbar(): void {
+    if (!this._map) return;
+    const entry = this._getFormEntry();
+    const colorbar = this._createColorbar(entry);
+    this._map.addControl(colorbar, entry.colorbarPosition);
+    this._colorbars.push(colorbar);
+    this._colorbarEntries.push(entry);
+    this._colorbar = colorbar;
     this._state.hasColorbar = true;
+    this._state.selectedColorbarIndex = this._colorbars.length - 1;
+    this._state.colorbars = this._colorbarEntries.map((item) => ({ ...item }));
     this._updateButtonStates();
     this._emit("colorbaradd");
   }
 
   private _updateColorbar(): void {
-    if (!this._colorbar) return;
-    this._colorbar.update({
-      colormap: this._getColormapValue(),
-      vmin: this._state.vmin,
-      vmax: this._state.vmax,
-      label: this._state.label,
-      units: this._state.units,
-      orientation: this._state.orientation,
-    });
+    if (!this._map) return;
+    const index = this._state.selectedColorbarIndex;
+    if (index < 0 || index >= this._colorbars.length) {
+      this._addColorbar();
+      return;
+    }
+
+    const entry = this._getFormEntry();
+    this._map.removeControl(this._colorbars[index]);
+    const colorbar = this._createColorbar(entry);
+    this._map.addControl(colorbar, entry.colorbarPosition);
+    this._colorbars[index] = colorbar;
+    this._colorbarEntries[index] = entry;
+    this._colorbar = colorbar;
+    this._state.colorbars = this._colorbarEntries.map((item) => ({ ...item }));
     this._emit("colorbarupdate");
+    this._updateButtonStates();
   }
 
   private _removeColorbar(): void {
-    if (this._colorbar && this._map) {
-      this._map.removeControl(this._colorbar);
-      this._colorbar = undefined;
-      this._state.hasColorbar = false;
-      this._updateButtonStates();
-      this._emit("colorbarremove");
+    if (!this._map) return;
+    const index = this._state.selectedColorbarIndex;
+    if (index < 0 || index >= this._colorbars.length) return;
+
+    this._map.removeControl(this._colorbars[index]);
+    this._colorbars.splice(index, 1);
+    this._colorbarEntries.splice(index, 1);
+    this._state.hasColorbar = this._colorbars.length > 0;
+    this._state.selectedColorbarIndex = this._state.hasColorbar
+      ? Math.min(index, this._colorbars.length - 1)
+      : -1;
+    this._colorbar =
+      this._state.selectedColorbarIndex >= 0
+        ? this._colorbars[this._state.selectedColorbarIndex]
+        : undefined;
+    this._state.colorbars = this._colorbarEntries.map((item) => ({ ...item }));
+    if (this._state.selectedColorbarIndex >= 0) {
+      this._applyEntryToForm(
+        this._colorbarEntries[this._state.selectedColorbarIndex],
+      );
     }
+    this._updateButtonStates();
+    this._emit("colorbarremove");
+  }
+
+  private _removeAllColorbars(): void {
+    if (!this._map) return;
+    this._colorbars.forEach((colorbar) => {
+      this._map!.removeControl(colorbar);
+    });
+    this._colorbars = [];
+    this._colorbarEntries = [];
+    this._colorbar = undefined;
+    this._state.hasColorbar = false;
+    this._state.selectedColorbarIndex = -1;
+    this._state.colorbars = [];
+    this._updateButtonStates();
   }
 
   private _updateButtonStates(): void {
     if (this._addBtn) {
-      this._addBtn.textContent = this._state.hasColorbar
-        ? "Update Colorbar"
-        : "Add Colorbar";
+      this._addBtn.textContent = "Add Colorbar";
+    }
+    const hasSelection = this._state.selectedColorbarIndex >= 0;
+    if (this._updateBtn) {
+      this._updateBtn.style.display = hasSelection ? "" : "none";
     }
     if (this._removeBtn) {
-      this._removeBtn.style.display = this._state.hasColorbar ? "" : "none";
+      this._removeBtn.style.display = hasSelection ? "" : "none";
     }
+    this._renderColorbarSelect();
   }
 
   private _togglePanel(): void {

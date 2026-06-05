@@ -48,6 +48,21 @@ describe('Colorbar', () => {
       expect(container.classList.contains('maplibregl-ctrl')).toBe(true);
       expect(container.classList.contains('maplibre-gl-colorbar')).toBe(true);
     });
+
+    it('should render multiple colorbars', () => {
+      const cb = new Colorbar({
+        colorbars: [
+          { label: 'Temperature', colormap: 'viridis', vmin: 0, vmax: 100 },
+          { label: 'Elevation', colormap: 'terrain', vmin: 0, vmax: 3000 },
+        ],
+      });
+
+      const container = cb.onAdd(mockMap);
+
+      expect(container.querySelectorAll('.maplibre-gl-colorbar-entry').length).toBe(2);
+      expect(cb.getState().colorbars?.length).toBe(2);
+      expect(cb.getState().colorbars?.[1].vmax).toBe(3000);
+    });
   });
 
   describe('onRemove', () => {

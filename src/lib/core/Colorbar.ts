@@ -2,6 +2,8 @@ import "../styles/common.css";
 import "../styles/colorbar.css";
 import type { IControl, Map as MapLibreMap } from "maplibre-gl";
 import type {
+  ColorbarItemOptions,
+  ColorbarItemState,
   ColorbarOptions,
   ColorbarState,
   ComponentEvent,
@@ -14,9 +16,13 @@ import { formatNumericValue } from "../utils";
 /**
  * Default options for the Colorbar control.
  */
-const DEFAULT_OPTIONS: Required<Omit<ColorbarOptions, "colorStops">> & {
+type ResolvedColorbarOptions = Required<
+  Omit<ColorbarItemOptions, "colorStops">
+> & {
   colorStops: ColorStop[];
-} = {
+};
+
+const DEFAULT_OPTIONS: ResolvedColorbarOptions = {
   colormap: "viridis",
   colorStops: [],
   vmin: 0,
@@ -24,7 +30,6 @@ const DEFAULT_OPTIONS: Required<Omit<ColorbarOptions, "colorStops">> & {
   label: "",
   units: "",
   orientation: "vertical",
-  position: "bottom-right",
   barThickness: 20,
   barLength: 200,
   ticks: { count: 5 },
@@ -61,9 +66,9 @@ const DEFAULT_OPTIONS: Required<Omit<ColorbarOptions, "colorStops">> & {
  */
 export class Colorbar implements IControl {
   private _container?: HTMLElement;
-  private _options: Required<Omit<ColorbarOptions, "colorStops">> & {
-    colorStops: ColorStop[];
-  };
+  private _options: ResolvedColorbarOptions;
+  private _colorbarOptions?: ColorbarItemOptions[];
+  private _colorbars: ResolvedColorbarOptions[];
   private _state: ColorbarState;
   private _eventHandlers: Map<
     ComponentEvent,
@@ -79,13 +84,12 @@ export class Colorbar implements IControl {
    * @param options - Configuration options for the colorbar.
    */
   constructor(options?: ColorbarOptions) {
-    this._options = { ...DEFAULT_OPTIONS, ...options };
-    this._state = {
-      visible: this._options.visible,
-      vmin: this._options.vmin,
-      vmax: this._options.vmax,
-      colormap: this._options.colormap,
-    };
+    const { colorbars, position: _position, ...entryOptions } = options ?? {};
+    void _position;
+    this._options = { ...DEFAULT_OPTIONS, ...entryOptions };
+    this._colorbarOptions = colorbars;
+    this._colorbars = this._resolveColorbars();
+    this._state = this._createState();
   }
 
   /**
@@ -130,7 +134,8 @@ export class Colorbar implements IControl {
    */
   show(): void {
     if (!this._state.visible) {
-      this._state.visible = true;
+      this._options.visible = true;
+      this._state = this._createState();
       this._updateDisplayState();
       this._emit("show");
     }
@@ -141,7 +146,8 @@ export class Colorbar implements IControl {
    */
   hide(): void {
     if (this._state.visible) {
-      this._state.visible = false;
+      this._options.visible = false;
+      this._state = this._createState();
       this._updateDisplayState();
       this._emit("hide");
     }
@@ -153,11 +159,14 @@ export class Colorbar implements IControl {
    * @param options - Partial options to update.
    */
   update(options: Partial<ColorbarOptions>): void {
-    this._options = { ...this._options, ...options };
-    if (options.vmin !== undefined) this._state.vmin = options.vmin;
-    if (options.vmax !== undefined) this._state.vmax = options.vmax;
-    if (options.colormap !== undefined) this._state.colormap = options.colormap;
-    if (options.visible !== undefined) this._state.visible = options.visible;
+    const { colorbars, position: _position, ...entryOptions } = options;
+    void _position;
+    this._options = { ...this._options, ...entryOptions };
+    if (colorbars !== undefined) {
+      this._colorbarOptions = colorbars;
+    }
+    this._colorbars = this._resolveColorbars();
+    this._state = this._createState();
     this._render();
     this._emit("update");
   }
@@ -201,17 +210,80 @@ export class Colorbar implements IControl {
   }
 
   /**
-   * Gets the resolved color stops for the current colormap.
+   * Resolves the configured colorbar entries against the control defaults.
    *
-   * @returns Array of color stops.
+   * @returns Array of resolved colorbar options.
    */
-  private _getColorStops(): ColorStop[] {
-    // Custom color stops take priority
-    if (this._options.colorStops && this._options.colorStops.length > 0) {
-      return this._options.colorStops;
+  private _resolveColorbars(): ResolvedColorbarOptions[] {
+    if (this._colorbarOptions && this._colorbarOptions.length > 0) {
+      return this._colorbarOptions.map((colorbar) => ({
+        ...this._options,
+        ...colorbar,
+        colorStops: colorbar.colorStops ?? this._options.colorStops,
+      }));
     }
 
-    const colormap = this._options.colormap;
+    return [this._options];
+  }
+
+  /**
+   * Creates public state from the current colorbar entries.
+   *
+   * @returns The current colorbar state.
+   */
+  private _createState(): ColorbarState {
+    const colorbars = this._colorbars.map((colorbar, index) =>
+      this._createColorbarState(colorbar, index),
+    );
+    return { ...colorbars[0], visible: this._options.visible, colorbars };
+  }
+
+  /**
+   * Creates public state for a single colorbar entry.
+   *
+   * @param colorbar - The resolved colorbar options.
+   * @returns The current colorbar entry state.
+   */
+  private _createColorbarState(
+    colorbar: ResolvedColorbarOptions,
+    index = 0,
+  ): ColorbarItemState {
+    return {
+      visible: this._getColorbarEntryVisible(index, colorbar.visible),
+      vmin: colorbar.vmin,
+      vmax: colorbar.vmax,
+      colormap: colorbar.colormap,
+    };
+  }
+
+  /**
+   * Gets an entry's configured visibility.
+   *
+   * @param index - The entry index.
+   * @param fallback - The fallback visibility value.
+   * @returns Whether the entry is configured as visible.
+   */
+  private _getColorbarEntryVisible(index: number, fallback: boolean): boolean {
+    if (this._colorbarOptions && this._colorbarOptions.length > 0) {
+      return this._colorbarOptions[index]?.visible ?? true;
+    }
+
+    return fallback;
+  }
+
+  /**
+   * Gets the resolved color stops for the current colormap.
+   *
+   * @param colorbar - The resolved colorbar options.
+   * @returns Array of color stops.
+   */
+  private _getColorStops(colorbar: ResolvedColorbarOptions): ColorStop[] {
+    // Custom color stops take priority
+    if (colorbar.colorStops && colorbar.colorStops.length > 0) {
+      return colorbar.colorStops;
+    }
+
+    const colormap = colorbar.colormap;
 
     // If colormap is a string array, convert to color stops
     if (Array.isArray(colormap)) {
@@ -233,12 +305,13 @@ export class Colorbar implements IControl {
   /**
    * Generates the CSS gradient string.
    *
+   * @param colorbar - The resolved colorbar options.
    * @returns CSS linear-gradient string.
    */
-  private _generateGradient(): string {
-    const stops = this._getColorStops();
+  private _generateGradient(colorbar: ResolvedColorbarOptions): string {
+    const stops = this._getColorStops(colorbar);
     const direction =
-      this._options.orientation === "horizontal" ? "to right" : "to top";
+      colorbar.orientation === "horizontal" ? "to right" : "to top";
     const colorStops = stops
       .map((stop) => `${stop.color} ${stop.position * 100}%`)
       .join(", ");
@@ -248,10 +321,11 @@ export class Colorbar implements IControl {
   /**
    * Generates tick values.
    *
+   * @param colorbar - The resolved colorbar options.
    * @returns Array of tick values.
    */
-  private _generateTicks(): number[] {
-    const { ticks, vmin, vmax } = this._options;
+  private _generateTicks(colorbar: ResolvedColorbarOptions): number[] {
+    const { ticks, vmin, vmax } = colorbar;
 
     if (ticks.values && ticks.values.length > 0) {
       return ticks.values;
@@ -266,17 +340,21 @@ export class Colorbar implements IControl {
    * Formats a tick value for display.
    *
    * @param value - The tick value.
+   * @param colorbar - The resolved colorbar options.
    * @returns Formatted string.
    */
-  private _formatTick(value: number): string {
-    const { ticks, units } = this._options;
+  private _formatTick(
+    value: number,
+    colorbar: ResolvedColorbarOptions,
+  ): string {
+    const { ticks, units } = colorbar;
 
     if (ticks.format) {
       return ticks.format(value);
     }
 
     // Auto-format based on range
-    const range = this._options.vmax - this._options.vmin;
+    const range = colorbar.vmax - colorbar.vmin;
     const formatted = formatNumericValue(value, range);
 
     return units ? `${formatted}${units}` : formatted;
@@ -299,15 +377,11 @@ export class Colorbar implements IControl {
    * Checks if the current zoom level is within the visibility range.
    */
   private _checkZoomVisibility(): void {
-    if (!this._map) return;
-
-    const zoom = this._map.getZoom();
-    const { minzoom, maxzoom } = this._options;
-    const inRange = zoom >= minzoom && zoom <= maxzoom;
+    const inRange = this._hasVisibleColorbars();
 
     if (inRange !== this._zoomVisible) {
       this._zoomVisible = inRange;
-      this._updateDisplayState();
+      this._render();
     }
   }
 
@@ -316,8 +390,38 @@ export class Colorbar implements IControl {
    */
   private _updateDisplayState(): void {
     if (!this._container) return;
-    const shouldShow = this._state.visible && this._zoomVisible;
+    const shouldShow = this._state.visible && this._hasVisibleColorbars();
     this._container.style.display = shouldShow ? "flex" : "none";
+  }
+
+  /**
+   * Checks whether a colorbar entry is visible at the current zoom.
+   *
+   * @param colorbar - The resolved colorbar options.
+   * @param index - The colorbar entry index.
+   * @returns Whether the colorbar should be rendered.
+   */
+  private _isColorbarVisible(
+    colorbar: ResolvedColorbarOptions,
+    index: number,
+  ): boolean {
+    if (!this._getColorbarEntryVisible(index, colorbar.visible)) return false;
+    if (!this._map) return true;
+
+    const zoom = this._map.getZoom();
+    return zoom >= colorbar.minzoom && zoom <= colorbar.maxzoom;
+  }
+
+  /**
+   * Checks whether any colorbar entry should be visible.
+   *
+   * @returns Whether at least one colorbar should be visible.
+   */
+  private _hasVisibleColorbars(): boolean {
+    if (!this._state.visible) return false;
+    return this._colorbars.some((colorbar, index) =>
+      this._isColorbarVisible(colorbar, index),
+    );
   }
 
   /**
@@ -340,11 +444,14 @@ export class Colorbar implements IControl {
   }
 
   /**
-   * Renders the colorbar content.
+   * Creates a colorbar entry element.
+   *
+   * @param colorbar - The resolved colorbar options.
+   * @returns The colorbar entry element.
    */
-  private _render(): void {
-    if (!this._container) return;
-
+  private _createColorbarElement(
+    colorbar: ResolvedColorbarOptions,
+  ): HTMLElement {
     const {
       orientation,
       barThickness,
@@ -356,23 +463,22 @@ export class Colorbar implements IControl {
       fontColor,
       borderRadius,
       padding,
-    } = this._options;
+    } = colorbar;
     const isVertical = orientation === "vertical";
-    const ticks = this._generateTicks();
+    const ticks = this._generateTicks(colorbar);
+    const colorbarEl = document.createElement("div");
+    colorbarEl.className = `maplibre-gl-colorbar-entry${
+      colorbar.className ? ` ${colorbar.className}` : ""
+    }`;
 
-    // Clear existing content
-    this._container.innerHTML = "";
-
-    // Apply container styles
-    const shouldShow = this._state.visible && this._zoomVisible;
-    Object.assign(this._container.style, {
+    Object.assign(colorbarEl.style, {
       backgroundColor,
       opacity: opacity.toString(),
       borderRadius: `${borderRadius}px`,
       padding: `${padding}px`,
       fontSize: `${fontSize}px`,
       color: fontColor,
-      display: shouldShow ? "flex" : "none",
+      display: "flex",
       flexDirection: isVertical ? "row" : "column",
       alignItems: "stretch",
       gap: "6px",
@@ -393,7 +499,7 @@ export class Colorbar implements IControl {
         writingMode: isVertical ? "vertical-rl" : "horizontal-tb",
         transform: isVertical ? "rotate(180deg)" : "none",
       });
-      this._container.appendChild(labelEl);
+      colorbarEl.appendChild(labelEl);
     }
 
     // Create gradient bar with ticks
@@ -409,7 +515,7 @@ export class Colorbar implements IControl {
     const bar = document.createElement("div");
     bar.className = "maplibre-gl-colorbar-bar";
     Object.assign(bar.style, {
-      background: this._generateGradient(),
+      background: this._generateGradient(colorbar),
       width: isVertical ? `${barThickness}px` : `${barLength}px`,
       height: isVertical ? `${barLength}px` : `${barThickness}px`,
       borderRadius: "2px",
@@ -432,13 +538,41 @@ export class Colorbar implements IControl {
     ticks.forEach((value) => {
       const tick = document.createElement("span");
       tick.className = "maplibre-gl-colorbar-tick";
-      tick.textContent = this._formatTick(value);
+      tick.textContent = this._formatTick(value, colorbar);
       tick.style.fontSize = `${fontSize - 1}px`;
       ticksContainer.appendChild(tick);
     });
 
     barWrapper.appendChild(bar);
     barWrapper.appendChild(ticksContainer);
-    this._container.appendChild(barWrapper);
+    colorbarEl.appendChild(barWrapper);
+
+    return colorbarEl;
+  }
+
+  /**
+   * Renders the colorbar content.
+   */
+  private _render(): void {
+    if (!this._container) return;
+
+    this._container.innerHTML = "";
+
+    const shouldShow = this._hasVisibleColorbars();
+    Object.assign(this._container.style, {
+      display: shouldShow ? "flex" : "none",
+      flexDirection: "column",
+      alignItems: "stretch",
+      gap: "8px",
+      background: "transparent",
+      boxShadow: "none",
+      padding: "0",
+    });
+
+    this._colorbars.forEach((colorbar, index) => {
+      if (this._isColorbarVisible(colorbar, index)) {
+        this._container?.appendChild(this._createColorbarElement(colorbar));
+      }
+    });
   }
 }

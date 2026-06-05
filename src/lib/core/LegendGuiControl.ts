@@ -8,6 +8,7 @@ import type {
 import type {
   LegendGuiControlOptions,
   LegendGuiControlState,
+  LegendGuiEntryState,
   LegendGuiEvent,
   LegendGuiEventHandler,
 } from "./types";
@@ -72,16 +73,20 @@ export class LegendGuiControl implements IControl {
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
 
-  // Active legend instance
+  // Active legend instances
   private _legend?: Legend;
+  private _legends: Legend[] = [];
+  private _legendEntries: LegendGuiEntryState[] = [];
 
   // DOM refs
+  private _legendSelect?: HTMLSelectElement;
   private _titleInput?: HTMLInputElement;
   private _positionSelect?: HTMLSelectElement;
   private _itemsContainer?: HTMLElement;
   private _dictTextarea?: HTMLTextAreaElement;
   private _dictErrorEl?: HTMLElement;
   private _addBtn?: HTMLButtonElement;
+  private _updateBtn?: HTMLButtonElement;
   private _removeBtn?: HTMLButtonElement;
 
   constructor(options?: LegendGuiControlOptions) {
@@ -97,6 +102,8 @@ export class LegendGuiControl implements IControl {
       ],
       legendPosition: "bottom-left",
       hasLegend: false,
+      selectedLegendIndex: -1,
+      legends: [],
     };
   }
 
@@ -114,7 +121,7 @@ export class LegendGuiControl implements IControl {
     if (this._handleZoom && this._map) {
       this._map.off("zoom", this._handleZoom);
     }
-    this._removeLegend();
+    this._removeAllLegends();
     this._container?.remove();
     this._container = undefined;
     this._map = undefined;
@@ -181,7 +188,14 @@ export class LegendGuiControl implements IControl {
   }
 
   getState(): LegendGuiControlState {
-    return { ...this._state, items: [...this._state.items] };
+    return {
+      ...this._state,
+      items: [...this._state.items],
+      legends: this._legendEntries.map((entry) => ({
+        ...entry,
+        items: [...entry.items],
+      })),
+    };
   }
 
   private _createContainer(): HTMLElement {
@@ -233,6 +247,16 @@ export class LegendGuiControl implements IControl {
     const content = document.createElement("div");
     content.className = "legend-gui-content";
 
+    const selectorField = this._createField("Legend");
+    this._legendSelect = document.createElement("select");
+    this._legendSelect.className = "legend-gui-select";
+    this._legendSelect.addEventListener("change", () => {
+      this._selectLegend(parseInt(this._legendSelect!.value, 10));
+    });
+    selectorField.appendChild(this._legendSelect);
+    content.appendChild(selectorField);
+    this._renderLegendSelect();
+
     // Title
     const titleField = this._createField("Title");
     this._titleInput = document.createElement("input");
@@ -242,7 +266,6 @@ export class LegendGuiControl implements IControl {
     this._titleInput.value = this._state.title;
     this._titleInput.addEventListener("input", () => {
       this._state.title = this._titleInput!.value;
-      if (this._state.hasLegend) this._updateLegend();
     });
     titleField.appendChild(this._titleInput);
     content.appendChild(titleField);
@@ -267,10 +290,6 @@ export class LegendGuiControl implements IControl {
     this._positionSelect.addEventListener("change", () => {
       this._state.legendPosition = this._positionSelect!
         .value as ControlPosition;
-      if (this._state.hasLegend) {
-        this._removeLegend();
-        this._addLegend();
-      }
     });
     posField.appendChild(this._positionSelect);
     content.appendChild(posField);
@@ -324,17 +343,17 @@ export class LegendGuiControl implements IControl {
     this._addBtn = document.createElement("button");
     this._addBtn.type = "button";
     this._addBtn.className = "legend-gui-add-btn";
-    this._addBtn.textContent = this._state.hasLegend
-      ? "Update Legend"
-      : "Add Legend";
-    this._addBtn.addEventListener("click", () => {
-      if (this._state.hasLegend) {
-        this._updateLegend();
-      } else {
-        this._addLegend();
-      }
-    });
+    this._addBtn.textContent = "Add Legend";
+    this._addBtn.addEventListener("click", () => this._addLegend());
     content.appendChild(this._addBtn);
+
+    this._updateBtn = document.createElement("button");
+    this._updateBtn.type = "button";
+    this._updateBtn.className = "legend-gui-add-btn";
+    this._updateBtn.textContent = "Update Selected Legend";
+    this._updateBtn.style.display = this._state.hasLegend ? "" : "none";
+    this._updateBtn.addEventListener("click", () => this._updateLegend());
+    content.appendChild(this._updateBtn);
 
     // Remove button
     this._removeBtn = document.createElement("button");
@@ -372,7 +391,6 @@ export class LegendGuiControl implements IControl {
       colorInput.value = item.color;
       colorInput.addEventListener("input", () => {
         this._state.items[index].color = colorInput.value;
-        if (this._state.hasLegend) this._updateLegend();
       });
 
       const labelInput = document.createElement("input");
@@ -382,7 +400,6 @@ export class LegendGuiControl implements IControl {
       labelInput.placeholder = "Label";
       labelInput.addEventListener("input", () => {
         this._state.items[index].label = labelInput.value;
-        if (this._state.hasLegend) this._updateLegend();
       });
 
       const shapeSelect = document.createElement("select");
@@ -399,7 +416,6 @@ export class LegendGuiControl implements IControl {
           | "square"
           | "circle"
           | "line";
-        if (this._state.hasLegend) this._updateLegend();
       });
 
       const deleteBtn = document.createElement("button");
@@ -410,7 +426,6 @@ export class LegendGuiControl implements IControl {
       deleteBtn.addEventListener("click", () => {
         this._state.items.splice(index, 1);
         this._renderItems();
-        if (this._state.hasLegend) this._updateLegend();
       });
 
       row.appendChild(colorInput);
@@ -439,7 +454,6 @@ export class LegendGuiControl implements IControl {
       shape: "square",
     });
     this._renderItems();
-    if (this._state.hasLegend) this._updateLegend();
   }
 
   private _importFromDict(): void {
@@ -472,7 +486,6 @@ export class LegendGuiControl implements IControl {
       }
       this._state.items = newItems;
       this._renderItems();
-      if (this._state.hasLegend) this._updateLegend();
       this._dictErrorEl.style.display = "none";
       this._dictTextarea.value = "";
     } catch (e: unknown) {
@@ -482,49 +495,164 @@ export class LegendGuiControl implements IControl {
     }
   }
 
-  private _addLegend(): void {
-    if (!this._map) return;
-    this._removeLegend();
-    this._legend = new Legend({
+  private _getFormEntry(): LegendGuiEntryState {
+    return {
       title: this._state.title,
-      items: [...this._state.items],
+      items: this._state.items.map((item) => ({ ...item })),
+      legendPosition: this._state.legendPosition,
+    };
+  }
+
+  private _applyEntryToForm(entry: LegendGuiEntryState): void {
+    this._state.title = entry.title;
+    this._state.items = entry.items.map((item) => ({ ...item }));
+    this._state.legendPosition = entry.legendPosition;
+    if (this._titleInput) this._titleInput.value = entry.title;
+    if (this._positionSelect)
+      this._positionSelect.value = entry.legendPosition;
+    this._renderItems();
+  }
+
+  private _createLegend(entry: LegendGuiEntryState): Legend {
+    return new Legend({
+      title: entry.title,
+      items: entry.items.map((item) => ({ ...item })),
       collapsible: true,
       collapsed: false,
     });
-    this._map.addControl(this._legend, this._state.legendPosition);
+  }
+
+  private _selectLegend(index: number): void {
+    if (index < 0) {
+      this._state.selectedLegendIndex = -1;
+      this._legend = undefined;
+      this._updateButtonStates();
+      return;
+    }
+    if (index >= this._legendEntries.length) return;
+    this._state.selectedLegendIndex = index;
+    this._legend = this._legends[index];
+    this._applyEntryToForm(this._legendEntries[index]);
+    this._updateButtonStates();
+  }
+
+  private _renderLegendSelect(): void {
+    if (!this._legendSelect) return;
+    this._legendSelect.innerHTML = "";
+
+    const newOpt = document.createElement("option");
+    newOpt.value = "-1";
+    newOpt.textContent = "New legend";
+    this._legendSelect.appendChild(newOpt);
+
+    this._legendEntries.forEach((entry, index) => {
+      const opt = document.createElement("option");
+      opt.value = String(index);
+      opt.textContent = entry.title || `Legend ${index + 1}`;
+      this._legendSelect!.appendChild(opt);
+    });
+    this._legendSelect.value =
+      this._state.selectedLegendIndex >= 0
+        ? String(this._state.selectedLegendIndex)
+        : "-1";
+  }
+
+  private _addLegend(): void {
+    if (!this._map) return;
+    const entry = this._getFormEntry();
+    const legend = this._createLegend(entry);
+    this._map.addControl(legend, entry.legendPosition);
+    this._legends.push(legend);
+    this._legendEntries.push(entry);
+    this._legend = legend;
     this._state.hasLegend = true;
+    this._state.selectedLegendIndex = this._legends.length - 1;
+    this._state.legends = this._legendEntries.map((item) => ({
+      ...item,
+      items: [...item.items],
+    }));
     this._updateButtonStates();
     this._emit("legendadd");
   }
 
   private _updateLegend(): void {
-    if (!this._legend) return;
-    this._legend.update({
-      title: this._state.title,
-      items: [...this._state.items],
-    });
+    if (!this._map) return;
+    const index = this._state.selectedLegendIndex;
+    if (index < 0 || index >= this._legends.length) {
+      this._addLegend();
+      return;
+    }
+
+    const entry = this._getFormEntry();
+    this._map.removeControl(this._legends[index]);
+    const legend = this._createLegend(entry);
+    this._map.addControl(legend, entry.legendPosition);
+    this._legends[index] = legend;
+    this._legendEntries[index] = entry;
+    this._legend = legend;
+    this._state.legends = this._legendEntries.map((item) => ({
+      ...item,
+      items: [...item.items],
+    }));
     this._emit("legendupdate");
+    this._updateButtonStates();
   }
 
   private _removeLegend(): void {
-    if (this._legend && this._map) {
-      this._map.removeControl(this._legend);
-      this._legend = undefined;
-      this._state.hasLegend = false;
-      this._updateButtonStates();
-      this._emit("legendremove");
+    if (!this._map) return;
+    const index = this._state.selectedLegendIndex;
+    if (index < 0 || index >= this._legends.length) return;
+
+    this._map.removeControl(this._legends[index]);
+    this._legends.splice(index, 1);
+    this._legendEntries.splice(index, 1);
+    this._state.hasLegend = this._legends.length > 0;
+    this._state.selectedLegendIndex = this._state.hasLegend
+      ? Math.min(index, this._legends.length - 1)
+      : -1;
+    this._legend =
+      this._state.selectedLegendIndex >= 0
+        ? this._legends[this._state.selectedLegendIndex]
+        : undefined;
+    this._state.legends = this._legendEntries.map((item) => ({
+      ...item,
+      items: [...item.items],
+    }));
+    if (this._state.selectedLegendIndex >= 0) {
+      this._applyEntryToForm(
+        this._legendEntries[this._state.selectedLegendIndex],
+      );
     }
+    this._updateButtonStates();
+    this._emit("legendremove");
   }
 
   private _updateButtonStates(): void {
     if (this._addBtn) {
-      this._addBtn.textContent = this._state.hasLegend
-        ? "Update Legend"
-        : "Add Legend";
+      this._addBtn.textContent = "Add Legend";
+    }
+    const hasSelection = this._state.selectedLegendIndex >= 0;
+    if (this._updateBtn) {
+      this._updateBtn.style.display = hasSelection ? "" : "none";
     }
     if (this._removeBtn) {
-      this._removeBtn.style.display = this._state.hasLegend ? "" : "none";
+      this._removeBtn.style.display = hasSelection ? "" : "none";
     }
+    this._renderLegendSelect();
+  }
+
+  private _removeAllLegends(): void {
+    if (!this._map) return;
+    this._legends.forEach((legend) => {
+      this._map!.removeControl(legend);
+    });
+    this._legends = [];
+    this._legendEntries = [];
+    this._legend = undefined;
+    this._state.hasLegend = false;
+    this._state.selectedLegendIndex = -1;
+    this._state.legends = [];
+    this._updateButtonStates();
   }
 
   private _togglePanel(): void {
