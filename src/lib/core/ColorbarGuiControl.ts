@@ -201,6 +201,73 @@ export class ColorbarGuiControl implements IControl {
     };
   }
 
+  setState(state: Partial<ColorbarGuiControlState>): this {
+    if (this._map) {
+      this._colorbars.forEach((colorbar) => {
+        this._map!.removeControl(colorbar);
+      });
+    }
+
+    const entries = (state.colorbars ?? []).map((entry) => ({ ...entry }));
+    this._colorbars = [];
+    this._colorbarEntries = entries;
+
+    if (this._map) {
+      entries.forEach((entry) => {
+        const colorbar = this._createColorbar(entry);
+        this._map!.addControl(colorbar, entry.colorbarPosition);
+        this._colorbars.push(colorbar);
+      });
+    }
+
+    const selectedIndex =
+      typeof state.selectedColorbarIndex === "number" &&
+      state.selectedColorbarIndex >= 0 &&
+      state.selectedColorbarIndex < entries.length
+        ? state.selectedColorbarIndex
+        : entries.length > 0
+          ? entries.length - 1
+          : -1;
+    const formEntry =
+      selectedIndex >= 0
+        ? entries[selectedIndex]
+        : {
+            mode: state.mode ?? this._state.mode,
+            colormap: state.colormap ?? this._state.colormap,
+            customColors: state.customColors ?? this._state.customColors,
+            vmin: state.vmin ?? this._state.vmin,
+            vmax: state.vmax ?? this._state.vmax,
+            label: state.label ?? this._state.label,
+            units: state.units ?? this._state.units,
+            orientation: state.orientation ?? this._state.orientation,
+            colorbarPosition:
+              state.colorbarPosition ?? this._state.colorbarPosition,
+          };
+
+    this._state = {
+      ...this._state,
+      ...formEntry,
+      visible: state.visible ?? this._state.visible,
+      collapsed: state.collapsed ?? this._state.collapsed,
+      hasColorbar: entries.length > 0,
+      selectedColorbarIndex: selectedIndex,
+      colorbars: entries.map((entry) => ({ ...entry })),
+    };
+    this._colorbar =
+      selectedIndex >= 0 ? this._colorbars[selectedIndex] : undefined;
+
+    this._applyEntryToForm(formEntry);
+    if (this._state.collapsed) this._hidePanel();
+    else this._showPanel();
+    if (this._container) {
+      this._container.style.display =
+        this._state.visible && this._zoomVisible ? "" : "none";
+    }
+    this._updateButtonStates();
+    this._emit("colorbarupdate");
+    return this;
+  }
+
   private _createContainer(): HTMLElement {
     const container = document.createElement("div");
     container.className = `maplibregl-ctrl maplibre-gl-colorbar-gui-control ${this._options.className}`;
@@ -548,15 +615,15 @@ export class ColorbarGuiControl implements IControl {
     this._state.orientation = entry.orientation;
     this._state.colorbarPosition = entry.colorbarPosition;
 
-    if (this._modeNamedRadio) this._modeNamedRadio.checked = entry.mode === "named";
+    if (this._modeNamedRadio)
+      this._modeNamedRadio.checked = entry.mode === "named";
     if (this._modeCustomRadio)
       this._modeCustomRadio.checked = entry.mode === "custom";
     if (this._namedSection) {
       this._namedSection.style.display = entry.mode === "named" ? "" : "none";
     }
     if (this._customSection) {
-      this._customSection.style.display =
-        entry.mode === "custom" ? "" : "none";
+      this._customSection.style.display = entry.mode === "custom" ? "" : "none";
     }
     if (this._colormapSelect) this._colormapSelect.value = entry.colormap;
     if (this._customColorsTextarea)

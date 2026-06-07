@@ -198,6 +198,75 @@ export class LegendGuiControl implements IControl {
     };
   }
 
+  setState(state: Partial<LegendGuiControlState>): this {
+    if (this._map) {
+      this._legends.forEach((legend) => {
+        this._map!.removeControl(legend);
+      });
+    }
+
+    const entries = (state.legends ?? []).map((entry) => ({
+      ...entry,
+      items: entry.items.map((item) => ({ ...item })),
+    }));
+    this._legends = [];
+    this._legendEntries = entries;
+
+    if (this._map) {
+      entries.forEach((entry) => {
+        const legend = this._createLegend(entry);
+        this._map!.addControl(legend, entry.legendPosition);
+        this._legends.push(legend);
+      });
+    }
+
+    const selectedIndex =
+      typeof state.selectedLegendIndex === "number" &&
+      state.selectedLegendIndex >= 0 &&
+      state.selectedLegendIndex < entries.length
+        ? state.selectedLegendIndex
+        : entries.length > 0
+          ? entries.length - 1
+          : -1;
+    const formEntry =
+      selectedIndex >= 0
+        ? entries[selectedIndex]
+        : {
+            title: state.title ?? this._state.title,
+            items: (state.items ?? this._state.items).map((item) => ({
+              ...item,
+            })),
+            legendPosition: state.legendPosition ?? this._state.legendPosition,
+          };
+
+    this._state = {
+      ...this._state,
+      ...formEntry,
+      items: formEntry.items.map((item) => ({ ...item })),
+      visible: state.visible ?? this._state.visible,
+      collapsed: state.collapsed ?? this._state.collapsed,
+      hasLegend: entries.length > 0,
+      selectedLegendIndex: selectedIndex,
+      legends: entries.map((entry) => ({
+        ...entry,
+        items: entry.items.map((item) => ({ ...item })),
+      })),
+    };
+    this._legend =
+      selectedIndex >= 0 ? this._legends[selectedIndex] : undefined;
+
+    this._applyEntryToForm(formEntry);
+    if (this._state.collapsed) this._hidePanel();
+    else this._showPanel();
+    if (this._container) {
+      this._container.style.display =
+        this._state.visible && this._zoomVisible ? "" : "none";
+    }
+    this._updateButtonStates();
+    this._emit("legendupdate");
+    return this;
+  }
+
   private _createContainer(): HTMLElement {
     const container = document.createElement("div");
     container.className = `maplibregl-ctrl maplibre-gl-legend-gui-control ${this._options.className}`;
@@ -508,8 +577,7 @@ export class LegendGuiControl implements IControl {
     this._state.items = entry.items.map((item) => ({ ...item }));
     this._state.legendPosition = entry.legendPosition;
     if (this._titleInput) this._titleInput.value = entry.title;
-    if (this._positionSelect)
-      this._positionSelect.value = entry.legendPosition;
+    if (this._positionSelect) this._positionSelect.value = entry.legendPosition;
     this._renderItems();
   }
 

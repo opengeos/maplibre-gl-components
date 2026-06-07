@@ -183,6 +183,67 @@ export class HtmlGuiControl implements IControl {
     };
   }
 
+  setState(state: Partial<HtmlGuiControlState>): this {
+    if (this._map) {
+      this._htmlControls.forEach((htmlControl) => {
+        this._map!.removeControl(htmlControl);
+      });
+    }
+
+    const entries = (state.htmls ?? []).map((entry) => ({ ...entry }));
+    this._htmlControls = [];
+    this._htmlEntries = entries;
+
+    if (this._map) {
+      entries.forEach((entry) => {
+        const htmlControl = this._createHtmlControl(entry);
+        this._map!.addControl(htmlControl, entry.htmlPosition);
+        this._htmlControls.push(htmlControl);
+      });
+    }
+
+    const selectedIndex =
+      typeof state.selectedHtmlIndex === "number" &&
+      state.selectedHtmlIndex >= 0 &&
+      state.selectedHtmlIndex < entries.length
+        ? state.selectedHtmlIndex
+        : entries.length > 0
+          ? entries.length - 1
+          : -1;
+    const formEntry =
+      selectedIndex >= 0
+        ? entries[selectedIndex]
+        : {
+            title: state.title ?? this._state.title,
+            html: state.html ?? this._state.html,
+            htmlPosition: state.htmlPosition ?? this._state.htmlPosition,
+            collapsible: state.collapsible ?? this._state.collapsible,
+          };
+
+    this._state = {
+      ...this._state,
+      ...formEntry,
+      visible: state.visible ?? this._state.visible,
+      collapsed: state.collapsed ?? this._state.collapsed,
+      hasHtmlControl: entries.length > 0,
+      selectedHtmlIndex: selectedIndex,
+      htmls: entries.map((entry) => ({ ...entry })),
+    };
+    this._htmlControl =
+      selectedIndex >= 0 ? this._htmlControls[selectedIndex] : undefined;
+
+    this._applyEntryToForm(formEntry);
+    if (this._state.collapsed) this._hidePanel();
+    else this._showPanel();
+    if (this._container) {
+      this._container.style.display =
+        this._state.visible && this._zoomVisible ? "" : "none";
+    }
+    this._updateButtonStates();
+    this._emit("htmlupdate");
+    return this;
+  }
+
   private _createContainer(): HTMLElement {
     const container = document.createElement("div");
     container.className = `maplibregl-ctrl maplibre-gl-html-gui-control ${this._options.className}`;
@@ -479,9 +540,7 @@ export class HtmlGuiControl implements IControl {
         : undefined;
     this._state.htmls = this._htmlEntries.map((item) => ({ ...item }));
     if (this._state.selectedHtmlIndex >= 0) {
-      this._applyEntryToForm(
-        this._htmlEntries[this._state.selectedHtmlIndex],
-      );
+      this._applyEntryToForm(this._htmlEntries[this._state.selectedHtmlIndex]);
     }
     this._updateButtonStates();
     this._emit("htmlremove");
