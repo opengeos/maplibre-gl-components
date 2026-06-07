@@ -167,6 +167,13 @@ map.on("load", () => {
     collapsed: true,
     filename: "my-map",
     showSizeOptions: true,
+    showPageOptions: true,
+    pageSize: "a4",
+    orientation: "auto",
+    dpi: 150,
+    margin: 24,
+    fitMode: "contain",
+    pageBackground: "#ffffff",
     colorbar: {
       enabled: false,
       colormap: "viridis",
