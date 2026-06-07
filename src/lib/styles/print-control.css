@@ -4,6 +4,27 @@
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
     Cantarell, sans-serif;
+
+  /* Let native form controls (checkboxes, select popups, scrollbars) follow
+     the system theme. */
+  color-scheme: light dark;
+
+  /* Theme tokens (light defaults). Overridden by the dark media query below
+     so the control adapts to the system light/dark theme. */
+  --print-panel-bg: rgba(255, 255, 255, 0.95);
+  --print-subtle-bg: #f9fafb;
+  --print-text: #374151;
+  --print-muted: #6b7280;
+  --print-subtle: #9ca3af;
+  --print-border: #e5e7eb;
+  --print-input-bg: #fff;
+  --print-input-text: #111;
+  --print-placeholder: #9ca3af;
+  --print-hover-bg: #f3f4f6;
+  --print-focus: #3b82f6;
+  --print-button-bg: #fff;
+  --print-button-text: #333;
+  --print-feedback: #16a34a;
 }
 
 .maplibre-gl-print-control .print-button {
@@ -15,15 +36,15 @@
   padding: 0;
   border: none;
   border-radius: 4px;
-  background: #fff;
-  color: #333;
+  background: var(--print-button-bg);
+  color: var(--print-button-text);
   cursor: pointer;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
   transition: background-color 0.15s ease;
 }
 
 .maplibre-gl-print-control .print-button:hover {
-  background-color: #f3f4f6;
+  background-color: var(--print-hover-bg);
 }
 
 .maplibre-gl-print-control .print-button.active {
@@ -39,7 +60,8 @@
 .maplibre-gl-print-control .print-panel {
   position: absolute;
   top: 0;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--print-panel-bg);
+  color: var(--print-text);
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   overflow: hidden;
@@ -59,10 +81,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--print-border);
   font-weight: 600;
   font-size: 13px;
-  color: #374151;
+  color: var(--print-text);
 }
 
 .maplibre-gl-print-control .print-panel .print-close {
@@ -75,14 +97,14 @@
   border: none;
   background-color: transparent;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--print-muted);
   border-radius: 3px;
   transition: all 0.15s ease;
 }
 
 .maplibre-gl-print-control .print-panel .print-close:hover {
-  background-color: #f3f4f6;
-  color: #374151;
+  background-color: var(--print-hover-bg);
+  color: var(--print-text);
 }
 
 .maplibre-gl-print-control .print-close svg {
@@ -102,7 +124,7 @@
   display: block;
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--print-muted);
   margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -111,23 +133,37 @@
 .maplibre-gl-print-control .print-input {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--print-border);
   border-radius: 4px;
   font-size: 12px;
-  color: #374151;
-  background: #fff;
+  color: var(--print-input-text);
+  background: var(--print-input-bg);
   box-sizing: border-box;
   transition: border-color 0.15s ease;
 }
 
 .maplibre-gl-print-control .print-input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--print-focus);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .maplibre-gl-print-control .print-input::placeholder {
-  color: #9ca3af;
+  color: var(--print-placeholder);
+}
+
+/* common.css forces `color: #000 !important` on every `.maplibregl-ctrl input`
+   and select. These higher-specificity rules win so the inputs follow the
+   theme instead of being locked to black. */
+.maplibre-gl-print-control .print-input,
+.maplibre-gl-print-control .print-select,
+.maplibre-gl-print-control .print-size-input {
+  color: var(--print-input-text) !important;
+}
+
+.maplibre-gl-print-control .print-input::placeholder,
+.maplibre-gl-print-control .print-size-input::placeholder {
+  color: var(--print-placeholder) !important;
 }
 
 .maplibre-gl-print-control .print-row {
@@ -142,11 +178,11 @@
 .maplibre-gl-print-control .print-select {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--print-border);
   border-radius: 4px;
   font-size: 12px;
-  color: #374151;
-  background: #fff;
+  color: var(--print-input-text);
+  background: var(--print-input-bg);
   box-sizing: border-box;
   cursor: pointer;
   transition: border-color 0.15s ease;
@@ -154,7 +190,7 @@
 
 .maplibre-gl-print-control .print-select:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--print-focus);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
@@ -168,12 +204,12 @@
   flex: 1;
   height: 4px;
   cursor: pointer;
-  accent-color: #3b82f6;
+  accent-color: var(--print-focus);
 }
 
 .maplibre-gl-print-control .print-quality-value {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--print-muted);
   min-width: 28px;
   text-align: right;
 }
@@ -189,7 +225,7 @@
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #374151;
+  color: var(--print-text);
   cursor: pointer;
   text-transform: none;
   font-weight: normal;
@@ -197,7 +233,7 @@
 }
 
 .maplibre-gl-print-control .print-radio-label input[type="radio"] {
-  accent-color: #3b82f6;
+  accent-color: var(--print-focus);
 }
 
 .maplibre-gl-print-control .print-checkbox-label {
@@ -205,7 +241,7 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #374151;
+  color: var(--print-text);
   margin-bottom: 6px;
   text-transform: none;
   font-weight: normal;
@@ -218,7 +254,7 @@
 }
 
 .maplibre-gl-print-control .print-checkbox-label input[type="checkbox"] {
-  accent-color: #3b82f6;
+  accent-color: var(--print-focus);
 }
 
 .maplibre-gl-print-control .print-custom-size {
@@ -233,7 +269,7 @@
 .maplibre-gl-print-control .print-size-label {
   display: block;
   font-size: 10px;
-  color: #9ca3af;
+  color: var(--print-subtle);
   margin-bottom: 2px;
   text-transform: none;
   font-weight: normal;
@@ -243,17 +279,17 @@
 .maplibre-gl-print-control .print-size-input {
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--print-border);
   border-radius: 4px;
   font-size: 12px;
-  color: #374151;
-  background: #fff;
+  color: var(--print-input-text);
+  background: var(--print-input-bg);
   box-sizing: border-box;
 }
 
 .maplibre-gl-print-control .print-size-input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--print-focus);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
@@ -297,19 +333,19 @@
   gap: 6px;
   width: 100%;
   padding: 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--print-border);
   border-radius: 4px;
   background-color: transparent;
-  color: #4b5563;
+  color: var(--print-text);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .maplibre-gl-print-control .print-panel .print-copy-btn:hover {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
-  color: #4b5563;
+  background-color: var(--print-hover-bg);
+  border-color: var(--print-subtle);
+  color: var(--print-text);
 }
 
 .maplibre-gl-print-control .print-panel .print-copy-btn:disabled {
@@ -326,7 +362,7 @@
   text-align: center;
   font-size: 12px;
   font-weight: 600;
-  color: #16a34a;
+  color: var(--print-feedback);
   padding: 4px 0 0;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -338,8 +374,8 @@
 
 /* Colorbar settings */
 .maplibre-gl-print-control .print-colorbar-settings {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--print-subtle-bg);
+  border: 1px solid var(--print-border);
   border-radius: 4px;
   padding: 8px;
   margin-top: 8px;
@@ -362,7 +398,7 @@
 
 .maplibre-gl-print-control .print-colorbar-sublabel {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--print-muted);
   min-width: 36px;
 }
 
@@ -381,4 +417,24 @@
   width: 60px;
   padding: 6px 8px;
   flex: none;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .maplibre-gl-print-control {
+    --print-panel-bg: rgba(40, 40, 40, 0.95);
+    --print-subtle-bg: rgba(255, 255, 255, 0.05);
+    --print-text: #e0e0e0;
+    --print-muted: #aaa;
+    --print-subtle: #888;
+    --print-border: #555;
+    --print-input-bg: #2a2a2a;
+    --print-input-text: #e0e0e0;
+    --print-placeholder: #888;
+    --print-hover-bg: rgba(255, 255, 255, 0.08);
+    --print-focus: #3b82f6;
+    --print-button-bg: #2a2a2a;
+    --print-button-text: #e0e0e0;
+    --print-feedback: #4ade80;
+  }
 }

@@ -69,11 +69,11 @@ const DEFAULT_OPTIONS: Required<Omit<PrintControlOptions, "colorbar">> & {
   showPageOptions: false,
   panelWidth: 280,
   maxHeight: 500,
-  backgroundColor: "rgba(255, 255, 255, 0.95)",
+  backgroundColor: "",
   borderRadius: 4,
   opacity: 1,
   fontSize: 12,
-  fontColor: "#333",
+  fontColor: "",
   minzoom: 0,
   maxzoom: 24,
 };
@@ -340,10 +340,16 @@ export class PrintControl implements IControl {
       panel.style.maxHeight = `${this._options.maxHeight}px`;
       panel.style.overflowY = "auto";
     }
-    panel.style.background = this._options.backgroundColor;
+    // Only force colors when explicitly provided; otherwise the CSS custom
+    // properties drive them so the panel adapts to the system theme.
+    if (this._options.backgroundColor) {
+      panel.style.background = this._options.backgroundColor;
+    }
     panel.style.borderRadius = `${this._options.borderRadius}px`;
     panel.style.fontSize = `${this._options.fontSize}px`;
-    panel.style.color = this._options.fontColor;
+    if (this._options.fontColor) {
+      panel.style.color = this._options.fontColor;
+    }
 
     // Header
     const header = document.createElement("div");
@@ -368,7 +374,7 @@ export class PrintControl implements IControl {
     this._titleInput = document.createElement("input");
     this._titleInput.type = "text";
     this._titleInput.className = "print-input";
-    this._titleInput.style.color = "#000";
+    this._titleInput.style.color = "var(--print-input-text)";
     this._titleInput.placeholder = "Enter a title...";
     this._titleInput.value = this._state.title;
     this._titleInput.addEventListener("input", () => {
@@ -437,7 +443,7 @@ export class PrintControl implements IControl {
     this._colorbarColormapSelect = document.createElement("select");
     this._colorbarColormapSelect.className =
       "print-select print-colorbar-select";
-    this._colorbarColormapSelect.style.color = "#000";
+    this._colorbarColormapSelect.style.color = "var(--print-input-text)";
     const colormapNames = getColormapNames();
     colormapNames.forEach((name) => {
       const opt = document.createElement("option");
@@ -463,7 +469,7 @@ export class PrintControl implements IControl {
     this._colorbarOrientationSelect = document.createElement("select");
     this._colorbarOrientationSelect.className =
       "print-select print-colorbar-select";
-    this._colorbarOrientationSelect.style.color = "#000";
+    this._colorbarOrientationSelect.style.color = "var(--print-input-text)";
     const orientations: Array<"horizontal" | "vertical"> = [
       "horizontal",
       "vertical",
@@ -493,7 +499,7 @@ export class PrintControl implements IControl {
     this._colorbarVminInput = document.createElement("input");
     this._colorbarVminInput.type = "number";
     this._colorbarVminInput.className = "print-input print-colorbar-num";
-    this._colorbarVminInput.style.color = "#000";
+    this._colorbarVminInput.style.color = "var(--print-input-text)";
     this._colorbarVminInput.value = String(this._state.colorbar.vmin ?? 0);
     this._colorbarVminInput.addEventListener("input", () => {
       this._state.colorbar.vmin =
@@ -505,7 +511,7 @@ export class PrintControl implements IControl {
     this._colorbarVmaxInput = document.createElement("input");
     this._colorbarVmaxInput.type = "number";
     this._colorbarVmaxInput.className = "print-input print-colorbar-num";
-    this._colorbarVmaxInput.style.color = "#000";
+    this._colorbarVmaxInput.style.color = "var(--print-input-text)";
     this._colorbarVmaxInput.value = String(this._state.colorbar.vmax ?? 1);
     this._colorbarVmaxInput.addEventListener("input", () => {
       this._state.colorbar.vmax =
@@ -526,7 +532,7 @@ export class PrintControl implements IControl {
     this._colorbarLabelInput = document.createElement("input");
     this._colorbarLabelInput.type = "text";
     this._colorbarLabelInput.className = "print-input";
-    this._colorbarLabelInput.style.color = "#000";
+    this._colorbarLabelInput.style.color = "var(--print-input-text)";
     this._colorbarLabelInput.placeholder = "e.g., Temperature";
     this._colorbarLabelInput.value = this._state.colorbar.label ?? "";
     this._colorbarLabelInput.addEventListener("input", () => {
@@ -545,7 +551,7 @@ export class PrintControl implements IControl {
     this._colorbarUnitsInput = document.createElement("input");
     this._colorbarUnitsInput.type = "text";
     this._colorbarUnitsInput.className = "print-input print-colorbar-units";
-    this._colorbarUnitsInput.style.color = "#000";
+    this._colorbarUnitsInput.style.color = "var(--print-input-text)";
     this._colorbarUnitsInput.placeholder = "e.g., °C";
     this._colorbarUnitsInput.value = this._state.colorbar.units ?? "";
     this._colorbarUnitsInput.addEventListener("input", () => {
@@ -565,7 +571,7 @@ export class PrintControl implements IControl {
     this._filenameInput = document.createElement("input");
     this._filenameInput.type = "text";
     this._filenameInput.className = "print-input";
-    this._filenameInput.style.color = "#000";
+    this._filenameInput.style.color = "var(--print-input-text)";
     this._filenameInput.value = this._state.filename;
     this._filenameInput.addEventListener("input", () => {
       this._state.filename = this._filenameInput!.value || "map-export";
@@ -583,7 +589,7 @@ export class PrintControl implements IControl {
     formatField.innerHTML = `<label>Format</label>`;
     this._formatSelect = document.createElement("select");
     this._formatSelect.className = "print-select";
-    this._formatSelect.style.color = "#000";
+    this._formatSelect.style.color = "var(--print-input-text)";
     this._formatSelect.innerHTML = `
       <option value="png" ${this._state.format === "png" ? "selected" : ""}>PNG</option>
       <option value="jpeg" ${this._state.format === "jpeg" ? "selected" : ""}>JPEG</option>
@@ -607,7 +613,7 @@ export class PrintControl implements IControl {
     this._qualityInput = document.createElement("input");
     this._qualityInput.type = "range";
     this._qualityInput.className = "print-quality-range";
-    this._qualityInput.style.color = "#000";
+    this._qualityInput.style.color = "var(--print-input-text)";
     this._qualityInput.min = "0.1";
     this._qualityInput.max = "1";
     this._qualityInput.step = "0.01";
@@ -687,7 +693,7 @@ export class PrintControl implements IControl {
       this._widthInput = document.createElement("input");
       this._widthInput.type = "number";
       this._widthInput.className = "print-size-input";
-      this._widthInput.style.color = "#000";
+      this._widthInput.style.color = "var(--print-input-text)";
       this._widthInput.min = "1";
       this._widthInput.max = "8192";
       this._widthInput.value = String(this._state.width || 1920);
@@ -705,7 +711,7 @@ export class PrintControl implements IControl {
       this._heightInput = document.createElement("input");
       this._heightInput.type = "number";
       this._heightInput.className = "print-size-input";
-      this._heightInput.style.color = "#000";
+      this._heightInput.style.color = "var(--print-input-text)";
       this._heightInput.min = "1";
       this._heightInput.max = "8192";
       this._heightInput.value = String(this._state.height || 1080);
@@ -783,7 +789,7 @@ export class PrintControl implements IControl {
   ): HTMLSelectElement {
     const select = document.createElement("select");
     select.className = "print-select";
-    select.style.color = "#000";
+    select.style.color = "var(--print-input-text)";
     options.forEach(([value, text]) => {
       const opt = document.createElement("option");
       opt.value = value;
@@ -866,7 +872,7 @@ export class PrintControl implements IControl {
     this._marginInput = document.createElement("input");
     this._marginInput.type = "number";
     this._marginInput.className = "print-input";
-    this._marginInput.style.color = "#000";
+    this._marginInput.style.color = "var(--print-input-text)";
     this._marginInput.min = "0";
     this._marginInput.value = String(this._state.margin);
     this._marginInput.addEventListener("input", () => {
