@@ -42,11 +42,11 @@ const DEFAULT_OPTIONS: Required<MeasureControlOptions> = {
   precision: 2,
   panelWidth: 240,
   maxHeight: 500,
-  backgroundColor: "rgba(255, 255, 255, 0.95)",
+  backgroundColor: "",
   borderRadius: 4,
   opacity: 1,
   fontSize: 12,
-  fontColor: "#333",
+  fontColor: "",
   minzoom: 0,
   maxzoom: 24,
 };
@@ -334,10 +334,16 @@ export class MeasureControl implements IControl {
       panel.style.maxHeight = `${this._options.maxHeight}px`;
       panel.style.overflowY = "auto";
     }
-    panel.style.background = this._options.backgroundColor;
+    // Only force colors when explicitly provided; otherwise the CSS custom
+    // properties drive them so the panel adapts to the system theme.
+    if (this._options.backgroundColor) {
+      panel.style.background = this._options.backgroundColor;
+    }
     panel.style.borderRadius = `${this._options.borderRadius}px`;
     panel.style.fontSize = `${this._options.fontSize}px`;
-    panel.style.color = this._options.fontColor;
+    if (this._options.fontColor) {
+      panel.style.color = this._options.fontColor;
+    }
 
     // Header
     const header = document.createElement("div");
@@ -385,7 +391,7 @@ export class MeasureControl implements IControl {
       <select></select>
     `;
     const select = unitDiv.querySelector("select")!;
-    select.style.color = "#000";
+    select.style.color = "var(--ms-input-text)";
     this._updateUnitOptions(select);
     select.addEventListener("change", (e) => {
       const value = (e.target as HTMLSelectElement).value;

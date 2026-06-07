@@ -29,10 +29,10 @@ const DEFAULT_OPTIONS: Required<BookmarkControlOptions> = {
   flyToDuration: 1500,
   panelWidth: 260,
   maxHeight: 500,
-  backgroundColor: "rgba(255, 255, 255, 0.95)",
+  backgroundColor: "",
   borderRadius: 4,
   fontSize: 12,
-  fontColor: "#333",
+  fontColor: "",
   minzoom: 0,
   maxzoom: 24,
 };
@@ -253,10 +253,16 @@ export class BookmarkControl implements IControl {
       panel.style.maxHeight = `${this._options.maxHeight}px`;
       panel.style.overflowY = "auto";
     }
-    panel.style.background = this._options.backgroundColor;
+    // Only force colors when explicitly provided; otherwise the CSS custom
+    // properties drive them so the panel adapts to the system theme.
+    if (this._options.backgroundColor) {
+      panel.style.background = this._options.backgroundColor;
+    }
     panel.style.borderRadius = `${this._options.borderRadius}px`;
     panel.style.fontSize = `${this._options.fontSize}px`;
-    panel.style.color = this._options.fontColor;
+    if (this._options.fontColor) {
+      panel.style.color = this._options.fontColor;
+    }
 
     // Header
     const header = document.createElement("div");
@@ -284,7 +290,7 @@ export class BookmarkControl implements IControl {
     this._nameInput = addForm.querySelector(
       ".bookmark-name-input",
     ) as HTMLInputElement;
-    this._nameInput.style.color = "#000";
+    this._nameInput.style.color = "var(--bm-input-text)";
     const addBtn = addForm.querySelector(".bookmark-add-btn")!;
 
     // Handle add
@@ -583,7 +589,7 @@ export class BookmarkControl implements IControl {
     const input = document.createElement("input");
     input.type = "text";
     input.className = "bookmark-rename-input";
-    input.style.color = "#000";
+    input.style.color = "var(--bm-input-text)";
     input.value = currentName;
     input.maxLength = 50;
 

@@ -4,6 +4,32 @@
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
     Cantarell, sans-serif;
+
+  /* Let native form controls follow the system theme. */
+  color-scheme: light dark;
+
+  /* Theme tokens (light defaults). Overridden by the dark media query below
+     so the control adapts to the system light/dark theme. */
+  --bm-panel-bg: rgba(255, 255, 255, 0.95);
+  --bm-text: #374151;
+  --bm-muted: #6b7280;
+  --bm-subtle: #9ca3af;
+  --bm-border: #e5e7eb;
+  --bm-input-bg: #fff;
+  --bm-input-text: #111;
+  --bm-placeholder: #9ca3af;
+  --bm-hover-bg: #f3f4f6;
+  --bm-chip-hover-bg: #e5e7eb;
+  --bm-focus: #3b82f6;
+  --bm-button-bg: #fff;
+  --bm-button-text: #333;
+  --bm-item-active-bg: #eff6ff;
+  --bm-secondary-text: #4b5563;
+  --bm-secondary-border: #d1d5db;
+  --bm-danger: #dc2626;
+  --bm-danger-bg: #fef2f2;
+  --bm-danger-border: #fecaca;
+  --bm-danger-border-hover: #fca5a5;
 }
 
 .maplibre-gl-bookmark-control .bookmark-button {
@@ -15,15 +41,15 @@
   padding: 0;
   border: none;
   border-radius: 4px;
-  background: #fff;
-  color: #333;
+  background: var(--bm-button-bg);
+  color: var(--bm-button-text);
   cursor: pointer;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
   transition: background-color 0.15s ease;
 }
 
 .maplibre-gl-bookmark-control .bookmark-button:hover {
-  background-color: #f3f4f6;
+  background-color: var(--bm-hover-bg);
 }
 
 .maplibre-gl-bookmark-control .bookmark-button.active {
@@ -39,7 +65,8 @@
 .maplibre-gl-bookmark-control .bookmark-panel {
   position: absolute;
   top: 0;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bm-panel-bg);
+  color: var(--bm-text);
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   overflow: hidden;
@@ -59,10 +86,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--bm-border);
   font-weight: 600;
   font-size: 13px;
-  color: #374151;
+  color: var(--bm-text);
 }
 
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-close {
@@ -75,14 +102,14 @@
   border: none;
   background-color: transparent;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--bm-muted);
   border-radius: 3px;
   transition: all 0.15s ease;
 }
 
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-close:hover {
-  background-color: #f3f4f6;
-  color: #374151;
+  background-color: var(--bm-hover-bg);
+  color: var(--bm-text);
 }
 
 .maplibre-gl-bookmark-control .bookmark-close svg {
@@ -103,21 +130,22 @@
 .maplibre-gl-bookmark-control .bookmark-name-input {
   flex: 1;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--bm-border);
   border-radius: 4px;
   font-size: 12px;
-  color: #374151;
+  color: var(--bm-input-text);
+  background: var(--bm-input-bg);
   transition: border-color 0.15s ease;
 }
 
 .maplibre-gl-bookmark-control .bookmark-name-input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--bm-focus);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .maplibre-gl-bookmark-control .bookmark-name-input::placeholder {
-  color: #9ca3af;
+  color: var(--bm-placeholder);
 }
 
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-add-btn {
@@ -158,7 +186,7 @@
 .maplibre-gl-bookmark-control .bookmark-empty {
   padding: 20px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--bm-subtle);
   font-size: 12px;
 }
 
@@ -181,11 +209,11 @@
 }
 
 .maplibre-gl-bookmark-control .bookmark-item:hover {
-  background: #f3f4f6;
+  background: var(--bm-hover-bg);
 }
 
 .maplibre-gl-bookmark-control .bookmark-item.active {
-  background: #eff6ff;
+  background: var(--bm-item-active-bg);
 }
 
 .maplibre-gl-bookmark-control .bookmark-item:last-child {
@@ -198,9 +226,9 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: #f3f4f6;
+  background: var(--bm-hover-bg);
   border-radius: 4px;
-  color: #6b7280;
+  color: var(--bm-muted);
   flex-shrink: 0;
 }
 
@@ -217,7 +245,7 @@
 .maplibre-gl-bookmark-control .bookmark-name {
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--bm-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -225,7 +253,7 @@
 
 .maplibre-gl-bookmark-control .bookmark-meta {
   font-size: 10px;
-  color: #9ca3af;
+  color: var(--bm-subtle);
   margin-top: 2px;
 }
 
@@ -250,21 +278,21 @@
   border: none;
   background-color: transparent;
   cursor: pointer;
-  color: #9ca3af;
+  color: var(--bm-subtle);
   border-radius: 4px;
   transition: all 0.15s ease;
 }
 
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-action-btn:hover {
-  background-color: #e5e7eb;
-  color: #374151;
+  background-color: var(--bm-chip-hover-bg);
+  color: var(--bm-text);
 }
 
 .maplibre-gl-bookmark-control
   .bookmark-panel
   .bookmark-action-btn.delete:hover {
-  background-color: #fef2f2;
-  color: #dc2626;
+  background-color: var(--bm-danger-bg);
+  color: var(--bm-danger);
 }
 
 .maplibre-gl-bookmark-control .bookmark-action-btn svg {
@@ -274,7 +302,7 @@
 
 .maplibre-gl-bookmark-control .bookmark-footer {
   padding: 8px 10px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--bm-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -291,20 +319,20 @@
   align-items: center;
   gap: 4px;
   padding: 6px 10px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--bm-secondary-border);
   border-radius: 4px;
   background-color: transparent;
   cursor: pointer;
   font-size: 11px;
-  color: #4b5563;
+  color: var(--bm-secondary-text);
   transition: all 0.15s ease;
 }
 
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-import-btn:hover,
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-btn:hover {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
-  color: #4b5563;
+  background-color: var(--bm-hover-bg);
+  border-color: var(--bm-subtle);
+  color: var(--bm-secondary-text);
 }
 
 .maplibre-gl-bookmark-control .bookmark-import-btn svg,
@@ -318,19 +346,19 @@
   align-items: center;
   gap: 4px;
   padding: 6px 10px;
-  border: 1px solid #fecaca;
+  border: 1px solid var(--bm-danger-border);
   border-radius: 4px;
   background-color: transparent;
   cursor: pointer;
   font-size: 11px;
-  color: #dc2626;
+  color: var(--bm-danger);
   transition: all 0.15s ease;
 }
 
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-clear-btn:hover {
-  background-color: #fef2f2;
-  border-color: #fca5a5;
-  color: #dc2626;
+  background-color: var(--bm-danger-bg);
+  border-color: var(--bm-danger-border-hover);
+  color: var(--bm-danger);
 }
 
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-clear-btn:disabled {
@@ -349,7 +377,7 @@
   height: 28px;
   border-radius: 3px;
   object-fit: cover;
-  background: #f3f4f6;
+  background: var(--bm-hover-bg);
   flex-shrink: 0;
 }
 
@@ -357,13 +385,52 @@
 .maplibre-gl-bookmark-control .bookmark-rename-input {
   width: 100%;
   padding: 4px 6px;
-  border: 1px solid #3b82f6;
+  border: 1px solid var(--bm-focus);
   border-radius: 3px;
   font-size: 13px;
-  color: #374151;
+  color: var(--bm-input-text);
+  background: var(--bm-input-bg);
 }
 
 .maplibre-gl-bookmark-control .bookmark-rename-input:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* common.css forces `color: #000 !important` on every `.maplibregl-ctrl input`.
+   These higher-specificity rules win so the inputs follow the theme. */
+.maplibre-gl-bookmark-control .bookmark-name-input,
+.maplibre-gl-bookmark-control .bookmark-rename-input {
+  color: var(--bm-input-text) !important;
+}
+
+.maplibre-gl-bookmark-control .bookmark-name-input::placeholder,
+.maplibre-gl-bookmark-control .bookmark-rename-input::placeholder {
+  color: var(--bm-placeholder) !important;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .maplibre-gl-bookmark-control {
+    --bm-panel-bg: rgba(40, 40, 40, 0.95);
+    --bm-text: #e0e0e0;
+    --bm-muted: #aaa;
+    --bm-subtle: #888;
+    --bm-border: #555;
+    --bm-input-bg: #2a2a2a;
+    --bm-input-text: #e0e0e0;
+    --bm-placeholder: #888;
+    --bm-hover-bg: rgba(255, 255, 255, 0.08);
+    --bm-chip-hover-bg: rgba(255, 255, 255, 0.15);
+    --bm-focus: #3b82f6;
+    --bm-button-bg: #2a2a2a;
+    --bm-button-text: #e0e0e0;
+    --bm-item-active-bg: rgba(59, 130, 246, 0.25);
+    --bm-secondary-text: #cbd5e1;
+    --bm-secondary-border: #555;
+    --bm-danger: #f87171;
+    --bm-danger-bg: rgba(248, 113, 113, 0.15);
+    --bm-danger-border: rgba(248, 113, 113, 0.4);
+    --bm-danger-border-hover: rgba(248, 113, 113, 0.6);
+  }
 }

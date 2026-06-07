@@ -4,6 +4,34 @@
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
     Cantarell, sans-serif;
+
+  /* Let native form controls follow the system theme. */
+  color-scheme: light dark;
+
+  /* Theme tokens (light defaults). Overridden by the dark media query below
+     so the control adapts to the system light/dark theme. */
+  --ms-panel-bg: rgba(255, 255, 255, 0.95);
+  --ms-text: #374151;
+  --ms-strong-text: #1f2937;
+  --ms-muted: #6b7280;
+  --ms-subtle: #9ca3af;
+  --ms-border: #e5e7eb;
+  --ms-input-bg: #fff;
+  --ms-input-text: #111;
+  --ms-hover-bg: #f3f4f6;
+  --ms-subtle-bg: #f9fafb;
+  --ms-focus: #3b82f6;
+  --ms-button-bg: #fff;
+  --ms-button-text: #333;
+  --ms-chip-bg: #e5e7eb;
+  --ms-chip-text: #4b5563;
+  --ms-secondary-border: #d1d5db;
+  --ms-warn-bg: #fef3c7;
+  --ms-warn-text: #92400e;
+  --ms-danger: #dc2626;
+  --ms-danger-bg: #fef2f2;
+  --ms-danger-border: #fecaca;
+  --ms-danger-border-hover: #fca5a5;
 }
 
 .maplibre-gl-measure-control .measure-button {
@@ -15,15 +43,15 @@
   padding: 0;
   border: none;
   border-radius: 4px;
-  background: #fff;
-  color: #333;
+  background: var(--ms-button-bg);
+  color: var(--ms-button-text);
   cursor: pointer;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
   transition: background-color 0.15s ease;
 }
 
 .maplibre-gl-measure-control .measure-button:hover {
-  background-color: #f3f4f6;
+  background-color: var(--ms-hover-bg);
 }
 
 .maplibre-gl-measure-control .measure-button.active {
@@ -39,7 +67,8 @@
 .maplibre-gl-measure-control .measure-panel {
   position: absolute;
   top: 0;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--ms-panel-bg);
+  color: var(--ms-text);
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   overflow: hidden;
@@ -59,10 +88,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--ms-border);
   font-weight: 600;
   font-size: 13px;
-  color: #374151;
+  color: var(--ms-text);
 }
 
 .maplibre-gl-measure-control .measure-panel .measure-close {
@@ -75,14 +104,14 @@
   border: none;
   background-color: transparent;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--ms-muted);
   border-radius: 3px;
   transition: all 0.15s ease;
 }
 
 .maplibre-gl-measure-control .measure-panel .measure-close:hover {
-  background-color: #f3f4f6;
-  color: #374151;
+  background-color: var(--ms-hover-bg);
+  color: var(--ms-text);
 }
 
 .maplibre-gl-measure-control .measure-close svg {
@@ -107,19 +136,19 @@
   justify-content: center;
   gap: 6px;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--ms-border);
   border-radius: 4px;
-  background-color: #fff;
+  background-color: var(--ms-input-bg);
   cursor: pointer;
   font-size: 12px;
-  color: #374151;
+  color: var(--ms-text);
   transition: all 0.15s ease;
 }
 
 .maplibre-gl-measure-control .measure-panel .mode-btn:hover {
-  background-color: #f9fafb;
-  border-color: #d1d5db;
-  color: #374151;
+  background-color: var(--ms-subtle-bg);
+  border-color: var(--ms-secondary-border);
+  color: var(--ms-text);
 }
 
 .maplibre-gl-measure-control .measure-panel .mode-btn.active {
@@ -147,7 +176,7 @@
   margin-bottom: 4px;
   font-size: 11px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--ms-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -155,28 +184,28 @@
 .maplibre-gl-measure-control .measure-unit select {
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--ms-border);
   border-radius: 4px;
-  background: #fff;
+  background: var(--ms-input-bg);
   font-size: 12px;
-  color: #374151;
+  color: var(--ms-input-text);
   cursor: pointer;
   transition: border-color 0.15s ease;
 }
 
 .maplibre-gl-measure-control .measure-unit select:hover {
-  border-color: #d1d5db;
+  border-color: var(--ms-secondary-border);
 }
 
 .maplibre-gl-measure-control .measure-unit select:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--ms-focus);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .maplibre-gl-measure-control .measure-result {
   padding: 10px;
-  background: #f9fafb;
+  background: var(--ms-subtle-bg);
   border-radius: 4px;
   margin-bottom: 10px;
 }
@@ -184,7 +213,7 @@
 .maplibre-gl-measure-control .result-label {
   font-size: 11px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--ms-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
@@ -193,25 +222,25 @@
 .maplibre-gl-measure-control .result-value {
   font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--ms-strong-text);
 }
 
 .maplibre-gl-measure-control .result-unit {
   font-size: 12px;
   font-weight: 400;
-  color: #6b7280;
+  color: var(--ms-muted);
   margin-left: 4px;
 }
 
 .maplibre-gl-measure-control .measure-segments {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px dashed #e5e7eb;
+  border-top: 1px dashed var(--ms-border);
 }
 
 .maplibre-gl-measure-control .segment-label {
   font-size: 10px;
-  color: #9ca3af;
+  color: var(--ms-subtle);
   margin-bottom: 4px;
 }
 
@@ -223,18 +252,18 @@
 
 .maplibre-gl-measure-control .segment-item {
   padding: 2px 6px;
-  background: #e5e7eb;
+  background: var(--ms-chip-bg);
   border-radius: 3px;
   font-size: 10px;
-  color: #4b5563;
+  color: var(--ms-chip-text);
 }
 
 .maplibre-gl-measure-control .measure-instructions {
   padding: 8px 10px;
-  background: #fef3c7;
+  background: var(--ms-warn-bg);
   border-radius: 4px;
   font-size: 11px;
-  color: #92400e;
+  color: var(--ms-warn-text);
   margin-bottom: 10px;
 }
 
@@ -250,19 +279,19 @@
   justify-content: center;
   gap: 4px;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--ms-border);
   border-radius: 4px;
-  background-color: #fff;
+  background-color: var(--ms-input-bg);
   cursor: pointer;
   font-size: 12px;
-  color: #374151;
+  color: var(--ms-text);
   transition: all 0.15s ease;
 }
 
 .maplibre-gl-measure-control .measure-panel .action-btn:hover {
-  background-color: #f9fafb;
-  border-color: #d1d5db;
-  color: #374151;
+  background-color: var(--ms-subtle-bg);
+  border-color: var(--ms-secondary-border);
+  color: var(--ms-text);
 }
 
 .maplibre-gl-measure-control .measure-panel .action-btn.primary {
@@ -277,14 +306,14 @@
 }
 
 .maplibre-gl-measure-control .measure-panel .action-btn.danger {
-  color: #dc2626;
-  border-color: #fecaca;
+  color: var(--ms-danger);
+  border-color: var(--ms-danger-border);
 }
 
 .maplibre-gl-measure-control .measure-panel .action-btn.danger:hover {
-  background-color: #fef2f2;
-  border-color: #fca5a5;
-  color: #dc2626;
+  background-color: var(--ms-danger-bg);
+  border-color: var(--ms-danger-border-hover);
+  color: var(--ms-danger);
 }
 
 .maplibre-gl-measure-control .measure-panel .action-btn svg {
@@ -297,7 +326,7 @@
   cursor: not-allowed;
 }
 
-/* Measurement labels on map */
+/* Measurement labels on map (overlay the map, theme-independent) */
 .measure-label {
   background: rgba(255, 255, 255, 0.95);
   padding: 3px 8px;
@@ -336,12 +365,12 @@
   padding: 6px 8px;
   border-radius: 4px;
   margin-bottom: 4px;
-  background: #f9fafb;
+  background: var(--ms-subtle-bg);
   transition: background 0.15s ease;
 }
 
 .maplibre-gl-measure-control .measurement-item:hover {
-  background: #f3f4f6;
+  background: var(--ms-hover-bg);
 }
 
 .maplibre-gl-measure-control .measurement-info {
@@ -351,7 +380,7 @@
 }
 
 .maplibre-gl-measure-control .measurement-icon {
-  color: #6b7280;
+  color: var(--ms-muted);
 }
 
 .maplibre-gl-measure-control .measurement-icon svg {
@@ -362,7 +391,7 @@
 .maplibre-gl-measure-control .measurement-value {
   font-size: 12px;
   font-weight: 500;
-  color: #374151;
+  color: var(--ms-text);
 }
 
 .maplibre-gl-measure-control .measure-panel .measurement-delete {
@@ -375,14 +404,14 @@
   border: none;
   background-color: transparent;
   cursor: pointer;
-  color: #9ca3af;
+  color: var(--ms-subtle);
   border-radius: 3px;
   transition: all 0.15s ease;
 }
 
 .maplibre-gl-measure-control .measure-panel .measurement-delete:hover {
-  background-color: #fef2f2;
-  color: #dc2626;
+  background-color: var(--ms-danger-bg);
+  color: var(--ms-danger);
 }
 
 .maplibre-gl-measure-control .measurement-delete svg {
@@ -394,6 +423,40 @@
 .maplibre-gl-measure-control .empty-state {
   padding: 16px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--ms-subtle);
   font-size: 12px;
+}
+
+/* common.css forces `color: #000 !important` on every `.maplibregl-ctrl select`.
+   This higher-specificity rule wins so the select follows the theme. */
+.maplibre-gl-measure-control .measure-unit select {
+  color: var(--ms-input-text) !important;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .maplibre-gl-measure-control {
+    --ms-panel-bg: rgba(40, 40, 40, 0.95);
+    --ms-text: #e0e0e0;
+    --ms-strong-text: #f3f4f6;
+    --ms-muted: #aaa;
+    --ms-subtle: #888;
+    --ms-border: #555;
+    --ms-input-bg: #2a2a2a;
+    --ms-input-text: #e0e0e0;
+    --ms-hover-bg: rgba(255, 255, 255, 0.08);
+    --ms-subtle-bg: rgba(255, 255, 255, 0.05);
+    --ms-focus: #3b82f6;
+    --ms-button-bg: #2a2a2a;
+    --ms-button-text: #e0e0e0;
+    --ms-chip-bg: rgba(255, 255, 255, 0.12);
+    --ms-chip-text: #cbd5e1;
+    --ms-secondary-border: #555;
+    --ms-warn-bg: rgba(251, 191, 36, 0.15);
+    --ms-warn-text: #fcd34d;
+    --ms-danger: #f87171;
+    --ms-danger-bg: rgba(248, 113, 113, 0.15);
+    --ms-danger-border: rgba(248, 113, 113, 0.4);
+    --ms-danger-border-hover: rgba(248, 113, 113, 0.6);
+  }
 }

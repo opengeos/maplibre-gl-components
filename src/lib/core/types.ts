@@ -2789,7 +2789,10 @@ export interface MeasureControlOptions {
   panelWidth?: number;
   /** Maximum height of the panel in pixels before scrolling. Default: 500. */
   maxHeight?: number;
-  /** Background color of the panel. Default: 'rgba(255, 255, 255, 0.95)'. */
+  /**
+   * Background color of the panel. When unset (default), the panel adapts to
+   * the system light/dark theme via CSS custom properties.
+   */
   backgroundColor?: string;
   /** Border radius in pixels. Default: 4. */
   borderRadius?: number;
@@ -2797,7 +2800,10 @@ export interface MeasureControlOptions {
   opacity?: number;
   /** Font size in pixels. Default: 12. */
   fontSize?: number;
-  /** Font color. Default: '#333'. */
+  /**
+   * Font color of the panel. When unset (default), the panel text adapts to
+   * the system light/dark theme via CSS custom properties.
+   */
   fontColor?: string;
   /** Minimum zoom level at which the control is visible. */
   minzoom?: number;
@@ -3017,13 +3023,19 @@ export interface BookmarkControlOptions {
   panelWidth?: number;
   /** Maximum height of the panel in pixels before scrolling. Default: 500. */
   maxHeight?: number;
-  /** Background color. Default: 'rgba(255, 255, 255, 0.95)'. */
+  /**
+   * Background color of the panel. When unset (default), the panel adapts to
+   * the system light/dark theme via CSS custom properties.
+   */
   backgroundColor?: string;
   /** Border radius in pixels. Default: 4. */
   borderRadius?: number;
   /** Font size in pixels. Default: 12. */
   fontSize?: number;
-  /** Font color. Default: '#333'. */
+  /**
+   * Font color of the panel. When unset (default), the panel text adapts to
+   * the system light/dark theme via CSS custom properties.
+   */
   fontColor?: string;
   /** Minimum zoom level at which the control is visible. */
   minzoom?: number;
