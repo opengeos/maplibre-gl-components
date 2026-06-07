@@ -946,6 +946,18 @@ export class PrintControl implements IControl {
   }
 
   /**
+   * Resolve the DPI used for physical sizing (PDF points, SVG inches, raster
+   * metadata). `dpi` is ignored in the legacy `'fit'` page mode, so a fixed
+   * 96 DPI is used there to keep that output deterministic.
+   *
+   * @returns The effective dots-per-inch.
+   */
+  private _effectiveDpi(): number {
+    if (this._state.pageSize === "fit") return 96;
+    return this._state.dpi > 0 ? this._state.dpi : 96;
+  }
+
+  /**
    * Export the canvas to a PDF file using jspdf. The composed canvas already
    * represents the full page (page size, margins, and overlays baked in), so
    * the PDF page is sized to match and the image fills it edge to edge.
@@ -954,7 +966,7 @@ export class PrintControl implements IControl {
    */
   private async _exportPdf(canvas: HTMLCanvasElement): Promise<void> {
     const { jsPDF } = await import("jspdf");
-    const dpi = this._state.dpi > 0 ? this._state.dpi : 96;
+    const dpi = this._effectiveDpi();
     // Convert the page pixel dimensions to points (1 pt = 1/72 inch).
     const widthPt = (canvas.width / dpi) * 72;
     const heightPt = (canvas.height / dpi) * 72;
@@ -989,7 +1001,7 @@ export class PrintControl implements IControl {
     const h = canvas.height;
     // Express the SVG size in physical inches (with a pixel viewBox) so it
     // reports the correct page size, e.g. 11in x 8.5in for Letter landscape.
-    const dpi = this._state.dpi > 0 ? this._state.dpi : 96;
+    const dpi = this._effectiveDpi();
     const widthIn = +(w / dpi).toFixed(4);
     const heightIn = +(h / dpi).toFixed(4);
     const svg =
@@ -1107,7 +1119,7 @@ export class PrintControl implements IControl {
   ): Promise<Blob> {
     try {
       const bytes = new Uint8Array(await blob.arrayBuffer());
-      const dpi = this._state.dpi > 0 ? this._state.dpi : 96;
+      const dpi = this._effectiveDpi();
       if (format === "png") {
         const out = this._pngWithDpi(bytes, dpi);
         return new Blob([out as unknown as BlobPart], { type: "image/png" });
@@ -1117,6 +1129,21 @@ export class PrintControl implements IControl {
     } catch {
       return blob;
     }
+  }
+
+  /**
+   * Read a blob as a base64 data URL.
+   *
+   * @param blob - The blob to encode.
+   * @returns The data URL string.
+   */
+  private _blobToDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("Failed to read image blob"));
+      reader.readAsDataURL(blob);
+    });
   }
 
   /**
@@ -1619,8 +1646,9 @@ export class PrintControl implements IControl {
         mapDest: { x: 0, y: 0, w: pageW, h: pageH },
         scaleX: mapW > 0 ? pageW / mapW : 1,
         clip: false,
-        pageWidthIn: this._state.dpi > 0 ? pageW / this._state.dpi : null,
-        pageHeightIn: this._state.dpi > 0 ? pageH / this._state.dpi : null,
+        // dpi is ignored in 'fit' mode, so physical sizing uses a fixed 96 DPI.
+        pageWidthIn: pageW / 96,
+        pageHeightIn: pageH / 96,
       };
     }
 
@@ -1685,8 +1713,11 @@ export class PrintControl implements IControl {
       if (!ctx) return null;
 
       // Fill the page background (visible in margins and letterboxed areas).
-      ctx.fillStyle = this._state.pageBackground;
-      ctx.fillRect(0, 0, pageW, pageH);
+      // Skipped in legacy 'fit' mode so transparent map pixels are preserved.
+      if (this._state.pageSize !== "fit") {
+        ctx.fillStyle = this._state.pageBackground;
+        ctx.fillRect(0, 0, pageW, pageH);
+      }
 
       // Draw the map, clipping to the content rect when cropping ('cover').
       ctx.save();
@@ -1806,7 +1837,8 @@ export class PrintControl implements IControl {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        const dataUrl = canvas.toDataURL(mimeType, quality);
+        // Emit the same DPI-patched image that was downloaded.
+        const dataUrl = await this._blobToDataUrl(outBlob);
         this._showFeedback("Exported!");
         this._emit("export", { dataUrl });
       }
@@ -2029,7 +2061,17 @@ export class PrintControl implements IControl {
       const quality =
         this._state.format === "jpeg" ? this._state.quality : undefined;
 
-      const dataUrl = canvas.toDataURL(mimeType, quality);
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((b) => resolve(b), mimeType, quality);
+      });
+      if (!blob) {
+        throw new Error("Failed to create image blob");
+      }
+      const outBlob = await this._embedDpi(
+        blob,
+        this._state.format === "jpeg" ? "jpeg" : "png",
+      );
+      const dataUrl = await this._blobToDataUrl(outBlob);
       this._emit("export", { dataUrl });
       return dataUrl;
     } finally {
