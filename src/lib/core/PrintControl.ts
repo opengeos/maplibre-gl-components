@@ -981,11 +981,16 @@ export class PrintControl implements IControl {
     const pngDataUrl = canvas.toDataURL("image/png");
     const w = canvas.width;
     const h = canvas.height;
+    // Express the SVG size in physical inches (with a pixel viewBox) so it
+    // reports the correct page size, e.g. 11in x 8.5in for Letter landscape.
+    const dpi = this._state.dpi > 0 ? this._state.dpi : 96;
+    const widthIn = +(w / dpi).toFixed(4);
+    const heightIn = +(h / dpi).toFixed(4);
     const svg =
       `<?xml version="1.0" encoding="UTF-8"?>\n` +
       `<svg xmlns="http://www.w3.org/2000/svg" ` +
       `xmlns:xlink="http://www.w3.org/1999/xlink" ` +
-      `width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
+      `width="${widthIn}in" height="${heightIn}in" viewBox="0 0 ${w} ${h}">` +
       `<image width="${w}" height="${h}" xlink:href="${pngDataUrl}"/>` +
       `</svg>`;
 
@@ -998,6 +1003,114 @@ export class PrintControl implements IControl {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Compute a PNG/zlib CRC-32 over the given bytes.
+   *
+   * @param bytes - The bytes to checksum.
+   * @returns The unsigned 32-bit CRC.
+   */
+  private _crc32(bytes: Uint8Array): number {
+    let crc = ~0;
+    for (let i = 0; i < bytes.length; i++) {
+      crc ^= bytes[i];
+      for (let k = 0; k < 8; k++) {
+        crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+      }
+    }
+    return (~crc) >>> 0;
+  }
+
+  /**
+   * Insert a `pHYs` chunk into a PNG so image viewers report the correct
+   * physical (print) size. Canvas-generated PNGs carry no resolution metadata,
+   * so without this a Letter page at 150 DPI is read as ~17x13 inches at 96 DPI.
+   *
+   * @param bytes - The original PNG bytes.
+   * @param dpi - The target resolution in dots per inch.
+   * @returns A new PNG byte array with the resolution embedded.
+   */
+  private _pngWithDpi(bytes: Uint8Array, dpi: number): Uint8Array {
+    // The IHDR chunk always comes first: 8-byte signature + 4 (length) +
+    // 4 (type) + 13 (data) + 4 (CRC) = byte offset 33.
+    const insertAt = 33;
+    if (bytes.length < insertAt) return bytes;
+
+    // Pixels per metre (PNG pHYs unit 1 == metre). 1 inch = 0.0254 m.
+    const ppm = Math.max(1, Math.round(dpi / 0.0254));
+
+    const chunk = new Uint8Array(21); // 4 len + 4 type + 9 data + 4 CRC
+    const view = new DataView(chunk.buffer);
+    view.setUint32(0, 9); // data length
+    chunk[4] = 0x70; // 'p'
+    chunk[5] = 0x48; // 'H'
+    chunk[6] = 0x59; // 'Y'
+    chunk[7] = 0x73; // 's'
+    view.setUint32(8, ppm); // X pixels per unit
+    view.setUint32(12, ppm); // Y pixels per unit
+    chunk[16] = 1; // unit specifier: metre
+    view.setUint32(17, this._crc32(chunk.subarray(4, 17))); // CRC over type+data
+
+    const out = new Uint8Array(bytes.length + chunk.length);
+    out.set(bytes.subarray(0, insertAt), 0);
+    out.set(chunk, insertAt);
+    out.set(bytes.subarray(insertAt), insertAt + chunk.length);
+    return out;
+  }
+
+  /**
+   * Patch the JFIF APP0 density fields of a JPEG so it reports the correct DPI.
+   *
+   * @param bytes - The original JPEG bytes (mutated in place).
+   * @param dpi - The target resolution in dots per inch.
+   * @returns The same byte array with the density fields set when a JFIF
+   *   header is present.
+   */
+  private _jpegWithDpi(bytes: Uint8Array, dpi: number): Uint8Array {
+    // SOI (FFD8) followed by an APP0 (FFE0) "JFIF\0" segment.
+    const hasJfif =
+      bytes.length > 18 &&
+      bytes[2] === 0xff &&
+      bytes[3] === 0xe0 &&
+      bytes[6] === 0x4a && // J
+      bytes[7] === 0x46 && // F
+      bytes[8] === 0x49 && // I
+      bytes[9] === 0x46; // F
+    if (!hasJfif) return bytes;
+
+    const d = Math.max(1, Math.min(0xffff, Math.round(dpi)));
+    bytes[13] = 1; // density units: dots per inch
+    bytes[14] = (d >> 8) & 0xff; // X density (high)
+    bytes[15] = d & 0xff; // X density (low)
+    bytes[16] = (d >> 8) & 0xff; // Y density (high)
+    bytes[17] = d & 0xff; // Y density (low)
+    return bytes;
+  }
+
+  /**
+   * Re-encode a raster blob with embedded DPI metadata.
+   *
+   * @param blob - The PNG or JPEG blob produced by the canvas.
+   * @param format - The raster format.
+   * @returns A new blob carrying the current DPI, or the original on failure.
+   */
+  private async _embedDpi(
+    blob: Blob,
+    format: "png" | "jpeg",
+  ): Promise<Blob> {
+    try {
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      const dpi = this._state.dpi > 0 ? this._state.dpi : 96;
+      if (format === "png") {
+        const out = this._pngWithDpi(bytes, dpi);
+        return new Blob([out as unknown as BlobPart], { type: "image/png" });
+      }
+      const out = this._jpegWithDpi(bytes, dpi);
+      return new Blob([out as unknown as BlobPart], { type: "image/jpeg" });
+    } catch {
+      return blob;
+    }
   }
 
   /**
@@ -1671,8 +1784,14 @@ export class PrintControl implements IControl {
           return;
         }
 
+        // Embed DPI metadata so viewers report the correct physical page size.
+        const outBlob = await this._embedDpi(
+          blob,
+          this._state.format === "jpeg" ? "jpeg" : "png",
+        );
+
         // Trigger download
-        const url = URL.createObjectURL(blob);
+        const url = URL.createObjectURL(outBlob);
         const a = document.createElement("a");
         a.href = url;
         a.download = `${this._state.filename}.${ext}`;
