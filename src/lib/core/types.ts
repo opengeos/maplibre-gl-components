@@ -1054,7 +1054,10 @@ export interface ViewStateControlOptions {
   panelWidth?: number;
   /** Maximum height of the panel in pixels before scrolling. Default: 500. */
   maxHeight?: number;
-  /** Background color of the container. */
+  /**
+   * Background color of the container. When unset (default), the control
+   * adapts to the system light/dark theme via CSS custom properties.
+   */
   backgroundColor?: string;
   /** Border radius for container. */
   borderRadius?: number;
@@ -1062,7 +1065,10 @@ export interface ViewStateControlOptions {
   opacity?: number;
   /** Font size in pixels. */
   fontSize?: number;
-  /** Font color. */
+  /**
+   * Font color of the panel. When unset (default), the panel text adapts to
+   * the system light/dark theme via CSS custom properties.
+   */
   fontColor?: string;
   /** Minimum zoom level at which the control is visible. */
   minzoom?: number;

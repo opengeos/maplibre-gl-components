@@ -34,11 +34,11 @@ const DEFAULT_OPTIONS: Required<ViewStateControlOptions> = {
   bboxStrokeWidth: 2,
   panelWidth: 280,
   maxHeight: 500,
-  backgroundColor: "rgba(255, 255, 255, 0.95)",
+  backgroundColor: "",
   borderRadius: 4,
   opacity: 1,
   fontSize: 12,
-  fontColor: "#333",
+  fontColor: "",
   minzoom: 0,
   maxzoom: 24,
 };
