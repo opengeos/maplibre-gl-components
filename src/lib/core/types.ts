@@ -3212,8 +3212,9 @@ export interface PrintControlOptions {
   orientation?: PrintOrientation;
   /**
    * Output resolution in dots per inch. Combined with a paper `pageSize` it
-   * determines the export pixel dimensions (pixels = inches x dpi). Ignored
-   * when `pageSize` is `'fit'`. Default: 96.
+   * determines the export pixel dimensions (pixels = inches x dpi). In `'fit'`
+   * mode it scales the export resolution relative to the 96 DPI baseline (a
+   * higher DPI produces a larger, higher-resolution image). Default: 96.
    */
   dpi?: number;
   /** Page margin in points (1/72 inch) around the map. Ignored for `'fit'`. Default: 0. */

@@ -953,13 +953,12 @@ export class PrintControl implements IControl {
 
   /**
    * Resolve the DPI used for physical sizing (PDF points, SVG inches, raster
-   * metadata). `dpi` is ignored in the legacy `'fit'` page mode, so a fixed
-   * 96 DPI is used there to keep that output deterministic.
+   * metadata). Applies to every page mode — including `'fit'`, where the DPI
+   * scales the export resolution — so viewers report the chosen density.
    *
    * @returns The effective dots-per-inch.
    */
   private _effectiveDpi(): number {
-    if (this._state.pageSize === "fit") return 96;
     return this._state.dpi > 0 ? this._state.dpi : 96;
   }
 
@@ -1637,11 +1636,19 @@ export class PrintControl implements IControl {
     const mapW = mapCanvas.width;
     const mapH = mapCanvas.height;
 
-    // Legacy 'fit' mode: page is the current canvas (or Custom width/height),
-    // and the map is stretched to fill it, preserving historical behavior.
+    // 'fit' mode: the page is the current canvas (or Custom width/height), with
+    // the map stretched to fill it. `dpi` acts as a resolution multiplier
+    // relative to the 96 DPI baseline, so a higher DPI yields a larger,
+    // higher-resolution export (the map is scaled up from the canvas, matching
+    // the paper-preset behavior). The physical size stays the base size at
+    // 96 DPI, so only the pixel count — and therefore the file size — grows.
     if (this._state.pageSize === "fit") {
-      const pageW = this._state.width || mapW;
-      const pageH = this._state.height || mapH;
+      const baseW = this._state.width || mapW;
+      const baseH = this._state.height || mapH;
+      const dpi = this._state.dpi > 0 ? this._state.dpi : 96;
+      const dpiScale = dpi / 96;
+      const pageW = Math.max(1, Math.round(baseW * dpiScale));
+      const pageH = Math.max(1, Math.round(baseH * dpiScale));
       return {
         pageW,
         pageH,
@@ -1649,9 +1656,8 @@ export class PrintControl implements IControl {
         mapDest: { x: 0, y: 0, w: pageW, h: pageH },
         scaleX: mapW > 0 ? pageW / mapW : 1,
         clip: false,
-        // dpi is ignored in 'fit' mode, so physical sizing uses a fixed 96 DPI.
-        pageWidthIn: pageW / 96,
-        pageHeightIn: pageH / 96,
+        pageWidthIn: baseW / 96,
+        pageHeightIn: baseH / 96,
       };
     }
 
