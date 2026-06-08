@@ -47,8 +47,11 @@
   box-sizing: border-box;
 }
 
-/* Button styling - matches terrain/inspect pattern */
-.maplibre-gl-view-state-button {
+/* Button styling - matches terrain/inspect pattern.
+ * Scope to the control container so this wins over MapLibre's
+ * `.maplibregl-ctrl-group button { display: block }`, which would otherwise
+ * left-align the icon when the control is added as a ctrl-group. */
+.maplibre-gl-view-state .maplibre-gl-view-state-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -181,10 +184,13 @@
 }
 
 /* Copy button */
-.maplibre-gl-view-state-copy {
+.maplibre-gl-view-state .maplibre-gl-view-state-copy {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Keep the button centered when the row's baseline alignment would
+   * otherwise pin it to the first line of a wrapped, multi-line value. */
+  align-self: center;
   width: 20px;
   height: 20px;
   padding: 0;
@@ -217,7 +223,7 @@
   padding-top: 2px;
 }
 
-.maplibre-gl-view-state-bbox-toggle {
+.maplibre-gl-view-state .maplibre-gl-view-state-bbox-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
