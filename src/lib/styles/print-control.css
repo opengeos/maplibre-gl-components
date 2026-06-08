@@ -10,7 +10,8 @@
   color-scheme: light dark;
 
   /* Theme tokens (light defaults). Overridden by the dark media query below
-     so the control adapts to the system light/dark theme. */
+     so the control adapts to the system light/dark theme, or by the explicit
+     `--light` / `--dark` modifier classes when the host app forces a theme. */
   --print-panel-bg: rgba(255, 255, 255, 0.95);
   --print-subtle-bg: #f9fafb;
   --print-text: #374151;
@@ -25,6 +26,50 @@
   --print-button-bg: #fff;
   --print-button-text: #333;
   --print-feedback: #16a34a;
+}
+
+/* Forced light theme. The host app sets the `--light` modifier (via the
+   PrintControl `theme: 'light'` option / setTheme) so the panel stays light
+   even when the system prefers dark. Higher specificity than the default rule
+   above and wins over the dark media query because that query excludes this
+   modifier. */
+.maplibre-gl-print-control.maplibre-gl-print-control--light {
+  color-scheme: light;
+  --print-panel-bg: rgba(255, 255, 255, 0.95);
+  --print-subtle-bg: #f9fafb;
+  --print-text: #374151;
+  --print-muted: #6b7280;
+  --print-subtle: #9ca3af;
+  --print-border: #e5e7eb;
+  --print-input-bg: #fff;
+  --print-input-text: #111;
+  --print-placeholder: #9ca3af;
+  --print-hover-bg: #f3f4f6;
+  --print-focus: #3b82f6;
+  --print-button-bg: #fff;
+  --print-button-text: #333;
+  --print-feedback: #16a34a;
+}
+
+/* Forced dark theme. The host app sets the `--dark` modifier (via the
+   PrintControl `theme: 'dark'` option / setTheme) so the panel stays dark even
+   when the system prefers light. */
+.maplibre-gl-print-control.maplibre-gl-print-control--dark {
+  color-scheme: dark;
+  --print-panel-bg: rgba(40, 40, 40, 0.95);
+  --print-subtle-bg: rgba(255, 255, 255, 0.05);
+  --print-text: #e0e0e0;
+  --print-muted: #aaa;
+  --print-subtle: #999;
+  --print-border: #555;
+  --print-input-bg: #2a2a2a;
+  --print-input-text: #e0e0e0;
+  --print-placeholder: #888;
+  --print-hover-bg: rgba(255, 255, 255, 0.08);
+  --print-focus: #3b82f6;
+  --print-button-bg: #2a2a2a;
+  --print-button-text: #e0e0e0;
+  --print-feedback: #4ade80;
 }
 
 .maplibre-gl-print-control .print-button {
@@ -419,9 +464,13 @@
   flex: none;
 }
 
-/* Dark mode support */
+/* Dark mode support (system preference). Applies only when no explicit theme
+   is forced via the `--light` / `--dark` modifier classes, so a host app that
+   manages its own theme is never overridden by the OS setting. */
 @media (prefers-color-scheme: dark) {
-  .maplibre-gl-print-control {
+  .maplibre-gl-print-control:not(.maplibre-gl-print-control--light):not(
+      .maplibre-gl-print-control--dark
+    ) {
     --print-panel-bg: rgba(40, 40, 40, 0.95);
     --print-subtle-bg: rgba(255, 255, 255, 0.05);
     --print-text: #e0e0e0;

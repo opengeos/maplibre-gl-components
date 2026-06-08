@@ -15,6 +15,7 @@ import type {
   PrintOrientation,
   PrintFitMode,
   PrintFormat,
+  PrintTheme,
   ColormapName,
   ColorStop,
 } from "./types";
@@ -47,6 +48,7 @@ const DEFAULT_OPTIONS: Required<Omit<PrintControlOptions, "colorbar">> & {
   className: "",
   visible: true,
   collapsed: true,
+  theme: "auto",
   format: "png",
   quality: 0.92,
   filename: "map-export",
@@ -312,6 +314,7 @@ export class PrintControl implements IControl {
   private _createContainer(): HTMLElement {
     const container = document.createElement("div");
     container.className = `maplibregl-ctrl maplibre-gl-print-control ${this._options.className}`;
+    this._applyThemeClass(container);
 
     if (!this._state.visible) {
       container.style.display = "none";
@@ -876,7 +879,10 @@ export class PrintControl implements IControl {
     this._marginInput.min = "0";
     this._marginInput.value = String(this._state.margin);
     this._marginInput.addEventListener("input", () => {
-      this._state.margin = Math.max(0, parseFloat(this._marginInput!.value) || 0);
+      this._state.margin = Math.max(
+        0,
+        parseFloat(this._marginInput!.value) || 0,
+      );
     });
     row2.appendChild(this._makeField("Margin (pt)", this._marginInput));
     wrapper.appendChild(row2);
@@ -1037,7 +1043,7 @@ export class PrintControl implements IControl {
         crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
       }
     }
-    return (~crc) >>> 0;
+    return ~crc >>> 0;
   }
 
   /**
@@ -1113,10 +1119,7 @@ export class PrintControl implements IControl {
    * @param format - The raster format.
    * @returns A new blob carrying the current DPI, or the original on failure.
    */
-  private async _embedDpi(
-    blob: Blob,
-    format: "png" | "jpeg",
-  ): Promise<Blob> {
+  private async _embedDpi(blob: Blob, format: "png" | "jpeg"): Promise<Blob> {
     try {
       const bytes = new Uint8Array(await blob.arrayBuffer());
       const dpi = this._effectiveDpi();
@@ -1757,7 +1760,10 @@ export class PrintControl implements IControl {
 
         if (content.w >= minCanvasWidthForArrow) {
           const arrowX = content.x + content.w - arrowSize - 18;
-          const arrowY = Math.max(content.y + 18, content.y + titleBarHeight + 8);
+          const arrowY = Math.max(
+            content.y + 18,
+            content.y + titleBarHeight + 8,
+          );
           const bearing = this._map.getBearing();
           this._drawNorthArrow(ctx, arrowX, arrowY, arrowSize, bearing);
         }
@@ -1949,6 +1955,41 @@ export class PrintControl implements IControl {
    */
   getState(): PrintControlState {
     return { ...this._state };
+  }
+
+  /**
+   * Set the panel theme.
+   *
+   * Use `'light'` or `'dark'` to force a theme when the host application
+   * manages its own light/dark mode, or `'auto'` to follow the system
+   * `prefers-color-scheme`. Updates the live panel immediately.
+   *
+   * @param theme - The theme to apply.
+   * @returns This control instance for chaining.
+   */
+  setTheme(theme: PrintTheme): this {
+    this._options.theme = theme;
+    if (this._container) {
+      this._applyThemeClass(this._container);
+    }
+    return this;
+  }
+
+  /**
+   * Apply the theme modifier class to the given element so the panel honors an
+   * explicitly forced light/dark theme. `'auto'` removes both modifiers and
+   * lets the CSS `prefers-color-scheme` media query drive the theme.
+   */
+  private _applyThemeClass(container: HTMLElement): void {
+    container.classList.remove(
+      "maplibre-gl-print-control--light",
+      "maplibre-gl-print-control--dark",
+    );
+    if (this._options.theme === "light") {
+      container.classList.add("maplibre-gl-print-control--light");
+    } else if (this._options.theme === "dark") {
+      container.classList.add("maplibre-gl-print-control--dark");
+    }
   }
 
   /**

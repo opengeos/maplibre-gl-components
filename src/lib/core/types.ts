@@ -3147,6 +3147,16 @@ export type PrintFitMode = "contain" | "cover";
 export type PrintFormat = "png" | "jpeg" | "pdf" | "svg";
 
 /**
+ * Panel theme for the PrintControl.
+ *
+ * - `'auto'` (default) follows the system `prefers-color-scheme`.
+ * - `'light'` / `'dark'` force the panel into that theme regardless of the
+ *   system setting. Use this when the host application manages its own theme
+ *   (e.g. a class toggled on `<html>`) so the panel can be kept in sync.
+ */
+export type PrintTheme = "auto" | "light" | "dark";
+
+/**
  * Options for configuring the PrintControl.
  */
 export interface PrintControlOptions {
@@ -3158,6 +3168,13 @@ export interface PrintControlOptions {
   visible?: boolean;
   /** Whether to start collapsed. Default: true. */
   collapsed?: boolean;
+  /**
+   * Panel theme. `'auto'` (default) follows the system `prefers-color-scheme`.
+   * Set to `'light'` or `'dark'` to force a theme when the host application
+   * manages its own light/dark mode. Can be changed at runtime with
+   * {@link PrintControl.setTheme}.
+   */
+  theme?: PrintTheme;
   /** Default image format. Default: 'png'. */
   format?: PrintFormat;
   /** JPEG quality (0-1). Default: 0.92. */

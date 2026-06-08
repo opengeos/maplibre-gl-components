@@ -307,6 +307,7 @@ export type {
   PrintColorbarConfig,
   PrintEvent,
   PrintEventHandler,
+  PrintTheme,
   MinimapControlOptions,
   MinimapControlState,
   MinimapEvent,
