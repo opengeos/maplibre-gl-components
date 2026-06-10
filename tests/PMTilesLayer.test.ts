@@ -104,4 +104,21 @@ describe("resolvePMTilesViewTarget", () => {
 
     expect(target).toEqual({ type: "center", center: [2, 3], zoom: 7 });
   });
+
+  it("clamps the fallback center zoom to a non-negative value", () => {
+    // Archives with a very low maxZoom must not yield a negative flyTo zoom.
+    for (const maxZoom of [0, 1]) {
+      expect(
+        resolvePMTilesViewTarget({
+          minLon: 5,
+          minLat: 5,
+          maxLon: 5,
+          maxLat: 5,
+          centerLon: 10,
+          centerLat: 10,
+          maxZoom,
+        }),
+      ).toEqual({ type: "center", center: [10, 10], zoom: 0 });
+    }
+  });
 });

@@ -110,7 +110,9 @@ export function resolvePMTilesViewTarget(
     return {
       type: "center",
       center: [header.centerLon, header.centerLat],
-      zoom: Math.min(header.maxZoom - 2, 14),
+      // Clamp to a valid zoom: archives with a very low maxZoom (0 or 1)
+      // would otherwise yield a negative flyTo zoom.
+      zoom: Math.max(0, Math.min(header.maxZoom - 2, 14)),
     };
   }
 
