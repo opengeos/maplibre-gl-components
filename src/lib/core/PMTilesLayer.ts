@@ -50,6 +50,76 @@ const DEFAULT_OPTIONS: Required<PMTilesLayerControlOptions> = {
 };
 
 /**
+ * The subset of a PMTiles archive header needed to decide how to frame a
+ * newly added layer.
+ */
+export interface PMTilesHeaderExtent {
+  minLon: number;
+  minLat: number;
+  maxLon: number;
+  maxLat: number;
+  centerLon?: number;
+  centerLat?: number;
+  maxZoom: number;
+}
+
+/**
+ * Where the map should move to in order to show a freshly added PMTiles layer.
+ */
+export type PMTilesViewTarget =
+  | { type: "bounds"; bounds: [[number, number], [number, number]] }
+  | { type: "center"; center: [number, number]; zoom: number }
+  | null;
+
+/**
+ * Decides how to frame a newly added PMTiles layer.
+ *
+ * The archive's bounds are the authoritative extent of its data, so they are
+ * preferred. The optional center field is used only as a fallback, when the
+ * bounds are missing or degenerate (zero-width or zero-height). Many PMTiles
+ * archives (notably Overture Maps exports) leave the center at its 0,0,0
+ * default; flying to that center drops the map on "null island" in the Gulf
+ * of Guinea instead of the data, so it must never be trusted over real bounds.
+ *
+ * @param header - The PMTiles archive header.
+ * @returns The view target, or null when neither bounds nor center are usable.
+ */
+export function resolvePMTilesViewTarget(
+  header: PMTilesHeaderExtent,
+): PMTilesViewTarget {
+  const { minLon, minLat, maxLon, maxLat } = header;
+  const hasUsableBounds =
+    Number.isFinite(minLon) &&
+    Number.isFinite(minLat) &&
+    Number.isFinite(maxLon) &&
+    Number.isFinite(maxLat) &&
+    maxLon > minLon &&
+    maxLat > minLat;
+
+  if (hasUsableBounds) {
+    return {
+      type: "bounds",
+      bounds: [
+        [minLon, minLat],
+        [maxLon, maxLat],
+      ],
+    };
+  }
+
+  if (header.centerLon !== undefined && header.centerLat !== undefined) {
+    return {
+      type: "center",
+      center: [header.centerLon, header.centerLat],
+      // Clamp to a valid zoom: archives with a very low maxZoom (0 or 1)
+      // would otherwise yield a negative flyTo zoom.
+      zoom: Math.max(0, Math.min(header.maxZoom - 2, 14)),
+    };
+  }
+
+  return null;
+}
+
+/**
  * A control for adding PMTiles layers to the map.
  *
  * Supports both vector and raster PMTiles files.
@@ -1193,11 +1263,21 @@ export class PMTilesLayerControl implements IControl {
         layerIds.push(rasterLayerId);
       }
 
-      // Fit bounds if we have center info
-      if (header.centerLon !== undefined && header.centerLat !== undefined) {
+      // Frame the newly added layer. Prefer the archive's bounds (the
+      // authoritative extent of the data) and only fall back to its declared
+      // center when those bounds are degenerate. See resolvePMTilesViewTarget:
+      // many archives (e.g. Overture exports) leave the center at 0,0, which
+      // would otherwise fly the map to "null island" instead of the data.
+      const viewTarget = resolvePMTilesViewTarget(header);
+      if (viewTarget?.type === "bounds") {
+        this._map.fitBounds(viewTarget.bounds, {
+          padding: 40,
+          duration: 1000,
+        });
+      } else if (viewTarget?.type === "center") {
         this._map.flyTo({
-          center: [header.centerLon, header.centerLat],
-          zoom: Math.min(header.maxZoom - 2, 14),
+          center: viewTarget.center,
+          zoom: viewTarget.zoom,
           duration: 1000,
         });
       }
