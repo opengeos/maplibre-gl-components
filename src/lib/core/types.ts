@@ -1771,6 +1771,59 @@ export interface ZarrLayerControlOptions {
 }
 
 /**
+ * Minimal zarrita-compatible store. Implement this to back a Zarr layer with a
+ * source the URL panel cannot express, such as a kerchunk reference store for
+ * Cloud-Optimized NetCDF/HDF5 (where each chunk key resolves to an HTTP byte
+ * range inside the original file) or an Icechunk store.
+ */
+export interface ZarrReadableStore {
+  /** Resolve a Zarr key (e.g. `/air/0.0.0`) to its bytes, or undefined if absent. */
+  get(key: string): Promise<Uint8Array | undefined>;
+}
+
+/**
+ * Per-call overrides accepted by {@link ZarrLayerControl.addLayer}. Each field is
+ * passed straight through to the underlying `@carbonplan/zarr-layer` layer,
+ * enabling sources and hints the URL-driven panel cannot express. The most
+ * important is `store`: supplying it lets a caller render data that is not a
+ * plain Zarr URL (for example Cloud-Optimized NetCDF/HDF5 via a kerchunk
+ * reference store) while reusing the control's panel, styling, and lifecycle.
+ */
+export interface ZarrLayerAddOptions {
+  /**
+   * Custom zarrita-compatible store. When provided, the Zarr URL becomes
+   * optional; pass a URL too if you want it recorded for display and project
+   * persistence (it is used as the layer's identifying `url`).
+   */
+  store?: ZarrReadableStore;
+  /** Zarr metadata version. Kerchunk references are Zarr v2. */
+  zarrVersion?: 2 | 3;
+  /** Transform request URLs/headers for auth or proxy routing. */
+  transformRequest?: (
+    url: string,
+    options?: { method?: "GET" | "HEAD" },
+  ) =>
+    | { url: string; headers?: Record<string, string> }
+    | Promise<{ url: string; headers?: Record<string, string> }>;
+  /** CRS identifier for built-in projections (e.g. `EPSG:4326`, `EPSG:3857`). */
+  crs?: string;
+  /** proj4 definition string for reprojection of non-mercator grids. */
+  proj4?: string;
+  /** Explicit spatial bounds `[xMin, yMin, xMax, yMax]`. */
+  bounds?: [number, number, number, number];
+  /** Override the names used to identify spatial (lat/lon) dimensions. */
+  spatialDimensions?: { lat?: string; lon?: string };
+  /** Dimension selector, e.g. `{ time: 0 }`. Overrides the panel's selector. */
+  selector?: Record<string, number | string>;
+  /** Colormap (array of hex colors). Overrides the panel's colormap. */
+  colormap?: string[];
+  /** Color limits `[min, max]`. Overrides the panel's clim. */
+  clim?: [number, number];
+  /** Layer opacity (0-1). Overrides the panel's opacity. */
+  opacity?: number;
+}
+
+/**
  * Internal state of the ZarrLayerControl.
  */
 export interface ZarrLayerControlState {

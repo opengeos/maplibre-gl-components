@@ -10,8 +10,10 @@ import type {
   ZarrLayerEvent,
   ZarrLayerEventHandler,
   ZarrLayerInfo,
+  ZarrLayerAddOptions,
   ColormapName,
 } from "./types";
+import type { ZarrLayerOptions } from "@carbonplan/zarr-layer";
 import { getColormap } from "../colormaps";
 
 /**
@@ -281,11 +283,22 @@ export class ZarrLayerControl implements IControl {
 
   /**
    * Programmatically add a Zarr layer.
+   *
+   * Pass `options.store` to render a source the URL panel cannot express, such
+   * as a kerchunk reference store for Cloud-Optimized NetCDF/HDF5. When a store
+   * is given the `url` is optional, but supplying it records the source for
+   * display and project persistence. Any other {@link ZarrLayerAddOptions} field
+   * (selector, clim, colormap, zarrVersion, crs, proj4, bounds, ...) overrides
+   * the panel's current value for this layer only.
    */
-  async addLayer(url?: string, variable?: string): Promise<void> {
+  async addLayer(
+    url?: string,
+    variable?: string,
+    options?: ZarrLayerAddOptions,
+  ): Promise<void> {
     if (url) this._state.url = url;
     if (variable) this._state.variable = variable;
-    await this._addLayer();
+    await this._addLayer(options);
   }
 
   /**
@@ -946,9 +959,16 @@ export class ZarrLayerControl implements IControl {
     }
   }
 
-  private async _addLayer(): Promise<void> {
-    if (!this._map || !this._state.url || !this._state.variable) {
-      this._state.error = "Please enter a Zarr URL and variable name.";
+  private async _addLayer(overrides?: ZarrLayerAddOptions): Promise<void> {
+    const hasStore = !!overrides?.store;
+    if (
+      !this._map ||
+      (!hasStore && !this._state.url) ||
+      !this._state.variable
+    ) {
+      this._state.error = hasStore
+        ? "Please enter a variable name."
+        : "Please enter a Zarr URL and variable name.";
       this._render();
       return;
     }
@@ -964,23 +984,49 @@ export class ZarrLayerControl implements IControl {
       // Generate unique layer ID
       const layerId = `zarr-layer-${this._layerCounter++}`;
 
-      // Build layer options
-      const layerOptions = {
-        id: layerId,
-        source: this._state.url,
-        variable: this._state.variable,
-        colormap: this._state.colormap,
-        clim: this._state.clim as [number, number],
-        opacity: this._state.layerOpacity,
-        selector:
-          this._state.selector && Object.keys(this._state.selector).length > 0
-            ? this._state.selector
-            : undefined,
-      };
+      // Build layer options, applying any per-call overrides on top of the
+      // panel state. Passthrough fields (store, transformRequest, crs, ...) let
+      // callers render sources the URL panel cannot express.
+      const selector =
+        overrides?.selector ??
+        (this._state.selector && Object.keys(this._state.selector).length > 0
+          ? this._state.selector
+          : undefined);
 
-      // Store props for adapter use
+      const layerOptions: ZarrLayerOptions = {
+        id: layerId,
+        variable: this._state.variable,
+        colormap: overrides?.colormap ?? this._state.colormap,
+        clim: (overrides?.clim ?? this._state.clim) as [number, number],
+        opacity: overrides?.opacity ?? this._state.layerOpacity,
+        selector,
+      };
+      // A custom store replaces source, but keep the URL (when given) as the
+      // layer's identifying source for display and persistence.
+      if (this._state.url) layerOptions.source = this._state.url;
+      if (overrides?.store) {
+        layerOptions.store = overrides.store as ZarrLayerOptions["store"];
+      }
+      if (overrides?.zarrVersion)
+        layerOptions.zarrVersion = overrides.zarrVersion;
+      if (overrides?.transformRequest) {
+        layerOptions.transformRequest =
+          overrides.transformRequest as ZarrLayerOptions["transformRequest"];
+      }
+      if (overrides?.crs) layerOptions.crs = overrides.crs;
+      if (overrides?.proj4) layerOptions.proj4 = overrides.proj4;
+      if (overrides?.bounds) layerOptions.bounds = overrides.bounds;
+      if (overrides?.spatialDimensions) {
+        layerOptions.spatialDimensions = overrides.spatialDimensions;
+      }
+
+      // Store props for adapter use. The live store/transformRequest are not
+      // serializable, so keep them out of the persisted props (the URL recorded
+      // as `source` is what callers re-hydrate a store from on project load).
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const layerProps: Record<string, any> = { ...layerOptions };
+      delete layerProps.store;
+      delete layerProps.transformRequest;
       // Store custom layer name if provided
       const customName = this._state.layerName?.trim();
       if (customName) {

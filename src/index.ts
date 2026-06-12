@@ -257,6 +257,8 @@ export type {
   ZarrLayerEvent,
   ZarrLayerEventHandler,
   ZarrLayerInfo,
+  ZarrLayerAddOptions,
+  ZarrReadableStore,
   PMTilesLayerControlOptions,
   PMTilesLayerControlState,
   PMTilesLayerEvent,
