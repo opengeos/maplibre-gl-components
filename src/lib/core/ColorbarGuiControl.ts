@@ -26,7 +26,7 @@ const DEFAULT_OPTIONS: Required<ColorbarGuiControlOptions> = {
   visible: true,
   collapsed: true,
   panelWidth: 280,
-  maxHeight: 500,
+  maxHeight: 0,
   backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
   opacity: 1,
@@ -69,6 +69,7 @@ export class ColorbarGuiControl implements IControl {
     new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
+  private _handleResize?: () => void;
   private _zoomVisible: boolean = true;
 
   // Active colorbar instances
@@ -130,6 +131,10 @@ export class ColorbarGuiControl implements IControl {
   onRemove(): void {
     if (this._handleZoom && this._map) {
       this._map.off("zoom", this._handleZoom);
+    }
+    if (this._handleResize) {
+      window.removeEventListener("resize", this._handleResize);
+      this._handleResize = undefined;
     }
     this._removeAllColorbars();
     this._container?.remove();
@@ -290,10 +295,9 @@ export class ColorbarGuiControl implements IControl {
     const panel = document.createElement("div");
     panel.className = `colorbar-gui-panel ${this._options.position.includes("left") ? "right" : "left"}`;
     panel.style.width = `${this._options.panelWidth}px`;
-    if (this._options.maxHeight > 0) {
-      panel.style.maxHeight = `${this._options.maxHeight}px`;
-      panel.style.overflowY = "auto";
-    }
+    // The height cap is applied in _updatePanelHeight() once the panel is in the
+    // DOM, so it can be sized to the available viewport space.
+    panel.style.overflowY = "auto";
     panel.style.background = this._options.backgroundColor;
     panel.style.borderRadius = `${this._options.borderRadius}px`;
     panel.style.fontSize = `${this._options.fontSize}px`;
@@ -800,12 +804,43 @@ export class ColorbarGuiControl implements IControl {
       this._container.appendChild(this._panel);
     }
     this._button?.classList.add("active");
+    this._updatePanelHeight();
+    if (!this._handleResize) {
+      this._handleResize = () => this._updatePanelHeight();
+      window.addEventListener("resize", this._handleResize);
+    }
   }
 
   private _hidePanel(): void {
+    if (this._handleResize) {
+      window.removeEventListener("resize", this._handleResize);
+      this._handleResize = undefined;
+    }
     this._panel?.remove();
     this._panel = undefined;
     this._button?.classList.remove("active");
+  }
+
+  /**
+   * Cap the panel height to the viewport space available below its top edge so
+   * the whole form (including the action buttons) stays visible when the screen
+   * is tall enough, scrolling only when the content would run past the screen
+   * edge. `maxHeight`, when set (> 0), acts as an explicit upper bound.
+   */
+  private _updatePanelHeight(): void {
+    if (!this._panel) return;
+    const VIEWPORT_MARGIN = 16;
+    const MIN_HEIGHT = 200;
+    const top = this._panel.getBoundingClientRect().top;
+    const available = Math.max(
+      MIN_HEIGHT,
+      window.innerHeight - top - VIEWPORT_MARGIN,
+    );
+    const maxHeight =
+      this._options.maxHeight > 0
+        ? Math.min(this._options.maxHeight, available)
+        : available;
+    this._panel.style.maxHeight = `${maxHeight}px`;
   }
 
   private _setupZoomHandler(): void {

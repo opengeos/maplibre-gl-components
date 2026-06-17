@@ -1152,7 +1152,12 @@ export interface ColorbarGuiControlOptions {
   collapsed?: boolean;
   /** Panel width in pixels. Default: 280. */
   panelWidth?: number;
-  /** Maximum height of the panel. Default: 500. */
+  /**
+   * Maximum height of the panel in pixels before it scrolls. When `0`
+   * (the default), the panel grows to use the available viewport height so the
+   * whole form stays visible on tall screens, scrolling only if its content
+   * would run past the screen edge.
+   */
   maxHeight?: number;
   /** Background color. */
   backgroundColor?: string;
@@ -1245,7 +1250,12 @@ export interface LegendGuiControlOptions {
   collapsed?: boolean;
   /** Panel width in pixels. Default: 280. */
   panelWidth?: number;
-  /** Maximum height of the panel. Default: 500. */
+  /**
+   * Maximum height of the panel in pixels before it scrolls. When `0`
+   * (the default), the panel grows to use the available viewport height so the
+   * whole form stays visible on tall screens, scrolling only if its content
+   * would run past the screen edge.
+   */
   maxHeight?: number;
   /** Background color. */
   backgroundColor?: string;
@@ -1326,7 +1336,12 @@ export interface HtmlGuiControlOptions {
   collapsed?: boolean;
   /** Panel width in pixels. Default: 280. */
   panelWidth?: number;
-  /** Maximum height of the panel. Default: 500. */
+  /**
+   * Maximum height of the panel in pixels before it scrolls. When `0`
+   * (the default), the panel grows to use the available viewport height so the
+   * whole form stays visible on tall screens, scrolling only if its content
+   * would run past the screen edge.
+   */
   maxHeight?: number;
   /** Background color. */
   backgroundColor?: string;
@@ -2373,7 +2388,12 @@ export interface ChoroplethControlOptions {
   fitBoundsPadding?: number;
   /** Panel width in pixels. Default: 320. */
   panelWidth?: number;
-  /** Maximum height of the panel. Default: 500. */
+  /**
+   * Maximum height of the panel in pixels before it scrolls. When `0`
+   * (the default), the panel grows to use the available viewport height so the
+   * whole form stays visible on tall screens, scrolling only if its content
+   * would run past the screen edge.
+   */
   maxHeight?: number;
   /** Background color. */
   backgroundColor?: string;
