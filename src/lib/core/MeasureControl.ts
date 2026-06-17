@@ -429,7 +429,7 @@ export class MeasureControl implements IControl {
     this._instructionsEl = document.createElement("div");
     this._instructionsEl.className = "measure-instructions";
     this._instructionsEl.textContent =
-      "Click on the map to start measuring. Double-click to finish.";
+      "Click Start, then click the map to add points. Double-click to finish.";
     content.appendChild(this._instructionsEl);
 
     // Measurements list
@@ -809,7 +809,7 @@ export class MeasureControl implements IControl {
     // Reset instructions
     if (this._instructionsEl) {
       this._instructionsEl.textContent =
-        "Click on the map to start measuring. Double-click to finish.";
+        "Click Start, then click the map to add points. Double-click to finish.";
     }
   }
 
