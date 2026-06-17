@@ -137,6 +137,55 @@ describe("GUI controls multiple instances", () => {
     expect(restored.getState().title).toBe("Land cover");
   });
 
+  it("sizes the legend panel to the available viewport height by default", () => {
+    const control = new LegendGuiControl({ collapsed: false });
+    const container = control.onAdd(mockMap);
+    const panel = container.querySelector(".legend-gui-panel") as HTMLElement;
+
+    // top is 0 in jsdom, so the panel may use the full viewport (minus margin).
+    expect(panel.style.maxHeight).toBe(`${window.innerHeight - 16}px`);
+    expect(panel.style.overflowY).toBe("auto");
+  });
+
+  it("treats an explicit legend maxHeight as an upper bound", () => {
+    const control = new LegendGuiControl({ collapsed: false, maxHeight: 300 });
+    const container = control.onAdd(mockMap);
+    const panel = container.querySelector(".legend-gui-panel") as HTMLElement;
+
+    expect(panel.style.maxHeight).toBe("300px");
+  });
+
+  it("re-sizes the colorbar panel when the window is resized", () => {
+    const control = new ColorbarGuiControl({ collapsed: false });
+    const container = control.onAdd(mockMap);
+    const panel = container.querySelector(".colorbar-gui-panel") as HTMLElement;
+
+    const original = window.innerHeight;
+    try {
+      Object.defineProperty(window, "innerHeight", {
+        value: 1200,
+        configurable: true,
+      });
+      window.dispatchEvent(new Event("resize"));
+      expect(panel.style.maxHeight).toBe("1184px");
+    } finally {
+      Object.defineProperty(window, "innerHeight", {
+        value: original,
+        configurable: true,
+      });
+    }
+  });
+
+  it("removes the resize listener when the panel is collapsed", () => {
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+    const control = new ColorbarGuiControl({ collapsed: false });
+    control.onAdd(mockMap);
+    control.collapse();
+
+    expect(removeSpy).toHaveBeenCalledWith("resize", expect.any(Function));
+    removeSpy.mockRestore();
+  });
+
   it("should add multiple HTML controls from the HTML GUI", () => {
     const control = new HtmlGuiControl({ collapsed: false });
     const container = control.onAdd(mockMap);
