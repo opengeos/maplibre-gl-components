@@ -1300,7 +1300,53 @@ See the [measure-control example](./examples/measure-control/) for a complete wo
 
 ### BookmarkControl
 
-A control for saving and restoring map views with localStorage persistence.
+A control for saving and restoring map views with localStorage persistence. The
+panel is resizable by dragging its corner, bookmarks can be reordered by dragging
+their grip handle, an optional per-item checkbox lets a subset be exported, and a
+`captureState`/`restoreState` hook lets the host persist extra state (e.g. which
+layers were visible) alongside each view.
+
+```typescript
+interface BookmarkControlOptions {
+  position?: ControlPosition;          // Control position (default: 'top-right')
+  className?: string;                  // Custom CSS class
+  visible?: boolean;                   // Initial visibility (default: true)
+  collapsed?: boolean;                 // Start collapsed (default: true)
+  bookmarks?: MapBookmark[];           // Initial bookmarks
+  storageKey?: string;                 // localStorage key for persistence
+  maxBookmarks?: number;               // Maximum bookmarks (default: 20)
+  generateThumbnails?: boolean;        // Capture a thumbnail per bookmark
+  flyToDuration?: number;              // Fly-to animation ms (default: 1500)
+  panelWidth?: number;                 // Panel width in pixels (default: 260)
+  maxHeight?: number;                  // Max panel height when not resizable
+  resizable?: boolean;                 // Drag-resize the panel (default: true)
+  reorderable?: boolean;               // Drag-reorder bookmarks (default: true)
+  selectable?: boolean;                // Per-item export checkboxes (default: false)
+  captureState?: () => Record<string, unknown> | undefined; // State to store on a new bookmark
+  restoreState?: (extra: Record<string, unknown> | undefined) => void; // Restore on open
+  captureStateLabel?: string;          // When set, show an opt-in checkbox in the add form
+  captureStateDefault?: boolean;       // Initial state of that checkbox (default: true)
+  backgroundColor?: string;
+  borderRadius?: number;
+  fontSize?: number;
+  fontColor?: string;
+  minzoom?: number;
+  maxzoom?: number;
+}
+
+// Methods
+bookmarkControl.getBookmarks()             // All bookmarks
+bookmarkControl.addBookmark(name?)         // Add a bookmark for the current view
+bookmarkControl.removeBookmark(id)
+bookmarkControl.goTo(id)                   // Fly to a bookmark (and restore its state)
+bookmarkControl.clear()
+bookmarkControl.importBookmarks(bookmarks) // Append an array of bookmarks
+bookmarkControl.exportBookmarks()          // JSON string (selected subset if any)
+bookmarkControl.getSelectedIds()           // IDs ticked for selective export
+bookmarkControl.setSelectedIds(ids)        // Set the export selection
+bookmarkControl.on('reorder', handler)     // Fired after a drag-reorder
+bookmarkControl.on('export', handler)      // Fired after an export
+```
 
 See the [bookmark-control example](./examples/bookmark-control/) for a complete working example.
 

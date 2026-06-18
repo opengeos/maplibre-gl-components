@@ -3074,6 +3074,13 @@ export interface MapBookmark {
   createdAt: number;
   /** Optional thumbnail data URL. */
   thumbnail?: string;
+  /**
+   * Optional host-defined state captured alongside the view (e.g. which layers
+   * were visible). Produced by {@link BookmarkControlOptions.captureState} and
+   * passed back to {@link BookmarkControlOptions.restoreState} when the
+   * bookmark is opened. The control treats it as opaque and only persists it.
+   */
+  extra?: Record<string, unknown>;
 }
 
 /**
@@ -3120,6 +3127,44 @@ export interface BookmarkControlOptions {
   minzoom?: number;
   /** Maximum zoom level at which the control is visible. */
   maxzoom?: number;
+  /**
+   * Whether the panel can be resized by dragging its corner. Default: true.
+   */
+  resizable?: boolean;
+  /**
+   * Whether bookmarks can be reordered by dragging their grip handle.
+   * Default: true.
+   */
+  reorderable?: boolean;
+  /**
+   * Whether each bookmark shows a checkbox so a subset can be selected for
+   * export. When any are selected, Export only writes the selection; otherwise
+   * it writes every bookmark. Default: false.
+   */
+  selectable?: boolean;
+  /**
+   * Capture host-defined state to store on a new bookmark (e.g. the set of
+   * visible layers). The returned value is persisted verbatim as the
+   * bookmark's `extra` and handed back to {@link restoreState} on open. Return
+   * `undefined` to store nothing.
+   */
+  captureState?: () => Record<string, unknown> | undefined;
+  /**
+   * Restore host-defined state when a bookmark is opened. Receives the value
+   * previously produced by {@link captureState} (or `undefined` if none).
+   */
+  restoreState?: (extra: Record<string, unknown> | undefined) => void;
+  /**
+   * When set together with {@link captureState}, the add form shows a checkbox
+   * with this label that controls whether state is captured for the next
+   * bookmark. When omitted, {@link captureState} (if provided) always runs.
+   */
+  captureStateLabel?: string;
+  /**
+   * Initial checked state of the {@link captureStateLabel} checkbox.
+   * Default: true.
+   */
+  captureStateDefault?: boolean;
 }
 
 /**
@@ -3146,7 +3191,9 @@ export type BookmarkEvent =
   | "select"
   | "rename"
   | "clear"
-  | "import";
+  | "import"
+  | "export"
+  | "reorder";
 
 /**
  * BookmarkControl event handler function type.
