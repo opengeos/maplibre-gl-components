@@ -35,6 +35,13 @@ const DEFAULT_OPTIONS: Required<BookmarkControlOptions> = {
   fontColor: "",
   minzoom: 0,
   maxzoom: 24,
+  resizable: true,
+  reorderable: true,
+  selectable: false,
+  captureState: () => undefined,
+  restoreState: () => {},
+  captureStateLabel: "",
+  captureStateDefault: true,
 };
 
 /**
@@ -66,6 +73,11 @@ const EDIT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" f
  * SVG icon for map/location.
  */
 const MAP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>`;
+
+/**
+ * SVG icon for the drag-to-reorder grip handle.
+ */
+const GRIP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>`;
 
 /**
  * SVG icon for download/export.
@@ -124,6 +136,12 @@ export class BookmarkControl implements IControl {
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
+  /** Whether the next added bookmark should capture host state (467). */
+  private _captureEnabled: boolean;
+  /** IDs of bookmarks ticked for selective export (470). */
+  private _exportSelection: Set<string> = new Set();
+  /** ID of the bookmark currently being dragged for reordering (471). */
+  private _dragId: string | null = null;
 
   // DOM elements
   private _listEl?: HTMLElement;
@@ -134,6 +152,7 @@ export class BookmarkControl implements IControl {
    */
   constructor(options?: BookmarkControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
+    this._captureEnabled = this._options.captureStateDefault;
     this._state = {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
@@ -248,10 +267,19 @@ export class BookmarkControl implements IControl {
   private _createPanel(): HTMLElement {
     const panel = document.createElement("div");
     panel.className = `bookmark-panel ${this._options.position.includes("left") ? "right" : "left"}`;
+    if (this._options.resizable) {
+      panel.classList.add("resizable");
+    }
     panel.style.width = `${this._options.panelWidth}px`;
-    if (this._options.maxHeight && this._options.maxHeight > 0) {
+    // When resizable, the user controls the height by dragging, so we leave the
+    // height to the CSS (`resize: both` with a viewport-relative cap) instead of
+    // pinning it. When fixed, cap the height and let the list scroll within.
+    if (
+      !this._options.resizable &&
+      this._options.maxHeight &&
+      this._options.maxHeight > 0
+    ) {
       panel.style.maxHeight = `${this._options.maxHeight}px`;
-      panel.style.overflowY = "auto";
     }
     // Only force colors when explicitly provided; otherwise the CSS custom
     // properties drive them so the panel adapts to the system theme.
@@ -308,6 +336,25 @@ export class BookmarkControl implements IControl {
     });
 
     content.appendChild(addForm);
+
+    // Optional "capture current state" toggle (e.g. include visible layers).
+    // Shown only when the host opts in by supplying a label.
+    if (this._options.captureStateLabel) {
+      const toggle = document.createElement("label");
+      toggle.className = "bookmark-capture-toggle";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "bookmark-capture-checkbox";
+      checkbox.checked = this._captureEnabled;
+      const text = document.createElement("span");
+      text.textContent = this._options.captureStateLabel;
+      toggle.appendChild(checkbox);
+      toggle.appendChild(text);
+      checkbox.addEventListener("change", () => {
+        this._captureEnabled = checkbox.checked;
+      });
+      content.appendChild(toggle);
+    }
 
     // Bookmarks list
     this._listEl = document.createElement("div");
@@ -424,10 +471,23 @@ export class BookmarkControl implements IControl {
       return;
     }
 
+    const reorderable = this._options.reorderable;
+    const selectable = this._options.selectable;
+
     this._listEl.innerHTML = this._state.bookmarks
       .map(
         (b) => `
-        <div class="bookmark-item ${this._state.selectedId === b.id ? "active" : ""}" data-id="${b.id}">
+        <div class="bookmark-item ${this._state.selectedId === b.id ? "active" : ""}" data-id="${b.id}"${reorderable ? ' draggable="true"' : ""}>
+          ${
+            reorderable
+              ? `<div class="bookmark-grip" title="Drag to reorder">${GRIP_ICON}</div>`
+              : ""
+          }
+          ${
+            selectable
+              ? `<input type="checkbox" class="bookmark-select" title="Select for export"${this._exportSelection.has(b.id) ? " checked" : ""}>`
+              : ""
+          }
           ${
             b.thumbnail
               ? `<img class="bookmark-thumbnail" src="${b.thumbnail}" alt="${b.name}">`
@@ -452,7 +512,10 @@ export class BookmarkControl implements IControl {
 
       // Click to go to bookmark
       item.addEventListener("click", (e) => {
-        if ((e.target as HTMLElement).closest(".bookmark-actions")) return;
+        const target = e.target as HTMLElement;
+        if (target.closest(".bookmark-actions")) return;
+        if (target.closest(".bookmark-select")) return;
+        if (target.closest(".bookmark-grip")) return;
         this._goToBookmark(id);
       });
 
@@ -467,7 +530,92 @@ export class BookmarkControl implements IControl {
         e.stopPropagation();
         this._removeBookmark(id);
       });
+
+      // Export-selection checkbox
+      const selectBox = item.querySelector(
+        ".bookmark-select",
+      ) as HTMLInputElement | null;
+      selectBox?.addEventListener("click", (e) => e.stopPropagation());
+      selectBox?.addEventListener("change", () => {
+        if (selectBox.checked) {
+          this._exportSelection.add(id);
+        } else {
+          this._exportSelection.delete(id);
+        }
+        this._updateExportButton();
+      });
+
+      if (reorderable) {
+        this._setupItemReorder(item as HTMLElement, id);
+      }
     });
+
+    this._updateExportButton();
+  }
+
+  /**
+   * Wire drag-and-drop reordering for a single bookmark item.
+   */
+  private _setupItemReorder(item: HTMLElement, id: string): void {
+    item.addEventListener("dragstart", (e) => {
+      this._dragId = id;
+      item.classList.add("dragging");
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", id);
+      }
+    });
+    item.addEventListener("dragend", () => {
+      this._dragId = null;
+      this._listEl
+        ?.querySelectorAll(".bookmark-item")
+        .forEach((el) => el.classList.remove("dragging", "drag-over"));
+    });
+    item.addEventListener("dragover", (e) => {
+      if (this._dragId === null || this._dragId === id) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+      item.classList.add("drag-over");
+    });
+    item.addEventListener("dragleave", () => {
+      item.classList.remove("drag-over");
+    });
+    item.addEventListener("drop", (e) => {
+      e.preventDefault();
+      item.classList.remove("drag-over");
+      this._reorderBookmark(this._dragId, id);
+    });
+  }
+
+  /**
+   * Move the dragged bookmark so it sits at the target bookmark's position.
+   */
+  private _reorderBookmark(fromId: string | null, toId: string): void {
+    if (!fromId || fromId === toId) return;
+    const bookmarks = this._state.bookmarks;
+    const from = bookmarks.findIndex((b) => b.id === fromId);
+    const to = bookmarks.findIndex((b) => b.id === toId);
+    if (from === -1 || to === -1) return;
+
+    const [moved] = bookmarks.splice(from, 1);
+    bookmarks.splice(to, 0, moved);
+
+    this._saveToStorage();
+    this._updateList();
+    this._emit("reorder", { bookmark: moved });
+  }
+
+  /**
+   * Reflect the current export selection on the Export button (title hint).
+   */
+  private _updateExportButton(): void {
+    const btn = this._panel?.querySelector(
+      ".bookmark-export-btn",
+    ) as HTMLElement | null;
+    if (!btn) return;
+    const count = this._exportSelection.size;
+    btn.title =
+      count > 0 ? `Export ${count} selected bookmark(s)` : "Export bookmarks";
   }
 
   /**
@@ -501,6 +649,18 @@ export class BookmarkControl implements IControl {
       bearing: this._map.getBearing(),
       createdAt: Date.now(),
     };
+
+    // Capture host-defined state (e.g. visible layers) when enabled. The
+    // checkbox gates capture only when the host supplied a label for it.
+    const captureEnabled = this._options.captureStateLabel
+      ? this._captureEnabled
+      : true;
+    if (captureEnabled) {
+      const extra = this._options.captureState();
+      if (extra !== undefined) {
+        bookmark.extra = extra;
+      }
+    }
 
     // Generate thumbnail if enabled
     if (this._options.generateThumbnails) {
@@ -546,6 +706,7 @@ export class BookmarkControl implements IControl {
     if (this._state.selectedId === id) {
       this._state.selectedId = null;
     }
+    this._exportSelection.delete(id);
 
     this._saveToStorage();
     this._updateList();
@@ -570,6 +731,11 @@ export class BookmarkControl implements IControl {
       bearing: bookmark.bearing,
       duration: this._options.flyToDuration,
     });
+
+    // Restore host-defined state captured with the bookmark (e.g. layers).
+    if (bookmark.extra) {
+      this._options.restoreState(bookmark.extra);
+    }
 
     this._emit("select", { bookmark });
   }
@@ -626,6 +792,7 @@ export class BookmarkControl implements IControl {
   private _clearAll(): void {
     this._state.bookmarks = [];
     this._state.selectedId = null;
+    this._exportSelection.clear();
     this._saveToStorage();
     this._updateList();
     this._updateFooter();
@@ -666,6 +833,20 @@ export class BookmarkControl implements IControl {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    this._emit("export");
+  }
+
+  /**
+   * The bookmarks an Export should write: the ticked subset when any are
+   * selected (and selection is enabled), otherwise all of them, in list order.
+   */
+  private _bookmarksForExport(): MapBookmark[] {
+    if (this._options.selectable && this._exportSelection.size > 0) {
+      return this._state.bookmarks.filter((b) =>
+        this._exportSelection.has(b.id),
+      );
+    }
+    return [...this._state.bookmarks];
   }
 
   /**
@@ -859,9 +1040,28 @@ export class BookmarkControl implements IControl {
   }
 
   /**
-   * Export bookmarks as JSON string.
+   * Export bookmarks as a JSON string. When export selection is enabled and a
+   * subset is ticked, only that subset is serialized; otherwise all bookmarks.
    */
   exportBookmarks(): string {
-    return JSON.stringify(this._state.bookmarks, null, 2);
+    return JSON.stringify(this._bookmarksForExport(), null, 2);
+  }
+
+  /**
+   * Get the IDs currently ticked for selective export.
+   */
+  getSelectedIds(): string[] {
+    return [...this._exportSelection];
+  }
+
+  /**
+   * Replace the set of bookmark IDs ticked for selective export. IDs that do
+   * not match an existing bookmark are ignored.
+   */
+  setSelectedIds(ids: string[]): this {
+    const valid = new Set(this._state.bookmarks.map((b) => b.id));
+    this._exportSelection = new Set(ids.filter((id) => valid.has(id)));
+    if (this._panel) this._updateList();
+    return this;
   }
 }

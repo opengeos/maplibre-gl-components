@@ -65,12 +65,24 @@
 .maplibre-gl-bookmark-control .bookmark-panel {
   position: absolute;
   top: 0;
+  display: flex;
+  flex-direction: column;
   background: var(--bm-panel-bg);
   color: var(--bm-text);
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   z-index: 1;
+}
+
+/* User-resizable panel: drag the bottom-right corner. The list flexes to fill
+   the available height (see .bookmark-content / .bookmark-list below). */
+.maplibre-gl-bookmark-control .bookmark-panel.resizable {
+  resize: both;
+  min-width: 220px;
+  min-height: 220px;
+  max-width: 90vw;
+  max-height: 85vh;
 }
 
 .maplibre-gl-bookmark-control .bookmark-panel.left {
@@ -118,6 +130,10 @@
 }
 
 .maplibre-gl-bookmark-control .bookmark-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 10px;
 }
 
@@ -125,6 +141,27 @@
   display: flex;
   gap: 6px;
   margin-bottom: 10px;
+}
+
+/* Optional "include layers / current state" toggle in the add form. */
+.maplibre-gl-bookmark-control .bookmark-capture-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  color: var(--bm-secondary-text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.maplibre-gl-bookmark-control .bookmark-capture-checkbox {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--bm-focus);
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .maplibre-gl-bookmark-control .bookmark-name-input {
@@ -179,8 +216,16 @@
 }
 
 .maplibre-gl-bookmark-control .bookmark-list {
+  flex: 1 1 auto;
+  min-height: 80px;
   max-height: 250px;
   overflow-y: auto;
+}
+
+/* In a flex panel (fixed max-height or user-resizable), let the list grow to
+   fill the available height instead of being capped at 250px. */
+.maplibre-gl-bookmark-control .bookmark-panel.resizable .bookmark-list {
+  max-height: none;
 }
 
 .maplibre-gl-bookmark-control .bookmark-empty {
@@ -218,6 +263,44 @@
 
 .maplibre-gl-bookmark-control .bookmark-item:last-child {
   margin-bottom: 0;
+}
+
+/* Reorder drag states (471) */
+.maplibre-gl-bookmark-control .bookmark-item.dragging {
+  opacity: 0.5;
+}
+
+.maplibre-gl-bookmark-control .bookmark-item.drag-over {
+  box-shadow: inset 0 2px 0 0 var(--bm-focus);
+}
+
+.maplibre-gl-bookmark-control .bookmark-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  color: var(--bm-subtle);
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.maplibre-gl-bookmark-control .bookmark-grip:active {
+  cursor: grabbing;
+}
+
+.maplibre-gl-bookmark-control .bookmark-grip svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Export-selection checkbox (470) */
+.maplibre-gl-bookmark-control .bookmark-select {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--bm-focus);
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .maplibre-gl-bookmark-control .bookmark-icon {

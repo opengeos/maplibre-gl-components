@@ -17,6 +17,17 @@ map.on("load", () => {
     maxBookmarks: 20,
     flyToDuration: 2000,
     generateThumbnails: false,
+    // Resizable panel, drag-to-reorder, and per-item export checkboxes.
+    resizable: true,
+    reorderable: true,
+    selectable: true,
+    // Persist arbitrary host state with each bookmark. Here we just record the
+    // basemap; a real app might capture the set of visible layers.
+    captureStateLabel: "Include basemap",
+    captureState: () => ({ style: map.getStyle().name ?? "unknown" }),
+    restoreState: (extra) => {
+      console.log("Restore captured state:", extra);
+    },
     bookmarks: [
       {
         id: "san-francisco",
@@ -90,4 +101,11 @@ map.on("load", () => {
     console.log("Bookmarks imported:", event.state.bookmarks.length, "total");
   });
 
+  bookmarkControl.on("reorder", (event) => {
+    console.log("Bookmarks reordered; moved:", event.bookmark?.name);
+  });
+
+  bookmarkControl.on("export", () => {
+    console.log("Bookmarks exported");
+  });
 });
