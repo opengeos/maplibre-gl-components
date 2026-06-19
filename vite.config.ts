@@ -66,6 +66,13 @@ export default defineConfig({
         /^@dvt3d\//,
         /^@developmentseed\//,
         /^@carbonplan\//,
+        // Keep the LiDAR controls external so consumers resolve their own
+        // installed maplibre-gl-lidar / maplibre-gl-usgs-lidar at runtime,
+        // instead of inlining a snapshot taken at this package's build time.
+        // Otherwise a consumer that upgrades those packages (e.g. for the
+        // LidarControl resize handle in >=0.16) still gets the old bundled UI.
+        'maplibre-gl-lidar',
+        'maplibre-gl-usgs-lidar',
       ],
       onwarn(warning, defaultHandler) {
         // Suppress "spawn" not exported warning from @loaders.gl/worker-utils
