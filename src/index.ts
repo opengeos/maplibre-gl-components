@@ -198,6 +198,7 @@ export {
 } from "./lib/converters";
 
 // Type exports
+export type { MaplibreSampleDataset } from "./lib/core/sampleDropdown";
 export type {
   ColorbarOptions,
   ColorbarState,

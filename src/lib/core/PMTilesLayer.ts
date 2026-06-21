@@ -1,5 +1,6 @@
 import "../styles/common.css";
 import "../styles/pmtiles-layer.css";
+import { createSampleDropdown } from "./sampleDropdown";
 import {
   type IControl,
   type Map as MapLibreMap,
@@ -31,6 +32,8 @@ const DEFAULT_OPTIONS: Required<PMTilesLayerControlOptions> = {
   collapsed: true,
   beforeId: "",
   defaultUrl: "",
+  sampleData: [],
+  sampleDataLabel: "Load sample data...",
   loadDefaultUrl: false,
   defaultOpacity: 1,
   defaultFillColor: "steelblue",
@@ -715,6 +718,15 @@ export class PMTilesLayerControl implements IControl {
       this._state.url = urlInput.value;
     });
     urlGroup.appendChild(urlInput);
+    const sampleDropdown = createSampleDropdown(
+      this._options.sampleData,
+      this._options.sampleDataLabel,
+      (url) => {
+        urlInput.value = url;
+        this._state.url = url;
+      },
+    );
+    if (sampleDropdown) panel.appendChild(sampleDropdown);
     panel.appendChild(urlGroup);
 
     // Opacity slider

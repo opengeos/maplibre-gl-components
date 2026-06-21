@@ -4,6 +4,7 @@ import maplibregl, {
   type IControl,
   type Map as MapLibreMap,
 } from "maplibre-gl";
+import { createSampleDropdown } from "./sampleDropdown";
 import type {
   AddVectorControlOptions,
   AddVectorControlState,
@@ -33,6 +34,8 @@ const DEFAULT_OPTIONS: Required<AddVectorControlOptions> = {
   collapsed: true,
   beforeId: "",
   defaultUrl: "",
+  sampleData: [],
+  sampleDataLabel: "Load sample data...",
   defaultLayerName: "",
   loadDefaultUrl: false,
   defaultFormat: "auto",
@@ -580,6 +583,15 @@ export class AddVectorControl implements IControl {
       formatHint.className = "maplibre-gl-add-vector-format-hint";
       formatHint.textContent = "Supports GeoJSON, GeoParquet, and FlatGeobuf";
       urlGroup.appendChild(formatHint);
+      const sampleDropdown = createSampleDropdown(
+        this._options.sampleData,
+        this._options.sampleDataLabel,
+        (url) => {
+          urlInput.value = url;
+          this._state.url = url;
+        },
+      );
+      if (sampleDropdown) panel.appendChild(sampleDropdown);
       panel.appendChild(urlGroup);
 
       // Format selector

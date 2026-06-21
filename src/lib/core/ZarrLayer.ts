@@ -1,5 +1,6 @@
 import "../styles/common.css";
 import "../styles/zarr-layer.css";
+import { createSampleDropdown } from "./sampleDropdown";
 import maplibregl, {
   type IControl,
   type Map as MapLibreMap,
@@ -82,6 +83,8 @@ const DEFAULT_OPTIONS: Required<ZarrLayerControlOptions> = {
   collapsed: true,
   beforeId: "",
   defaultUrl: "",
+  sampleData: [],
+  sampleDataLabel: "Load sample data...",
   loadDefaultUrl: false,
   defaultVariable: "",
   defaultColormap: getColormapColors("viridis"),
@@ -620,6 +623,15 @@ export class ZarrLayerControl implements IControl {
       this._state.url = urlInput.value;
     });
     urlGroup.appendChild(urlInput);
+    const sampleDropdown = createSampleDropdown(
+      this._options.sampleData,
+      this._options.sampleDataLabel,
+      (url) => {
+        urlInput.value = url;
+        this._state.url = url;
+      },
+    );
+    if (sampleDropdown) panel.appendChild(sampleDropdown);
     panel.appendChild(urlGroup);
 
     // Variable input with fetch button

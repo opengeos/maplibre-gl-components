@@ -58,3 +58,112 @@
 .maplibre-gl-html-control::-webkit-scrollbar-thumb:hover {
   background: #aaa;
 }
+
+/**
+ * Shared "Load sample data" dropdown (custom, not a native <select>) used by
+ * the Add data controls so the menu themes correctly in dark mode.
+ */
+.maplibre-gl-sample-dropdown {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.maplibre-gl-sample-trigger {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  font-weight: 400;
+  text-align: left;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  color: #6b7280;
+  cursor: pointer;
+  outline: none;
+}
+
+.maplibre-gl-sample-trigger:hover,
+.maplibre-gl-sample-trigger.open,
+.maplibre-gl-sample-trigger:focus-visible {
+  border-color: #4a90d9;
+}
+
+.maplibre-gl-sample-trigger-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.maplibre-gl-sample-caret {
+  flex: 0 0 auto;
+  font-size: 10px;
+}
+
+.maplibre-gl-sample-menu {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.maplibre-gl-sample-menu[hidden] {
+  display: none;
+}
+
+.maplibre-gl-sample-option {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  font: inherit;
+  font-weight: 400;
+  text-align: left;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  color: #111827;
+  cursor: pointer;
+}
+
+.maplibre-gl-sample-option:hover,
+.maplibre-gl-sample-option:focus-visible {
+  outline: none;
+  background: rgba(74, 144, 217, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  .maplibre-gl-sample-trigger {
+    background: #1f2937;
+    border-color: #4b5563;
+    color: #9aa3ab;
+  }
+  .maplibre-gl-sample-menu {
+    background: #1f2937;
+    border-color: #4b5563;
+  }
+  .maplibre-gl-sample-option {
+    color: #e5e7eb;
+  }
+  .maplibre-gl-sample-option:hover,
+  .maplibre-gl-sample-option:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}

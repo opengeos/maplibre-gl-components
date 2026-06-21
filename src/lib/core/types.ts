@@ -1,5 +1,8 @@
 import type { IControl, Map } from "maplibre-gl";
 import type { StreetViewControlOptions } from "maplibre-gl-streetview";
+import type { MaplibreSampleDataset } from "./sampleDropdown";
+
+export type { MaplibreSampleDataset } from "./sampleDropdown";
 
 /**
  * Position options for legend controls.
@@ -1749,6 +1752,10 @@ export interface ZarrLayerControlOptions {
   beforeId?: string;
   /** Default Zarr URL to pre-fill. */
   defaultUrl?: string;
+  /** Sample datasets shown as a "Load sample data" dropdown above the URL input (hidden when empty). */
+  sampleData?: MaplibreSampleDataset[];
+  /** Placeholder shown in the sample-data dropdown. Default: 'Load sample data...'. */
+  sampleDataLabel?: string;
   /** Whether to automatically load the defaultUrl when control is added. Default: false. */
   loadDefaultUrl?: boolean;
   /** Default variable name. Default: ''. */
@@ -1964,6 +1971,10 @@ export interface PMTilesLayerControlOptions {
   beforeId?: string;
   /** Default PMTiles URL to pre-fill. */
   defaultUrl?: string;
+  /** Sample datasets shown as a "Load sample data" dropdown above the URL input (hidden when empty). */
+  sampleData?: MaplibreSampleDataset[];
+  /** Placeholder shown in the sample-data dropdown. Default: 'Load sample data...'. */
+  sampleDataLabel?: string;
   /** Whether to automatically load the defaultUrl when control is added. Default: false. */
   loadDefaultUrl?: boolean;
   /** Default opacity (0-1). Default: 1. */
@@ -2137,6 +2148,10 @@ export interface AddVectorControlOptions {
   beforeId?: string;
   /** Default URL to pre-fill. */
   defaultUrl?: string;
+  /** Sample datasets shown as a "Load sample data" dropdown above the URL input (hidden when empty). */
+  sampleData?: MaplibreSampleDataset[];
+  /** Placeholder shown in the sample-data dropdown. Default: 'Load sample data...'. */
+  sampleDataLabel?: string;
   /** Default layer name to pre-fill. If not specified, a unique ID is generated. */
   defaultLayerName?: string;
   /** Whether to automatically load the defaultUrl when control is added. Default: false. */
