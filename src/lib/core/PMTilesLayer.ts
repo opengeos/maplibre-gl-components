@@ -9,7 +9,7 @@ import {
 } from "maplibre-gl";
 import { generateDistinctColors } from "../utils/color";
 import {
-  addPanelResizeHandle,
+  addPanelResizeHandles,
   applyPanelMaxHeight,
   applyUserPanelSize,
   type UserPanelSize,
@@ -1009,7 +1009,7 @@ export class PMTilesLayerControl implements IControl {
     }
 
     // Size-to-content with a dynamic cap, plus a custom corner resize handle.
-    addPanelResizeHandle({
+    addPanelResizeHandles({
       panel,
       map: this._map,
       container: this._container,

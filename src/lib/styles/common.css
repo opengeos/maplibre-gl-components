@@ -60,51 +60,61 @@
 }
 
 /**
- * Shared corner resize handle for the floating data panels (PMTiles, Zarr,
- * Add Vector / FlatGeobuf). A custom pointer-driven grip is used instead of the
- * native CSS `resize`, which is unreliable in WebKitGTK. The panel itself is the
- * positioned ancestor (set inline), so the handle pins to its inward corner; the
- * inline `top`/`bottom`/`left`/`right`/`cursor` come from the JS that places it.
+ * Shared bottom-corner resize grips for the floating data panels (PMTiles,
+ * Zarr, Add Vector / FlatGeobuf). Two grips are rendered, one in each bottom
+ * corner: the bottom-right grip grows the panel rightward, the bottom-left grip
+ * leftward, and both grow it downward (matching maplibre-gl-vector). A custom
+ * pointer-driven grip is used instead of the native CSS `resize`, which is
+ * unreliable in WebKitGTK. The panel is the positioned ancestor (set inline), so
+ * the grips pin to its bottom corners.
  */
-.maplibre-gl-panel-resize {
+.maplibre-gl-panel-resize-handle {
   position: absolute;
+  bottom: 0;
   width: 16px;
   height: 16px;
   z-index: 2;
   touch-action: none;
-  background: linear-gradient(
-    135deg,
-    transparent 0%,
-    transparent 50%,
-    rgba(0, 0, 0, 0.28) 50%,
-    rgba(0, 0, 0, 0.28) 60%,
-    transparent 60%,
-    transparent 72%,
-    rgba(0, 0, 0, 0.28) 72%,
-    rgba(0, 0, 0, 0.28) 82%,
-    transparent 82%
-  );
-  opacity: 0.6;
 }
 
-.maplibre-gl-panel-resize:hover {
+.maplibre-gl-panel-resize-handle::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  width: 7px;
+  height: 7px;
+  border-color: rgba(0, 0, 0, 0.4);
+  border-style: solid;
+  opacity: 0.7;
+}
+
+.maplibre-gl-panel-resize-handle:hover::after {
   opacity: 1;
 }
 
+.maplibre-gl-panel-resize-right {
+  right: 0;
+  cursor: nwse-resize;
+}
+
+.maplibre-gl-panel-resize-right::after {
+  right: 3px;
+  border-width: 0 2px 2px 0;
+}
+
+.maplibre-gl-panel-resize-left {
+  left: 0;
+  cursor: nesw-resize;
+}
+
+.maplibre-gl-panel-resize-left::after {
+  left: 3px;
+  border-width: 0 0 2px 2px;
+}
+
 @media (prefers-color-scheme: dark) {
-  .maplibre-gl-panel-resize {
-    background: linear-gradient(
-      135deg,
-      transparent 0%,
-      transparent 50%,
-      rgba(255, 255, 255, 0.4) 50%,
-      rgba(255, 255, 255, 0.4) 60%,
-      transparent 60%,
-      transparent 72%,
-      rgba(255, 255, 255, 0.4) 72%,
-      rgba(255, 255, 255, 0.4) 82%,
-      transparent 82%
-    );
+  .maplibre-gl-panel-resize-handle::after {
+    border-color: rgba(255, 255, 255, 0.55);
   }
 }
 

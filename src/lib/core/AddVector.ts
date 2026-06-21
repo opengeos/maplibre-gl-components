@@ -15,7 +15,7 @@ import type {
 } from "./types";
 import { generateId, debounce } from "../utils/helpers";
 import {
-  addPanelResizeHandle,
+  addPanelResizeHandles,
   applyPanelMaxHeight,
   applyUserPanelSize,
   type UserPanelSize,
@@ -991,7 +991,7 @@ export class AddVectorControl implements IControl {
     }
 
     // Size-to-content with a dynamic cap, plus a custom corner resize handle.
-    addPanelResizeHandle({
+    addPanelResizeHandles({
       panel,
       map: this._map,
       container: this._container,

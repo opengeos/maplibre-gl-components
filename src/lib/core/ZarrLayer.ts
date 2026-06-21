@@ -17,7 +17,7 @@ import type {
 import type { ZarrLayerOptions } from "@carbonplan/zarr-layer";
 import { getColormap } from "../colormaps";
 import {
-  addPanelResizeHandle,
+  addPanelResizeHandles,
   applyPanelMaxHeight,
   applyUserPanelSize,
   type UserPanelSize,
@@ -973,7 +973,7 @@ export class ZarrLayerControl implements IControl {
     }
 
     // Size-to-content with a dynamic cap, plus a custom corner resize handle.
-    addPanelResizeHandle({
+    addPanelResizeHandles({
       panel,
       map: this._map,
       container: this._container,

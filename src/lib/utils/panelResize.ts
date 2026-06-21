@@ -11,10 +11,13 @@ export const PANEL_MIN_HEIGHT = 180;
 export const PANEL_EDGE_MARGIN = 12;
 
 /**
- * The shared CSS class for the custom corner resize handle. A single class is
- * reused by every floating panel because they share the same styling.
+ * The shared CSS class for the custom corner resize handles. Both bottom-corner
+ * grips carry this base class plus a side modifier so every floating panel gets
+ * the same styling.
  */
-export const PANEL_RESIZE_HANDLE_CLASS = "maplibre-gl-panel-resize";
+export const PANEL_RESIZE_HANDLE_CLASS = "maplibre-gl-panel-resize-handle";
+export const PANEL_RESIZE_LEFT_CLASS = "maplibre-gl-panel-resize-left";
+export const PANEL_RESIZE_RIGHT_CLASS = "maplibre-gl-panel-resize-right";
 
 /**
  * A persisted, user-chosen panel size from the resize handle.
@@ -185,114 +188,197 @@ export function applyUserPanelSize(opts: PanelResizeOptions): void {
 }
 
 /**
- * Adds a custom pointer-driven resize handle to a floating panel. The panel
- * itself stays the scroll container, so its content scrolls within the capped
- * height on overflow.
+ * Adds two custom pointer-driven resize grips to a floating panel, one in each
+ * bottom corner, matching the UX shipped in `maplibre-gl-vector`. The
+ * bottom-right grip grows the panel rightward, the bottom-left grip grows it
+ * leftward, and both grow it downward. The panel itself stays the scroll
+ * container, so its content scrolls within the capped height on overflow.
  *
- * The handle sits at the panel's inward corner (the corner pointing toward the
- * map interior, derived from the control's docking corner) and resizes both
- * width and height. It can grow and shrink between a minimum and the room
- * available to the opposite map edge, while the docked edges stay fixed. A
- * custom pointer-event handle is used instead of CSS `resize`, which is
- * unreliable in WebKitGTK. The chosen size is persisted via `setUserSize` so it
- * survives the panel being re-rendered, the window resizing, or the map
- * resizing.
+ * These panels are flowed children of the MapLibre control container (docked
+ * top-left under the toggle button), not absolutely positioned in the map
+ * container. So, unlike vector's map-relative pinning, the drag temporarily
+ * gives the panel `position: fixed` with `left`/`top`/`width`/`height` read from
+ * its live `getBoundingClientRect()` (viewport coordinates). This lets the
+ * corner-anchored growth math work regardless of the flow parent. On
+ * pointerup/cancel the temporary fixed positioning is removed so the panel
+ * returns to its docked flow position, but the chosen width/height are kept by
+ * persisting them via `setUserSize` (re-applied by {@link applyUserPanelSize} on
+ * re-render and map resize).
+ *
+ * A custom pointer-event handle is used instead of CSS `resize`, which is
+ * unreliable in WebKitGTK.
  *
  * @param opts - The resize options carrying the panel, map, and size store.
- * @returns The created handle element.
+ * @returns The created handle elements (left, right).
  */
-export function addPanelResizeHandle(opts: PanelResizeOptions): HTMLElement {
+export function addPanelResizeHandles(
+  opts: PanelResizeOptions,
+): HTMLElement[] {
   const { panel, map, container } = opts;
   const minWidth = opts.minWidth ?? PANEL_MIN_WIDTH;
   const minHeight = opts.minHeight ?? PANEL_MIN_HEIGHT;
 
-  // The handle is absolutely positioned against the panel, so the panel must be
-  // a positioned ancestor. The panel itself is the scroll container (it already
-  // carries `overflow-y: auto` and the dynamic max-height), so the whole panel
-  // scrolls together on overflow.
+  // The handles are absolutely positioned against the panel, so the panel must
+  // be a positioned ancestor when docked. The panel itself is the scroll
+  // container (it already carries `overflow-y: auto` and the dynamic
+  // max-height), so the whole panel scrolls together on overflow.
   if (!panel.style.position || panel.style.position === "static") {
     panel.style.position = "relative";
   }
 
-  const handle = document.createElement("div");
-  handle.className = PANEL_RESIZE_HANDLE_CLASS;
-  handle.setAttribute("aria-hidden", "true");
-  panel.appendChild(handle);
+  const handles: HTMLElement[] = [];
 
-  const placeHandle = (): void => {
-    const corner = getControlCorner(container);
-    const right = corner.endsWith("right");
-    const bottom = corner.startsWith("bottom");
-    handle.style.top = bottom ? "0" : "auto";
-    handle.style.bottom = bottom ? "auto" : "0";
-    handle.style.left = right ? "0" : "auto";
-    handle.style.right = right ? "auto" : "0";
-    handle.style.cursor = right === bottom ? "nwse-resize" : "nesw-resize";
+  for (const side of ["left", "right"] as const) {
+    const handle = document.createElement("div");
+    handle.className = `${PANEL_RESIZE_HANDLE_CLASS} ${
+      side === "left" ? PANEL_RESIZE_LEFT_CLASS : PANEL_RESIZE_RIGHT_CLASS
+    }`;
+    handle.setAttribute("aria-hidden", "true");
+    handle.addEventListener("pointerdown", (event) =>
+      beginResize(event, side, handle, opts, minWidth, minHeight),
+    );
+    panel.appendChild(handle);
+    handles.push(handle);
+  }
+
+  void map;
+  void container;
+  return handles;
+}
+
+/**
+ * Starts a pointer-driven resize from one of the bottom-corner grips.
+ *
+ * The panel is temporarily switched to `position: fixed` and pinned to its
+ * current viewport rect, so the corner-anchored growth math works no matter what
+ * the panel's flow parent is. The right grip grows the panel rightward (left
+ * edge fixed), the left grip leftward (right edge fixed); both grow it downward.
+ * Sizes are clamped to the configured minimums and to the map container rect
+ * (less {@link PANEL_EDGE_MARGIN}). On release the fixed positioning is removed
+ * so the panel re-docks in flow while its chosen width/height are persisted.
+ *
+ * @param event - The pointerdown event.
+ * @param side - Which bottom corner started the drag.
+ * @param handle - The grip element (for pointer capture).
+ * @param opts - The resize options carrying the panel, map, and size store.
+ * @param minWidth - Smallest allowed width.
+ * @param minHeight - Smallest allowed height.
+ */
+function beginResize(
+  event: PointerEvent,
+  side: "left" | "right",
+  handle: HTMLElement,
+  opts: PanelResizeOptions,
+  minWidth: number,
+  minHeight: number,
+): void {
+  const { panel, map } = opts;
+  event.preventDefault();
+  // Keep the drag from bubbling to any document click-outside handler.
+  event.stopPropagation();
+
+  const rect = panel.getBoundingClientRect();
+  const startX = event.clientX;
+  const startY = event.clientY;
+  const startWidth = rect.width;
+  const startHeight = rect.height;
+  const startLeft = rect.left;
+  const startTop = rect.top;
+  const startRight = rect.right;
+
+  const mapContainer = getMapContainer(map);
+  const mapRect = mapContainer?.getBoundingClientRect();
+
+  // Save the inline styles we override so flow positioning is restored exactly.
+  const saved = {
+    position: panel.style.position,
+    left: panel.style.left,
+    top: panel.style.top,
+    right: panel.style.right,
+    bottom: panel.style.bottom,
+    width: panel.style.width,
+    height: panel.style.height,
+    maxWidth: panel.style.maxWidth,
+    maxHeight: panel.style.maxHeight,
   };
-  placeHandle();
 
-  let right = false;
-  let bottom = false;
-  let startX = 0;
-  let startY = 0;
-  let startW = 0;
-  let startH = 0;
-  let maxW = Infinity;
-  let maxH = Infinity;
+  // Pin the panel to its current viewport rect with fixed positioning, so the
+  // corner-anchored resize math is independent of the flow parent. Drop the
+  // CSS max-size caps for the duration of the drag.
+  panel.style.boxSizing = "border-box";
+  panel.style.position = "fixed";
+  panel.style.left = `${startLeft}px`;
+  panel.style.top = `${startTop}px`;
+  panel.style.right = "auto";
+  panel.style.bottom = "auto";
+  panel.style.width = `${startWidth}px`;
+  panel.style.height = `${startHeight}px`;
+  panel.style.maxWidth = "none";
+  panel.style.maxHeight = "none";
 
-  const onMove = (event: PointerEvent): void => {
-    const dx = event.clientX - startX;
-    const dy = event.clientY - startY;
-    const width = Math.min(
-      maxW,
-      Math.max(minWidth, right ? startW - dx : startW + dx),
-    );
-    const height = Math.min(
-      maxH,
-      Math.max(minHeight, bottom ? startH - dy : startH + dy),
-    );
-    opts.setUserSize({ width, height });
+  let userWidth = startWidth;
+  let userHeight = startHeight;
+
+  const onMove = (moveEvent: PointerEvent): void => {
+    const dx = moveEvent.clientX - startX;
+    const dy = moveEvent.clientY - startY;
+
+    let maxHeight = Infinity;
+    if (mapRect) {
+      maxHeight = Math.max(minHeight, mapRect.bottom - startTop - PANEL_EDGE_MARGIN);
+    }
+    const nextHeight = Math.max(minHeight, Math.min(startHeight + dy, maxHeight));
+
+    let nextWidth: number;
+    let nextLeft = startLeft;
+    if (side === "right") {
+      let maxWidth = Infinity;
+      if (mapRect) {
+        maxWidth = Math.max(minWidth, mapRect.right - startLeft - PANEL_EDGE_MARGIN);
+      }
+      nextWidth = Math.max(minWidth, Math.min(startWidth + dx, maxWidth));
+    } else {
+      let maxWidth = Infinity;
+      if (mapRect) {
+        maxWidth = Math.max(minWidth, startRight - mapRect.left - PANEL_EDGE_MARGIN);
+      }
+      nextWidth = Math.max(minWidth, Math.min(startWidth - dx, maxWidth));
+      // Hold the right edge fixed while the left edge follows the drag.
+      nextLeft = startLeft + (startWidth - nextWidth);
+    }
+
+    panel.style.width = `${nextWidth}px`;
+    panel.style.height = `${nextHeight}px`;
+    panel.style.left = `${nextLeft}px`;
+    userWidth = nextWidth;
+    userHeight = nextHeight;
+  };
+
+  const cleanup = (endEvent: PointerEvent): void => {
+    handle.releasePointerCapture?.(endEvent.pointerId);
+    handle.removeEventListener("pointermove", onMove);
+    handle.removeEventListener("pointerup", cleanup);
+    handle.removeEventListener("pointercancel", cleanup);
+
+    // Drop the temporary fixed positioning so the panel re-docks in flow.
+    panel.style.position = saved.position;
+    panel.style.left = saved.left;
+    panel.style.top = saved.top;
+    panel.style.right = saved.right;
+    panel.style.bottom = saved.bottom;
+
+    // Persist the chosen size and re-apply it (clamped) in the flow layout.
+    opts.setUserSize({ width: userWidth, height: userHeight });
+    panel.style.width = saved.width;
+    panel.style.height = saved.height;
+    panel.style.maxWidth = saved.maxWidth;
+    panel.style.maxHeight = saved.maxHeight;
     applyUserPanelSize(opts);
   };
-  const onEnd = (event: PointerEvent): void => {
-    handle.releasePointerCapture?.(event.pointerId);
-    handle.removeEventListener("pointermove", onMove);
-    handle.removeEventListener("pointerup", onEnd);
-    handle.removeEventListener("pointercancel", onEnd);
-  };
-  handle.addEventListener("pointerdown", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    placeHandle();
-    const corner = getControlCorner(container);
-    right = corner.endsWith("right");
-    bottom = corner.startsWith("bottom");
-    const rect = panel.getBoundingClientRect();
-    startX = event.clientX;
-    startY = event.clientY;
-    startW = rect.width;
-    startH = rect.height;
-    const mapContainer = getMapContainer(map);
-    if (mapContainer) {
-      const mapRect = mapContainer.getBoundingClientRect();
-      // The docked edge is fixed, so the room to grow is constant for the whole
-      // drag: from that edge to the opposite map edge, less a margin.
-      maxW =
-        (right ? rect.right - mapRect.left : mapRect.right - rect.left) -
-        PANEL_EDGE_MARGIN;
-      maxH =
-        (bottom ? rect.bottom - mapRect.top : mapRect.bottom - rect.top) -
-        PANEL_EDGE_MARGIN;
-    } else {
-      maxW = Infinity;
-      maxH = Infinity;
-    }
-    handle.setPointerCapture?.(event.pointerId);
-    handle.addEventListener("pointermove", onMove);
-    handle.addEventListener("pointerup", onEnd);
-    // Touch/pen drags can end with pointercancel instead of pointerup.
-    handle.addEventListener("pointercancel", onEnd);
-  });
 
-  return handle;
+  handle.setPointerCapture?.(event.pointerId);
+  handle.addEventListener("pointermove", onMove);
+  handle.addEventListener("pointerup", cleanup);
+  // Touch/pen drags can end with pointercancel instead of pointerup.
+  handle.addEventListener("pointercancel", cleanup);
 }

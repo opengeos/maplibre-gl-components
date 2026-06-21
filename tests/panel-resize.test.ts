@@ -4,6 +4,8 @@ import { ZarrLayerControl } from "../src/lib/core/ZarrLayer";
 import { AddVectorControl } from "../src/lib/core/AddVector";
 import {
   PANEL_RESIZE_HANDLE_CLASS,
+  PANEL_RESIZE_LEFT_CLASS,
+  PANEL_RESIZE_RIGHT_CLASS,
   PANEL_MIN_WIDTH,
   PANEL_MIN_HEIGHT,
   applyPanelMaxHeight,
@@ -60,17 +62,27 @@ describe("panel resize handle", () => {
         document.body.appendChild(container);
       });
 
-      it("renders a resize handle in the expanded panel", () => {
-        const handle = container.querySelector(`.${PANEL_RESIZE_HANDLE_CLASS}`);
-        expect(handle).not.toBeNull();
+      it("renders both bottom-corner resize grips in the expanded panel", () => {
+        const handles = container.querySelectorAll(
+          `.${PANEL_RESIZE_HANDLE_CLASS}`,
+        );
+        expect(handles.length).toBe(2);
+        expect(
+          container.querySelector(`.${PANEL_RESIZE_LEFT_CLASS}`),
+        ).not.toBeNull();
+        expect(
+          container.querySelector(`.${PANEL_RESIZE_RIGHT_CLASS}`),
+        ).not.toBeNull();
       });
 
-      it("places the handle inside the panel", () => {
+      it("places both grips inside the panel", () => {
         const panel = container.querySelector(c.panelClass) as HTMLElement;
         expect(panel).not.toBeNull();
-        const handle = panel.querySelector(`.${PANEL_RESIZE_HANDLE_CLASS}`);
-        expect(handle).not.toBeNull();
-        // The panel must be a positioned ancestor so the handle pins to it.
+        const left = panel.querySelector(`.${PANEL_RESIZE_LEFT_CLASS}`);
+        const right = panel.querySelector(`.${PANEL_RESIZE_RIGHT_CLASS}`);
+        expect(left).not.toBeNull();
+        expect(right).not.toBeNull();
+        // The panel must be a positioned ancestor so the grips pin to it.
         expect(panel.style.position).toBe("relative");
       });
 
