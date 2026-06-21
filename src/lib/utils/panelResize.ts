@@ -117,8 +117,17 @@ export function applyPanelMaxHeight(
   container: HTMLElement | undefined,
 ): void {
   const available = availableHeight(panel, map, container);
-  panel.style.maxHeight = `min(80vh, 720px, ${available}px)`;
+  // Cap at the room actually available (and a hard 720px ceiling), not 80vh: an
+  // 80vh cap is smaller than the available room on common window sizes, so a
+  // panel that would otherwise fit was forced to scroll. The panel still sizes
+  // to its content and only scrolls when the content exceeds this cap.
+  panel.style.maxHeight = `min(720px, ${available}px)`;
   panel.style.overflowY = "auto";
+  // The panel is itself the scroll container, so reserve a stable scrollbar
+  // gutter. Without it the scrollbar overlays the right edge of the fields and
+  // sits outside the bottom-right resize handle (which is pinned to the padding
+  // edge), making the handle appear to the left of the scrollbar.
+  panel.style.scrollbarGutter = "stable";
 }
 
 /**
