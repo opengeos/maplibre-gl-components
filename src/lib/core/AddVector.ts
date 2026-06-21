@@ -14,6 +14,12 @@ import type {
   RemoteVectorFormat,
 } from "./types";
 import { generateId, debounce } from "../utils/helpers";
+import {
+  addPanelResizeHandle,
+  applyPanelMaxHeight,
+  applyUserPanelSize,
+  type UserPanelSize,
+} from "../utils/panelResize";
 
 /**
  * Vector/polygon icon for the control button.
@@ -119,6 +125,9 @@ export class AddVectorControl implements IControl {
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
+  /** User-chosen panel size from the resize handle, re-applied on re-render. */
+  private _userPanelSize: UserPanelSize | null = null;
+  private _mapResizeHandler?: () => void;
   private _vectorLayers: Map<string, AddVectorLayerInfo> = new Map();
   private _activePopup?: maplibregl.Popup;
   private _viewportLoadingLayers: Set<string> = new Set();
@@ -161,6 +170,11 @@ export class AddVectorControl implements IControl {
     this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
 
+    // Keep the open panel sized to the available map space when the map
+    // resizes (e.g. a sidebar toggles or the window changes).
+    this._mapResizeHandler = () => this._reflowPanel();
+    this._map.on("resize", this._mapResizeHandler);
+
     // Auto-load default URL if specified
     if (this._options.loadDefaultUrl && this._options.defaultUrl) {
       const loadLayer = () => {
@@ -185,12 +199,35 @@ export class AddVectorControl implements IControl {
       this._handleZoom = undefined;
     }
 
+    if (this._map && this._mapResizeHandler) {
+      this._map.off("resize", this._mapResizeHandler);
+      this._mapResizeHandler = undefined;
+    }
+
     this._map = undefined;
     this._container?.parentNode?.removeChild(this._container);
     this._container = undefined;
     this._button = undefined;
     this._panel = undefined;
     this._eventHandlers.clear();
+  }
+
+  /**
+   * Re-applies the panel's available-space max-height and any persisted
+   * user-chosen size. Safe to call when the panel is collapsed (no-op).
+   */
+  private _reflowPanel(): void {
+    if (!this._panel) return;
+    applyPanelMaxHeight(this._panel, this._map, this._container);
+    applyUserPanelSize({
+      panel: this._panel,
+      map: this._map,
+      container: this._container,
+      getUserSize: () => this._userPanelSize,
+      setUserSize: (size) => {
+        this._userPanelSize = size;
+      },
+    });
   }
 
   show(): void {
@@ -507,10 +544,6 @@ export class AddVectorControl implements IControl {
     const panel = document.createElement("div");
     panel.className = "maplibre-gl-add-vector-panel";
     panel.style.width = `${this._options.panelWidth}px`;
-    if (this._options.maxHeight && this._options.maxHeight > 0) {
-      panel.style.maxHeight = `${this._options.maxHeight}px`;
-      panel.style.overflowY = "auto";
-    }
     this._panel = panel;
 
     // Header
@@ -688,7 +721,9 @@ export class AddVectorControl implements IControl {
             };
             this._map.on("zoom", updateZoomLabel);
             // Store cleanup function on the element for later removal
-            (currentZoomLabel as HTMLElement & { _cleanup?: () => void })._cleanup = () => {
+            (
+              currentZoomLabel as HTMLElement & { _cleanup?: () => void }
+            )._cleanup = () => {
               this._map?.off("zoom", updateZoomLabel);
             };
           }
@@ -955,8 +990,24 @@ export class AddVectorControl implements IControl {
       panel.appendChild(listContainer);
     }
 
+    // Size-to-content with a dynamic cap, plus a custom corner resize handle.
+    addPanelResizeHandle({
+      panel,
+      map: this._map,
+      container: this._container,
+      getUserSize: () => this._userPanelSize,
+      setUserSize: (size) => {
+        this._userPanelSize = size;
+      },
+    });
+    this._reflowPanel();
+
     this._container.appendChild(panel);
     this._button = undefined;
+
+    // The panel must be in the DOM before its rect is meaningful, so apply the
+    // available-space cap and any persisted user size on the next frame.
+    requestAnimationFrame(() => this._reflowPanel());
   }
 
   private _createFormGroup(labelText: string, id: string): HTMLElement {

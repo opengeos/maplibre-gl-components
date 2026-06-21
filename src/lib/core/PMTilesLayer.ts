@@ -8,6 +8,12 @@ import {
   Popup,
 } from "maplibre-gl";
 import { generateDistinctColors } from "../utils/color";
+import {
+  addPanelResizeHandle,
+  applyPanelMaxHeight,
+  applyUserPanelSize,
+  type UserPanelSize,
+} from "../utils/panelResize";
 import type {
   PMTilesLayerControlOptions,
   PMTilesLayerControlState,
@@ -153,6 +159,9 @@ export class PMTilesLayerControl implements IControl {
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
+  /** User-chosen panel size from the resize handle, re-applied on re-render. */
+  private _userPanelSize: UserPanelSize | null = null;
+  private _mapResizeHandler?: () => void;
   private _pmtilesLayers: Map<string, PMTilesLayerInfo> = new Map();
   private _layerCounter = 0;
   private _protocolRegistered = false;
@@ -190,6 +199,11 @@ export class PMTilesLayerControl implements IControl {
     this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
 
+    // Keep the open panel sized to the available map space when the map
+    // resizes (e.g. a sidebar toggles or the window changes).
+    this._mapResizeHandler = () => this._reflowPanel();
+    this._map.on("resize", this._mapResizeHandler);
+
     // Set up click handler for pickable features
     this._setupClickHandler();
 
@@ -215,6 +229,11 @@ export class PMTilesLayerControl implements IControl {
     if (this._map && this._handleZoom) {
       this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
+    }
+
+    if (this._map && this._mapResizeHandler) {
+      this._map.off("resize", this._mapResizeHandler);
+      this._mapResizeHandler = undefined;
     }
 
     // Clean up click handler
@@ -570,9 +589,7 @@ export class PMTilesLayerControl implements IControl {
           html += '<table class="maplibre-gl-pmtiles-popup-table">';
           for (const [key, value] of propEntries) {
             const displayValue =
-              typeof value === "object"
-                ? JSON.stringify(value)
-                : String(value);
+              typeof value === "object" ? JSON.stringify(value) : String(value);
             html += `<tr><td class="maplibre-gl-pmtiles-popup-key">${key}</td><td class="maplibre-gl-pmtiles-popup-value">${displayValue}</td></tr>`;
           }
           html += "</table>";
@@ -685,10 +702,6 @@ export class PMTilesLayerControl implements IControl {
     const panel = document.createElement("div");
     panel.className = "maplibre-gl-pmtiles-layer-panel";
     panel.style.width = `${this._options.panelWidth}px`;
-    if (this._options.maxHeight && this._options.maxHeight > 0) {
-      panel.style.maxHeight = `${this._options.maxHeight}px`;
-      panel.style.overflowY = "auto";
-    }
     this._panel = panel;
 
     // Header
@@ -995,8 +1008,42 @@ export class PMTilesLayerControl implements IControl {
       panel.appendChild(listContainer);
     }
 
+    // Size-to-content with a dynamic cap, plus a custom corner resize handle.
+    addPanelResizeHandle({
+      panel,
+      map: this._map,
+      container: this._container,
+      getUserSize: () => this._userPanelSize,
+      setUserSize: (size) => {
+        this._userPanelSize = size;
+      },
+    });
+    this._reflowPanel();
+
     this._container.appendChild(panel);
     this._button = undefined;
+
+    // The panel must be in the DOM before its rect is meaningful, so apply the
+    // available-space cap and any persisted user size on the next frame.
+    requestAnimationFrame(() => this._reflowPanel());
+  }
+
+  /**
+   * Re-applies the panel's available-space max-height and any persisted
+   * user-chosen size. Safe to call when the panel is collapsed (no-op).
+   */
+  private _reflowPanel(): void {
+    if (!this._panel) return;
+    applyPanelMaxHeight(this._panel, this._map, this._container);
+    applyUserPanelSize({
+      panel: this._panel,
+      map: this._map,
+      container: this._container,
+      getUserSize: () => this._userPanelSize,
+      setUserSize: (size) => {
+        this._userPanelSize = size;
+      },
+    });
   }
 
   private _createFormGroup(labelText: string, id: string): HTMLElement {

@@ -60,6 +60,55 @@
 }
 
 /**
+ * Shared corner resize handle for the floating data panels (PMTiles, Zarr,
+ * Add Vector / FlatGeobuf). A custom pointer-driven grip is used instead of the
+ * native CSS `resize`, which is unreliable in WebKitGTK. The panel itself is the
+ * positioned ancestor (set inline), so the handle pins to its inward corner; the
+ * inline `top`/`bottom`/`left`/`right`/`cursor` come from the JS that places it.
+ */
+.maplibre-gl-panel-resize {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  z-index: 2;
+  touch-action: none;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.28) 50%,
+    rgba(0, 0, 0, 0.28) 60%,
+    transparent 60%,
+    transparent 72%,
+    rgba(0, 0, 0, 0.28) 72%,
+    rgba(0, 0, 0, 0.28) 82%,
+    transparent 82%
+  );
+  opacity: 0.6;
+}
+
+.maplibre-gl-panel-resize:hover {
+  opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .maplibre-gl-panel-resize {
+    background: linear-gradient(
+      135deg,
+      transparent 0%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0.4) 60%,
+      transparent 60%,
+      transparent 72%,
+      rgba(255, 255, 255, 0.4) 72%,
+      rgba(255, 255, 255, 0.4) 82%,
+      transparent 82%
+    );
+  }
+}
+
+/**
  * Shared "Load sample data" dropdown (custom, not a native <select>) used by
  * the Add data controls so the menu themes correctly in dark mode.
  */

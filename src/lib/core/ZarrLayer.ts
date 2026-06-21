@@ -16,6 +16,12 @@ import type {
 } from "./types";
 import type { ZarrLayerOptions } from "@carbonplan/zarr-layer";
 import { getColormap } from "../colormaps";
+import {
+  addPanelResizeHandle,
+  applyPanelMaxHeight,
+  applyUserPanelSize,
+  type UserPanelSize,
+} from "../utils/panelResize";
 
 /**
  * All available colormap names (same as COG layer).
@@ -135,6 +141,9 @@ export class ZarrLayerControl implements IControl {
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
+  /** User-chosen panel size from the resize handle, re-applied on re-render. */
+  private _userPanelSize: UserPanelSize | null = null;
+  private _mapResizeHandler?: () => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _zarrLayers: Map<string, any> = new Map();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -186,6 +195,11 @@ export class ZarrLayerControl implements IControl {
     this._map.on("zoom", this._handleZoom);
     this._checkZoomVisibility();
 
+    // Keep the open panel sized to the available map space when the map
+    // resizes (e.g. a sidebar toggles or the window changes).
+    this._mapResizeHandler = () => this._reflowPanel();
+    this._map.on("resize", this._mapResizeHandler);
+
     // Auto-load default URL if specified
     if (
       this._options.loadDefaultUrl &&
@@ -213,6 +227,11 @@ export class ZarrLayerControl implements IControl {
     if (this._map && this._handleZoom) {
       this._map.off("zoom", this._handleZoom);
       this._handleZoom = undefined;
+    }
+
+    if (this._map && this._mapResizeHandler) {
+      this._map.off("resize", this._mapResizeHandler);
+      this._mapResizeHandler = undefined;
     }
 
     this._map = undefined;
@@ -258,6 +277,24 @@ export class ZarrLayerControl implements IControl {
   toggle(): void {
     if (this._state.collapsed) this.expand();
     else this.collapse();
+  }
+
+  /**
+   * Re-applies the panel's available-space max-height and any persisted
+   * user-chosen size. Safe to call when the panel is collapsed (no-op).
+   */
+  private _reflowPanel(): void {
+    if (!this._panel) return;
+    applyPanelMaxHeight(this._panel, this._map, this._container);
+    applyUserPanelSize({
+      panel: this._panel,
+      map: this._map,
+      container: this._container,
+      getUserSize: () => this._userPanelSize,
+      setUserSize: (size) => {
+        this._userPanelSize = size;
+      },
+    });
   }
 
   getState(): ZarrLayerControlState {
@@ -590,10 +627,6 @@ export class ZarrLayerControl implements IControl {
     const panel = document.createElement("div");
     panel.className = "maplibre-gl-zarr-layer-panel";
     panel.style.width = `${this._options.panelWidth}px`;
-    if (this._options.maxHeight && this._options.maxHeight > 0) {
-      panel.style.maxHeight = `${this._options.maxHeight}px`;
-      panel.style.overflowY = "auto";
-    }
     this._panel = panel;
 
     // Header
@@ -939,8 +972,24 @@ export class ZarrLayerControl implements IControl {
       panel.appendChild(listContainer);
     }
 
+    // Size-to-content with a dynamic cap, plus a custom corner resize handle.
+    addPanelResizeHandle({
+      panel,
+      map: this._map,
+      container: this._container,
+      getUserSize: () => this._userPanelSize,
+      setUserSize: (size) => {
+        this._userPanelSize = size;
+      },
+    });
+    this._reflowPanel();
+
     this._container.appendChild(panel);
     this._button = undefined;
+
+    // The panel must be in the DOM before its rect is meaningful, so apply the
+    // available-space cap and any persisted user size on the next frame.
+    requestAnimationFrame(() => this._reflowPanel());
   }
 
   private _createFormGroup(labelText: string, id: string): HTMLElement {
