@@ -96,6 +96,52 @@ describe("panel resize handle", () => {
         expect(panel.style.scrollbarGutter).toBe("stable");
       });
 
+      it("resizes via width/height on drag without switching to position: fixed", () => {
+        // Dock the control top-left so growing the panel means dragging the
+        // bottom-right interior corner right and down.
+        const ctrlWrap = document.createElement("div");
+        ctrlWrap.className = "maplibregl-ctrl-top-left";
+        document.body.appendChild(ctrlWrap);
+        ctrlWrap.appendChild(container);
+
+        const panel = container.querySelector(c.panelClass) as HTMLElement;
+        const right = panel.querySelector(
+          `.${PANEL_RESIZE_RIGHT_CLASS}`,
+        ) as HTMLElement;
+        // Stub the geometry jsdom does not compute so the dock-based math has
+        // real numbers to work with: the panel is docked at the top-left.
+        panel.getBoundingClientRect = () =>
+          ({ left: 10, top: 10, right: 310, bottom: 210, width: 300, height: 200 }) as DOMRect;
+
+        const down = new Event("pointerdown") as any;
+        down.clientX = 310;
+        down.clientY = 210;
+        down.pointerId = 1;
+        right.dispatchEvent(down);
+
+        const move = new Event("pointermove") as any;
+        move.clientX = 460; // drag the interior corner 150px right
+        move.clientY = 360; // and 150px down
+        right.dispatchEvent(move);
+
+        // The drag must resize, not reposition: no position: fixed, and the
+        // docked edges (left/top/right/bottom) are untouched.
+        expect(panel.style.position).toBe("relative");
+        expect(panel.style.left).toBe("");
+        expect(panel.style.top).toBe("");
+        expect(panel.style.right).toBe("");
+        expect(panel.style.bottom).toBe("");
+        expect(parseFloat(panel.style.width)).toBeGreaterThan(300);
+        expect(parseFloat(panel.style.height)).toBeGreaterThan(200);
+
+        const up = new Event("pointerup") as any;
+        up.pointerId = 1;
+        right.dispatchEvent(up);
+
+        // Still no fixed positioning after release.
+        expect(panel.style.position).toBe("relative");
+      });
+
       it("re-applies a persisted user size across re-renders", () => {
         const panel = container.querySelector(c.panelClass) as HTMLElement;
         // Simulate a user-resized panel by writing the private size field.
