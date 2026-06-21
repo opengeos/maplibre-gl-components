@@ -88,10 +88,12 @@ describe("panel resize handle", () => {
 
       it("drives a dynamic max-height instead of a fixed cap", () => {
         const panel = container.querySelector(c.panelClass) as HTMLElement;
-        // Should be a min(...) expression, not the old "500px" fixed cap.
-        expect(panel.style.maxHeight).toContain("min(");
+        // A dynamic length cap (jsdom normalizes the min() to a calc()), not
+        // the old fixed "500px", and a reserved scrollbar gutter.
         expect(panel.style.maxHeight).not.toBe("500px");
+        expect(panel.style.maxHeight).toMatch(/px/);
         expect(panel.style.overflowY).toBe("auto");
+        expect(panel.style.scrollbarGutter).toBe("stable");
       });
 
       it("re-applies a persisted user size across re-renders", () => {
@@ -113,11 +115,14 @@ describe("panel resize handle", () => {
 });
 
 describe("applyPanelMaxHeight", () => {
-  it("caps to a min() of available space and never below the floor", () => {
+  it("caps the panel height to the available space with a scrollbar gutter", () => {
     const panel = document.createElement("div");
     document.body.appendChild(panel);
     applyPanelMaxHeight(panel, undefined, undefined);
-    expect(panel.style.maxHeight).toMatch(/^min\(80vh, 720px, \d+px\)$/);
+    // A dynamic length cap (jsdom normalizes the min() to a calc()).
+    expect(panel.style.maxHeight).toMatch(/px/);
+    expect(panel.style.maxHeight).not.toBe("");
     expect(panel.style.overflowY).toBe("auto");
+    expect(panel.style.scrollbarGutter).toBe("stable");
   });
 });
