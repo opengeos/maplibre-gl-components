@@ -18,6 +18,7 @@ export const PANEL_EDGE_MARGIN = 12;
 export const PANEL_RESIZE_HANDLE_CLASS = "maplibre-gl-panel-resize-handle";
 export const PANEL_RESIZE_LEFT_CLASS = "maplibre-gl-panel-resize-left";
 export const PANEL_RESIZE_RIGHT_CLASS = "maplibre-gl-panel-resize-right";
+export const PANEL_BODY_CLASS = "maplibre-gl-panel-body";
 
 /**
  * A persisted, user-chosen panel size from the resize handle.
@@ -122,38 +123,27 @@ export function applyPanelMaxHeight(
   // panel that would otherwise fit was forced to scroll. The panel still sizes
   // to its content and only scrolls when the content exceeds this cap.
   panel.style.maxHeight = `min(720px, ${available}px)`;
-  panel.style.overflowY = "auto";
-  // The panel is itself the scroll container, so reserve a stable scrollbar
-  // gutter. Without it the scrollbar overlays the right edge of the fields and
-  // sits outside the bottom-right resize handle (which is pinned to the padding
-  // edge), making the handle appear to the left of the scrollbar.
-  panel.style.scrollbarGutter = "stable";
-  // Push the bottom-right grip out past the reserved scrollbar gutter so it
-  // lands at the panel's true inline-end rather than to the left of the
-  // scrollbar (the gutter is excluded from an absolutely positioned child's
-  // containing block, so `right: 0` would otherwise sit inside the gutter).
-  alignRightGripToGutter(panel);
-}
+  // The panel is a flex column whose inner body scrolls (see addPanelResizeHandles);
+  // the panel itself never scrolls, so the resize grips stay pinned to its
+  // visible bottom corners and a stray sub-pixel overflow adds no panel scrollbar.
+  panel.style.overflowX = "hidden";
+  panel.style.overflowY = "hidden";
 
-/**
- * Offsets the bottom-right resize grip outward by the reserved scrollbar-gutter
- * width so it sits at the panel's true inline-end, clear of the scrollbar, not
- * to its left. `scrollbar-gutter: stable` reserves a gutter that is excluded
- * from an absolutely positioned descendant's containing block, so a plain
- * `right: 0` grip would otherwise land inside that gutter, left of the
- * scrollbar. Safe to call repeatedly (on render and map resize).
- *
- * @param panel - The scroll-container panel holding the grips.
- */
-function alignRightGripToGutter(panel: HTMLElement): void {
-  const grip = panel.querySelector<HTMLElement>(
-    `.${PANEL_RESIZE_RIGHT_CLASS}`,
-  );
-  if (!grip) return;
-  // The reserved gutter width is the panel's border-box minus its client (content)
-  // width; this stays positive while `scrollbar-gutter: stable` is in effect.
-  const gutter = panel.offsetWidth - panel.clientWidth;
-  grip.style.right = gutter > 0 ? `-${gutter}px` : "0";
+  // Keep the scrollbar from covering the fields without leaving an idle margin.
+  // Only while the body overflows, reserve a consistent gutter on its right:
+  // top up the layout width a classic scrollbar already takes (WebKit
+  // ::-webkit-scrollbar) to a fixed total, or reserve the whole gutter when the
+  // scrollbar is an overlay that takes no width (e.g. Linux Chromium) and would
+  // otherwise float over the fields. When the body fits, no padding is added,
+  // so there is no idle margin.
+  const body = panel.querySelector<HTMLElement>(`.${PANEL_BODY_CLASS}`);
+  if (body) {
+    const overflowing = body.scrollHeight > body.clientHeight;
+    const scrollbarWidth = Math.max(0, body.offsetWidth - body.clientWidth);
+    const gutter = 14;
+    const pad = overflowing ? Math.max(0, gutter - scrollbarWidth) : 0;
+    body.style.paddingRight = pad > 0 ? `${pad}px` : "";
+  }
 }
 
 /**
@@ -219,14 +209,57 @@ export function applyUserPanelSize(opts: PanelResizeOptions): void {
   panel.style.maxHeight = "none";
   panel.style.width = `${width}px`;
   panel.style.height = `${height}px`;
-  panel.style.overflowY = "auto";
+  // The panel does not scroll; its inner body does, flexing to the new height.
+  panel.style.overflowX = "hidden";
+  panel.style.overflowY = "hidden";
+}
+
+/**
+ * Moves everything below the panel header into a scrolling inner body, turning
+ * the panel into a flex column: a fixed header, a body that flexes and scrolls,
+ * and (added by the caller) resize grips pinned to the panel's visible bottom
+ * corners. Without this the panel itself was the scroll container, so the
+ * absolutely positioned grips sat at the bottom of the scrollable content
+ * (above a long Layers list, left of the scrollbar) instead of the visible
+ * bottom edge. These panels are rebuilt on every state change, so this re-wraps
+ * the fresh children on each render. The header is taken to be the panel's
+ * first child (these controls always append the header first).
+ *
+ * @param panel - The panel element to restructure.
+ */
+function wrapPanelBody(panel: HTMLElement): void {
+  const children = Array.from(panel.children) as HTMLElement[];
+  if (children.length === 0) return;
+  let body = children.find((c) => c.classList.contains(PANEL_BODY_CLASS));
+  if (!body) {
+    body = document.createElement("div");
+    body.className = PANEL_BODY_CLASS;
+    const header = children[0];
+    for (const child of children.slice(1)) body.appendChild(child);
+    panel.insertBefore(body, header.nextSibling);
+  }
+  body.style.flex = "1 1 auto";
+  body.style.minHeight = "0";
+  body.style.overflowY = "auto";
+  body.style.overflowX = "hidden";
+  // No scrollbar-gutter (a stable gutter leaves a margin even when nothing
+  // scrolls) and no `scrollbar-width` (setting it makes Chromium ignore the
+  // ::-webkit-scrollbar styling and fall back to a zero-width overlay that
+  // covers the fields). common.css styles `.maplibre-gl-panel-body` with a thin
+  // ::-webkit-scrollbar, which is a classic space-taking scrollbar in the
+  // WebKit/Chromium engines we target: no space (no margin) when the body fits,
+  // and the content reflows clear of it (no covering) when it scrolls.
+  panel.style.display = "flex";
+  panel.style.flexDirection = "column";
+  panel.style.overflow = "hidden";
 }
 
 /**
  * Adds two custom pointer-driven resize grips to a floating panel, one in each
- * bottom corner, matching the UX shipped in `maplibre-gl-vector`. The panel
- * itself stays the scroll container, so its content scrolls within the capped
- * height on overflow.
+ * bottom corner, matching the UX shipped in `maplibre-gl-vector`. The grips are
+ * appended to the panel, which is a flex column with a scrolling inner body
+ * (see {@link wrapPanelBody}), so they stay pinned to the panel's visible
+ * bottom corners while the body scrolls.
  *
  * These panels are flowed children of the MapLibre control container (docked
  * under the toggle button), which keeps the panel anchored at its docked corner.
@@ -253,10 +286,13 @@ export function addPanelResizeHandles(
   const minWidth = opts.minWidth ?? PANEL_MIN_WIDTH;
   const minHeight = opts.minHeight ?? PANEL_MIN_HEIGHT;
 
+  // Move everything below the header into a scrolling inner body so the grips,
+  // which are appended to the (non-scrolling) panel, stay at the panel's
+  // visible bottom corners instead of scrolling away inside the content.
+  wrapPanelBody(panel);
+
   // The handles are absolutely positioned against the panel, so the panel must
-  // be a positioned ancestor when docked. The panel itself is the scroll
-  // container (it already carries `overflow-y: auto` and the dynamic
-  // max-height), so the whole panel scrolls together on overflow.
+  // be a positioned ancestor when docked.
   if (!panel.style.position || panel.style.position === "static") {
     panel.style.position = "relative";
   }

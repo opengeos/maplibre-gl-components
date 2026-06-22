@@ -134,6 +134,7 @@ export class ZarrLayerControl implements IControl {
   private _container?: HTMLElement;
   private _button?: HTMLButtonElement;
   private _panel?: HTMLElement;
+  private _fetchButton?: HTMLButtonElement;
   private _options: Required<ZarrLayerControlOptions>;
   private _state: ZarrLayerControlState;
   private _eventHandlers: Map<ZarrLayerEvent, Set<ZarrLayerEventHandler>> =
@@ -283,6 +284,17 @@ export class ZarrLayerControl implements IControl {
    * Re-applies the panel's available-space max-height and any persisted
    * user-chosen size. Safe to call when the panel is collapsed (no-op).
    */
+  /**
+   * Re-evaluates the Fetch button's enabled state from the current URL. Called
+   * whenever the URL input changes, including when a sample dataset is picked
+   * (which sets the input value programmatically and would not otherwise fire an
+   * `input` event), so Fetch enables as soon as there is a URL.
+   */
+  private _syncFetchButton(): void {
+    if (!this._fetchButton) return;
+    this._fetchButton.disabled = this._variablesLoading || !this._state.url;
+  }
+
   private _reflowPanel(): void {
     if (!this._panel) return;
     applyPanelMaxHeight(this._panel, this._map, this._container);
@@ -654,6 +666,7 @@ export class ZarrLayerControl implements IControl {
     urlInput.value = this._state.url;
     urlInput.addEventListener("input", () => {
       this._state.url = urlInput.value;
+      this._syncFetchButton();
     });
     urlGroup.appendChild(urlInput);
     const sampleDropdown = createSampleDropdown(
@@ -662,6 +675,7 @@ export class ZarrLayerControl implements IControl {
       (url) => {
         urlInput.value = url;
         this._state.url = url;
+        this._syncFetchButton();
       },
     );
     if (sampleDropdown) panel.appendChild(sampleDropdown);
@@ -717,6 +731,7 @@ export class ZarrLayerControl implements IControl {
     fetchBtn.style.padding = "5px 10px";
     fetchBtn.style.flexShrink = "0";
     fetchBtn.addEventListener("click", () => this.fetchVariables());
+    this._fetchButton = fetchBtn;
     varRow.appendChild(fetchBtn);
 
     varGroup.appendChild(varRow);

@@ -150,6 +150,7 @@ export class PMTilesLayerControl implements IControl {
   private _container?: HTMLElement;
   private _button?: HTMLButtonElement;
   private _panel?: HTMLElement;
+  private _fetchButton?: HTMLButtonElement;
   private _options: Required<PMTilesLayerControlOptions>;
   private _state: PMTilesLayerControlState;
   private _eventHandlers: Map<
@@ -729,6 +730,7 @@ export class PMTilesLayerControl implements IControl {
     urlInput.value = this._state.url;
     urlInput.addEventListener("input", () => {
       this._state.url = urlInput.value;
+      this._syncFetchButton();
     });
     urlGroup.appendChild(urlInput);
     const sampleDropdown = createSampleDropdown(
@@ -737,6 +739,7 @@ export class PMTilesLayerControl implements IControl {
       (url) => {
         urlInput.value = url;
         this._state.url = url;
+        this._syncFetchButton();
       },
     );
     if (sampleDropdown) panel.appendChild(sampleDropdown);
@@ -813,6 +816,7 @@ export class PMTilesLayerControl implements IControl {
     fetchBtn.style.whiteSpace = "nowrap";
     fetchBtn.disabled = !this._state.url;
     fetchBtn.addEventListener("click", () => this._fetchSourceLayers());
+    this._fetchButton = fetchBtn;
     fetchRow.appendChild(fetchBtn);
 
     if (this._state.availableSourceLayers.length > 0) {
@@ -1026,6 +1030,17 @@ export class PMTilesLayerControl implements IControl {
     // The panel must be in the DOM before its rect is meaningful, so apply the
     // available-space cap and any persisted user size on the next frame.
     requestAnimationFrame(() => this._reflowPanel());
+  }
+
+  /**
+   * Re-evaluates the Fetch button's enabled state from the current URL. Called
+   * whenever the URL input changes, including when a sample dataset is picked
+   * (which sets the input value programmatically and would not otherwise fire an
+   * `input` event), so Fetch enables as soon as there is a URL.
+   */
+  private _syncFetchButton(): void {
+    if (!this._fetchButton) return;
+    this._fetchButton.disabled = !this._state.url;
   }
 
   /**

@@ -36,26 +36,30 @@
 /* Scrollbar styling */
 .maplibre-gl-legend-content::-webkit-scrollbar,
 .maplibre-gl-colorbar::-webkit-scrollbar,
-.maplibre-gl-html-control::-webkit-scrollbar {
-  width: 6px;
+.maplibre-gl-html-control::-webkit-scrollbar,
+.maplibre-gl-panel-body::-webkit-scrollbar {
+  width: 8px;
 }
 
 .maplibre-gl-legend-content::-webkit-scrollbar-track,
 .maplibre-gl-colorbar::-webkit-scrollbar-track,
-.maplibre-gl-html-control::-webkit-scrollbar-track {
+.maplibre-gl-html-control::-webkit-scrollbar-track,
+.maplibre-gl-panel-body::-webkit-scrollbar-track {
   background: transparent;
 }
 
 .maplibre-gl-legend-content::-webkit-scrollbar-thumb,
 .maplibre-gl-colorbar::-webkit-scrollbar-thumb,
-.maplibre-gl-html-control::-webkit-scrollbar-thumb {
+.maplibre-gl-html-control::-webkit-scrollbar-thumb,
+.maplibre-gl-panel-body::-webkit-scrollbar-thumb {
   background: #ccc;
   border-radius: 3px;
 }
 
 .maplibre-gl-legend-content::-webkit-scrollbar-thumb:hover,
 .maplibre-gl-colorbar::-webkit-scrollbar-thumb:hover,
-.maplibre-gl-html-control::-webkit-scrollbar-thumb:hover {
+.maplibre-gl-html-control::-webkit-scrollbar-thumb:hover,
+.maplibre-gl-panel-body::-webkit-scrollbar-thumb:hover {
   background: #aaa;
 }
 

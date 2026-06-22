@@ -1,6 +1,6 @@
 {
   "name": "maplibre-gl-components",
-  "version": "0.22.4",
+  "version": "0.22.5",
   "description": "Legend, colorbar, and HTML control components for MapLibre GL JS maps",
   "type": "module",
   "main": "./dist/index.cjs",

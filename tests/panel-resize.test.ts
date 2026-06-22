@@ -89,11 +89,17 @@ describe("panel resize handle", () => {
       it("drives a dynamic max-height instead of a fixed cap", () => {
         const panel = container.querySelector(c.panelClass) as HTMLElement;
         // A dynamic length cap (jsdom normalizes the min() to a calc()), not
-        // the old fixed "500px", and a reserved scrollbar gutter.
+        // the old fixed "500px". The panel itself does not scroll; its inner
+        // body does, so the grips stay at the panel's visible bottom corners.
         expect(panel.style.maxHeight).not.toBe("500px");
         expect(panel.style.maxHeight).toMatch(/px/);
-        expect(panel.style.overflowY).toBe("auto");
-        expect(panel.style.scrollbarGutter).toBe("stable");
+        expect(panel.style.overflowY).toBe("hidden");
+        expect(panel.style.overflowX).toBe("hidden");
+        const body = panel.querySelector(
+          ".maplibre-gl-panel-body",
+        ) as HTMLElement;
+        expect(body).not.toBeNull();
+        expect(body.style.overflowY).toBe("auto");
       });
 
       it("resizes via width/height on drag without switching to position: fixed", () => {
@@ -161,14 +167,14 @@ describe("panel resize handle", () => {
 });
 
 describe("applyPanelMaxHeight", () => {
-  it("caps the panel height to the available space with a scrollbar gutter", () => {
+  it("caps the panel height to the available space and disables horizontal scroll", () => {
     const panel = document.createElement("div");
     document.body.appendChild(panel);
     applyPanelMaxHeight(panel, undefined, undefined);
     // A dynamic length cap (jsdom normalizes the min() to a calc()).
     expect(panel.style.maxHeight).toMatch(/px/);
     expect(panel.style.maxHeight).not.toBe("");
-    expect(panel.style.overflowY).toBe("auto");
-    expect(panel.style.scrollbarGutter).toBe("stable");
+    expect(panel.style.overflowY).toBe("hidden");
+    expect(panel.style.overflowX).toBe("hidden");
   });
 });
