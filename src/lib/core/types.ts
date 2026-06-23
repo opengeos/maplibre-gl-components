@@ -3099,6 +3099,13 @@ export interface MapBookmark {
 }
 
 /**
+ * Which bookmarks an export writes. "all" writes every bookmark; "selected"
+ * writes only the ticked subset; "auto" writes the ticked subset when any are
+ * selected (and selection is enabled), otherwise every bookmark.
+ */
+export type BookmarkExportMode = "auto" | "all" | "selected";
+
+/**
  * Options for configuring the BookmarkControl.
  */
 export interface BookmarkControlOptions {
@@ -3180,6 +3187,34 @@ export interface BookmarkControlOptions {
    * Default: true.
    */
   captureStateDefault?: boolean;
+  /**
+   * Optional explanatory text for the {@link captureStateLabel} checkbox. When
+   * set, an info icon is rendered next to the label and this text is shown as
+   * its tooltip (e.g. clarifying that the toggle applies per bookmark).
+   */
+  captureStateTooltip?: string;
+  /**
+   * Whether each bookmark card shows its zoom level and creation date below the
+   * name. Default: true. Set to false for a cleaner list that leaves the name
+   * as the only identifier.
+   */
+  showMetadata?: boolean;
+  /**
+   * Whether the footer shows a dedicated "Export All" button that always writes
+   * every bookmark, independent of any export selection. When enabled and
+   * {@link selectable} is on, a separate "Export Selected" button appears only
+   * while one or more bookmarks are ticked. Default: false.
+   */
+  showExportAll?: boolean;
+  /** Label for the Export button. Default: 'Export'. */
+  exportLabel?: string;
+  /**
+   * Label for the Export button (or the dedicated selected-export button) when
+   * one or more bookmarks are ticked for export. Default: 'Export Selected'.
+   */
+  exportSelectedLabel?: string;
+  /** Label for the dedicated Export All button. Default: 'Export All'. */
+  exportAllLabel?: string;
 }
 
 /**
