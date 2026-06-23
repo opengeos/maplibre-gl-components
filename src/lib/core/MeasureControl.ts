@@ -189,6 +189,7 @@ export class MeasureControl implements IControl {
   private _boundClickHandler?: (e: MapMouseEvent) => void;
   private _boundMoveHandler?: (e: MapMouseEvent) => void;
   private _boundDblClickHandler?: (e: MapMouseEvent) => void;
+  private _boundContextMenuHandler?: (e: MapMouseEvent) => void;
   private _boundKeyHandler?: (e: KeyboardEvent) => void;
 
   // Markers for vertices
@@ -429,7 +430,7 @@ export class MeasureControl implements IControl {
     this._instructionsEl = document.createElement("div");
     this._instructionsEl.className = "measure-instructions";
     this._instructionsEl.textContent =
-      "Click Start, then click the map to add points. Double-click to finish.";
+      "Click the map to add points. Double-click or right-click to finish.";
     content.appendChild(this._instructionsEl);
 
     // Measurements list
@@ -537,6 +538,13 @@ export class MeasureControl implements IControl {
       this._container.appendChild(this._panel);
     }
     this._button?.classList.add("active");
+
+    // Opening the tool puts the map straight into drawing mode so the user can
+    // click the map immediately, without first pressing a separate "Start"
+    // button.
+    if (!this._state.isDrawing) {
+      this._startDrawing();
+    }
   }
 
   /**
@@ -553,9 +561,7 @@ export class MeasureControl implements IControl {
    * Set the measurement mode.
    */
   private _setMode(mode: MeasureMode): void {
-    if (mode === this._state.mode) return;
-
-    this._stopDrawing();
+    const changed = mode !== this._state.mode;
     this._state.mode = mode;
 
     // Update UI
@@ -579,7 +585,19 @@ export class MeasureControl implements IControl {
         mode === "distance" ? "Total Distance" : "Total Area";
     }
 
-    this._emit("modechange");
+    if (changed) this._emit("modechange");
+
+    // Selecting a mode immediately starts measuring. If a drawing is already in
+    // progress, keep the points already placed and just re-interpret them under
+    // the new mode (open polyline for distance, closed polygon for area) so the
+    // user does not lose work when toggling mid-session.
+    if (!this._panel) return;
+    if (this._state.isDrawing) {
+      this._updateMeasurement();
+      this._updateMapGeometry();
+    } else {
+      this._startDrawing();
+    }
   }
 
   /**
@@ -649,24 +667,32 @@ export class MeasureControl implements IControl {
     const startBtn = this._panel?.querySelector(".start-btn span");
     if (startBtn) startBtn.textContent = "Finish";
 
-    // Show result area
+    // Show result area, reset to zero so a re-armed tool does not keep showing
+    // the previously completed measurement's total.
     const resultDiv = this._panel?.querySelector(
       ".measure-result",
     ) as HTMLElement;
     if (resultDiv) resultDiv.style.display = "block";
+    this._updateResult();
 
     // Update instructions
     if (this._instructionsEl) {
       this._instructionsEl.textContent =
         this._state.mode === "distance"
-          ? "Click to add points. Double-click or press Enter to finish."
-          : "Click to add vertices. Double-click or press Enter to close the polygon.";
+          ? "Click to add points. Double-click, right-click, or Enter to finish."
+          : "Click to add vertices. Double-click, right-click, or Enter to close the polygon.";
     }
 
     // Set up event handlers
     this._boundClickHandler = (e: MapMouseEvent) => this._handleClick(e);
     this._boundMoveHandler = (e: MapMouseEvent) => this._handleMouseMove(e);
     this._boundDblClickHandler = (e: MapMouseEvent) => {
+      e.preventDefault();
+      this._finishOnDoubleClick();
+    };
+    // Right-click is a familiar "finish placing points" gesture in desktop GIS
+    // tools (e.g. QGIS); support it here and suppress the browser context menu.
+    this._boundContextMenuHandler = (e: MapMouseEvent) => {
       e.preventDefault();
       this._finishDrawing();
     };
@@ -681,6 +707,7 @@ export class MeasureControl implements IControl {
     this._map.on("click", this._boundClickHandler);
     this._map.on("mousemove", this._boundMoveHandler);
     this._map.on("dblclick", this._boundDblClickHandler);
+    this._map.on("contextmenu", this._boundContextMenuHandler);
     document.addEventListener("keydown", this._boundKeyHandler);
 
     // Change cursor
@@ -703,6 +730,9 @@ export class MeasureControl implements IControl {
     }
     if (this._boundDblClickHandler) {
       this._map.off("dblclick", this._boundDblClickHandler);
+    }
+    if (this._boundContextMenuHandler) {
+      this._map.off("contextmenu", this._boundContextMenuHandler);
     }
     if (this._boundKeyHandler) {
       document.removeEventListener("keydown", this._boundKeyHandler);
@@ -750,13 +780,11 @@ export class MeasureControl implements IControl {
    * Finish the current drawing.
    */
   private _finishDrawing(): void {
-    if (this._state.currentPoints.length < 2) {
-      this._cancelDrawing();
-      return;
-    }
-
-    if (this._state.mode === "area" && this._state.currentPoints.length < 3) {
-      this._cancelDrawing();
+    // A line needs at least two points; a polygon needs at least three. If the
+    // user triggers "finish" too early (e.g. a stray double-click), ignore it
+    // and keep the current drawing active instead of discarding their points.
+    const required = this._state.mode === "area" ? 3 : 2;
+    if (this._state.currentPoints.length < required) {
       return;
     }
 
@@ -787,6 +815,36 @@ export class MeasureControl implements IControl {
 
     this._emit("drawend", { measurement });
     this._emit("measurementadd", { measurement });
+
+    // Re-arm immediately so the user can start the next measurement without
+    // having to click "Start" again, matching the continuous workflow of a
+    // typical desktop GIS measure tool.
+    if (this._panel) {
+      this._startDrawing();
+    }
+  }
+
+  /**
+   * Finish drawing from a double-click.
+   *
+   * A double-click emits two `click` events at (essentially) the same location
+   * before this handler runs, so the final vertex gets added twice and the last
+   * segment reads as zero length. Detect that duplicate in screen space (so it
+   * works at any zoom level) and drop it before completing the measurement.
+   */
+  private _finishOnDoubleClick(): void {
+    const points = this._state.currentPoints;
+    if (this._map && points.length >= 2) {
+      const last = points[points.length - 1];
+      const prev = points[points.length - 2];
+      const lastPx = this._map.project([last.lng, last.lat]);
+      const prevPx = this._map.project([prev.lng, prev.lat]);
+      if (Math.hypot(lastPx.x - prevPx.x, lastPx.y - prevPx.y) < 6) {
+        points.pop();
+        this._updateMeasurement();
+      }
+    }
+    this._finishDrawing();
   }
 
   /**
@@ -809,7 +867,7 @@ export class MeasureControl implements IControl {
     // Reset instructions
     if (this._instructionsEl) {
       this._instructionsEl.textContent =
-        "Click Start, then click the map to add points. Double-click to finish.";
+        "Click the map to add points. Double-click or right-click to finish.";
     }
   }
 
