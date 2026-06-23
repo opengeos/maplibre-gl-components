@@ -234,4 +234,54 @@ describe("GUI controls multiple instances", () => {
     expect(restored.getState().htmls).toEqual(savedState.htmls);
     expect(restored.getState().html).toBe("<strong>Restored</strong>");
   });
+
+  it("sizes the HTML panel to the available viewport height by default", () => {
+    const control = new HtmlGuiControl({ collapsed: false });
+    const container = control.onAdd(mockMap);
+    const panel = container.querySelector(".html-gui-panel") as HTMLElement;
+
+    // top is 0 in jsdom, so the panel uses the full viewport (minus margin)
+    // instead of a fixed cap that would scroll while space remains below it.
+    expect(panel.style.maxHeight).toBe(`${window.innerHeight - 16}px`);
+    expect(panel.style.overflowY).toBe("auto");
+  });
+
+  it("treats an explicit HTML maxHeight as an upper bound", () => {
+    const control = new HtmlGuiControl({ collapsed: false, maxHeight: 300 });
+    const container = control.onAdd(mockMap);
+    const panel = container.querySelector(".html-gui-panel") as HTMLElement;
+
+    expect(panel.style.maxHeight).toBe("300px");
+  });
+
+  it("re-sizes the HTML panel when the window is resized", () => {
+    const control = new HtmlGuiControl({ collapsed: false });
+    const container = control.onAdd(mockMap);
+    const panel = container.querySelector(".html-gui-panel") as HTMLElement;
+
+    const original = window.innerHeight;
+    try {
+      Object.defineProperty(window, "innerHeight", {
+        value: 1200,
+        configurable: true,
+      });
+      window.dispatchEvent(new Event("resize"));
+      expect(panel.style.maxHeight).toBe("1184px");
+    } finally {
+      Object.defineProperty(window, "innerHeight", {
+        value: original,
+        configurable: true,
+      });
+    }
+  });
+
+  it("removes the HTML resize listener when the panel is collapsed", () => {
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+    const control = new HtmlGuiControl({ collapsed: false });
+    control.onAdd(mockMap);
+    control.collapse();
+
+    expect(removeSpy).toHaveBeenCalledWith("resize", expect.any(Function));
+    removeSpy.mockRestore();
+  });
 });
