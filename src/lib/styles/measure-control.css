@@ -26,8 +26,12 @@
   --ms-chip-bg: #e5e7eb;
   --ms-chip-text: #4b5563;
   --ms-secondary-border: #d1d5db;
-  --ms-warn-bg: #fef3c7;
-  --ms-warn-text: #92400e;
+  /* Neutral informational style for the helper text. Amber/warning colors are
+     reserved for destructive actions or errors, so guidance uses a soft,
+     low-contrast blue instead. */
+  --ms-info-bg: #eff6ff;
+  --ms-info-text: #1e40af;
+  --ms-info-border: #bfdbfe;
   --ms-danger: #dc2626;
   --ms-danger-bg: #fef2f2;
   --ms-danger-border: #fecaca;
@@ -260,10 +264,11 @@
 
 .maplibre-gl-measure-control .measure-instructions {
   padding: 8px 10px;
-  background: var(--ms-warn-bg);
+  background: var(--ms-info-bg);
+  border: 1px solid var(--ms-info-border);
   border-radius: 4px;
   font-size: 11px;
-  color: var(--ms-warn-text);
+  color: var(--ms-info-text);
   margin-bottom: 10px;
 }
 
@@ -452,8 +457,9 @@
     --ms-chip-bg: rgba(255, 255, 255, 0.12);
     --ms-chip-text: #cbd5e1;
     --ms-secondary-border: #555;
-    --ms-warn-bg: rgba(251, 191, 36, 0.15);
-    --ms-warn-text: #fcd34d;
+    --ms-info-bg: rgba(59, 130, 246, 0.12);
+    --ms-info-text: #93c5fd;
+    --ms-info-border: rgba(59, 130, 246, 0.35);
     --ms-danger: #f87171;
     --ms-danger-bg: rgba(248, 113, 113, 0.15);
     --ms-danger-border: rgba(248, 113, 113, 0.4);
