@@ -23,7 +23,11 @@ const DEFAULT_OPTIONS: Required<HtmlGuiControlOptions> = {
   visible: true,
   collapsed: true,
   panelWidth: 280,
-  maxHeight: 500,
+  // 0 means the panel sizes to its content, capped to the available viewport
+  // height (see _updatePanelHeight). A positive value acts as an explicit
+  // upper bound. This mirrors ColorbarGuiControl / LegendGuiControl so the
+  // panel never shows a scrollbar while empty vertical space remains below it.
+  maxHeight: 0,
   backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
   opacity: 1,
@@ -66,6 +70,7 @@ export class HtmlGuiControl implements IControl {
     new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
+  private _handleResize?: () => void;
   private _zoomVisible: boolean = true;
 
   // Active HTML control instances
@@ -112,6 +117,10 @@ export class HtmlGuiControl implements IControl {
   onRemove(): void {
     if (this._handleZoom && this._map) {
       this._map.off("zoom", this._handleZoom);
+    }
+    if (this._handleResize) {
+      window.removeEventListener("resize", this._handleResize);
+      this._handleResize = undefined;
     }
     this._removeAllHtmlControls();
     this._container?.remove();
@@ -266,10 +275,9 @@ export class HtmlGuiControl implements IControl {
     const panel = document.createElement("div");
     panel.className = `html-gui-panel ${this._options.position.includes("left") ? "right" : "left"}`;
     panel.style.width = `${this._options.panelWidth}px`;
-    if (this._options.maxHeight > 0) {
-      panel.style.maxHeight = `${this._options.maxHeight}px`;
-      panel.style.overflowY = "auto";
-    }
+    // The concrete maxHeight is applied in _updatePanelHeight so the panel can
+    // grow with its content and only scroll when it would overflow the viewport.
+    panel.style.overflowY = "auto";
     panel.style.background = this._options.backgroundColor;
     panel.style.borderRadius = `${this._options.borderRadius}px`;
     panel.style.fontSize = `${this._options.fontSize}px`;
@@ -588,12 +596,43 @@ export class HtmlGuiControl implements IControl {
       this._container.appendChild(this._panel);
     }
     this._button?.classList.add("active");
+    this._updatePanelHeight();
+    if (!this._handleResize) {
+      this._handleResize = () => this._updatePanelHeight();
+      window.addEventListener("resize", this._handleResize);
+    }
   }
 
   private _hidePanel(): void {
+    if (this._handleResize) {
+      window.removeEventListener("resize", this._handleResize);
+      this._handleResize = undefined;
+    }
     this._panel?.remove();
     this._panel = undefined;
     this._button?.classList.remove("active");
+  }
+
+  /**
+   * Cap the panel height to the viewport space available below its top edge so
+   * the whole form stays visible when the screen is tall enough, scrolling only
+   * when the content would run past the screen edge. `maxHeight`, when set
+   * (> 0), acts as an explicit upper bound.
+   */
+  private _updatePanelHeight(): void {
+    if (!this._panel) return;
+    const VIEWPORT_MARGIN = 16;
+    const MIN_HEIGHT = 200;
+    const top = this._panel.getBoundingClientRect().top;
+    const available = Math.max(
+      MIN_HEIGHT,
+      window.innerHeight - top - VIEWPORT_MARGIN,
+    );
+    const maxHeight =
+      this._options.maxHeight > 0
+        ? Math.min(this._options.maxHeight, available)
+        : available;
+    this._panel.style.maxHeight = `${maxHeight}px`;
   }
 
   private _setupZoomHandler(): void {
