@@ -10,6 +10,7 @@ import type {
   BookmarkControlState,
   BookmarkEvent,
   BookmarkEventHandler,
+  BookmarkExportMode,
   MapBookmark,
 } from "./types";
 import { generateId } from "../utils/helpers";
@@ -42,6 +43,12 @@ const DEFAULT_OPTIONS: Required<BookmarkControlOptions> = {
   restoreState: () => {},
   captureStateLabel: "",
   captureStateDefault: true,
+  captureStateTooltip: "",
+  showMetadata: true,
+  showExportAll: false,
+  exportLabel: "Export",
+  exportSelectedLabel: "Export Selected",
+  exportAllLabel: "Export All",
 };
 
 /**
@@ -88,6 +95,11 @@ const DOWNLOAD_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 2
  * SVG icon for upload/import.
  */
 const UPLOAD_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
+
+/**
+ * SVG icon for an information hint.
+ */
+const INFO_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
 
 /**
  * Format a date for display.
@@ -350,6 +362,20 @@ export class BookmarkControl implements IControl {
       text.textContent = this._options.captureStateLabel;
       toggle.appendChild(checkbox);
       toggle.appendChild(text);
+      // Optional info icon clarifying how the toggle behaves (e.g. that it
+      // applies per bookmark rather than as a global setting).
+      if (this._options.captureStateTooltip) {
+        const info = document.createElement("span");
+        info.className = "bookmark-capture-info";
+        info.innerHTML = INFO_ICON;
+        info.title = this._options.captureStateTooltip;
+        info.setAttribute("aria-label", this._options.captureStateTooltip);
+        info.setAttribute("role", "img");
+        // The icon lives inside the toggle's <label>, so clicking it would
+        // otherwise flip the checkbox. Hovering still surfaces the tooltip.
+        info.addEventListener("click", (e) => e.preventDefault());
+        toggle.appendChild(info);
+      }
       checkbox.addEventListener("change", () => {
         this._captureEnabled = checkbox.checked;
       });
@@ -364,19 +390,29 @@ export class BookmarkControl implements IControl {
 
     panel.appendChild(content);
 
-    // Footer with import/export and clear buttons
+    // Footer with import/export and clear buttons. Import uses a downward arrow
+    // (data coming into the app) and Export an upward one (data leaving it),
+    // matching the convention used by most desktop GIS and design tools.
     const footer = document.createElement("div");
     footer.className = "bookmark-footer";
+    const exportAll = this._options.showExportAll;
     footer.innerHTML = `
       <div class="bookmark-footer-actions">
         <button type="button" class="bookmark-import-btn" title="Import bookmarks">
-          ${UPLOAD_ICON}
+          ${DOWNLOAD_ICON}
           <span>Import</span>
         </button>
-        <button type="button" class="bookmark-export-btn" title="Export bookmarks">
-          ${DOWNLOAD_ICON}
-          <span>Export</span>
-        </button>
+        ${
+          exportAll
+            ? `<button type="button" class="bookmark-export-all-btn" title="${this._escapeHtml(this._options.exportAllLabel)}">
+          ${UPLOAD_ICON}
+          <span>${this._escapeHtml(this._options.exportAllLabel)}</span>
+        </button>`
+            : `<button type="button" class="bookmark-export-btn" title="Export bookmarks">
+          ${UPLOAD_ICON}
+          <span>${this._escapeHtml(this._options.exportLabel)}</span>
+        </button>`
+        }
       </div>
       ${
         this._state.bookmarks.length > 0
@@ -395,6 +431,9 @@ export class BookmarkControl implements IControl {
     footer
       .querySelector(".bookmark-export-btn")
       ?.addEventListener("click", () => this._exportToFile());
+    footer
+      .querySelector(".bookmark-export-all-btn")
+      ?.addEventListener("click", () => this._exportToFile("all"));
     footer
       .querySelector(".bookmark-clear-btn")
       ?.addEventListener("click", () => this._clearAll());
@@ -495,7 +534,11 @@ export class BookmarkControl implements IControl {
           }
           <div class="bookmark-info">
             <div class="bookmark-name">${this._escapeHtml(b.name)}</div>
-            <div class="bookmark-meta">z${b.zoom.toFixed(1)} · ${formatDate(b.createdAt)}</div>
+            ${
+              this._options.showMetadata
+                ? `<div class="bookmark-meta">z${b.zoom.toFixed(1)} · ${formatDate(b.createdAt)}</div>`
+                : ""
+            }
           </div>
           <div class="bookmark-actions">
             <button type="button" class="bookmark-action-btn rename" title="Rename">${EDIT_ICON}</button>
@@ -606,16 +649,50 @@ export class BookmarkControl implements IControl {
   }
 
   /**
-   * Reflect the current export selection on the Export button (title hint).
+   * Reflect the current export selection on the footer's export controls. With
+   * a single Export button it morphs the label between "Export" and "Export
+   * Selected"; with a dedicated "Export All" button it shows/hides a separate
+   * "Export Selected" button that appears only while a subset is ticked.
    */
   private _updateExportButton(): void {
-    const btn = this._panel?.querySelector(
+    if (!this._panel) return;
+    const count = this._options.selectable ? this._exportSelection.size : 0;
+
+    if (this._options.showExportAll) {
+      const actions = this._panel.querySelector(".bookmark-footer-actions");
+      if (!actions) return;
+      let btn = actions.querySelector(
+        ".bookmark-export-selected-btn",
+      ) as HTMLElement | null;
+      if (count > 0) {
+        if (!btn) {
+          btn = document.createElement("button");
+          btn.setAttribute("type", "button");
+          btn.className = "bookmark-export-selected-btn";
+          btn.innerHTML = `${UPLOAD_ICON}<span>${this._escapeHtml(this._options.exportSelectedLabel)}</span>`;
+          btn.addEventListener("click", () => this._exportToFile("selected"));
+          actions.appendChild(btn);
+        }
+        btn.title = `${this._options.exportSelectedLabel} (${count})`;
+      } else if (btn) {
+        btn.remove();
+      }
+      return;
+    }
+
+    // Single Export button: morph its label and title with the selection.
+    const btn = this._panel.querySelector(
       ".bookmark-export-btn",
     ) as HTMLElement | null;
     if (!btn) return;
-    const count = this._exportSelection.size;
-    btn.title =
-      count > 0 ? `Export ${count} selected bookmark(s)` : "Export bookmarks";
+    const label = btn.querySelector("span");
+    if (count > 0) {
+      if (label) label.textContent = this._options.exportSelectedLabel;
+      btn.title = `${this._options.exportSelectedLabel} (${count})`;
+    } else {
+      if (label) label.textContent = this._options.exportLabel;
+      btn.title = "Export bookmarks";
+    }
   }
 
   /**
@@ -820,10 +897,11 @@ export class BookmarkControl implements IControl {
   }
 
   /**
-   * Export bookmarks to a JSON file download.
+   * Export bookmarks to a JSON file download. The mode controls which
+   * bookmarks are written (see {@link exportBookmarks}).
    */
-  private _exportToFile(): void {
-    const json = this.exportBookmarks();
+  private _exportToFile(mode: BookmarkExportMode = "auto"): void {
+    const json = this.exportBookmarks(mode);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -837,11 +915,17 @@ export class BookmarkControl implements IControl {
   }
 
   /**
-   * The bookmarks an Export should write: the ticked subset when any are
-   * selected (and selection is enabled), otherwise all of them, in list order.
+   * The bookmarks an Export should write, in list order. With mode "all" every
+   * bookmark is written; "selected" writes only the ticked subset; "auto" (the
+   * default) writes the ticked subset when any are selected and selection is
+   * enabled, otherwise every bookmark.
    */
-  private _bookmarksForExport(): MapBookmark[] {
-    if (this._options.selectable && this._exportSelection.size > 0) {
+  private _bookmarksForExport(mode: BookmarkExportMode = "auto"): MapBookmark[] {
+    const useSelection =
+      this._options.selectable &&
+      this._exportSelection.size > 0 &&
+      (mode === "selected" || mode === "auto");
+    if (useSelection) {
       return this._state.bookmarks.filter((b) =>
         this._exportSelection.has(b.id),
       );
@@ -1040,11 +1124,13 @@ export class BookmarkControl implements IControl {
   }
 
   /**
-   * Export bookmarks as a JSON string. When export selection is enabled and a
-   * subset is ticked, only that subset is serialized; otherwise all bookmarks.
+   * Export bookmarks as a JSON string. With mode "all" every bookmark is
+   * serialized; "selected" serializes only the ticked subset; "auto" (the
+   * default) serializes the ticked subset when export selection is enabled and
+   * a subset is ticked, otherwise every bookmark.
    */
-  exportBookmarks(): string {
-    return JSON.stringify(this._bookmarksForExport(), null, 2);
+  exportBookmarks(mode: BookmarkExportMode = "auto"): string {
+    return JSON.stringify(this._bookmarksForExport(mode), null, 2);
   }
 
   /**

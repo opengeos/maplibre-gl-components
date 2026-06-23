@@ -304,6 +304,7 @@ export type {
   BookmarkControlState,
   BookmarkEvent,
   BookmarkEventHandler,
+  BookmarkExportMode,
   MapBookmark,
   PrintControlOptions,
   PrintControlState,

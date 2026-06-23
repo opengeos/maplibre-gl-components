@@ -163,6 +163,107 @@ describe("BookmarkControl", () => {
     });
   });
 
+  describe("metadata visibility (794)", () => {
+    it("shows the zoom/date meta line by default", () => {
+      const { control, container } = mount();
+      control.addBookmark("a");
+      expect(container.querySelector(".bookmark-meta")).not.toBeNull();
+    });
+
+    it("hides the meta line when showMetadata is false", () => {
+      const { control, container } = mount({ showMetadata: false });
+      control.addBookmark("a");
+      expect(container.querySelector(".bookmark-meta")).toBeNull();
+      // The name is still rendered as the identifier.
+      expect(container.querySelector(".bookmark-name")?.textContent).toBe("a");
+    });
+  });
+
+  describe("capture tooltip (794)", () => {
+    it("renders an info icon when captureStateTooltip is set", () => {
+      const { container } = mount({
+        captureState: () => ({ a: 1 }),
+        captureStateLabel: "Include layers",
+        captureStateTooltip: "Applies to the next bookmark only.",
+      });
+      const info = container.querySelector(
+        ".bookmark-capture-info",
+      ) as HTMLElement | null;
+      expect(info).not.toBeNull();
+      expect(info?.title).toBe("Applies to the next bookmark only.");
+    });
+
+    it("omits the info icon when no tooltip is provided", () => {
+      const { container } = mount({
+        captureState: () => ({ a: 1 }),
+        captureStateLabel: "Include layers",
+      });
+      expect(container.querySelector(".bookmark-capture-info")).toBeNull();
+    });
+  });
+
+  describe("export labels and Export All (794)", () => {
+    it("morphs the Export label to Export Selected when a subset is ticked", () => {
+      const { control, container } = mount({ selectable: true });
+      control.addBookmark("a");
+      control.addBookmark("b");
+      const labelOf = () =>
+        container.querySelector(".bookmark-export-btn span")?.textContent;
+      expect(labelOf()).toBe("Export");
+      control.setSelectedIds(control.getBookmarks().map((b) => b.id).slice(0, 1));
+      expect(labelOf()).toBe("Export Selected");
+      control.setSelectedIds([]);
+      expect(labelOf()).toBe("Export");
+    });
+
+    it("honors custom export label overrides", () => {
+      const { control, container } = mount({
+        selectable: true,
+        exportLabel: "Save",
+        exportSelectedLabel: "Save Picked",
+      });
+      control.addBookmark("a");
+      expect(container.querySelector(".bookmark-export-btn span")?.textContent).toBe(
+        "Save",
+      );
+      control.setSelectedIds(control.getBookmarks().map((b) => b.id));
+      expect(container.querySelector(".bookmark-export-btn span")?.textContent).toBe(
+        "Save Picked",
+      );
+    });
+
+    it("renders a dedicated Export All button and a conditional Export Selected button", () => {
+      const { control, container } = mount({
+        selectable: true,
+        showExportAll: true,
+      });
+      control.addBookmark("a");
+      control.addBookmark("b");
+      expect(container.querySelector(".bookmark-export-all-btn")).not.toBeNull();
+      // No selection -> no Export Selected button.
+      expect(container.querySelector(".bookmark-export-selected-btn")).toBeNull();
+      control.setSelectedIds(control.getBookmarks().map((b) => b.id).slice(0, 1));
+      expect(
+        container.querySelector(".bookmark-export-selected-btn"),
+      ).not.toBeNull();
+      control.setSelectedIds([]);
+      expect(container.querySelector(".bookmark-export-selected-btn")).toBeNull();
+    });
+
+    it("exportBookmarks('all') ignores the selection", () => {
+      const { control } = mount({ selectable: true });
+      control.addBookmark("a");
+      control.addBookmark("b");
+      control.setSelectedIds(control.getBookmarks().map((b) => b.id).slice(0, 1));
+      const all = JSON.parse(control.exportBookmarks("all")) as MapBookmark[];
+      expect(all).toHaveLength(2);
+      const selected = JSON.parse(
+        control.exportBookmarks("selected"),
+      ) as MapBookmark[];
+      expect(selected).toHaveLength(1);
+    });
+  });
+
   describe("reordering (471)", () => {
     it("renders draggable items with a grip when reorderable", () => {
       const { control, container } = mount({ reorderable: true });

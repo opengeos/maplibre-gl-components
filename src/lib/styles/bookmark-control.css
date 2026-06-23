@@ -164,6 +164,26 @@
   flex-shrink: 0;
 }
 
+/* Info hint next to the capture toggle (shows its tooltip on hover). */
+.maplibre-gl-bookmark-control .bookmark-capture-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: help;
+  color: var(--bm-secondary-text);
+  opacity: 0.7;
+}
+
+.maplibre-gl-bookmark-control .bookmark-capture-info:hover {
+  opacity: 1;
+}
+
+.maplibre-gl-bookmark-control .bookmark-capture-info svg {
+  width: 13px;
+  height: 13px;
+}
+
 .maplibre-gl-bookmark-control .bookmark-name-input {
   flex: 1;
   padding: 8px 10px;
@@ -389,15 +409,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
 .maplibre-gl-bookmark-control .bookmark-footer-actions {
   display: flex;
   gap: 4px;
+  flex-wrap: wrap;
 }
 
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-import-btn,
-.maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-btn {
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-btn,
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-all-btn,
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-selected-btn {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -412,14 +437,18 @@
 }
 
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-import-btn:hover,
-.maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-btn:hover {
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-btn:hover,
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-all-btn:hover,
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-selected-btn:hover {
   background-color: var(--bm-hover-bg);
   border-color: var(--bm-subtle);
   color: var(--bm-secondary-text);
 }
 
 .maplibre-gl-bookmark-control .bookmark-import-btn svg,
-.maplibre-gl-bookmark-control .bookmark-export-btn svg {
+.maplibre-gl-bookmark-control .bookmark-export-btn svg,
+.maplibre-gl-bookmark-control .bookmark-export-all-btn svg,
+.maplibre-gl-bookmark-control .bookmark-export-selected-btn svg {
   width: 12px;
   height: 12px;
 }
