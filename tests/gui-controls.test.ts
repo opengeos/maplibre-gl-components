@@ -2,6 +2,14 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ColorbarGuiControl } from "../src/lib/core/ColorbarGuiControl";
 import { LegendGuiControl } from "../src/lib/core/LegendGuiControl";
 import { HtmlGuiControl } from "../src/lib/core/HtmlGuiControl";
+import {
+  PANEL_RESIZE_HANDLE_CLASS,
+  PANEL_RESIZE_LEFT_CLASS,
+  PANEL_RESIZE_RIGHT_CLASS,
+  PANEL_MAX_HEIGHT_CEILING,
+  PANEL_MIN_WIDTH,
+  PANEL_MIN_HEIGHT,
+} from "../src/lib/utils/panelResize";
 
 describe("GUI controls multiple instances", () => {
   let mockMap: any;
@@ -235,15 +243,21 @@ describe("GUI controls multiple instances", () => {
     expect(restored.getState().html).toBe("<strong>Restored</strong>");
   });
 
-  it("sizes the HTML panel to the available viewport height by default", () => {
+  it("sizes the HTML panel to the available space by default (no fixed cap)", () => {
     const control = new HtmlGuiControl({ collapsed: false });
     const container = control.onAdd(mockMap);
     const panel = container.querySelector(".html-gui-panel") as HTMLElement;
 
-    // top is 0 in jsdom, so the panel uses the full viewport (minus margin)
-    // instead of a fixed cap that would scroll while space remains below it.
-    expect(panel.style.maxHeight).toBe(`${window.innerHeight - 16}px`);
-    expect(panel.style.overflowY).toBe("auto");
+    // No map container in the mock, so the cap is the hard ceiling clamped to
+    // the viewport (minus the edge margin) instead of a fixed 500px that would
+    // scroll while space remains below it. The panel itself never scrolls; its
+    // inner body does.
+    const expected = Math.min(PANEL_MAX_HEIGHT_CEILING, window.innerHeight - 12);
+    expect(panel.style.maxHeight).toBe(`${expected}px`);
+    expect(panel.style.overflowY).toBe("hidden");
+    const body = panel.querySelector(".maplibre-gl-panel-body") as HTMLElement;
+    expect(body).not.toBeNull();
+    expect(body.style.overflowY).toBe("auto");
   });
 
   it("treats an explicit HTML maxHeight as an upper bound", () => {
@@ -261,18 +275,61 @@ describe("GUI controls multiple instances", () => {
 
     const original = window.innerHeight;
     try {
+      // A short viewport (below the ceiling) so the cap tracks it dynamically.
       Object.defineProperty(window, "innerHeight", {
-        value: 1200,
+        value: 400,
         configurable: true,
       });
       window.dispatchEvent(new Event("resize"));
-      expect(panel.style.maxHeight).toBe("1184px");
+      expect(panel.style.maxHeight).toBe(`${400 - 12}px`);
     } finally {
       Object.defineProperty(window, "innerHeight", {
         value: original,
         configurable: true,
       });
     }
+  });
+
+  it("renders both bottom-corner resize grips on the HTML panel", () => {
+    const control = new HtmlGuiControl({ collapsed: false });
+    const container = control.onAdd(mockMap);
+    const panel = container.querySelector(".html-gui-panel") as HTMLElement;
+
+    expect(
+      panel.querySelectorAll(`.${PANEL_RESIZE_HANDLE_CLASS}`).length,
+    ).toBe(2);
+    expect(panel.querySelector(`.${PANEL_RESIZE_LEFT_CLASS}`)).not.toBeNull();
+    expect(panel.querySelector(`.${PANEL_RESIZE_RIGHT_CLASS}`)).not.toBeNull();
+    // The float-beside-button layout (position: absolute) is preserved so the
+    // grips anchor to the panel without it collapsing into normal flow.
+    expect(panel.style.position).toBe("absolute");
+  });
+
+  it("does not duplicate the grips when the panel is re-shown in place", () => {
+    const control = new HtmlGuiControl({ collapsed: false }) as any;
+    const container = control.onAdd(mockMap);
+    // The panel persists across shows (fields update in place); re-running
+    // _showPanel must not append a second pair of grips.
+    control._showPanel();
+    control._showPanel();
+    const panel = container.querySelector(".html-gui-panel") as HTMLElement;
+    expect(
+      panel.querySelectorAll(`.${PANEL_RESIZE_HANDLE_CLASS}`).length,
+    ).toBe(2);
+  });
+
+  it("re-applies a persisted user size across collapse/expand", () => {
+    const control = new HtmlGuiControl({ collapsed: false }) as any;
+    const container = control.onAdd(mockMap);
+    control._userPanelSize = {
+      width: PANEL_MIN_WIDTH + 60,
+      height: PANEL_MIN_HEIGHT + 90,
+    };
+    control.collapse();
+    control.expand();
+    const panel = container.querySelector(".html-gui-panel") as HTMLElement;
+    expect(panel.style.width).toBe(`${PANEL_MIN_WIDTH + 60}px`);
+    expect(panel.style.height).toBe(`${PANEL_MIN_HEIGHT + 90}px`);
   });
 
   it("removes the HTML resize listener when the panel is collapsed", () => {

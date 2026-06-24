@@ -111,18 +111,31 @@ function availableHeight(
  * @param panel - The panel element to cap.
  * @param map - The MapLibre map instance.
  * @param container - The control container element.
+ * @param maxHeightCap - An optional explicit upper bound (px). When > 0 the cap
+ *   is the smaller of this value and the hard ceiling, letting a control honor a
+ *   caller-supplied `maxHeight` option while still never exceeding the room
+ *   available. Omit or pass 0 to use the hard ceiling alone.
  */
+export const PANEL_MAX_HEIGHT_CEILING = 720;
+
 export function applyPanelMaxHeight(
   panel: HTMLElement,
   map: MapLibreMap | undefined,
   container: HTMLElement | undefined,
+  maxHeightCap?: number,
 ): void {
   const available = availableHeight(panel, map, container);
   // Cap at the room actually available (and a hard 720px ceiling), not 80vh: an
   // 80vh cap is smaller than the available room on common window sizes, so a
-  // panel that would otherwise fit was forced to scroll. The panel still sizes
-  // to its content and only scrolls when the content exceeds this cap.
-  panel.style.maxHeight = `min(720px, ${available}px)`;
+  // panel that would otherwise fit was forced to scroll. A caller-supplied
+  // maxHeightCap (e.g. an explicit `maxHeight` option) tightens the ceiling
+  // further. The panel still sizes to its content and only scrolls when the
+  // content exceeds this cap.
+  const ceiling =
+    maxHeightCap && maxHeightCap > 0
+      ? Math.min(PANEL_MAX_HEIGHT_CEILING, maxHeightCap)
+      : PANEL_MAX_HEIGHT_CEILING;
+  panel.style.maxHeight = `${Math.min(ceiling, available)}px`;
   // The panel is a flex column whose inner body scrolls (see addPanelResizeHandles);
   // the panel itself never scrolls, so the resize grips stay pinned to its
   // visible bottom corners and a stray sub-pixel overflow adds no panel scrollbar.
