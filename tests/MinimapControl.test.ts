@@ -167,6 +167,50 @@ describe("MinimapControl", () => {
     });
   });
 
+  describe("collapse to icon", () => {
+    it("hides the toggle icon and marks the container expanded while open", () => {
+      const ctrl = new MinimapControl({ collapsed: false });
+      const container = ctrl.onAdd(mockMap);
+      const button = container.querySelector(
+        ".minimap-button",
+      ) as HTMLButtonElement;
+
+      expect(
+        container.classList.contains("maplibre-gl-minimap-control--expanded"),
+      ).toBe(true);
+      expect(button.style.visibility).toBe("hidden");
+      expect(
+        container.querySelector(".minimap-collapse-button"),
+      ).not.toBeNull();
+    });
+
+    it("restores the toggle icon when collapsed", () => {
+      const ctrl = new MinimapControl({ collapsed: false });
+      const container = ctrl.onAdd(mockMap);
+      const button = container.querySelector(
+        ".minimap-button",
+      ) as HTMLButtonElement;
+
+      ctrl.collapse();
+      expect(
+        container.classList.contains("maplibre-gl-minimap-control--expanded"),
+      ).toBe(false);
+      expect(button.style.visibility).toBe("");
+      expect(container.querySelector(".minimap-collapse-button")).toBeNull();
+    });
+
+    it("collapses via the inline collapse control", () => {
+      const ctrl = new MinimapControl({ collapsed: false });
+      const container = ctrl.onAdd(mockMap);
+      const collapseBtn = container.querySelector(
+        ".minimap-collapse-button",
+      ) as HTMLButtonElement;
+
+      collapseBtn.click();
+      expect(ctrl.getState().collapsed).toBe(true);
+    });
+  });
+
   describe("onRemove", () => {
     it("should clean up on remove", () => {
       const ctrl = new MinimapControl({ collapsed: true });

@@ -863,6 +863,7 @@ A control that displays live map view state (center, bounds, zoom, pitch, bearin
 interface ViewStateControlOptions {
   position?: ControlPosition;
   className?: string; // Custom CSS class
+  title?: string; // Panel header title. Default: 'View State'
   visible?: boolean; // Default: true
   collapsed?: boolean; // Start collapsed (button only). Default: true
   precision?: number; // Decimal precision for coordinates. Default: 4
@@ -871,6 +872,8 @@ interface ViewStateControlOptions {
   showZoom?: boolean; // Show zoom level. Default: true
   showPitch?: boolean; // Show pitch value. Default: true
   showBearing?: boolean; // Show bearing value. Default: true
+  showProjection?: boolean; // Show projection (globe / mercator). Default: true
+  showCopyView?: boolean; // Show the unified "copy view" button. Default: true
   enableBBox?: boolean; // Enable bounding box drawing. Default: false
   bboxFillColor?: string; // BBox fill color. Default: 'rgba(0, 120, 215, 0.1)'
   bboxStrokeColor?: string; // BBox stroke color. Default: '#0078d7'

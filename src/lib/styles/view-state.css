@@ -43,6 +43,14 @@
   background: var(--vs-surface-bg);
 }
 
+/* While expanded the toggle button is hidden, so drop the ctrl-group chrome
+   to avoid an empty box behind the panel. Use !important to win over the
+   inline backgroundColor some hosts set on the container. */
+.maplibre-gl-view-state--expanded.maplibregl-ctrl-group {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 .maplibre-gl-view-state * {
   box-sizing: border-box;
 }
@@ -146,13 +154,54 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2px 10px 4px;
+  gap: 8px;
+  padding: 2px 6px 4px 10px;
   border-bottom: 1px solid var(--vs-border);
   font-size: 11px;
   font-weight: 600;
   color: var(--vs-heading);
   text-transform: uppercase;
   letter-spacing: 0.3px;
+}
+
+.maplibre-gl-view-state-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.maplibre-gl-view-state-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.maplibre-gl-view-state .maplibre-gl-view-state-header-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--vs-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.maplibre-gl-view-state .maplibre-gl-view-state-header-button:hover {
+  color: var(--vs-accent);
+  background: var(--vs-accent-soft);
+}
+
+.maplibre-gl-view-state-header-button svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* Data rows */
@@ -282,9 +331,13 @@
   margin-top: 4px;
 }
 
-.maplibre-gl-view-state-bbox-action {
+/* Scope under the control container so this wins over MapLibre's
+ * `.maplibregl-ctrl-group button { display: block }`, which would otherwise
+ * stack the copy icon above its label and break the action row alignment. */
+.maplibre-gl-view-state .maplibre-gl-view-state-bbox-action {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 2px;
   padding: 2px 6px;
   border: none;
