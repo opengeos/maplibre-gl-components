@@ -137,10 +137,11 @@
   margin-top: 4px;
 }
 
-/* While expanded the toggle button is hidden but still reserves its space, so
-   anchor the panel flush to the control's edge instead of floating above the
-   (now invisible) button. Avoids a gap between the panel and the map edge /
-   attribution. */
+/* While expanded the toggle button is hidden but still reserves its ~29px of
+   layout space, so the panel (anchored bottom/top: 100%) floats above the now
+   invisible button, leaving a large gap to the map edge / attribution. Anchor
+   the panel where the button sat so it keeps the same standard control margin
+   to its neighbours as every other maplibre control. */
 .maplibregl-ctrl-bottom-left .maplibre-gl-view-state--expanded .maplibre-gl-view-state-panel,
 .maplibregl-ctrl-bottom-right .maplibre-gl-view-state--expanded .maplibre-gl-view-state-panel {
   bottom: 0;
