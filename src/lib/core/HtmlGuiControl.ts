@@ -13,6 +13,12 @@ import type {
   HtmlGuiEventHandler,
 } from "./types";
 import { HtmlControl } from "./HtmlControl";
+import {
+  addPanelResizeHandles,
+  applyPanelMaxHeight,
+  applyUserPanelSize,
+  type UserPanelSize,
+} from "../utils/panelResize";
 
 /**
  * Default options for the HtmlGuiControl.
@@ -23,10 +29,11 @@ const DEFAULT_OPTIONS: Required<HtmlGuiControlOptions> = {
   visible: true,
   collapsed: true,
   panelWidth: 280,
-  // 0 means the panel sizes to its content, capped to the available viewport
-  // height (see _updatePanelHeight). A positive value acts as an explicit
-  // upper bound. This mirrors ColorbarGuiControl / LegendGuiControl so the
-  // panel never shows a scrollbar while empty vertical space remains below it.
+  // 0 means the panel sizes to its content, capped to the space available
+  // between its docked corner and the opposite map edge (see _reflowPanel). A
+  // positive value tightens that cap as an explicit upper bound. The panel
+  // never shows a scrollbar while empty vertical space remains below it, and
+  // the bottom-corner grips let the user resize it (like the data panels).
   maxHeight: 0,
   backgroundColor: "rgba(255, 255, 255, 0.95)",
   borderRadius: 4,
@@ -72,6 +79,8 @@ export class HtmlGuiControl implements IControl {
   private _handleZoom?: () => void;
   private _handleResize?: () => void;
   private _zoomVisible: boolean = true;
+  /** Persisted user-chosen panel size from the corner resize grips. */
+  private _userPanelSize: UserPanelSize | null = null;
 
   // Active HTML control instances
   private _htmlControl?: HtmlControl;
@@ -275,9 +284,12 @@ export class HtmlGuiControl implements IControl {
     const panel = document.createElement("div");
     panel.className = `html-gui-panel ${this._options.position.includes("left") ? "right" : "left"}`;
     panel.style.width = `${this._options.panelWidth}px`;
-    // The concrete maxHeight is applied in _updatePanelHeight so the panel can
-    // grow with its content and only scroll when it would overflow the viewport.
-    panel.style.overflowY = "auto";
+    // The panel floats beside the toggle button (position: absolute in CSS).
+    // Set it inline too so addPanelResizeHandles keeps it as the grips' anchor
+    // instead of forcing position: relative. The concrete maxHeight and any
+    // persisted user size are applied in _reflowPanel; the inner body (added by
+    // addPanelResizeHandles) scrolls, so the panel itself does not.
+    panel.style.position = "absolute";
     panel.style.background = this._options.backgroundColor;
     panel.style.borderRadius = `${this._options.borderRadius}px`;
     panel.style.fontSize = `${this._options.fontSize}px`;
@@ -594,11 +606,29 @@ export class HtmlGuiControl implements IControl {
     if (!this._panel && this._container) {
       this._panel = this._createPanel();
       this._container.appendChild(this._panel);
+      // Add the two bottom-corner resize grips once, on fresh creation. The
+      // panel persists across _showPanel calls (fields update in place), so the
+      // grips are not re-appended on every show, unlike the data panels which
+      // rebuild their panel each render.
+      addPanelResizeHandles({
+        panel: this._panel,
+        map: this._map,
+        container: this._container,
+        getUserSize: () => this._userPanelSize,
+        setUserSize: (size) => {
+          this._userPanelSize = size;
+        },
+      });
     }
     this._button?.classList.add("active");
-    this._updatePanelHeight();
+    this._reflowPanel();
+    // The panel must be in the DOM before its rect is meaningful, so re-apply
+    // the available-space cap and any persisted user size on the next frame.
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => this._reflowPanel());
+    }
     if (!this._handleResize) {
-      this._handleResize = () => this._updatePanelHeight();
+      this._handleResize = () => this._reflowPanel();
       window.addEventListener("resize", this._handleResize);
     }
   }
@@ -614,25 +644,30 @@ export class HtmlGuiControl implements IControl {
   }
 
   /**
-   * Cap the panel height to the viewport space available below its top edge so
-   * the whole form stays visible when the screen is tall enough, scrolling only
-   * when the content would run past the screen edge. `maxHeight`, when set
-   * (> 0), acts as an explicit upper bound.
+   * Size the panel to the space available between its docked corner and the
+   * opposite map edge so the whole form stays visible when there is room,
+   * scrolling its inner body only when the content would run past that edge.
+   * `maxHeight`, when set (> 0), tightens the cap as an explicit upper bound.
+   * Then re-apply any persisted user-chosen size from the corner grips so it
+   * survives a re-render or map resize. Mirrors the data panels' resize UX.
    */
-  private _updatePanelHeight(): void {
+  private _reflowPanel(): void {
     if (!this._panel) return;
-    const VIEWPORT_MARGIN = 16;
-    const MIN_HEIGHT = 200;
-    const top = this._panel.getBoundingClientRect().top;
-    const available = Math.max(
-      MIN_HEIGHT,
-      window.innerHeight - top - VIEWPORT_MARGIN,
+    applyPanelMaxHeight(
+      this._panel,
+      this._map,
+      this._container,
+      this._options.maxHeight,
     );
-    const maxHeight =
-      this._options.maxHeight > 0
-        ? Math.min(this._options.maxHeight, available)
-        : available;
-    this._panel.style.maxHeight = `${maxHeight}px`;
+    applyUserPanelSize({
+      panel: this._panel,
+      map: this._map,
+      container: this._container,
+      getUserSize: () => this._userPanelSize,
+      setUserSize: (size) => {
+        this._userPanelSize = size;
+      },
+    });
   }
 
   private _setupZoomHandler(): void {
