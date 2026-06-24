@@ -313,6 +313,150 @@
   height: 14px;
 }
 
+/* Bookmark indented inside a folder (794) */
+.maplibre-gl-bookmark-control .bookmark-item.grouped {
+  margin-left: 16px;
+}
+
+/* New Folder button (794) */
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-new-folder-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  border: 1px solid var(--bm-secondary-border);
+  border-radius: 4px;
+  background-color: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--bm-secondary-text);
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-new-folder-btn:hover {
+  background-color: var(--bm-hover-bg);
+  border-color: var(--bm-subtle);
+}
+
+.maplibre-gl-bookmark-control .bookmark-new-folder-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* Folder header row (794) */
+.maplibre-gl-bookmark-control .bookmark-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.maplibre-gl-bookmark-control .bookmark-group-header:hover {
+  background: var(--bm-hover-bg);
+}
+
+.maplibre-gl-bookmark-control .bookmark-group-header.drag-over {
+  background: var(--bm-item-active-bg);
+  box-shadow: inset 0 0 0 1px var(--bm-focus);
+}
+
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  color: var(--bm-muted);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.maplibre-gl-bookmark-control .bookmark-group-toggle:hover {
+  color: var(--bm-text);
+}
+
+.maplibre-gl-bookmark-control .bookmark-group-toggle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.maplibre-gl-bookmark-control .bookmark-group-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bm-muted);
+  flex-shrink: 0;
+}
+
+.maplibre-gl-bookmark-control .bookmark-group-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.maplibre-gl-bookmark-control .bookmark-group-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bm-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.maplibre-gl-bookmark-control .bookmark-group-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.maplibre-gl-bookmark-control
+  .bookmark-group-header:hover
+  .bookmark-group-actions {
+  opacity: 1;
+}
+
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-group-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  color: var(--bm-subtle);
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-group-btn:hover {
+  background-color: var(--bm-chip-hover-bg);
+  color: var(--bm-text);
+}
+
+.maplibre-gl-bookmark-control .bookmark-panel .bookmark-group-btn.delete:hover {
+  background-color: var(--bm-danger-bg);
+  color: var(--bm-danger);
+}
+
+.maplibre-gl-bookmark-control .bookmark-group-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
 /* Export-selection checkbox (470) */
 .maplibre-gl-bookmark-control .bookmark-select {
   width: 15px;
@@ -439,7 +583,9 @@
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-import-btn:hover,
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-btn:hover,
 .maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-all-btn:hover,
-.maplibre-gl-bookmark-control .bookmark-panel .bookmark-export-selected-btn:hover {
+.maplibre-gl-bookmark-control
+  .bookmark-panel
+  .bookmark-export-selected-btn:hover {
   background-color: var(--bm-hover-bg);
   border-color: var(--bm-subtle);
   color: var(--bm-secondary-text);

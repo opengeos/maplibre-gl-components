@@ -3090,12 +3090,34 @@ export interface MapBookmark {
   /** Optional thumbnail data URL. */
   thumbnail?: string;
   /**
+   * Optional id of the folder/group this bookmark belongs to. Matches the `id`
+   * of a {@link MapBookmarkGroup}. A bookmark with no `groupId` (or one pointing
+   * at a group that no longer exists) is treated as ungrouped. Only meaningful
+   * when {@link BookmarkControlOptions.groupable} is enabled.
+   */
+  groupId?: string;
+  /**
    * Optional host-defined state captured alongside the view (e.g. which layers
    * were visible). Produced by {@link BookmarkControlOptions.captureState} and
    * passed back to {@link BookmarkControlOptions.restoreState} when the
    * bookmark is opened. The control treats it as opaque and only persists it.
    */
   extra?: Record<string, unknown>;
+}
+
+/**
+ * A folder/group that bookmarks can be organized into. Groups are flat (they do
+ * not nest) and behave like the layer groups in a typical GIS layer panel:
+ * bookmarks are dragged into them and the folder can be expanded or collapsed.
+ * Only used when {@link BookmarkControlOptions.groupable} is enabled.
+ */
+export interface MapBookmarkGroup {
+  /** Unique identifier. */
+  id: string;
+  /** Display name of the folder. */
+  name: string;
+  /** Whether the folder is collapsed (its members hidden) in the panel. */
+  collapsed: boolean;
 }
 
 /**
@@ -3215,6 +3237,23 @@ export interface BookmarkControlOptions {
   exportSelectedLabel?: string;
   /** Label for the dedicated Export All button. Default: 'Export All'. */
   exportAllLabel?: string;
+  /**
+   * Whether bookmarks can be organized into folders/groups. When enabled, a
+   * "New Folder" button appears, folders can be renamed/deleted/collapsed, and
+   * bookmarks can be dragged into a folder (drop on its header) or out of one
+   * (drop on an ungrouped bookmark). Folders persist alongside the bookmarks.
+   * Default: false.
+   */
+  groupable?: boolean;
+  /** Initial folders. Only used when {@link groupable} is enabled. Default: []. */
+  groups?: MapBookmarkGroup[];
+  /** Label for the "New Folder" button. Default: 'New Folder'. */
+  newFolderLabel?: string;
+  /**
+   * Base name for folders created via the New Folder button; a number is
+   * appended (e.g. "Folder 1", "Folder 2"). Default: 'Folder'.
+   */
+  defaultFolderName?: string;
 }
 
 /**
@@ -3227,6 +3266,8 @@ export interface BookmarkControlState {
   collapsed: boolean;
   /** Saved bookmarks. */
   bookmarks: MapBookmark[];
+  /** Folders/groups bookmarks can be organized into (when groupable). */
+  groups: MapBookmarkGroup[];
   /** Currently selected bookmark ID. */
   selectedId: string | null;
 }
@@ -3243,7 +3284,11 @@ export type BookmarkEvent =
   | "clear"
   | "import"
   | "export"
-  | "reorder";
+  | "reorder"
+  | "group-add"
+  | "group-remove"
+  | "group-rename"
+  | "group-move";
 
 /**
  * BookmarkControl event handler function type.
@@ -3252,6 +3297,7 @@ export type BookmarkEventHandler = (event: {
   type: BookmarkEvent;
   state: BookmarkControlState;
   bookmark?: MapBookmark;
+  group?: MapBookmarkGroup;
 }) => void;
 
 // ============================================================================

@@ -12,6 +12,7 @@ import type {
   BookmarkEventHandler,
   BookmarkExportMode,
   MapBookmark,
+  MapBookmarkGroup,
 } from "./types";
 import { generateId } from "../utils/helpers";
 
@@ -49,6 +50,10 @@ const DEFAULT_OPTIONS: Required<BookmarkControlOptions> = {
   exportLabel: "Export",
   exportSelectedLabel: "Export Selected",
   exportAllLabel: "Export All",
+  groupable: false,
+  groups: [],
+  newFolderLabel: "New Folder",
+  defaultFolderName: "Folder",
 };
 
 /**
@@ -100,6 +105,31 @@ const UPLOAD_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
  * SVG icon for an information hint.
  */
 const INFO_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+
+/**
+ * SVG chevron pointing right (collapsed folder).
+ */
+const CHEVRON_RIGHT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`;
+
+/**
+ * SVG chevron pointing down (expanded folder).
+ */
+const CHEVRON_DOWN_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+/**
+ * SVG icon for a closed folder.
+ */
+const FOLDER_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>`;
+
+/**
+ * SVG icon for an open folder.
+ */
+const FOLDER_OPEN_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>`;
+
+/**
+ * SVG icon for the "New Folder" button (a folder with a plus).
+ */
+const FOLDER_PLUS_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><line x1="12" y1="10" x2="12" y2="16"/><line x1="9" y1="13" x2="15" y2="13"/></svg>`;
 
 /**
  * Format a date for display.
@@ -169,6 +199,7 @@ export class BookmarkControl implements IControl {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
       bookmarks: [...this._options.bookmarks],
+      groups: [...this._options.groups],
       selectedId: null,
     };
 
@@ -237,7 +268,7 @@ export class BookmarkControl implements IControl {
    */
   private _emit(
     event: BookmarkEvent,
-    extra?: { bookmark?: MapBookmark },
+    extra?: { bookmark?: MapBookmark; group?: MapBookmarkGroup },
   ): void {
     const handlers = this._eventHandlers.get(event);
     if (handlers) {
@@ -382,6 +413,19 @@ export class BookmarkControl implements IControl {
       content.appendChild(toggle);
     }
 
+    // Optional "New Folder" button for organizing bookmarks into folders.
+    if (this._options.groupable) {
+      const newFolderBtn = document.createElement("button");
+      newFolderBtn.type = "button";
+      newFolderBtn.className = "bookmark-new-folder-btn";
+      newFolderBtn.title = this._options.newFolderLabel;
+      newFolderBtn.innerHTML = `${FOLDER_PLUS_ICON}<span>${this._escapeHtml(
+        this._options.newFolderLabel,
+      )}</span>`;
+      newFolderBtn.addEventListener("click", () => this._addGroup());
+      content.appendChild(newFolderBtn);
+    }
+
     // Bookmarks list
     this._listEl = document.createElement("div");
     this._listEl.className = "bookmark-list";
@@ -494,29 +538,14 @@ export class BookmarkControl implements IControl {
   }
 
   /**
-   * Update the bookmarks list display.
+   * Render a single bookmark item's HTML. When `grouped` is true the item is
+   * indented to sit visually inside its folder.
    */
-  private _updateList(): void {
-    if (!this._listEl) return;
-
-    if (this._state.bookmarks.length === 0) {
-      this._listEl.innerHTML = `
-        <div class="bookmark-empty">
-          ${MAP_ICON}
-          <div>No bookmarks yet</div>
-          <div>Save your current view</div>
-        </div>
-      `;
-      return;
-    }
-
+  private _renderBookmarkItem(b: MapBookmark, grouped: boolean): string {
     const reorderable = this._options.reorderable;
     const selectable = this._options.selectable;
-
-    this._listEl.innerHTML = this._state.bookmarks
-      .map(
-        (b) => `
-        <div class="bookmark-item ${this._state.selectedId === b.id ? "active" : ""}" data-id="${b.id}"${reorderable ? ' draggable="true"' : ""}>
+    return `
+        <div class="bookmark-item ${this._state.selectedId === b.id ? "active" : ""}${grouped ? " grouped" : ""}" data-id="${b.id}"${reorderable ? ' draggable="true"' : ""}>
           ${
             reorderable
               ? `<div class="bookmark-grip" title="Drag to reorder">${GRIP_ICON}</div>`
@@ -545,11 +574,114 @@ export class BookmarkControl implements IControl {
             <button type="button" class="bookmark-action-btn delete" title="Delete">${TRASH_ICON}</button>
           </div>
         </div>
-      `,
-      )
-      .join("");
+      `;
+  }
 
-    // Add event listeners
+  /**
+   * Render a folder/group header row (collapse toggle, folder icon, name, and
+   * rename/delete actions). Acts as a drop target for dragging bookmarks in.
+   */
+  private _renderGroupHeader(group: MapBookmarkGroup): string {
+    const toggleTitle = group.collapsed ? "Expand folder" : "Collapse folder";
+    return `
+        <div class="bookmark-group-header" data-group-id="${group.id}">
+          <button type="button" class="bookmark-group-toggle" title="${toggleTitle}">${
+            group.collapsed ? CHEVRON_RIGHT_ICON : CHEVRON_DOWN_ICON
+          }</button>
+          <div class="bookmark-group-icon">${
+            group.collapsed ? FOLDER_ICON : FOLDER_OPEN_ICON
+          }</div>
+          <div class="bookmark-group-name">${this._escapeHtml(group.name)}</div>
+          <div class="bookmark-group-actions">
+            <button type="button" class="bookmark-group-btn rename" title="Rename">${EDIT_ICON}</button>
+            <button type="button" class="bookmark-group-btn delete" title="Delete folder">${TRASH_ICON}</button>
+          </div>
+        </div>
+      `;
+  }
+
+  /**
+   * Update the bookmarks list display, rendering any folders and their members.
+   */
+  private _updateList(): void {
+    if (!this._listEl) return;
+
+    if (this._state.bookmarks.length === 0 && this._state.groups.length === 0) {
+      this._listEl.innerHTML = `
+        <div class="bookmark-empty">
+          ${MAP_ICON}
+          <div>No bookmarks yet</div>
+          <div>Save your current view</div>
+        </div>
+      `;
+      return;
+    }
+
+    if (this._options.groupable) {
+      this._normalizeGroupContiguity();
+    }
+
+    const reorderable = this._options.reorderable;
+    const groupById = new Map(this._state.groups.map((g) => [g.id, g]));
+
+    // Build the list: folder headers render inline before their first member,
+    // and empty folders render at the top so they remain a visible drop target.
+    let html = "";
+    if (this._options.groupable) {
+      const memberGroupIds = new Set(
+        this._state.bookmarks
+          .map((b) => b.groupId)
+          .filter((id): id is string => !!id && groupById.has(id)),
+      );
+      for (const group of this._state.groups) {
+        if (!memberGroupIds.has(group.id))
+          html += this._renderGroupHeader(group);
+      }
+    }
+    const renderedGroups = new Set<string>();
+    for (const b of this._state.bookmarks) {
+      const gid =
+        this._options.groupable && b.groupId && groupById.has(b.groupId)
+          ? b.groupId
+          : null;
+      if (gid && !renderedGroups.has(gid)) {
+        html += this._renderGroupHeader(groupById.get(gid)!);
+        renderedGroups.add(gid);
+      }
+      if (gid && groupById.get(gid)!.collapsed) continue;
+      html += this._renderBookmarkItem(b, !!gid);
+    }
+    this._listEl.innerHTML = html;
+
+    // Wire folder header listeners (toggle / rename / delete / drop target).
+    this._listEl
+      .querySelectorAll(".bookmark-group-header")
+      .forEach((header) => {
+        const groupId = (header as HTMLElement).dataset.groupId!;
+        header
+          .querySelector(".bookmark-group-toggle")
+          ?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._toggleGroupCollapsed(groupId);
+          });
+        header
+          .querySelector(".bookmark-group-btn.rename")
+          ?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._startGroupRename(groupId);
+          });
+        header
+          .querySelector(".bookmark-group-btn.delete")
+          ?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this._removeGroup(groupId);
+          });
+        if (reorderable) {
+          this._setupGroupDropTarget(header as HTMLElement, groupId);
+        }
+      });
+
+    // Wire bookmark item listeners.
     this._listEl.querySelectorAll(".bookmark-item").forEach((item) => {
       const id = (item as HTMLElement).dataset.id!;
 
@@ -632,6 +764,9 @@ export class BookmarkControl implements IControl {
 
   /**
    * Move the dragged bookmark so it sits at the target bookmark's position.
+   * When grouping is enabled, the moved bookmark also adopts the target's
+   * folder, so dragging onto a bookmark in another folder (or an ungrouped one)
+   * moves it between folders.
    */
   private _reorderBookmark(fromId: string | null, toId: string): void {
     if (!fromId || fromId === toId) return;
@@ -640,12 +775,221 @@ export class BookmarkControl implements IControl {
     const to = bookmarks.findIndex((b) => b.id === toId);
     if (from === -1 || to === -1) return;
 
+    const target = bookmarks[to];
     const [moved] = bookmarks.splice(from, 1);
-    bookmarks.splice(to, 0, moved);
+    if (this._options.groupable) {
+      if (target.groupId) {
+        moved.groupId = target.groupId;
+      } else {
+        delete moved.groupId;
+      }
+    }
+    // The target index may have shifted after removing the dragged item.
+    const insertAt = bookmarks.findIndex((b) => b.id === toId);
+    bookmarks.splice(insertAt, 0, moved);
+    if (this._options.groupable) this._normalizeGroupContiguity();
 
+    this._dragId = null;
     this._saveToStorage();
     this._updateList();
     this._emit("reorder", { bookmark: moved });
+  }
+
+  /**
+   * Wire a folder header as a drop target: dropping a bookmark on it moves the
+   * bookmark into that folder.
+   */
+  private _setupGroupDropTarget(header: HTMLElement, groupId: string): void {
+    header.addEventListener("dragover", (e) => {
+      if (this._dragId === null) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+      header.classList.add("drag-over");
+    });
+    header.addEventListener("dragleave", () => {
+      header.classList.remove("drag-over");
+    });
+    header.addEventListener("drop", (e) => {
+      e.preventDefault();
+      header.classList.remove("drag-over");
+      this._moveBookmarkToGroup(this._dragId, groupId);
+    });
+  }
+
+  /**
+   * Re-sort the flat bookmarks array so every folder's members form one
+   * contiguous block (positioned at the block's first member) while ungrouped
+   * bookmarks keep their place. Also clears any `groupId` that points at a
+   * folder which no longer exists. Mirrors the layer-group contiguity model so
+   * folder headers can be rendered inline.
+   */
+  private _normalizeGroupContiguity(): void {
+    const groupIds = new Set(this._state.groups.map((g) => g.id));
+    const bookmarks = this._state.bookmarks;
+    for (const b of bookmarks) {
+      if (b.groupId && !groupIds.has(b.groupId)) delete b.groupId;
+    }
+    const result: MapBookmark[] = [];
+    const emitted = new Set<string>();
+    for (const b of bookmarks) {
+      const gid = b.groupId;
+      if (!gid) {
+        result.push(b);
+        continue;
+      }
+      if (emitted.has(gid)) continue;
+      // Emit every member of this folder, in their current relative order.
+      for (const m of bookmarks) {
+        if (m.groupId === gid) result.push(m);
+      }
+      emitted.add(gid);
+    }
+    this._state.bookmarks = result;
+  }
+
+  /**
+   * Generate the next default folder name ("Folder 1", "Folder 2", ...),
+   * avoiding collisions with existing default-named folders.
+   */
+  private _nextDefaultGroupName(): string {
+    const base = this._options.defaultFolderName;
+    let max = 0;
+    const pattern = new RegExp(`^${this._escapeRegExp(base)} (\\d+)$`);
+    for (const g of this._state.groups) {
+      const match = g.name.match(pattern);
+      if (match) max = Math.max(max, parseInt(match[1], 10));
+    }
+    return `${base} ${max + 1}`;
+  }
+
+  /**
+   * Escape a string for safe inclusion in a regular expression.
+   */
+  private _escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  /**
+   * Create a new folder and immediately start renaming it. No-op unless
+   * grouping is enabled.
+   */
+  private _addGroup(name?: string): string | null {
+    if (!this._options.groupable) return null;
+    const group: MapBookmarkGroup = {
+      id: generateId("bookmark-group"),
+      name: name?.trim() || this._nextDefaultGroupName(),
+      collapsed: false,
+    };
+    this._state.groups.unshift(group);
+    this._saveToStorage();
+    this._updateList();
+    this._emit("group-add", { group });
+    if (!name) this._startGroupRename(group.id);
+    return group.id;
+  }
+
+  /**
+   * Delete a folder, keeping its bookmarks (they become ungrouped).
+   */
+  private _removeGroup(id: string): void {
+    const index = this._state.groups.findIndex((g) => g.id === id);
+    if (index === -1) return;
+    const [group] = this._state.groups.splice(index, 1);
+    for (const b of this._state.bookmarks) {
+      if (b.groupId === id) delete b.groupId;
+    }
+    this._normalizeGroupContiguity();
+    this._saveToStorage();
+    this._updateList();
+    this._emit("group-remove", { group });
+  }
+
+  /**
+   * Toggle a folder's collapsed (expanded/collapsed) state.
+   */
+  private _toggleGroupCollapsed(id: string): void {
+    const group = this._state.groups.find((g) => g.id === id);
+    if (!group) return;
+    group.collapsed = !group.collapsed;
+    this._saveToStorage();
+    this._updateList();
+  }
+
+  /**
+   * Start inline renaming of a folder.
+   */
+  private _startGroupRename(id: string): void {
+    const group = this._state.groups.find((g) => g.id === id);
+    if (!group) return;
+
+    const header = this._listEl?.querySelector(`[data-group-id="${id}"]`);
+    const nameEl = header?.querySelector(".bookmark-group-name");
+    if (!nameEl) return;
+
+    const currentName = group.name;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "bookmark-rename-input bookmark-group-rename-input";
+    input.style.color = "var(--bm-input-text)";
+    input.value = currentName;
+    input.maxLength = 50;
+
+    nameEl.innerHTML = "";
+    nameEl.appendChild(input);
+    input.focus();
+    input.select();
+
+    const finishRename = () => {
+      const newName = input.value.trim() || currentName;
+      group.name = newName;
+      this._saveToStorage();
+      this._updateList();
+      this._emit("group-rename", { group });
+    };
+
+    input.addEventListener("blur", finishRename);
+    input.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") input.blur();
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        input.value = currentName;
+        input.blur();
+      }
+    });
+  }
+
+  /**
+   * Move a bookmark into a folder (or out of any folder when `groupId` is null).
+   * The bookmark is appended to the target folder's block.
+   */
+  private _moveBookmarkToGroup(
+    bookmarkId: string | null,
+    groupId: string | null,
+  ): void {
+    if (!bookmarkId) return;
+    const bookmark = this._state.bookmarks.find((b) => b.id === bookmarkId);
+    if (!bookmark) return;
+    if (groupId && !this._state.groups.some((g) => g.id === groupId)) return;
+    if ((bookmark.groupId ?? null) === groupId) return;
+
+    if (groupId) {
+      bookmark.groupId = groupId;
+    } else {
+      delete bookmark.groupId;
+    }
+    // Move to the end of the array so it appends to the target folder's block
+    // (or to the end of the ungrouped tail) after contiguity normalization.
+    const index = this._state.bookmarks.indexOf(bookmark);
+    this._state.bookmarks.splice(index, 1);
+    this._state.bookmarks.push(bookmark);
+    this._normalizeGroupContiguity();
+
+    this._dragId = null;
+    this._saveToStorage();
+    this._updateList();
+    this._emit("group-move", { bookmark });
   }
 
   /**
@@ -868,6 +1212,7 @@ export class BookmarkControl implements IControl {
    */
   private _clearAll(): void {
     this._state.bookmarks = [];
+    this._state.groups = [];
     this._state.selectedId = null;
     this._exportSelection.clear();
     this._saveToStorage();
@@ -920,7 +1265,9 @@ export class BookmarkControl implements IControl {
    * default) writes the ticked subset when any are selected and selection is
    * enabled, otherwise every bookmark.
    */
-  private _bookmarksForExport(mode: BookmarkExportMode = "auto"): MapBookmark[] {
+  private _bookmarksForExport(
+    mode: BookmarkExportMode = "auto",
+  ): MapBookmark[] {
     const useSelection =
       this._options.selectable &&
       this._exportSelection.size > 0 &&
@@ -988,10 +1335,14 @@ export class BookmarkControl implements IControl {
     if (!this._options.storageKey) return;
 
     try {
-      localStorage.setItem(
-        this._options.storageKey,
-        JSON.stringify(this._state.bookmarks),
-      );
+      // Persist folders alongside bookmarks using an envelope object when
+      // grouping is in play; otherwise keep the legacy bare-array form so
+      // existing (non-grouping) consumers stay byte-compatible.
+      const payload =
+        this._options.groupable || this._state.groups.length > 0
+          ? { bookmarks: this._state.bookmarks, groups: this._state.groups }
+          : this._state.bookmarks;
+      localStorage.setItem(this._options.storageKey, JSON.stringify(payload));
     } catch {
       // localStorage not available or full
     }
@@ -1006,8 +1357,25 @@ export class BookmarkControl implements IControl {
     try {
       const stored = localStorage.getItem(this._options.storageKey);
       if (stored) {
-        const bookmarks = JSON.parse(stored) as MapBookmark[];
-        this._state.bookmarks = bookmarks;
+        const parsed = JSON.parse(stored) as unknown;
+        if (Array.isArray(parsed)) {
+          // Legacy bare-array form (bookmarks only).
+          this._state.bookmarks = parsed as MapBookmark[];
+        } else if (
+          parsed &&
+          typeof parsed === "object" &&
+          Array.isArray((parsed as { bookmarks?: unknown }).bookmarks)
+        ) {
+          // Envelope form: { bookmarks, groups }.
+          const envelope = parsed as {
+            bookmarks: MapBookmark[];
+            groups?: MapBookmarkGroup[];
+          };
+          this._state.bookmarks = envelope.bookmarks;
+          if (Array.isArray(envelope.groups)) {
+            this._state.groups = envelope.groups;
+          }
+        }
       }
     } catch {
       // localStorage not available or invalid data
@@ -1117,6 +1485,9 @@ export class BookmarkControl implements IControl {
     const remaining = this._options.maxBookmarks - this._state.bookmarks.length;
     const toImport = bookmarks.slice(0, remaining);
     this._state.bookmarks.push(...toImport);
+    // Imported bookmarks may carry a groupId for a folder that does not exist
+    // here; contiguity normalization drops those dangling references.
+    if (this._options.groupable) this._normalizeGroupContiguity();
     this._saveToStorage();
     this._updateList();
     this._updateFooter();
@@ -1148,6 +1519,52 @@ export class BookmarkControl implements IControl {
     const valid = new Set(this._state.bookmarks.map((b) => b.id));
     this._exportSelection = new Set(ids.filter((id) => valid.has(id)));
     if (this._panel) this._updateList();
+    return this;
+  }
+
+  /**
+   * Get all folders/groups.
+   */
+  getGroups(): MapBookmarkGroup[] {
+    return [...this._state.groups];
+  }
+
+  /**
+   * Create a folder/group programmatically and return its id (or null when
+   * grouping is disabled). When a name is given it is used verbatim; when
+   * omitted a default name is generated and inline renaming starts.
+   */
+  addGroup(name?: string): string | null {
+    return this._addGroup(name);
+  }
+
+  /**
+   * Remove a folder by id, keeping its bookmarks (they become ungrouped).
+   */
+  removeGroup(id: string): this {
+    this._removeGroup(id);
+    return this;
+  }
+
+  /**
+   * Rename a folder by id.
+   */
+  renameGroup(id: string, name: string): this {
+    const group = this._state.groups.find((g) => g.id === id);
+    if (group) {
+      group.name = name;
+      this._saveToStorage();
+      if (this._panel) this._updateList();
+      this._emit("group-rename", { group });
+    }
+    return this;
+  }
+
+  /**
+   * Move a bookmark into a folder, or out of any folder when `groupId` is null.
+   */
+  moveToGroup(bookmarkId: string, groupId: string | null): this {
+    this._moveBookmarkToGroup(bookmarkId, groupId);
     return this;
   }
 }

@@ -210,7 +210,12 @@ describe("BookmarkControl", () => {
       const labelOf = () =>
         container.querySelector(".bookmark-export-btn span")?.textContent;
       expect(labelOf()).toBe("Export");
-      control.setSelectedIds(control.getBookmarks().map((b) => b.id).slice(0, 1));
+      control.setSelectedIds(
+        control
+          .getBookmarks()
+          .map((b) => b.id)
+          .slice(0, 1),
+      );
       expect(labelOf()).toBe("Export Selected");
       control.setSelectedIds([]);
       expect(labelOf()).toBe("Export");
@@ -223,13 +228,13 @@ describe("BookmarkControl", () => {
         exportSelectedLabel: "Save Picked",
       });
       control.addBookmark("a");
-      expect(container.querySelector(".bookmark-export-btn span")?.textContent).toBe(
-        "Save",
-      );
+      expect(
+        container.querySelector(".bookmark-export-btn span")?.textContent,
+      ).toBe("Save");
       control.setSelectedIds(control.getBookmarks().map((b) => b.id));
-      expect(container.querySelector(".bookmark-export-btn span")?.textContent).toBe(
-        "Save Picked",
-      );
+      expect(
+        container.querySelector(".bookmark-export-btn span")?.textContent,
+      ).toBe("Save Picked");
     });
 
     it("renders a dedicated Export All button and a conditional Export Selected button", () => {
@@ -239,22 +244,38 @@ describe("BookmarkControl", () => {
       });
       control.addBookmark("a");
       control.addBookmark("b");
-      expect(container.querySelector(".bookmark-export-all-btn")).not.toBeNull();
+      expect(
+        container.querySelector(".bookmark-export-all-btn"),
+      ).not.toBeNull();
       // No selection -> no Export Selected button.
-      expect(container.querySelector(".bookmark-export-selected-btn")).toBeNull();
-      control.setSelectedIds(control.getBookmarks().map((b) => b.id).slice(0, 1));
+      expect(
+        container.querySelector(".bookmark-export-selected-btn"),
+      ).toBeNull();
+      control.setSelectedIds(
+        control
+          .getBookmarks()
+          .map((b) => b.id)
+          .slice(0, 1),
+      );
       expect(
         container.querySelector(".bookmark-export-selected-btn"),
       ).not.toBeNull();
       control.setSelectedIds([]);
-      expect(container.querySelector(".bookmark-export-selected-btn")).toBeNull();
+      expect(
+        container.querySelector(".bookmark-export-selected-btn"),
+      ).toBeNull();
     });
 
     it("exportBookmarks('all') ignores the selection", () => {
       const { control } = mount({ selectable: true });
       control.addBookmark("a");
       control.addBookmark("b");
-      control.setSelectedIds(control.getBookmarks().map((b) => b.id).slice(0, 1));
+      control.setSelectedIds(
+        control
+          .getBookmarks()
+          .map((b) => b.id)
+          .slice(0, 1),
+      );
       const all = JSON.parse(control.exportBookmarks("all")) as MapBookmark[];
       expect(all).toHaveLength(2);
       const selected = JSON.parse(
@@ -279,6 +300,178 @@ describe("BookmarkControl", () => {
       const item = container.querySelector(".bookmark-item");
       expect(item?.getAttribute("draggable")).toBeNull();
       expect(container.querySelector(".bookmark-grip")).toBeNull();
+    });
+  });
+
+  describe("folder grouping (794)", () => {
+    it("does not show folder UI unless groupable is enabled", () => {
+      const { container } = mount();
+      expect(container.querySelector(".bookmark-new-folder-btn")).toBeNull();
+    });
+
+    it("renders a New Folder button when groupable", () => {
+      const { container } = mount({ groupable: true });
+      expect(
+        container.querySelector(".bookmark-new-folder-btn"),
+      ).not.toBeNull();
+    });
+
+    it("creates a folder and renders its header", () => {
+      const { control, container } = mount({ groupable: true });
+      const id = control.addGroup("Region A");
+      expect(id).not.toBeNull();
+      expect(control.getGroups()).toHaveLength(1);
+      const header = container.querySelector(
+        `.bookmark-group-header[data-group-id="${id}"]`,
+      );
+      expect(header).not.toBeNull();
+      expect(header?.querySelector(".bookmark-group-name")?.textContent).toBe(
+        "Region A",
+      );
+    });
+
+    it("does not create folders when grouping is disabled", () => {
+      const { control } = mount();
+      expect(control.addGroup("nope")).toBeNull();
+      expect(control.getGroups()).toHaveLength(0);
+    });
+
+    it("moves a bookmark into a folder and indents it", () => {
+      const { control, container } = mount({ groupable: true });
+      control.addBookmark("a");
+      const groupId = control.addGroup("Folder X")!;
+      const [bookmark] = control.getBookmarks();
+      control.moveToGroup(bookmark.id, groupId);
+      expect(control.getBookmarks()[0].groupId).toBe(groupId);
+      const item = container.querySelector(
+        `.bookmark-item[data-id="${bookmark.id}"]`,
+      );
+      expect(item?.classList.contains("grouped")).toBe(true);
+    });
+
+    it("hides a folder's members when collapsed", () => {
+      const { control, container } = mount({ groupable: true });
+      control.addBookmark("a");
+      const groupId = control.addGroup("Folder X")!;
+      const [bookmark] = control.getBookmarks();
+      control.moveToGroup(bookmark.id, groupId);
+      // Collapse via the header toggle button.
+      const toggle = container.querySelector(
+        `.bookmark-group-header[data-group-id="${groupId}"] .bookmark-group-toggle`,
+      ) as HTMLButtonElement;
+      toggle.click();
+      expect(
+        container.querySelector(`.bookmark-item[data-id="${bookmark.id}"]`),
+      ).toBeNull();
+      // The header itself stays visible as a drop target.
+      expect(
+        container.querySelector(
+          `.bookmark-group-header[data-group-id="${groupId}"]`,
+        ),
+      ).not.toBeNull();
+    });
+
+    it("deleting a folder keeps its bookmarks (ungrouped)", () => {
+      const { control } = mount({ groupable: true });
+      control.addBookmark("a");
+      const groupId = control.addGroup("Folder X")!;
+      const [bookmark] = control.getBookmarks();
+      control.moveToGroup(bookmark.id, groupId);
+      control.removeGroup(groupId);
+      expect(control.getGroups()).toHaveLength(0);
+      const [survivor] = control.getBookmarks();
+      expect(survivor).toBeDefined();
+      expect(survivor.groupId).toBeUndefined();
+    });
+
+    it("moves a bookmark out of a folder", () => {
+      const { control } = mount({ groupable: true });
+      control.addBookmark("a");
+      const groupId = control.addGroup("Folder X")!;
+      const [bookmark] = control.getBookmarks();
+      control.moveToGroup(bookmark.id, groupId);
+      control.moveToGroup(bookmark.id, null);
+      expect(control.getBookmarks()[0].groupId).toBeUndefined();
+    });
+
+    it("keeps a folder's members contiguous in the flat list", () => {
+      const { control } = mount({ groupable: true });
+      control.addBookmark("a");
+      control.addBookmark("b");
+      control.addBookmark("c");
+      const groupId = control.addGroup("Folder X")!;
+      const [a, b, c] = control.getBookmarks();
+      // Put a and c (not b) into the folder.
+      control.moveToGroup(a.id, groupId);
+      control.moveToGroup(c.id, groupId);
+      const grouped = control
+        .getBookmarks()
+        .filter((bm) => bm.groupId === groupId);
+      expect(grouped).toHaveLength(2);
+      // The two grouped bookmarks sit next to each other in the array.
+      const ids = control.getBookmarks().map((bm) => bm.id);
+      const positions = grouped.map((bm) => ids.indexOf(bm.id)).sort();
+      expect(positions[1] - positions[0]).toBe(1);
+      // b is untouched and remains ungrouped.
+      expect(
+        control.getBookmarks().find((bm) => bm.id === b.id)?.groupId,
+      ).toBeUndefined();
+    });
+
+    it("renames a folder", () => {
+      const { control } = mount({ groupable: true });
+      const groupId = control.addGroup("Old")!;
+      control.renameGroup(groupId, "New");
+      expect(control.getGroups()[0].name).toBe("New");
+    });
+
+    it("persists folders to storage and reloads them", () => {
+      const { control } = mount({ groupable: true, storageKey: "bm-groups" });
+      control.addBookmark("a");
+      const groupId = control.addGroup("Persisted")!;
+      const [bookmark] = control.getBookmarks();
+      control.moveToGroup(bookmark.id, groupId);
+
+      // A fresh control reading the same key restores both groups and members.
+      const reloaded = new BookmarkControl({
+        groupable: true,
+        storageKey: "bm-groups",
+      });
+      reloaded.onAdd(map as never);
+      expect(reloaded.getGroups().map((g) => g.name)).toEqual(["Persisted"]);
+      expect(reloaded.getBookmarks()[0].groupId).toBe(groupId);
+    });
+
+    it("still reads the legacy bare-array storage form", () => {
+      const legacy: MapBookmark[] = [
+        {
+          id: "b1",
+          name: "legacy",
+          lng: 0,
+          lat: 0,
+          zoom: 3,
+          pitch: 0,
+          bearing: 0,
+          createdAt: 0,
+        },
+      ];
+      localStorage.setItem("bm-legacy", JSON.stringify(legacy));
+      const control = new BookmarkControl({
+        groupable: true,
+        storageKey: "bm-legacy",
+      });
+      control.onAdd(map as never);
+      expect(control.getBookmarks().map((b) => b.name)).toEqual(["legacy"]);
+      expect(control.getGroups()).toHaveLength(0);
+    });
+
+    it("generates incrementing default folder names", () => {
+      const { control } = mount({ groupable: true });
+      control.addGroup();
+      control.addGroup();
+      const names = control.getGroups().map((g) => g.name);
+      expect(names).toContain("Folder 1");
+      expect(names).toContain("Folder 2");
     });
   });
 });
