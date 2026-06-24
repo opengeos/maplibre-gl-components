@@ -15,6 +15,13 @@ import type {
   MapBookmarkGroup,
 } from "./types";
 import { generateId } from "../utils/helpers";
+import {
+  addPanelResizeHandles,
+  applyPanelMaxHeight,
+  applyUserPanelSize,
+  PANEL_BODY_CLASS,
+  type UserPanelSize,
+} from "../utils/panelResize";
 
 /**
  * Default options for the BookmarkControl.
@@ -177,7 +184,10 @@ export class BookmarkControl implements IControl {
     new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
+  private _handleResize?: () => void;
   private _zoomVisible: boolean = true;
+  /** Persisted user-chosen panel size from the bottom-corner resize grips. */
+  private _userPanelSize: UserPanelSize | null = null;
   /** Whether the next added bookmark should capture host state (467). */
   private _captureEnabled: boolean;
   /** IDs of bookmarks ticked for selective export (470). */
@@ -230,6 +240,10 @@ export class BookmarkControl implements IControl {
   onRemove(): void {
     if (this._handleZoom && this._map) {
       this._map.off("zoom", this._handleZoom);
+    }
+    if (this._handleResize) {
+      window.removeEventListener("resize", this._handleResize);
+      this._handleResize = undefined;
     }
 
     this._container?.remove();
@@ -314,9 +328,14 @@ export class BookmarkControl implements IControl {
       panel.classList.add("resizable");
     }
     panel.style.width = `${this._options.panelWidth}px`;
-    // When resizable, the user controls the height by dragging, so we leave the
-    // height to the CSS (`resize: both` with a viewport-relative cap) instead of
-    // pinning it. When fixed, cap the height and let the list scroll within.
+    // The panel floats beside the toggle button (position: absolute in CSS).
+    // Set it inline too so addPanelResizeHandles keeps it as the grips' anchor
+    // instead of forcing position: relative (which would collapse the panel
+    // into normal flow and detach it from the docked button).
+    panel.style.position = "absolute";
+    // When resizable, the bottom-corner grips drive the height and _reflowPanel
+    // caps it to the room available (honoring maxHeight as an upper bound). When
+    // fixed, pin the cap here and let the list scroll within.
     if (
       !this._options.resizable &&
       this._options.maxHeight &&
@@ -347,9 +366,12 @@ export class BookmarkControl implements IControl {
       ?.addEventListener("click", () => this._togglePanel());
     panel.appendChild(header);
 
-    // Content
+    // Content. Tagging it as the shared panel body makes addPanelResizeHandles
+    // treat it as the (already wrapped) scrolling region, so it does not pull
+    // the footer into the scroll area: the footer stays pinned below it while
+    // the bookmark list inside scrolls.
     const content = document.createElement("div");
-    content.className = "bookmark-content";
+    content.className = `bookmark-content ${PANEL_BODY_CLASS}`;
 
     // Add form
     const addForm = document.createElement("div");
@@ -524,14 +546,67 @@ export class BookmarkControl implements IControl {
     if (!this._panel && this._container) {
       this._panel = this._createPanel();
       this._container.appendChild(this._panel);
+      if (this._options.resizable) {
+        // Add the two bottom-corner resize grips (left + right). The panel is
+        // rebuilt on each expand, so they are re-added on every fresh panel.
+        addPanelResizeHandles({
+          panel: this._panel,
+          map: this._map,
+          container: this._container,
+          getUserSize: () => this._userPanelSize,
+          setUserSize: (size) => {
+            this._userPanelSize = size;
+          },
+        });
+        this._reflowPanel();
+        // The panel must be in the DOM before its rect is meaningful, so
+        // re-apply the available-space cap and any persisted user size next
+        // frame.
+        if (typeof requestAnimationFrame === "function") {
+          requestAnimationFrame(() => this._reflowPanel());
+        }
+        if (!this._handleResize) {
+          this._handleResize = () => this._reflowPanel();
+          window.addEventListener("resize", this._handleResize);
+        }
+      }
     }
     this._button?.classList.add("active");
+  }
+
+  /**
+   * Size the resizable panel to the room available between its docked corner
+   * and the opposite map edge (honoring `maxHeight` as an upper bound), then
+   * re-apply any user-chosen size from the corner grips so it survives a
+   * re-render or map resize. Mirrors the data panels' resize UX.
+   */
+  private _reflowPanel(): void {
+    if (!this._panel) return;
+    applyPanelMaxHeight(
+      this._panel,
+      this._map,
+      this._container,
+      this._options.maxHeight,
+    );
+    applyUserPanelSize({
+      panel: this._panel,
+      map: this._map,
+      container: this._container,
+      getUserSize: () => this._userPanelSize,
+      setUserSize: (size) => {
+        this._userPanelSize = size;
+      },
+    });
   }
 
   /**
    * Hide the panel.
    */
   private _hidePanel(): void {
+    if (this._handleResize) {
+      window.removeEventListener("resize", this._handleResize);
+      this._handleResize = undefined;
+    }
     this._panel?.remove();
     this._panel = undefined;
     this._button?.classList.remove("active");
