@@ -38,6 +38,17 @@ const DEFAULT_OPTIONS: Required<MinimapControlOptions> = {
  */
 const MINIMAP_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10" rx="1" stroke-dasharray="2 2"/></svg>`;
 
+/**
+ * SVG icon (minus) for the inline collapse button shown inside the panel.
+ */
+const COLLAPSE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+
+/**
+ * CSS class added to the container while the minimap panel is expanded so the
+ * standalone toggle button can be hidden and the panel dropped to the corner.
+ */
+const EXPANDED_CLASS = "maplibre-gl-minimap-control--expanded";
+
 const SOURCE_ID = "maplibre-minimap-viewport";
 const FILL_LAYER_ID = "maplibre-minimap-viewport-fill";
 const LINE_LAYER_ID = "maplibre-minimap-viewport-line";
@@ -191,7 +202,30 @@ export class MinimapControl implements IControl {
     mapDiv.className = "minimap-map";
     this._panel.appendChild(mapDiv);
 
+    // Inline collapse control inside the panel frame. Clicking it shrinks the
+    // minimap back to the standalone toggle icon (window-style controls live
+    // inside the container they control). Only shown when the minimap can be
+    // toggled, so there is always a way back to the panel.
+    if (this._options.toggleable) {
+      const collapseBtn = document.createElement("button");
+      collapseBtn.type = "button";
+      collapseBtn.className = "minimap-collapse-button";
+      collapseBtn.title = "Collapse minimap";
+      collapseBtn.setAttribute("aria-label", "Collapse minimap");
+      collapseBtn.innerHTML = COLLAPSE_ICON;
+      collapseBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.collapse();
+      });
+      this._panel.appendChild(collapseBtn);
+    }
+
     this._container.appendChild(this._panel);
+
+    // While expanded, hide the standalone toggle icon and let the panel occupy
+    // the corner so no detached control sits outside the frame.
+    this._container.classList.add(EXPANDED_CLASS);
+    if (this._button) this._button.style.visibility = "hidden";
 
     const mainCenter = this._map.getCenter();
     const mainZoom = this._map.getZoom();
@@ -336,6 +370,9 @@ export class MinimapControl implements IControl {
       this._panel.remove();
       this._panel = undefined;
     }
+    // Restore the standalone toggle icon, which doubles as the minimized state.
+    this._container?.classList.remove(EXPANDED_CLASS);
+    if (this._button) this._button.style.visibility = "";
   }
 
   private _syncMinimap(): void {

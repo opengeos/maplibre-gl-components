@@ -37,6 +37,54 @@
   background: #fff;
 }
 
+/* While expanded the standalone toggle icon is hidden, so let the panel drop
+   into the corner it would otherwise sit above. */
+.maplibre-gl-minimap-control--expanded .minimap-panel {
+  bottom: 0;
+}
+
+/* Inline collapse control, overlaid in the top-right corner of the frame so
+   the window control sits inside the container it operates. */
+.maplibre-gl-minimap-control .minimap-collapse-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #333;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.maplibre-gl-minimap-control .minimap-collapse-button:hover {
+  background: #fff;
+}
+
+.maplibre-gl-minimap-control .minimap-collapse-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .maplibre-gl-minimap-control .minimap-collapse-button {
+    color: #e0e0e0;
+    background: rgba(40, 40, 40, 0.9);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+  }
+
+  .maplibre-gl-minimap-control .minimap-collapse-button:hover {
+    background: #2a2a2a;
+  }
+}
+
 .maplibre-gl-minimap-control .minimap-map {
   width: 100%;
   height: 100%;

@@ -20,6 +20,7 @@ import { generateId } from "../utils/helpers";
 const DEFAULT_OPTIONS: Required<ViewStateControlOptions> = {
   position: "bottom-left",
   className: "",
+  title: "View State",
   visible: true,
   collapsed: true,
   precision: 4,
@@ -28,6 +29,8 @@ const DEFAULT_OPTIONS: Required<ViewStateControlOptions> = {
   showZoom: true,
   showPitch: true,
   showBearing: true,
+  showProjection: true,
+  showCopyView: true,
   enableBBox: false,
   bboxFillColor: "rgba(0, 120, 215, 0.1)",
   bboxStrokeColor: "#0078d7",
@@ -59,9 +62,28 @@ const COPY_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" f
 const CHECK_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
 /**
- * SVG icon for bbox draw button.
+ * SVG icon for the bbox draw button. A pencil over a frame signifies an active
+ * drawing action, rather than the previous dashed rectangle that read as a
+ * passive selection marquee.
  */
-const BBOX_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1" stroke-dasharray="4 2"/></svg>`;
+const BBOX_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
+
+/**
+ * SVG icon (minus) for the inline collapse button in the panel header.
+ */
+const COLLAPSE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+
+/**
+ * SVG icon (camera) for the unified "copy view" button that bundles the whole
+ * camera state into one string.
+ */
+const COPY_VIEW_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
+
+/**
+ * CSS class added to the container while the panel is expanded so the
+ * standalone toggle button can be hidden.
+ */
+const EXPANDED_CLASS = "maplibre-gl-view-state--expanded";
 
 /**
  * A control that displays live map view state (center, bounds, zoom, pitch, bearing)
@@ -99,9 +121,12 @@ export class ViewStateControl implements IControl {
   private _zoomValueEl?: HTMLElement;
   private _pitchValueEl?: HTMLElement;
   private _bearingValueEl?: HTMLElement;
+  private _projectionValueEl?: HTMLElement;
 
   // Move handler for live updates
   private _boundMoveHandler?: () => void;
+  // Projection change handler (globe <-> mercator) for live updates
+  private _boundProjectionHandler?: () => void;
 
   // BBox drawing state
   private _bboxSourceId: string = "";
@@ -159,6 +184,11 @@ export class ViewStateControl implements IControl {
     this._boundMoveHandler = () => this._onMapMove();
     this._map.on("move", this._boundMoveHandler);
 
+    // Keep the projection readout in sync when the user toggles globe/mercator
+    // without moving the map.
+    this._boundProjectionHandler = () => this._updateProjectionValue();
+    this._map.on("projectiontransition", this._boundProjectionHandler);
+
     return this._container;
   }
 
@@ -175,6 +205,10 @@ export class ViewStateControl implements IControl {
         this._map.off("move", this._boundMoveHandler);
         this._boundMoveHandler = undefined;
       }
+      if (this._boundProjectionHandler) {
+        this._map.off("projectiontransition", this._boundProjectionHandler);
+        this._boundProjectionHandler = undefined;
+      }
       if (this._state.drawingBBox) {
         this._stopBBoxDrawing();
       }
@@ -190,6 +224,7 @@ export class ViewStateControl implements IControl {
     this._zoomValueEl = undefined;
     this._pitchValueEl = undefined;
     this._bearingValueEl = undefined;
+    this._projectionValueEl = undefined;
     this._bboxToggleBtn = undefined;
     this._bboxResultEl = undefined;
     this._eventHandlers.clear();
@@ -401,6 +436,34 @@ export class ViewStateControl implements IControl {
     if (this._bearingValueEl) {
       this._bearingValueEl.textContent = `${this._state.bearing.toFixed(1)}°`;
     }
+    this._updateProjectionValue();
+  }
+
+  /**
+   * Reads the current map projection and renders it as a friendly label
+   * (e.g. "Globe" or "Mercator").
+   */
+  private _updateProjectionValue(): void {
+    if (!this._projectionValueEl || !this._map) return;
+    this._projectionValueEl.textContent = this._getProjectionLabel();
+  }
+
+  /**
+   * Returns a human-readable label for the map's current projection.
+   */
+  private _getProjectionLabel(): string {
+    if (!this._map) return "";
+    let type = "mercator";
+    try {
+      // getProjection() is available on maplibre-gl >= 5; guard for older libs.
+      const projection = (
+        this._map as unknown as { getProjection?: () => { type?: string } }
+      ).getProjection?.();
+      if (projection?.type) type = projection.type;
+    } catch {
+      // Ignore and fall back to the default label.
+    }
+    return type.charAt(0).toUpperCase() + type.slice(1);
   }
 
   /**
@@ -408,6 +471,9 @@ export class ViewStateControl implements IControl {
    */
   private _createContainer(): HTMLElement {
     const container = document.createElement("div");
+    // Assign early so _updateButtonState (called below) can toggle the
+    // expanded class on the container; onAdd reassigns the same element.
+    this._container = container;
     container.className =
       `maplibregl-ctrl maplibregl-ctrl-group maplibre-gl-view-state ${this._options.className}`.trim();
 
@@ -461,11 +527,9 @@ export class ViewStateControl implements IControl {
       panel.style.color = this._options.fontColor;
     }
 
-    // Header
-    const header = document.createElement("div");
-    header.className = "maplibre-gl-view-state-header";
-    header.textContent = "View State";
-    panel.appendChild(header);
+    // Header: title on the left, action buttons (copy-view, collapse) on the
+    // right so the window controls live inside the panel they operate.
+    panel.appendChild(this._createHeader());
 
     const p = this._options.precision;
 
@@ -476,17 +540,6 @@ export class ViewStateControl implements IControl {
         `${this._state.center[0].toFixed(p)}, ${this._state.center[1].toFixed(p)}`,
       );
       this._centerValueEl = valueEl;
-      panel.appendChild(row);
-    }
-
-    // Bounds row
-    if (this._options.showBounds) {
-      const b = this._state.bounds;
-      const { row, valueEl } = this._createRow(
-        "Bounds",
-        `${b[0].toFixed(p)}, ${b[1].toFixed(p)}, ${b[2].toFixed(p)}, ${b[3].toFixed(p)}`,
-      );
-      this._boundsValueEl = valueEl;
       panel.appendChild(row);
     }
 
@@ -520,12 +573,120 @@ export class ViewStateControl implements IControl {
       panel.appendChild(row);
     }
 
+    // Projection row (globe / mercator). Read-only, so no copy button.
+    if (this._options.showProjection) {
+      const { row, valueEl } = this._createInfoRow(
+        "Projection",
+        this._getProjectionLabel(),
+      );
+      this._projectionValueEl = valueEl;
+      panel.appendChild(row);
+    }
+
+    // Bounds row — placed last since it describes the extent rather than the
+    // camera (center/zoom/pitch/bearing), which is read first.
+    if (this._options.showBounds) {
+      const b = this._state.bounds;
+      const { row, valueEl } = this._createRow(
+        "Bounds",
+        `${b[0].toFixed(p)}, ${b[1].toFixed(p)}, ${b[2].toFixed(p)}, ${b[3].toFixed(p)}`,
+      );
+      this._boundsValueEl = valueEl;
+      panel.appendChild(row);
+    }
+
     // BBox section
     if (this._options.enableBBox) {
       panel.appendChild(this._createBBoxSection());
     }
 
     return panel;
+  }
+
+  /**
+   * Builds the panel header: the title plus the copy-view and collapse actions.
+   */
+  private _createHeader(): HTMLElement {
+    const header = document.createElement("div");
+    header.className = "maplibre-gl-view-state-header";
+
+    const titleEl = document.createElement("span");
+    titleEl.className = "maplibre-gl-view-state-title";
+    titleEl.textContent = this._options.title;
+    header.appendChild(titleEl);
+
+    const actions = document.createElement("div");
+    actions.className = "maplibre-gl-view-state-header-actions";
+
+    // Unified copy-view button bundles the whole camera state into one string.
+    if (this._options.showCopyView) {
+      const copyViewBtn = document.createElement("button");
+      copyViewBtn.type = "button";
+      copyViewBtn.className = "maplibre-gl-view-state-header-button";
+      copyViewBtn.title = "Copy view";
+      copyViewBtn.setAttribute("aria-label", "Copy view");
+      copyViewBtn.innerHTML = COPY_VIEW_ICON;
+      copyViewBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this._copyToClipboard(this._formatViewState(), copyViewBtn);
+      });
+      actions.appendChild(copyViewBtn);
+    }
+
+    // Inline collapse control shrinks the panel back to the toggle icon.
+    const collapseBtn = document.createElement("button");
+    collapseBtn.type = "button";
+    collapseBtn.className = "maplibre-gl-view-state-header-button";
+    collapseBtn.title = "Collapse";
+    collapseBtn.setAttribute("aria-label", "Collapse");
+    collapseBtn.innerHTML = COLLAPSE_ICON;
+    collapseBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.collapse();
+    });
+    actions.appendChild(collapseBtn);
+
+    header.appendChild(actions);
+    return header;
+  }
+
+  /**
+   * Builds the consolidated, paste-friendly camera string used by the unified
+   * copy-view button.
+   */
+  private _formatViewState(): string {
+    const p = this._options.precision;
+    const c = this._state.center;
+    return (
+      `center: [${c[0].toFixed(p)}, ${c[1].toFixed(p)}], ` +
+      `zoom: ${this._state.zoom.toFixed(2)}, ` +
+      `bearing: ${this._state.bearing.toFixed(1)}, ` +
+      `pitch: ${this._state.pitch.toFixed(1)}`
+    );
+  }
+
+  /**
+   * Creates a read-only labeled row (no copy button), e.g. for projection.
+   */
+  private _createInfoRow(
+    label: string,
+    value: string,
+  ): { row: HTMLElement; valueEl: HTMLElement } {
+    const row = document.createElement("div");
+    row.className = "maplibre-gl-view-state-row";
+
+    const labelEl = document.createElement("span");
+    labelEl.className = "maplibre-gl-view-state-label";
+    labelEl.textContent = label;
+
+    const valueEl = document.createElement("span");
+    valueEl.className = "maplibre-gl-view-state-value";
+    valueEl.textContent = value;
+
+    row.appendChild(labelEl);
+    row.appendChild(valueEl);
+
+    return { row, valueEl };
   }
 
   /**
@@ -673,15 +834,19 @@ export class ViewStateControl implements IControl {
   }
 
   /**
-   * Updates the button's active state appearance.
+   * Updates the toggle button appearance. While the panel is expanded the
+   * standalone button is hidden (the panel has its own inline collapse
+   * control); when collapsed it reappears as the minimized icon.
    */
   private _updateButtonState(): void {
+    if (this._container) {
+      this._container.classList.toggle(EXPANDED_CLASS, !this._state.collapsed);
+    }
     if (this._button) {
       if (!this._state.collapsed) {
-        this._button.classList.add("maplibre-gl-view-state-button--active");
-        this._button.title = "Hide view state";
+        this._button.style.visibility = "hidden";
       } else {
-        this._button.classList.remove("maplibre-gl-view-state-button--active");
+        this._button.style.visibility = "";
         this._button.title = "View map state";
       }
     }

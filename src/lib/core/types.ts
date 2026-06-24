@@ -1029,6 +1029,8 @@ export interface ViewStateControlOptions {
   position?: ControlPosition;
   /** Custom CSS class name. */
   className?: string;
+  /** Panel header title. Default: 'View State'. */
+  title?: string;
   /** Whether the control is initially visible. Default: true. */
   visible?: boolean;
   /** Whether the panel starts collapsed (button only). Default: true. */
@@ -1045,6 +1047,14 @@ export interface ViewStateControlOptions {
   showPitch?: boolean;
   /** Whether to show bearing value. Default: true. */
   showBearing?: boolean;
+  /** Whether to show the map projection (globe / mercator). Default: true. */
+  showProjection?: boolean;
+  /**
+   * Whether to show the unified "copy view" button in the header, which copies
+   * the whole camera state (center, zoom, bearing, pitch) as one string.
+   * Default: true.
+   */
+  showCopyView?: boolean;
   /** Whether to enable bounding box drawing. Default: false. */
   enableBBox?: boolean;
   /** Fill color for drawn bounding box. Default: 'rgba(0, 120, 215, 0.1)'. */
