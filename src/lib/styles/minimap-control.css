@@ -1,5 +1,13 @@
 .maplibre-gl-minimap-control {
   position: relative;
+
+  /* Theme tokens for the control buttons (light defaults). Overridden by the
+     dark media query below, and host apps with class-based theming can set
+     these on the control to follow their own theme instead. */
+  --mm-button-bg: #fff;
+  --mm-button-hover-bg: #f0f0f0;
+  --mm-button-text: #333;
+  --mm-button-ring: rgba(0, 0, 0, 0.1);
 }
 
 .maplibre-gl-minimap-control .minimap-button {
@@ -9,16 +17,16 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  background: #fff;
-  color: #333;
+  background: var(--mm-button-bg);
+  color: var(--mm-button-text);
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 2px var(--mm-button-ring);
 }
 
 .maplibre-gl-minimap-control .minimap-button:hover {
-  background: #f0f0f0;
+  background: var(--mm-button-hover-bg);
 }
 
 .maplibre-gl-minimap-control .minimap-button svg {
@@ -59,13 +67,13 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  color: #333;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  color: var(--mm-button-text);
+  background: var(--mm-button-bg);
+  box-shadow: 0 0 0 1px var(--mm-button-ring);
 }
 
 .maplibre-gl-minimap-control .minimap-collapse-button:hover {
-  background: #fff;
+  background: var(--mm-button-hover-bg);
 }
 
 .maplibre-gl-minimap-control .minimap-collapse-button svg {
@@ -74,14 +82,11 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .maplibre-gl-minimap-control .minimap-collapse-button {
-    color: #e0e0e0;
-    background: rgba(40, 40, 40, 0.9);
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
-  }
-
-  .maplibre-gl-minimap-control .minimap-collapse-button:hover {
-    background: #2a2a2a;
+  .maplibre-gl-minimap-control {
+    --mm-button-bg: #2a2a2a;
+    --mm-button-hover-bg: #3a3a3a;
+    --mm-button-text: #e0e0e0;
+    --mm-button-ring: rgba(255, 255, 255, 0.15);
   }
 }
 
