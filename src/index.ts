@@ -306,6 +306,7 @@ export type {
   BookmarkEventHandler,
   BookmarkExportMode,
   MapBookmark,
+  MapBookmarkGroup,
   PrintControlOptions,
   PrintControlState,
   PrintColorbarConfig,
