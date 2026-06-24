@@ -75,14 +75,14 @@
   z-index: 1;
 }
 
-/* User-resizable panel: drag the bottom-right corner. The list flexes to fill
-   the available height (see .bookmark-content / .bookmark-list below). */
+/* User-resizable panel: drag either bottom-corner grip (added by
+   addPanelResizeHandles). The list flexes to fill the available height (see
+   .bookmark-content / .bookmark-list below). Sizing bounds are enforced by the
+   resize util (min size, map-edge margin, height ceiling), not CSS, so the
+   grips can grow the panel toward the map interior from its docked corner. */
 .maplibre-gl-bookmark-control .bookmark-panel.resizable {
-  resize: both;
   min-width: 220px;
   min-height: 220px;
-  max-width: 90vw;
-  max-height: 85vh;
 }
 
 .maplibre-gl-bookmark-control .bookmark-panel.left {

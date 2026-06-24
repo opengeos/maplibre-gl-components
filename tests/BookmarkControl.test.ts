@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { BookmarkControl } from "../src/lib/core/BookmarkControl";
 import type { MapBookmark } from "../src/lib/core/types";
+import {
+  PANEL_RESIZE_HANDLE_CLASS,
+  PANEL_RESIZE_LEFT_CLASS,
+  PANEL_RESIZE_RIGHT_CLASS,
+  PANEL_MIN_WIDTH,
+  PANEL_MIN_HEIGHT,
+} from "../src/lib/utils/panelResize";
 
 // jsdom in this project's vitest setup does not expose localStorage; the control
 // degrades gracefully without it, but provide a simple in-memory stub so the
@@ -77,6 +84,57 @@ describe("BookmarkControl", () => {
       const { container } = mount({ resizable: false });
       const panel = container.querySelector(".bookmark-panel");
       expect(panel?.classList.contains("resizable")).toBe(false);
+    });
+
+    it("renders both bottom-corner resize grips when resizable", () => {
+      const { container } = mount();
+      const panel = container.querySelector(".bookmark-panel") as HTMLElement;
+      expect(
+        panel.querySelectorAll(`.${PANEL_RESIZE_HANDLE_CLASS}`).length,
+      ).toBe(2);
+      expect(panel.querySelector(`.${PANEL_RESIZE_LEFT_CLASS}`)).not.toBeNull();
+      expect(
+        panel.querySelector(`.${PANEL_RESIZE_RIGHT_CLASS}`),
+      ).not.toBeNull();
+      // The float-beside-button layout (position: absolute) is preserved so the
+      // grips anchor to the panel without it collapsing into normal flow.
+      expect(panel.style.position).toBe("absolute");
+      // The footer stays a sibling of the scrolling body, not pulled into it.
+      expect(panel.querySelector(".bookmark-footer")?.parentElement).toBe(
+        panel,
+      );
+    });
+
+    it("adds no resize grips when resizing is disabled", () => {
+      const { container } = mount({ resizable: false });
+      expect(
+        container.querySelectorAll(`.${PANEL_RESIZE_HANDLE_CLASS}`).length,
+      ).toBe(0);
+    });
+
+    it("re-applies a persisted user size across collapse/expand", () => {
+      const { control, container } = mount();
+      (control as unknown as { _userPanelSize: unknown })._userPanelSize = {
+        width: PANEL_MIN_WIDTH + 60,
+        height: PANEL_MIN_HEIGHT + 90,
+      };
+      control.collapse();
+      control.expand();
+      const panel = container.querySelector(".bookmark-panel") as HTMLElement;
+      expect(panel.style.width).toBe(`${PANEL_MIN_WIDTH + 60}px`);
+      expect(panel.style.height).toBe(`${PANEL_MIN_HEIGHT + 90}px`);
+      // Exactly one pair of grips after a re-show (not accumulated).
+      expect(
+        panel.querySelectorAll(`.${PANEL_RESIZE_HANDLE_CLASS}`).length,
+      ).toBe(2);
+    });
+
+    it("removes the resize listener when the panel is collapsed", () => {
+      const removeSpy = vi.spyOn(window, "removeEventListener");
+      const { control } = mount();
+      control.collapse();
+      expect(removeSpy).toHaveBeenCalledWith("resize", expect.any(Function));
+      removeSpy.mockRestore();
     });
   });
 
