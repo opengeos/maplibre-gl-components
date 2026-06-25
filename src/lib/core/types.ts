@@ -19,6 +19,15 @@ export type ControlPosition =
 export type ColorbarOrientation = "horizontal" | "vertical";
 
 /**
+ * Direction in which multiple colorbars sharing the same corner are stacked.
+ *
+ * This is independent of {@link ColorbarOrientation}, which controls the
+ * shape of an individual gradient bar. `"vertical"` stacks colorbars in a
+ * column (the default), `"horizontal"` lays them out in a row.
+ */
+export type ColorbarStackOrientation = "horizontal" | "vertical";
+
+/**
  * Built-in colormap names (matplotlib-compatible).
  */
 export type ColormapName =
@@ -125,6 +134,11 @@ export interface ColorbarOptions extends ColorbarItemOptions {
   position?: ControlPosition;
   /** Multiple colorbar entries to display in this control. */
   colorbars?: ColorbarItemOptions[];
+  /**
+   * Direction in which multiple colorbar entries are stacked within the
+   * control. Default: `"vertical"`.
+   */
+  stackOrientation?: ColorbarStackOrientation;
 }
 
 /**
@@ -1186,6 +1200,11 @@ export interface ColorbarGuiControlOptions {
   minzoom?: number;
   /** Maximum zoom. */
   maxzoom?: number;
+  /**
+   * Direction in which multiple colorbars sharing a corner are stacked.
+   * Default: `"vertical"`.
+   */
+  stackOrientation?: ColorbarStackOrientation;
 }
 
 /**
@@ -1226,6 +1245,8 @@ export interface ColorbarGuiControlState extends ColorbarGuiEntryState {
   selectedColorbarIndex: number;
   /** Configured colorbars currently active on the map. */
   colorbars: ColorbarGuiEntryState[];
+  /** Direction in which colorbars sharing a corner are stacked. */
+  stackOrientation: ColorbarStackOrientation;
 }
 
 /**

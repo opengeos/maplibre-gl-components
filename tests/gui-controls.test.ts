@@ -25,7 +25,7 @@ describe("GUI controls multiple instances", () => {
     };
   });
 
-  it("should add multiple colorbars from the colorbar GUI", () => {
+  it("groups colorbars sharing a corner into a single control", () => {
     const control = new ColorbarGuiControl({ collapsed: false });
     const container = control.onAdd(mockMap);
     const addButton = container.querySelector(
@@ -35,12 +35,110 @@ describe("GUI controls multiple instances", () => {
     addButton.click();
     addButton.click();
 
-    expect(mockMap.addControl).toHaveBeenCalledTimes(2);
+    // Both colorbars use the default corner, so they are stacked inside one
+    // map control rather than two competing controls.
+    expect(mockMap.addControl).toHaveBeenCalledTimes(1);
     expect(control.getState().hasColorbar).toBe(true);
     expect(control.getState().colorbars.length).toBe(2);
+    const grouped = mockMap.addControl.mock.calls[0][0];
+    expect(grouped.getState().colorbars.length).toBe(2);
     expect(
       container.querySelectorAll(".colorbar-gui-select")[0],
     ).toBeInstanceOf(HTMLSelectElement);
+  });
+
+  it("adds a separate control per corner", () => {
+    const control = new ColorbarGuiControl({ collapsed: false });
+    const container = control.onAdd(mockMap);
+    const selects = container.querySelectorAll(".colorbar-gui-select");
+    const positionSelect = selects[3] as HTMLSelectElement;
+    const addButton = container.querySelector(
+      ".colorbar-gui-add-btn",
+    ) as HTMLButtonElement;
+
+    addButton.click();
+    positionSelect.value = "top-left";
+    positionSelect.dispatchEvent(new Event("change"));
+    addButton.click();
+
+    expect(mockMap.addControl).toHaveBeenCalledTimes(2);
+    expect(control.getState().colorbars.length).toBe(2);
+  });
+
+  it("keeps a colorbar's place in the stack when it is updated", () => {
+    const control = new ColorbarGuiControl({ collapsed: false });
+    const container = control.onAdd(mockMap);
+    const selects = container.querySelectorAll(".colorbar-gui-select");
+    const colorbarSelect = selects[0] as HTMLSelectElement;
+    const colormapSelect = selects[1] as HTMLSelectElement;
+    // Inputs in panel order: min, max, label, units.
+    const labelInput = container.querySelectorAll(".colorbar-gui-input")[2] as HTMLInputElement;
+    const addButton = container.querySelector(
+      ".colorbar-gui-add-btn",
+    ) as HTMLButtonElement;
+    const updateButton = container.querySelectorAll(
+      ".colorbar-gui-add-btn",
+    )[1] as HTMLButtonElement;
+
+    const addNamed = (label: string) => {
+      colorbarSelect.value = "-1";
+      colorbarSelect.dispatchEvent(new Event("change"));
+      labelInput.value = label;
+      labelInput.dispatchEvent(new Event("input"));
+      addButton.click();
+    };
+    addNamed("Depth");
+    addNamed("Weight");
+    addNamed("Height");
+
+    const grouped = mockMap.addControl.mock.calls[0][0];
+    const labelsBefore = control
+      .getState()
+      .colorbars.map((c) => c.label);
+    expect(labelsBefore).toEqual(["Depth", "Weight", "Height"]);
+
+    // Select the first colorbar and update its colormap.
+    colorbarSelect.value = "0";
+    colorbarSelect.dispatchEvent(new Event("change"));
+    colormapSelect.value = "plasma";
+    colormapSelect.dispatchEvent(new Event("change"));
+    updateButton.click();
+
+    // No new control is added (the grouped control is updated in place) and
+    // the stacking order is unchanged.
+    expect(mockMap.addControl).toHaveBeenCalledTimes(1);
+    expect(control.getState().colorbars.map((c) => c.label)).toEqual([
+      "Depth",
+      "Weight",
+      "Height",
+    ]);
+    expect(control.getState().colorbars[0].colormap).toBe("plasma");
+    expect(grouped.getState().colorbars.length).toBe(3);
+  });
+
+  it("applies the stacking direction to the grouped control", () => {
+    const control = new ColorbarGuiControl({ collapsed: false });
+    const container = control.onAdd(mockMap);
+    const addButton = container.querySelector(
+      ".colorbar-gui-add-btn",
+    ) as HTMLButtonElement;
+    addButton.click();
+    addButton.click();
+
+    const grouped = mockMap.addControl.mock.calls[0][0];
+    const groupContainer = grouped.onAdd(mockMap);
+    expect(groupContainer.style.flexDirection).toBe("column");
+
+    // Selects, in panel order: colorbar, colormap, orientation, position,
+    // stack. The stack select is the last one.
+    const selects = container.querySelectorAll(".colorbar-gui-select");
+    const stackSelect = selects[selects.length - 1] as HTMLSelectElement;
+    expect(stackSelect.querySelector('option[value="horizontal"]')).not.toBeNull();
+    stackSelect.value = "horizontal";
+    stackSelect.dispatchEvent(new Event("change"));
+
+    expect(control.getState().stackOrientation).toBe("horizontal");
+    expect(groupContainer.style.flexDirection).toBe("row");
   });
 
   it("should not update an existing colorbar while editing a new colorbar draft", () => {
@@ -65,7 +163,9 @@ describe("GUI controls multiple instances", () => {
 
     addButton.click();
 
-    expect(mockMap.addControl).toHaveBeenCalledTimes(2);
+    // Both colorbars share the default corner, so they live in one grouped
+    // control (addControl is only called when the corner is first occupied).
+    expect(mockMap.addControl).toHaveBeenCalledTimes(1);
     expect(control.getState().colorbars[1].colormap).toBe("plasma");
   });
 
@@ -96,7 +196,8 @@ describe("GUI controls multiple instances", () => {
     restored.onAdd(restoredMap);
     restored.setState(savedState);
 
-    expect(restoredMap.addControl).toHaveBeenCalledTimes(2);
+    // Two saved colorbars at the same corner restore into one grouped control.
+    expect(restoredMap.addControl).toHaveBeenCalledTimes(1);
     expect(restored.getState().colorbars).toEqual(savedState.colorbars);
     expect(restored.getState().selectedColorbarIndex).toBe(1);
   });
