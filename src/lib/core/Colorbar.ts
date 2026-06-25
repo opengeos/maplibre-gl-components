@@ -5,6 +5,7 @@ import type {
   ColorbarItemOptions,
   ColorbarItemState,
   ColorbarOptions,
+  ColorbarStackOrientation,
   ColorbarState,
   ComponentEvent,
   ComponentEventHandler,
@@ -69,6 +70,7 @@ export class Colorbar implements IControl {
   private _options: ResolvedColorbarOptions;
   private _colorbarOptions?: ColorbarItemOptions[];
   private _colorbars: ResolvedColorbarOptions[];
+  private _stackOrientation: ColorbarStackOrientation = "vertical";
   private _state: ColorbarState;
   private _eventHandlers: Map<
     ComponentEvent,
@@ -84,10 +86,16 @@ export class Colorbar implements IControl {
    * @param options - Configuration options for the colorbar.
    */
   constructor(options?: ColorbarOptions) {
-    const { colorbars, position: _position, ...entryOptions } = options ?? {};
+    const {
+      colorbars,
+      position: _position,
+      stackOrientation,
+      ...entryOptions
+    } = options ?? {};
     void _position;
     this._options = { ...DEFAULT_OPTIONS, ...entryOptions };
     this._colorbarOptions = colorbars;
+    if (stackOrientation) this._stackOrientation = stackOrientation;
     this._colorbars = this._resolveColorbars();
     this._state = this._createState();
   }
@@ -159,9 +167,17 @@ export class Colorbar implements IControl {
    * @param options - Partial options to update.
    */
   update(options: Partial<ColorbarOptions>): void {
-    const { colorbars, position: _position, ...entryOptions } = options;
+    const {
+      colorbars,
+      position: _position,
+      stackOrientation,
+      ...entryOptions
+    } = options;
     void _position;
     this._options = { ...this._options, ...entryOptions };
+    if (stackOrientation !== undefined) {
+      this._stackOrientation = stackOrientation;
+    }
     if (colorbars !== undefined) {
       this._colorbarOptions = colorbars;
     }
@@ -559,10 +575,11 @@ export class Colorbar implements IControl {
     this._container.innerHTML = "";
 
     const shouldShow = this._hasVisibleColorbars();
+    const isHorizontalStack = this._stackOrientation === "horizontal";
     Object.assign(this._container.style, {
       display: shouldShow ? "flex" : "none",
-      flexDirection: "column",
-      alignItems: "stretch",
+      flexDirection: isHorizontalStack ? "row" : "column",
+      alignItems: isHorizontalStack ? "flex-end" : "stretch",
       gap: "8px",
       background: "transparent",
       boxShadow: "none",

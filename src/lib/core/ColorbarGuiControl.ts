@@ -11,8 +11,10 @@ import type {
   ColorbarGuiEntryState,
   ColorbarGuiEvent,
   ColorbarGuiEventHandler,
+  ColorbarItemOptions,
   ColormapName,
   ColorbarOrientation,
+  ColorbarStackOrientation,
 } from "./types";
 import { Colorbar } from "./Colorbar";
 import { getColormap, getColormapNames } from "../colormaps";
@@ -34,6 +36,7 @@ const DEFAULT_OPTIONS: Required<ColorbarGuiControlOptions> = {
   fontColor: "#333",
   minzoom: 0,
   maxzoom: 24,
+  stackOrientation: "vertical",
 };
 
 /** SVG icon for the colorbar button – gradient bar only, no lines. */
@@ -72,9 +75,12 @@ export class ColorbarGuiControl implements IControl {
   private _handleResize?: () => void;
   private _zoomVisible: boolean = true;
 
-  // Active colorbar instances
+  // Active colorbar instances. Colorbars that share a corner are grouped into
+  // a single Colorbar control (one per occupied position) so that updating an
+  // entry re-renders it in place without changing its order in the stack, and
+  // so the whole stack can be laid out vertically or horizontally.
   private _colorbar?: Colorbar;
-  private _colorbars: Colorbar[] = [];
+  private _positionControls: Map<ControlPosition, Colorbar> = new Map();
   private _colorbarEntries: ColorbarGuiEntryState[] = [];
 
   // DOM refs
@@ -85,6 +91,7 @@ export class ColorbarGuiControl implements IControl {
   private _labelInput?: HTMLInputElement;
   private _unitsInput?: HTMLInputElement;
   private _orientationSelect?: HTMLSelectElement;
+  private _stackSelect?: HTMLSelectElement;
   private _positionSelect?: HTMLSelectElement;
   private _addBtn?: HTMLButtonElement;
   private _updateBtn?: HTMLButtonElement;
@@ -115,6 +122,7 @@ export class ColorbarGuiControl implements IControl {
       hasColorbar: false,
       selectedColorbarIndex: -1,
       colorbars: [],
+      stackOrientation: this._options.stackOrientation,
     };
   }
 
@@ -208,21 +216,22 @@ export class ColorbarGuiControl implements IControl {
 
   setState(state: Partial<ColorbarGuiControlState>): this {
     if (this._map) {
-      this._colorbars.forEach((colorbar) => {
-        this._map!.removeControl(colorbar);
+      this._positionControls.forEach((control) => {
+        this._map!.removeControl(control);
       });
     }
+    this._positionControls.clear();
 
     const entries = (state.colorbars ?? []).map((entry) => ({ ...entry }));
-    this._colorbars = [];
     this._colorbarEntries = entries;
+    this._state.stackOrientation =
+      state.stackOrientation ?? this._state.stackOrientation;
 
     if (this._map) {
-      entries.forEach((entry) => {
-        const colorbar = this._createColorbar(entry);
-        this._map!.addControl(colorbar, entry.colorbarPosition);
-        this._colorbars.push(colorbar);
-      });
+      const positions = new Set<ControlPosition>(
+        entries.map((entry) => entry.colorbarPosition),
+      );
+      positions.forEach((position) => this._syncPositionControl(position));
     }
 
     const selectedIndex =
@@ -259,9 +268,14 @@ export class ColorbarGuiControl implements IControl {
       colorbars: entries.map((entry) => ({ ...entry })),
     };
     this._colorbar =
-      selectedIndex >= 0 ? this._colorbars[selectedIndex] : undefined;
+      selectedIndex >= 0
+        ? this._positionControls.get(entries[selectedIndex].colorbarPosition)
+        : undefined;
 
     this._applyEntryToForm(formEntry);
+    if (this._stackSelect) {
+      this._stackSelect.value = this._state.stackOrientation;
+    }
     if (this._state.collapsed) this._hidePanel();
     else this._showPanel();
     if (this._container) {
@@ -511,6 +525,32 @@ export class ColorbarGuiControl implements IControl {
     optRow.appendChild(posField);
     content.appendChild(optRow);
 
+    // Stacking direction for multiple colorbars sharing the same corner. This
+    // is a global layout setting (not per colorbar) and applies immediately.
+    const stackField = this._createField("Stack multiple colorbars");
+    this._stackSelect = document.createElement("select");
+    this._stackSelect.className = "colorbar-gui-select";
+    (
+      [
+        { value: "vertical", label: "Vertically" },
+        { value: "horizontal", label: "Horizontally" },
+      ] as { value: ColorbarStackOrientation; label: string }[]
+    ).forEach((opt) => {
+      const option = document.createElement("option");
+      option.value = opt.value;
+      option.textContent = opt.label;
+      option.selected = opt.value === this._state.stackOrientation;
+      this._stackSelect!.appendChild(option);
+    });
+    this._stackSelect.addEventListener("change", () => {
+      this._state.stackOrientation = this._stackSelect!
+        .value as ColorbarStackOrientation;
+      this._applyStackOrientation();
+      this._emit("colorbarupdate");
+    });
+    stackField.appendChild(this._stackSelect);
+    content.appendChild(stackField);
+
     // Buttons
     this._addBtn = document.createElement("button");
     this._addBtn.type = "button";
@@ -643,7 +683,13 @@ export class ColorbarGuiControl implements IControl {
     this._updatePreview();
   }
 
-  private _createColorbar(entry: ColorbarGuiEntryState): Colorbar {
+  /**
+   * Builds the per-entry options for a single colorbar from its GUI entry.
+   *
+   * @param entry - The configured colorbar entry.
+   * @returns The resolved colorbar item options.
+   */
+  private _buildColorbarItem(entry: ColorbarGuiEntryState): ColorbarItemOptions {
     const colormap =
       entry.mode === "custom"
         ? entry.customColors
@@ -652,7 +698,7 @@ export class ColorbarGuiControl implements IControl {
             .filter((color) => color.length > 0)
         : entry.colormap;
 
-    return new Colorbar({
+    return {
       colormap:
         Array.isArray(colormap) && colormap.length === 0
           ? ["#440154", "#21918c", "#fde725"]
@@ -662,7 +708,69 @@ export class ColorbarGuiControl implements IControl {
       label: entry.label,
       units: entry.units,
       orientation: entry.orientation,
-      position: entry.colorbarPosition,
+    };
+  }
+
+  /**
+   * Returns the configured entries at a given position, preserving their order
+   * in the flat entry list (which drives the visual stacking order).
+   *
+   * @param position - The map corner to filter by.
+   * @returns The entries currently assigned to that position.
+   */
+  private _entriesAtPosition(
+    position: ControlPosition,
+  ): ColorbarGuiEntryState[] {
+    return this._colorbarEntries.filter(
+      (entry) => entry.colorbarPosition === position,
+    );
+  }
+
+  /**
+   * Reconciles the single grouped Colorbar control for a position with the
+   * current entries. Creates, updates in place, or removes the control as
+   * needed. Updating in place keeps each colorbar's order in the stack stable.
+   *
+   * @param position - The map corner to reconcile.
+   */
+  private _syncPositionControl(position: ControlPosition): void {
+    if (!this._map) return;
+    const items = this._entriesAtPosition(position).map((entry) =>
+      this._buildColorbarItem(entry),
+    );
+    const existing = this._positionControls.get(position);
+
+    if (items.length === 0) {
+      if (existing) {
+        this._map.removeControl(existing);
+        this._positionControls.delete(position);
+      }
+      return;
+    }
+
+    if (existing) {
+      existing.update({
+        colorbars: items,
+        stackOrientation: this._state.stackOrientation,
+      });
+      return;
+    }
+
+    const control = new Colorbar({
+      colorbars: items,
+      position,
+      stackOrientation: this._state.stackOrientation,
+    });
+    this._map.addControl(control, position);
+    this._positionControls.set(position, control);
+  }
+
+  /**
+   * Applies the current stacking direction to every active position control.
+   */
+  private _applyStackOrientation(): void {
+    this._positionControls.forEach((control) => {
+      control.update({ stackOrientation: this._state.stackOrientation });
     });
   }
 
@@ -675,7 +783,9 @@ export class ColorbarGuiControl implements IControl {
     }
     if (index >= this._colorbarEntries.length) return;
     this._state.selectedColorbarIndex = index;
-    this._colorbar = this._colorbars[index];
+    this._colorbar = this._positionControls.get(
+      this._colorbarEntries[index].colorbarPosition,
+    );
     this._applyEntryToForm(this._colorbarEntries[index]);
     this._updateButtonStates();
   }
@@ -704,13 +814,11 @@ export class ColorbarGuiControl implements IControl {
   private _addColorbar(): void {
     if (!this._map) return;
     const entry = this._getFormEntry();
-    const colorbar = this._createColorbar(entry);
-    this._map.addControl(colorbar, entry.colorbarPosition);
-    this._colorbars.push(colorbar);
     this._colorbarEntries.push(entry);
-    this._colorbar = colorbar;
+    this._syncPositionControl(entry.colorbarPosition);
+    this._colorbar = this._positionControls.get(entry.colorbarPosition);
     this._state.hasColorbar = true;
-    this._state.selectedColorbarIndex = this._colorbars.length - 1;
+    this._state.selectedColorbarIndex = this._colorbarEntries.length - 1;
     this._state.colorbars = this._colorbarEntries.map((item) => ({ ...item }));
     this._updateButtonStates();
     this._emit("colorbaradd");
@@ -719,18 +827,21 @@ export class ColorbarGuiControl implements IControl {
   private _updateColorbar(): void {
     if (!this._map) return;
     const index = this._state.selectedColorbarIndex;
-    if (index < 0 || index >= this._colorbars.length) {
+    if (index < 0 || index >= this._colorbarEntries.length) {
       this._addColorbar();
       return;
     }
 
+    const previousPosition = this._colorbarEntries[index].colorbarPosition;
     const entry = this._getFormEntry();
-    this._map.removeControl(this._colorbars[index]);
-    const colorbar = this._createColorbar(entry);
-    this._map.addControl(colorbar, entry.colorbarPosition);
-    this._colorbars[index] = colorbar;
     this._colorbarEntries[index] = entry;
-    this._colorbar = colorbar;
+    // Reconcile the old corner first when the position changed so the entry is
+    // dropped from its previous stack before being added to the new one.
+    if (previousPosition !== entry.colorbarPosition) {
+      this._syncPositionControl(previousPosition);
+    }
+    this._syncPositionControl(entry.colorbarPosition);
+    this._colorbar = this._positionControls.get(entry.colorbarPosition);
     this._state.colorbars = this._colorbarEntries.map((item) => ({ ...item }));
     this._emit("colorbarupdate");
     this._updateButtonStates();
@@ -739,35 +850,36 @@ export class ColorbarGuiControl implements IControl {
   private _removeColorbar(): void {
     if (!this._map) return;
     const index = this._state.selectedColorbarIndex;
-    if (index < 0 || index >= this._colorbars.length) return;
+    if (index < 0 || index >= this._colorbarEntries.length) return;
 
-    this._map.removeControl(this._colorbars[index]);
-    this._colorbars.splice(index, 1);
-    this._colorbarEntries.splice(index, 1);
-    this._state.hasColorbar = this._colorbars.length > 0;
+    const [removed] = this._colorbarEntries.splice(index, 1);
+    this._syncPositionControl(removed.colorbarPosition);
+    this._state.hasColorbar = this._colorbarEntries.length > 0;
     this._state.selectedColorbarIndex = this._state.hasColorbar
-      ? Math.min(index, this._colorbars.length - 1)
+      ? Math.min(index, this._colorbarEntries.length - 1)
       : -1;
+    const selectedIndex = this._state.selectedColorbarIndex;
     this._colorbar =
-      this._state.selectedColorbarIndex >= 0
-        ? this._colorbars[this._state.selectedColorbarIndex]
+      selectedIndex >= 0
+        ? this._positionControls.get(
+            this._colorbarEntries[selectedIndex].colorbarPosition,
+          )
         : undefined;
     this._state.colorbars = this._colorbarEntries.map((item) => ({ ...item }));
-    if (this._state.selectedColorbarIndex >= 0) {
-      this._applyEntryToForm(
-        this._colorbarEntries[this._state.selectedColorbarIndex],
-      );
+    if (selectedIndex >= 0) {
+      this._applyEntryToForm(this._colorbarEntries[selectedIndex]);
     }
     this._updateButtonStates();
     this._emit("colorbarremove");
   }
 
   private _removeAllColorbars(): void {
-    if (!this._map) return;
-    this._colorbars.forEach((colorbar) => {
-      this._map!.removeControl(colorbar);
-    });
-    this._colorbars = [];
+    if (this._map) {
+      this._positionControls.forEach((control) => {
+        this._map!.removeControl(control);
+      });
+    }
+    this._positionControls.clear();
     this._colorbarEntries = [];
     this._colorbar = undefined;
     this._state.hasColorbar = false;

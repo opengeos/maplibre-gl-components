@@ -95,6 +95,51 @@ describe('Colorbar', () => {
     });
   });
 
+  describe('stack orientation', () => {
+    it('stacks entries vertically by default', () => {
+      const cb = new Colorbar({
+        colorbars: [
+          { label: 'A', vmin: 0, vmax: 1 },
+          { label: 'B', vmin: 0, vmax: 1 },
+        ],
+      });
+      const container = cb.onAdd(mockMap);
+      expect(container.style.flexDirection).toBe('column');
+    });
+
+    it('lays entries out in a row when stackOrientation is horizontal', () => {
+      const cb = new Colorbar({
+        stackOrientation: 'horizontal',
+        colorbars: [
+          { label: 'A', vmin: 0, vmax: 1 },
+          { label: 'B', vmin: 0, vmax: 1 },
+        ],
+      });
+      const container = cb.onAdd(mockMap);
+      expect(container.style.flexDirection).toBe('row');
+    });
+
+    it('switches stack direction on update without losing entries', () => {
+      const cb = new Colorbar({
+        colorbars: [
+          { label: 'A', vmin: 0, vmax: 1 },
+          { label: 'B', vmin: 0, vmax: 1 },
+        ],
+      });
+      const container = cb.onAdd(mockMap);
+      expect(container.style.flexDirection).toBe('column');
+
+      cb.update({ stackOrientation: 'horizontal' });
+      expect(container.style.flexDirection).toBe('row');
+      expect(
+        container.querySelectorAll('.maplibre-gl-colorbar-entry').length,
+      ).toBe(2);
+
+      cb.update({ stackOrientation: 'vertical' });
+      expect(container.style.flexDirection).toBe('column');
+    });
+  });
+
   describe('update', () => {
     it('should update colorbar options', () => {
       colorbar.onAdd(mockMap);
