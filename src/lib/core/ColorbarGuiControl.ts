@@ -18,6 +18,12 @@ import type {
 } from "./types";
 import { Colorbar } from "./Colorbar";
 import { getColormap, getColormapNames } from "../colormaps";
+import {
+  addPanelResizeHandles,
+  applyPanelMaxHeight,
+  applyUserPanelSize,
+  type UserPanelSize,
+} from "../utils/panelResize";
 
 /**
  * Default options for the ColorbarGuiControl.
@@ -74,6 +80,9 @@ export class ColorbarGuiControl implements IControl {
   private _handleZoom?: () => void;
   private _handleResize?: () => void;
   private _zoomVisible: boolean = true;
+  // The user-chosen panel size from the bottom-corner resize grips. Kept in
+  // memory (not serialized) and re-applied across panel open/close.
+  private _userPanelSize: UserPanelSize | null = null;
 
   // Active colorbar instances. Colorbars that share a corner are grouped into
   // a single Colorbar control (one per occupied position) so that updating an
@@ -309,9 +318,14 @@ export class ColorbarGuiControl implements IControl {
     const panel = document.createElement("div");
     panel.className = `colorbar-gui-panel ${this._options.position.includes("left") ? "right" : "left"}`;
     panel.style.width = `${this._options.panelWidth}px`;
-    // The height cap is applied in _updatePanelHeight() once the panel is in the
-    // DOM, so it can be sized to the available viewport space.
-    panel.style.overflowY = "auto";
+    // The panel floats beside the toggle button (position: absolute in CSS).
+    // Set it inline too so addPanelResizeHandles keeps it as the grips' anchor
+    // instead of forcing position: relative. Concrete sizing is applied in
+    // _reflowPanel once the panel is in the DOM. The panel becomes a flex
+    // column whose inner body scrolls (added by addPanelResizeHandles), so the
+    // panel itself never scrolls and the bottom-corner grips stay pinned to its
+    // visible edge.
+    panel.style.position = "absolute";
     panel.style.background = this._options.backgroundColor;
     panel.style.borderRadius = `${this._options.borderRadius}px`;
     panel.style.fontSize = `${this._options.fontSize}px`;
@@ -914,11 +928,28 @@ export class ColorbarGuiControl implements IControl {
     if (!this._panel && this._container) {
       this._panel = this._createPanel();
       this._container.appendChild(this._panel);
+      // Add the two bottom-corner resize grips once, on fresh creation. The
+      // panel persists across _showPanel calls while open, so the grips are not
+      // re-appended on every show.
+      addPanelResizeHandles({
+        panel: this._panel,
+        map: this._map,
+        container: this._container,
+        getUserSize: () => this._userPanelSize,
+        setUserSize: (size) => {
+          this._userPanelSize = size;
+        },
+      });
     }
     this._button?.classList.add("active");
-    this._updatePanelHeight();
+    this._reflowPanel();
+    // The panel must be in the DOM before its rect is meaningful, so re-apply
+    // the available-space cap and any persisted user size on the next frame.
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => this._reflowPanel());
+    }
     if (!this._handleResize) {
-      this._handleResize = () => this._updatePanelHeight();
+      this._handleResize = () => this._reflowPanel();
       window.addEventListener("resize", this._handleResize);
     }
   }
@@ -934,25 +965,30 @@ export class ColorbarGuiControl implements IControl {
   }
 
   /**
-   * Cap the panel height to the viewport space available below its top edge so
-   * the whole form (including the action buttons) stays visible when the screen
-   * is tall enough, scrolling only when the content would run past the screen
-   * edge. `maxHeight`, when set (> 0), acts as an explicit upper bound.
+   * Size the panel to the space available between its docked corner and the
+   * opposite map edge so the whole form stays visible when there is room,
+   * scrolling its inner body only when the content would run past that edge.
+   * `maxHeight`, when set (> 0), tightens the cap as an explicit upper bound.
+   * Then re-apply any persisted user-chosen size from the corner grips so it
+   * survives a re-render or map resize. Mirrors the other resizable panels.
    */
-  private _updatePanelHeight(): void {
+  private _reflowPanel(): void {
     if (!this._panel) return;
-    const VIEWPORT_MARGIN = 16;
-    const MIN_HEIGHT = 200;
-    const top = this._panel.getBoundingClientRect().top;
-    const available = Math.max(
-      MIN_HEIGHT,
-      window.innerHeight - top - VIEWPORT_MARGIN,
+    applyPanelMaxHeight(
+      this._panel,
+      this._map,
+      this._container,
+      this._options.maxHeight,
     );
-    const maxHeight =
-      this._options.maxHeight > 0
-        ? Math.min(this._options.maxHeight, available)
-        : available;
-    this._panel.style.maxHeight = `${maxHeight}px`;
+    applyUserPanelSize({
+      panel: this._panel,
+      map: this._map,
+      container: this._container,
+      getUserSize: () => this._userPanelSize,
+      setUserSize: (size) => {
+        this._userPanelSize = size;
+      },
+    });
   }
 
   private _setupZoomHandler(): void {
