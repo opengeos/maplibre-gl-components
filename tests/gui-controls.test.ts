@@ -264,6 +264,22 @@ describe("GUI controls multiple instances", () => {
     expect(panel.style.maxHeight).toBe("300px");
   });
 
+  it("sizes the colorbar panel to the available space by default", () => {
+    const control = new ColorbarGuiControl({ collapsed: false });
+    const container = control.onAdd(mockMap);
+    const panel = container.querySelector(".colorbar-gui-panel") as HTMLElement;
+
+    // No map container in the mock, so the cap is the hard ceiling clamped to
+    // the viewport (minus the edge margin). The panel itself never scrolls; its
+    // inner body does.
+    const expected = Math.min(PANEL_MAX_HEIGHT_CEILING, window.innerHeight - 12);
+    expect(panel.style.maxHeight).toBe(`${expected}px`);
+    expect(panel.style.overflowY).toBe("hidden");
+    const body = panel.querySelector(".maplibre-gl-panel-body") as HTMLElement;
+    expect(body).not.toBeNull();
+    expect(body.style.overflowY).toBe("auto");
+  });
+
   it("re-sizes the colorbar panel when the window is resized", () => {
     const control = new ColorbarGuiControl({ collapsed: false });
     const container = control.onAdd(mockMap);
@@ -271,18 +287,62 @@ describe("GUI controls multiple instances", () => {
 
     const original = window.innerHeight;
     try {
+      // A short viewport (below the ceiling) so the cap tracks it dynamically.
       Object.defineProperty(window, "innerHeight", {
-        value: 1200,
+        value: 400,
         configurable: true,
       });
       window.dispatchEvent(new Event("resize"));
-      expect(panel.style.maxHeight).toBe("1184px");
+      expect(panel.style.maxHeight).toBe(`${400 - 12}px`);
     } finally {
       Object.defineProperty(window, "innerHeight", {
         value: original,
         configurable: true,
       });
     }
+  });
+
+  it("renders both bottom-corner resize grips on the colorbar panel", () => {
+    const control = new ColorbarGuiControl({ collapsed: false });
+    const container = control.onAdd(mockMap);
+    const panel = container.querySelector(".colorbar-gui-panel") as HTMLElement;
+
+    expect(
+      panel.querySelectorAll(`.${PANEL_RESIZE_HANDLE_CLASS}`).length,
+    ).toBe(2);
+    expect(panel.querySelector(`.${PANEL_RESIZE_LEFT_CLASS}`)).not.toBeNull();
+    expect(panel.querySelector(`.${PANEL_RESIZE_RIGHT_CLASS}`)).not.toBeNull();
+    // The float-beside-button layout (position: absolute) is preserved so the
+    // grips anchor to the panel and width grows toward the map interior rather
+    // than the panel collapsing into normal flow.
+    expect(panel.style.position).toBe("absolute");
+  });
+
+  it("does not duplicate the colorbar grips when re-shown in place", () => {
+    const control = new ColorbarGuiControl({ collapsed: false }) as any;
+    const container = control.onAdd(mockMap);
+    // The panel persists across shows while open, so _showPanel must not append
+    // a second pair of grips.
+    control._showPanel();
+    control._showPanel();
+    const panel = container.querySelector(".colorbar-gui-panel") as HTMLElement;
+    expect(
+      panel.querySelectorAll(`.${PANEL_RESIZE_HANDLE_CLASS}`).length,
+    ).toBe(2);
+  });
+
+  it("re-applies a persisted colorbar panel size across collapse/expand", () => {
+    const control = new ColorbarGuiControl({ collapsed: false }) as any;
+    const container = control.onAdd(mockMap);
+    control._userPanelSize = {
+      width: PANEL_MIN_WIDTH + 40,
+      height: PANEL_MIN_HEIGHT + 70,
+    };
+    control.collapse();
+    control.expand();
+    const panel = container.querySelector(".colorbar-gui-panel") as HTMLElement;
+    expect(panel.style.width).toBe(`${PANEL_MIN_WIDTH + 40}px`);
+    expect(panel.style.height).toBe(`${PANEL_MIN_HEIGHT + 70}px`);
   });
 
   it("removes the resize listener when the panel is collapsed", () => {
