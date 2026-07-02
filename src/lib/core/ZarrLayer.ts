@@ -51,6 +51,17 @@ const COLORMAP_NAMES: ColormapName[] = [
 ];
 
 /**
+ * Parse a clim input value, preserving a valid `0` (which `value || fallback`
+ * would incorrectly coerce away) and using `fallback` only for empty/invalid
+ * input.
+ */
+function parseClim(raw: string, fallback: number): number {
+  if (raw.trim() === "") return fallback;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+/**
  * Check if a colormap array matches a named colormap.
  */
 function findColormapName(colors: string[]): ColormapName | "custom" {
@@ -773,6 +784,7 @@ export class ZarrLayerControl implements IControl {
         this._state.colormap = getColormapColors(this._colormapName);
       }
       this._updateColormapPreview();
+      this._updateColormap();
     });
     cmGroup.appendChild(cmSelect);
 
@@ -794,7 +806,8 @@ export class ZarrLayerControl implements IControl {
     minInput.style.color = "#000";
     minInput.value = String(this._state.clim[0]);
     minInput.addEventListener("input", () => {
-      this._state.clim = [Number(minInput.value) || 0, this._state.clim[1]];
+      this._state.clim = [parseClim(minInput.value, 0), this._state.clim[1]];
+      this._updateClim();
     });
     minGroup.appendChild(minInput);
     climRow.appendChild(minGroup);
@@ -805,7 +818,8 @@ export class ZarrLayerControl implements IControl {
     maxInput.style.color = "#000";
     maxInput.value = String(this._state.clim[1]);
     maxInput.addEventListener("input", () => {
-      this._state.clim = [this._state.clim[0], Number(maxInput.value) || 1];
+      this._state.clim = [this._state.clim[0], parseClim(maxInput.value, 1)];
+      this._updateClim();
     });
     maxGroup.appendChild(maxInput);
     climRow.appendChild(maxGroup);
@@ -1254,6 +1268,46 @@ export class ZarrLayerControl implements IControl {
       if (typeof layer.setOpacity === "function") {
         layer.setOpacity(opacity);
       }
+    }
+    if (this._map) {
+      this._map.triggerRepaint();
+    }
+  }
+
+  /**
+   * Apply the current colormap to every live Zarr layer (and record it in the
+   * per-layer props), so changing the colormap picker restyles the layers in
+   * place instead of only updating the preview. Mirrors {@link _updateOpacity}.
+   */
+  private _updateColormap(): void {
+    if (this._zarrLayers.size === 0) return;
+    const colormap = this._state.colormap;
+    for (const [layerId, layer] of this._zarrLayers) {
+      if (typeof layer.setColormap === "function") {
+        layer.setColormap(colormap);
+      }
+      const props = this._zarrLayerPropsMap.get(layerId);
+      if (props) props.colormap = colormap;
+    }
+    if (this._map) {
+      this._map.triggerRepaint();
+    }
+  }
+
+  /**
+   * Apply the current color limits to every live Zarr layer (and record them in
+   * the per-layer props), so editing Clim Min/Max restyles the layers in place.
+   * Mirrors {@link _updateOpacity}.
+   */
+  private _updateClim(): void {
+    if (this._zarrLayers.size === 0) return;
+    const clim = this._state.clim;
+    for (const [layerId, layer] of this._zarrLayers) {
+      if (typeof layer.setClim === "function") {
+        layer.setClim(clim);
+      }
+      const props = this._zarrLayerPropsMap.get(layerId);
+      if (props) props.clim = clim;
     }
     if (this._map) {
       this._map.triggerRepaint();
