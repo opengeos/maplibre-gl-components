@@ -51,6 +51,17 @@ const COLORMAP_NAMES: ColormapName[] = [
 ];
 
 /**
+ * Parse a clim input value, preserving a valid `0` (which `value || fallback`
+ * would incorrectly coerce away) and using `fallback` only for empty/invalid
+ * input.
+ */
+function parseClim(raw: string, fallback: number): number {
+  if (raw.trim() === "") return fallback;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+/**
  * Check if a colormap array matches a named colormap.
  */
 function findColormapName(colors: string[]): ColormapName | "custom" {
@@ -795,7 +806,7 @@ export class ZarrLayerControl implements IControl {
     minInput.style.color = "#000";
     minInput.value = String(this._state.clim[0]);
     minInput.addEventListener("input", () => {
-      this._state.clim = [Number(minInput.value) || 0, this._state.clim[1]];
+      this._state.clim = [parseClim(minInput.value, 0), this._state.clim[1]];
       this._updateClim();
     });
     minGroup.appendChild(minInput);
@@ -807,7 +818,7 @@ export class ZarrLayerControl implements IControl {
     maxInput.style.color = "#000";
     maxInput.value = String(this._state.clim[1]);
     maxInput.addEventListener("input", () => {
-      this._state.clim = [this._state.clim[0], Number(maxInput.value) || 1];
+      this._state.clim = [this._state.clim[0], parseClim(maxInput.value, 1)];
       this._updateClim();
     });
     maxGroup.appendChild(maxInput);

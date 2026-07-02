@@ -88,6 +88,16 @@ describe("ZarrLayerControl live restyle", () => {
     expect(map.triggerRepaint).toHaveBeenCalled();
   });
 
+  it("preserves a clim max of 0 instead of coercing it to 1", () => {
+    const maxInput = container.querySelectorAll(
+      'input.maplibre-gl-zarr-layer-input[type="number"]'
+    )[1] as HTMLInputElement;
+    maxInput.value = "0";
+    maxInput.dispatchEvent(new Event("input"));
+    const lastClim = fake.setClim.mock.calls.at(-1)?.[0];
+    expect(lastClim?.[1]).toBe(0);
+  });
+
   it("_updateColormap/_updateClim are safe no-ops with no layers", () => {
     control._zarrLayers.clear();
     expect(() => control._updateColormap()).not.toThrow();
