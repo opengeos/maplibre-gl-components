@@ -2048,8 +2048,12 @@ export interface PMTilesLayerControlState {
   visible: boolean;
   /** Whether the panel is collapsed. */
   collapsed: boolean;
-  /** Current PMTiles URL. */
+  /** Current PMTiles URL. For a local file this is an object URL created from
+   * the picked `File`; `localFileName` then holds the display name. */
   url: string;
+  /** Display name of the currently selected local file, if the source is a
+   * local file rather than a remote URL. */
+  localFileName?: string;
   /** Current layer name (optional, auto-generated if empty). */
   layerName: string;
   /** Current opacity (0-1). */

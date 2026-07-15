@@ -170,6 +170,9 @@ export class PMTilesLayerControl implements IControl {
   private _protocol?: any;
   private _popup?: Popup;
   private _clickHandler?: (e: MapMouseEvent) => void;
+  /** Object URL for the currently selected local file, tracked so it can be
+   * revoked when the selection changes or the control is removed. */
+  private _objectUrl?: string;
 
   constructor(options?: PMTilesLayerControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -255,6 +258,40 @@ export class PMTilesLayerControl implements IControl {
     this._button = undefined;
     this._panel = undefined;
     this._eventHandlers.clear();
+  }
+
+  /**
+   * Selects a local `.pmtiles` file as the source. The file is exposed to the
+   * rest of the load flow as an object URL (which supports HTTP range
+   * requests), so it flows through the same code path as a remote URL.
+   */
+  private _selectLocalFile(file: File): void {
+    // Not revoked on re-pick or teardown: an object URL can be referenced by an
+    // already-added layer that outlives the control, and revoking it would
+    // break that layer. Object URLs backed by disk files are cheap and are
+    // reclaimed when the page unloads.
+    this._objectUrl = URL.createObjectURL(file);
+    this._state.url = this._objectUrl;
+    this._state.localFileName = file.name;
+    this._state.availableSourceLayers = [];
+    this._state.selectedSourceLayers = [];
+    this._state.error = null;
+    this._state.status = null;
+    this._syncFetchButton();
+    this._render();
+  }
+
+  /** Clears a selected local file, returning the panel to URL entry. */
+  private _clearLocalFile(): void {
+    this._objectUrl = undefined;
+    this._state.url = "";
+    this._state.localFileName = undefined;
+    this._state.availableSourceLayers = [];
+    this._state.selectedSourceLayers = [];
+    this._state.error = null;
+    this._state.status = null;
+    this._syncFetchButton();
+    this._render();
   }
 
   show(): void {
@@ -720,28 +757,72 @@ export class PMTilesLayerControl implements IControl {
     header.appendChild(closeBtn);
     panel.appendChild(header);
 
-    // URL input
+    // URL input. When a local file is selected its display name is shown here
+    // (read-only); the loadable object URL lives in `this._state.url`.
+    const usingLocalFile = Boolean(this._state.localFileName);
     const urlGroup = this._createFormGroup("PMTiles URL", "url");
     const urlInput = document.createElement("input");
     urlInput.type = "text";
     urlInput.className = "maplibre-gl-pmtiles-layer-input";
     urlInput.style.color = "#000";
     urlInput.placeholder = "https://example.com/tiles.pmtiles";
-    urlInput.value = this._state.url;
+    urlInput.value = usingLocalFile
+      ? (this._state.localFileName as string)
+      : this._state.url;
+    urlInput.readOnly = usingLocalFile;
     urlInput.addEventListener("input", () => {
       this._state.url = urlInput.value;
       this._syncFetchButton();
     });
     urlGroup.appendChild(urlInput);
-    const sampleDropdown = createSampleDropdown(
-      this._options.sampleData,
-      this._options.sampleDataLabel,
-      (url) => {
-        urlInput.value = url;
-        this._state.url = url;
-        this._syncFetchButton();
-      },
-    );
+
+    // Local-file picker: choose a `.pmtiles` file from disk instead of a URL.
+    const fileRow = document.createElement("div");
+    fileRow.style.display = "flex";
+    fileRow.style.gap = "6px";
+    fileRow.style.alignItems = "center";
+    fileRow.style.marginTop = "6px";
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".pmtiles";
+    fileInput.style.display = "none";
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files?.[0];
+      if (file) this._selectLocalFile(file);
+      fileInput.value = "";
+    });
+    const fileBtn = document.createElement("button");
+    fileBtn.type = "button";
+    fileBtn.className = "maplibre-gl-pmtiles-layer-btn";
+    fileBtn.textContent = usingLocalFile ? "Change file" : "Local file...";
+    fileBtn.style.padding = "4px 10px";
+    fileBtn.style.fontSize = "11px";
+    fileBtn.addEventListener("click", () => fileInput.click());
+    fileRow.appendChild(fileBtn);
+    if (usingLocalFile) {
+      const clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.className = "maplibre-gl-pmtiles-layer-btn";
+      clearBtn.textContent = "Clear";
+      clearBtn.style.padding = "4px 10px";
+      clearBtn.style.fontSize = "11px";
+      clearBtn.addEventListener("click", () => this._clearLocalFile());
+      fileRow.appendChild(clearBtn);
+    }
+    fileRow.appendChild(fileInput);
+    urlGroup.appendChild(fileRow);
+
+    const sampleDropdown = usingLocalFile
+      ? null
+      : createSampleDropdown(
+          this._options.sampleData,
+          this._options.sampleDataLabel,
+          (url) => {
+            urlInput.value = url;
+            this._state.url = url;
+            this._syncFetchButton();
+          },
+        );
     if (sampleDropdown) panel.appendChild(sampleDropdown);
     panel.appendChild(urlGroup);
 
