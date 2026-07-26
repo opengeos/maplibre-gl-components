@@ -91,6 +91,133 @@ function getColormapColors(name: ColormapName): string[] {
 const ZARR_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`;
 
 /**
+ * Coordinate/dimension arrays a Zarr store carries alongside its data variables.
+ * They are valid arrays but never what a user wants to render.
+ */
+const COORDINATE_ARRAY_NAMES = new Set([
+  "x",
+  "y",
+  "lat",
+  "lon",
+  "latitude",
+  "longitude",
+  "time",
+  "band",
+  "month",
+  "spatial_ref",
+]);
+
+/**
+ * Reduce a list of array paths to the data variables worth offering, keeping the
+ * last path segment (`"5/climate"` -> `"climate"`) and dropping coordinate
+ * arrays. Falls back to every name when the filter leaves nothing, so a store
+ * whose only arrays look like coordinates is still listable. Shared by the Zarr
+ * v3 (consolidated `zarr.json`) and v2 (`.zmetadata`) listings.
+ *
+ * @internal Exported for tests.
+ */
+export function pickDataVariables(paths: string[]): string[] {
+  const leafNames = paths
+    .map((path) => path.split("/").pop() ?? path)
+    .filter(Boolean);
+  const dataVariables = leafNames.filter(
+    (name) => !COORDINATE_ARRAY_NAMES.has(name),
+  );
+  const variables = new Set(
+    dataVariables.length > 0 ? dataVariables : leafNames,
+  );
+  return Array.from(variables).sort();
+}
+
+/**
+ * Pull a spatial reference out of one Zarr node's attributes.
+ *
+ * `crs_wkt` is deliberately ignored: the renderer recognizes only
+ * `EPSG:4326`/`EPSG:3857` by identifier and needs a proj4 definition for
+ * anything else, so converting WKT would mean a new dependency for no gain.
+ *
+ * @internal Exported for tests.
+ */
+export function zarrSpatialMetadataFromAttributes(
+  attributes: unknown,
+): ZarrSpatialMetadata {
+  if (!attributes || typeof attributes !== "object") return {};
+  const attrs = attributes as Record<string, unknown>;
+  const result: ZarrSpatialMetadata = {};
+  if (typeof attrs.proj4 === "string" && attrs.proj4.trim()) {
+    result.proj4 = attrs.proj4.trim();
+  }
+  if (typeof attrs.crs === "string" && attrs.crs.trim()) {
+    result.crs = attrs.crs.trim();
+  }
+  const bounds = attrs.bounds;
+  if (
+    Array.isArray(bounds) &&
+    bounds.length === 4 &&
+    bounds.every((value) => typeof value === "number" && Number.isFinite(value))
+  ) {
+    result.bounds = bounds as [number, number, number, number];
+  }
+  return result;
+}
+
+/**
+ * Read the spatial reference from a Zarr v3 root `zarr.json`: the group's own
+ * attributes first, then a CF-style `spatial_ref` coordinate in the consolidated
+ * metadata (whose bounds/proj4 some writers put there instead).
+ *
+ * @internal Exported for tests.
+ */
+export function zarrSpatialMetadataFromV3Root(
+  metadata: unknown,
+): ZarrSpatialMetadata {
+  const root = metadata as
+    | {
+        attributes?: unknown;
+        consolidated_metadata?: { metadata?: Record<string, unknown> };
+      }
+    | null
+    | undefined;
+  const fromRoot = zarrSpatialMetadataFromAttributes(root?.attributes);
+  const nodes = root?.consolidated_metadata?.metadata ?? {};
+  const spatialRef = nodes.spatial_ref as { attributes?: unknown } | undefined;
+  const fromSpatialRef = zarrSpatialMetadataFromAttributes(
+    spatialRef?.attributes,
+  );
+  // The root wins where both speak: it describes the group the user asked for.
+  return { ...fromSpatialRef, ...fromRoot };
+}
+
+/**
+ * Read the spatial reference from Zarr v2 consolidated metadata (`.zmetadata`),
+ * where the root attributes live under the `".zattrs"` key.
+ *
+ * @internal Exported for tests.
+ */
+export function zarrSpatialMetadataFromV2Consolidated(
+  metadata: unknown,
+): ZarrSpatialMetadata {
+  const entries =
+    (metadata as { metadata?: Record<string, unknown> } | null | undefined)
+      ?.metadata ?? {};
+  const fromRoot = zarrSpatialMetadataFromAttributes(entries[".zattrs"]);
+  const fromSpatialRef = zarrSpatialMetadataFromAttributes(
+    entries["spatial_ref/.zattrs"],
+  );
+  return { ...fromSpatialRef, ...fromRoot };
+}
+
+/**
+ * The spatial reference a Zarr store declares about itself: enough to place a
+ * projected grid without the user supplying anything.
+ */
+export interface ZarrSpatialMetadata {
+  crs?: string;
+  proj4?: string;
+  bounds?: [number, number, number, number];
+}
+
+/**
  * Default options for the ZarrLayerControl.
  */
 const DEFAULT_OPTIONS: Required<ZarrLayerControlOptions> = {
@@ -108,6 +235,8 @@ const DEFAULT_OPTIONS: Required<ZarrLayerControlOptions> = {
   defaultClim: [0, 1],
   defaultSelector: {},
   defaultLayerName: "",
+  defaultCrs: "",
+  defaultProj4: "",
   defaultOpacity: 1,
   defaultPickable: true,
   panelWidth: 300,
@@ -165,6 +294,8 @@ export class ZarrLayerControl implements IControl {
   private _colormapName: ColormapName | "custom" = "viridis";
   private _customColormap?: string[];
   private _availableVariables: string[] = [];
+  /** Per-store spatial reference read from the store's own metadata. */
+  private _spatialMetadataCache = new Map<string, ZarrSpatialMetadata>();
   private _variablesLoading: boolean = false;
 
   constructor(options?: ZarrLayerControlOptions) {
@@ -187,6 +318,8 @@ export class ZarrLayerControl implements IControl {
       clim: this._options.defaultClim,
       selector: this._options.defaultSelector,
       layerName: this._options.defaultLayerName,
+      crs: this._options.defaultCrs,
+      proj4: this._options.defaultProj4,
       layerOpacity: this._options.defaultOpacity,
       pickable: this._options.defaultPickable,
       hasLayer: false,
@@ -453,6 +586,42 @@ export class ZarrLayerControl implements IControl {
     try {
       const url = this._state.url.replace(/\/$/, "");
 
+      // Zarr v3 first: a consolidated store's root zarr.json embeds every child
+      // node's metadata, so the arrays can be listed from the one response.
+      // Probing it first also means a v3 store never reaches the v2 `.zmetadata`
+      // / `.zgroup` requests below, which would 404 and surface as errors in a
+      // host's network diagnostics even though the store is perfectly valid.
+      try {
+        const response = await fetch(`${url}/zarr.json`);
+        if (response.ok) {
+          const metadata = await response.json();
+          const nodes = metadata?.consolidated_metadata?.metadata ?? {};
+          const arrays = Object.entries(nodes as Record<string, unknown>)
+            .filter(
+              ([, node]) =>
+                (node as { node_type?: string })?.node_type === "array",
+            )
+            .map(([name]) => name);
+          const variables = pickDataVariables(arrays);
+          if (variables.length > 0) {
+            this._availableVariables = variables;
+            this._variablesLoading = false;
+            this._render();
+            return variables;
+          }
+          // A valid v3 group without consolidated metadata cannot be listed
+          // without a directory listing, so leave the field for manual entry
+          // rather than falling through to the v2 probes.
+          if (metadata?.node_type === "group") {
+            this._variablesLoading = false;
+            this._render();
+            return this._availableVariables;
+          }
+        }
+      } catch {
+        // Not a Zarr v3 store, or the request failed.
+      }
+
       // Try to fetch .zmetadata (consolidated metadata for Zarr v2)
       try {
         const response = await fetch(`${url}/.zmetadata`);
@@ -463,43 +632,7 @@ export class ZarrLayerControl implements IControl {
             .map((key) => key.replace("/.zarray", ""))
             .filter((name) => name && !name.startsWith("."));
 
-          // Extract unique variable names (last part of path, excluding coordinate arrays)
-          const coordArrays = new Set([
-            "x",
-            "y",
-            "lat",
-            "lon",
-            "latitude",
-            "longitude",
-            "time",
-            "band",
-            "month",
-            "spatial_ref",
-          ]);
-          const uniqueVars = new Set<string>();
-
-          for (const path of allPaths) {
-            // Get the last part of the path (e.g., "5/climate" -> "climate")
-            const parts = path.split("/");
-            const varName = parts[parts.length - 1];
-            // Skip coordinate/dimension arrays, keep data variables
-            if (!coordArrays.has(varName)) {
-              uniqueVars.add(varName);
-            }
-          }
-
-          // If no data variables found, fall back to showing all unique names
-          let variables = Array.from(uniqueVars);
-          if (variables.length === 0) {
-            const allNames = new Set<string>();
-            for (const path of allPaths) {
-              const parts = path.split("/");
-              allNames.add(parts[parts.length - 1]);
-            }
-            variables = Array.from(allNames);
-          }
-
-          variables.sort();
+          const variables = pickDataVariables(allPaths);
 
           if (variables.length > 0) {
             this._availableVariables = variables;
@@ -510,21 +643,6 @@ export class ZarrLayerControl implements IControl {
         }
       } catch {
         // .zmetadata not available
-      }
-
-      // Try to fetch zarr.json (Zarr v3)
-      try {
-        const response = await fetch(`${url}/zarr.json`);
-        if (response.ok) {
-          const metadata = await response.json();
-          // For Zarr v3, look for node_type: "array" in the root
-          if (metadata.node_type === "group") {
-            // Need to list contents - this is more complex for v3
-            // For now, return empty and let user enter manually
-          }
-        }
-      } catch {
-        // zarr.json not available
       }
 
       // Try to fetch .zgroup and then list directory contents
@@ -747,6 +865,40 @@ export class ZarrLayerControl implements IControl {
 
     varGroup.appendChild(varRow);
     panel.appendChild(varGroup);
+
+    // CRS / proj4 inputs. A store in a projected CRS (a national grid, a polar
+    // stereographic grid) is read as WGS84 without these, so it renders in the
+    // wrong place. Both are optional: when left empty the store's own metadata
+    // is consulted (see _detectSpatialMetadata), and only then does the layer
+    // fall back to WGS84.
+    const crsGroup = this._createFormGroup("CRS (optional)", "crs");
+    const crsInput = document.createElement("input");
+    crsInput.type = "text";
+    crsInput.className = "maplibre-gl-zarr-layer-input";
+    crsInput.style.color = "#000";
+    crsInput.placeholder = "e.g. EPSG:4326 (auto-detected when empty)";
+    crsInput.value = this._state.crs;
+    crsInput.addEventListener("input", () => {
+      this._state.crs = crsInput.value;
+    });
+    crsGroup.appendChild(crsInput);
+    panel.appendChild(crsGroup);
+
+    const proj4Group = this._createFormGroup(
+      "proj4 definition (optional)",
+      "proj4",
+    );
+    const proj4Input = document.createElement("input");
+    proj4Input.type = "text";
+    proj4Input.className = "maplibre-gl-zarr-layer-input";
+    proj4Input.style.color = "#000";
+    proj4Input.placeholder = "+proj=stere +lat_0=-90 ...";
+    proj4Input.value = this._state.proj4;
+    proj4Input.addEventListener("input", () => {
+      this._state.proj4 = proj4Input.value;
+    });
+    proj4Group.appendChild(proj4Input);
+    panel.appendChild(proj4Group);
 
     // Colormap dropdown
     const cmGroup = this._createFormGroup("Colormap", "colormap");
@@ -1103,9 +1255,21 @@ export class ZarrLayerControl implements IControl {
         layerOptions.transformRequest =
           overrides.transformRequest as ZarrLayerOptions["transformRequest"];
       }
-      if (overrides?.crs) layerOptions.crs = overrides.crs;
-      if (overrides?.proj4) layerOptions.proj4 = overrides.proj4;
-      if (overrides?.bounds) layerOptions.bounds = overrides.bounds;
+      // Spatial reference precedence: the caller's override, then the panel's
+      // fields, then whatever the store itself declares. Only a store with no
+      // spatial metadata at all is left to the renderer's WGS84 default.
+      const panelCrs = this._state.crs?.trim();
+      const panelProj4 = this._state.proj4?.trim();
+      const detected =
+        overrides?.crs || overrides?.proj4 || panelCrs || panelProj4
+          ? {}
+          : await this._detectSpatialMetadata(this._state.url);
+      const crs = overrides?.crs ?? (panelCrs || detected.crs);
+      const proj4 = overrides?.proj4 ?? (panelProj4 || detected.proj4);
+      const bounds = overrides?.bounds ?? detected.bounds;
+      if (crs) layerOptions.crs = crs;
+      if (proj4) layerOptions.proj4 = proj4;
+      if (bounds) layerOptions.bounds = bounds;
       if (overrides?.spatialDimensions) {
         layerOptions.spatialDimensions = overrides.spatialDimensions;
       }
@@ -1314,6 +1478,67 @@ export class ZarrLayerControl implements IControl {
     }
   }
 
+  /**
+   * Read the spatial reference a store declares about itself, so a projected
+   * store lands in the right place without the user pasting a proj4 string.
+   *
+   * Looks at the root attributes (Zarr v3 `zarr.json`, v2 `.zattrs`) for a
+   * `proj4`/`crs` definition and `bounds`, then at a CF-style `spatial_ref`
+   * coordinate's attributes for a `proj4` definition. `crs_wkt` is deliberately
+   * ignored: the renderer only recognizes `EPSG:4326`/`EPSG:3857` by identifier
+   * and needs a proj4 string for anything else, and converting WKT would mean a
+   * new dependency.
+   *
+   * Failures are silent: detection is a convenience, and a store that says
+   * nothing simply renders as WGS84 the way it did before.
+   */
+  private async _detectSpatialMetadata(
+    url: string,
+  ): Promise<ZarrSpatialMetadata> {
+    const trimmed = url?.replace(/\/$/, "");
+    if (!trimmed) return {};
+
+    const cached = this._spatialMetadataCache.get(trimmed);
+    if (cached) return cached;
+
+    const detected = await this._readSpatialMetadata(trimmed);
+    this._spatialMetadataCache.set(trimmed, detected);
+    return detected;
+  }
+
+  private async _readSpatialMetadata(
+    url: string,
+  ): Promise<ZarrSpatialMetadata> {
+    try {
+      // Zarr v3: the root zarr.json carries the group attributes, and a
+      // consolidated store embeds every child node's metadata with it.
+      const v3 = await fetch(`${url}/zarr.json`);
+      if (v3.ok) return zarrSpatialMetadataFromV3Root(await v3.json());
+    } catch {
+      // Not a v3 store, or the request failed: fall through to v2.
+    }
+
+    try {
+      // Zarr v2: consolidated metadata keeps the root attributes under ".zattrs".
+      const consolidated = await fetch(`${url}/.zmetadata`);
+      if (consolidated.ok) {
+        return zarrSpatialMetadataFromV2Consolidated(await consolidated.json());
+      }
+    } catch {
+      // Nothing to detect.
+    }
+
+    try {
+      const attrs = await fetch(`${url}/.zattrs`);
+      if (attrs.ok)
+        return zarrSpatialMetadataFromAttributes(await attrs.json());
+    } catch {
+      // Nothing to detect.
+    }
+
+    return {};
+  }
+
   private _buildLayerInfoList(): ZarrLayerInfo[] {
     const list: ZarrLayerInfo[] = [];
     for (const [layerId, props] of this._zarrLayerPropsMap) {
@@ -1326,6 +1551,9 @@ export class ZarrLayerControl implements IControl {
         clim: props.clim as [number, number],
         selector: props.selector as Record<string, number | string> | undefined,
         opacity: (props.opacity as number) ?? 1,
+        crs: (props.crs as string) || undefined,
+        proj4: (props.proj4 as string) || undefined,
+        bounds: props.bounds as [number, number, number, number] | undefined,
       });
     }
     return list;

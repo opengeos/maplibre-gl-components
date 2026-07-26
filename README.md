@@ -1005,6 +1005,8 @@ interface ZarrLayerControlOptions {
   defaultColormap?: string[];          // Array of hex colors. Default: viridis
   defaultClim?: [number, number];      // Color limits [min, max]. Default: [0, 1]
   defaultSelector?: Record<string, number | string>;  // Dimension selectors
+  defaultCrs?: string;                 // CRS identifier, e.g. "EPSG:4326"
+  defaultProj4?: string;               // proj4 definition for a projected store
   defaultOpacity?: number;             // Layer opacity. Default: 1
   panelWidth?: number;                 // Panel width in pixels. Default: 300
   backgroundColor?: string;
@@ -1032,11 +1034,21 @@ zarrControl.setLayerOpacity(id, opacity)  // Set layer opacity
 zarrControl.getLayerVisibility(id)     // Check if layer is visible
 zarrControl.setLayerVisibility(id, visible)  // Show/hide layer
 zarrControl.getLayerUrl(id)            // Get Zarr URL for a layer
-zarrControl.fetchVariables()           // Fetch available variables from store
+zarrControl.fetchVariables()           // Fetch available variables from store (Zarr v2 and v3)
 zarrControl.on('layeradd', handler)    // Fired when layer is added
 zarrControl.on('layerremove', handler) // Fired when layer is removed
 zarrControl.on('error', handler)       // Fired on error
 ```
+
+**Projected stores.** A Zarr store whose coordinates are not lat/lon (a national
+grid, a polar stereographic grid) needs a spatial reference, or it is read as
+WGS84 and renders in the wrong place. The panel's **CRS** and **proj4** fields
+supply one, `addLayer(url, variable, { crs, proj4, bounds })` overrides it per
+call, and when both are left empty the control reads the store's own metadata
+(the root `zarr.json`/`.zattrs` attributes, then a CF-style `spatial_ref`
+coordinate) for a `proj4`/`crs` definition and `bounds`. Only the renderer's
+built-in projections (`EPSG:4326`, `EPSG:3857`) are recognized by identifier;
+anything else needs a matching proj4 definition.
 
 **Features:**
 
@@ -1456,31 +1468,31 @@ An inset overview map that shows the current viewport extent on a smaller map. S
 
 ```typescript
 interface MinimapControlOptions {
-  position?: ControlPosition;          // Control position (default: 'bottom-left')
-  className?: string;                  // Custom CSS class
-  visible?: boolean;                   // Initial visibility (default: true)
-  collapsed?: boolean;                 // Start collapsed (default: false)
-  width?: number;                      // Minimap width in pixels (default: 250)
-  height?: number;                     // Minimap height in pixels (default: 180)
-  zoomOffset?: number;                 // Zoom offset from main map (default: -5)
-  style?: string | object;             // Map style URL or object
-  viewportRectColor?: string;          // Viewport rectangle color (default: '#0078d7')
-  viewportRectOpacity?: number;        // Viewport rectangle fill opacity (default: 0.2)
-  toggleable?: boolean;                // Whether minimap can be toggled (default: true)
-  interactive?: boolean;               // Click minimap to navigate main map (default: false)
+  position?: ControlPosition; // Control position (default: 'bottom-left')
+  className?: string; // Custom CSS class
+  visible?: boolean; // Initial visibility (default: true)
+  collapsed?: boolean; // Start collapsed (default: false)
+  width?: number; // Minimap width in pixels (default: 250)
+  height?: number; // Minimap height in pixels (default: 180)
+  zoomOffset?: number; // Zoom offset from main map (default: -5)
+  style?: string | object; // Map style URL or object
+  viewportRectColor?: string; // Viewport rectangle color (default: '#0078d7')
+  viewportRectOpacity?: number; // Viewport rectangle fill opacity (default: 0.2)
+  toggleable?: boolean; // Whether minimap can be toggled (default: true)
+  interactive?: boolean; // Click minimap to navigate main map (default: false)
   minzoom?: number;
   maxzoom?: number;
 }
 
 // Methods
-minimapControl.show()
-minimapControl.hide()
-minimapControl.expand()                // Show the minimap panel
-minimapControl.collapse()              // Hide the minimap panel
-minimapControl.toggle()                // Toggle panel visibility
-minimapControl.getState()
-minimapControl.on(event, handler)      // 'show' | 'hide' | 'expand' | 'collapse'
-minimapControl.off(event, handler)
+minimapControl.show();
+minimapControl.hide();
+minimapControl.expand(); // Show the minimap panel
+minimapControl.collapse(); // Hide the minimap panel
+minimapControl.toggle(); // Toggle panel visibility
+minimapControl.getState();
+minimapControl.on(event, handler); // 'show' | 'hide' | 'expand' | 'collapse'
+minimapControl.off(event, handler);
 ```
 
 **Usage:**
@@ -1518,22 +1530,22 @@ A control that automatically spins the globe by continuously shifting the map ce
 
 ```typescript
 interface SpinGlobeControlOptions {
-  speed?: number;               // Rotation speed in degrees per second (default: 10)
-  spinOnLoad?: boolean;         // Auto-start spinning when added to the map (default: false)
+  speed?: number; // Rotation speed in degrees per second (default: 10)
+  spinOnLoad?: boolean; // Auto-start spinning when added to the map (default: false)
   pauseOnInteraction?: boolean; // Stop on drag/zoom/touch/rotate/pitch/wheel (default: true)
 }
 ```
 
 ```typescript
 // Methods
-spinControl.startSpin()
-spinControl.stopSpin()
-spinControl.toggleSpin()
-spinControl.isSpinning()              // Returns true if currently spinning
-spinControl.getState()                // Returns { spinning: boolean }
-spinControl.update(options)           // Update speed or other options at runtime
-spinControl.on(event, handler)        // 'spinstart' | 'spinstop'
-spinControl.off(event, handler)
+spinControl.startSpin();
+spinControl.stopSpin();
+spinControl.toggleSpin();
+spinControl.isSpinning(); // Returns true if currently spinning
+spinControl.getState(); // Returns { spinning: boolean }
+spinControl.update(options); // Update speed or other options at runtime
+spinControl.on(event, handler); // 'spinstart' | 'spinstop'
+spinControl.off(event, handler);
 ```
 
 **Usage:**
@@ -1572,19 +1584,19 @@ A collapsible toolbar grid that organizes multiple controls (built-in and plugin
 
 ```typescript
 interface ControlGridOptions {
-  title?: string;                         // Header title
-  position?: ControlPosition;             // Control position (default: 'top-right')
-  visible?: boolean;                      // Initial visibility (default: true)
-  collapsible?: boolean;                  // Whether grid is collapsible (default: true)
-  collapsed?: boolean;                    // Start collapsed (default: true)
-  rows?: number;                          // Grid rows, 1-12 (default: 1)
-  columns?: number;                       // Grid columns, 1-12 (default: 3)
-  showRowColumnControls?: boolean;        // Show row/column input fields (default: true)
-  controls?: IControl[];                  // Custom IControl instances
+  title?: string; // Header title
+  position?: ControlPosition; // Control position (default: 'top-right')
+  visible?: boolean; // Initial visibility (default: true)
+  collapsible?: boolean; // Whether grid is collapsible (default: true)
+  collapsed?: boolean; // Start collapsed (default: true)
+  rows?: number; // Grid rows, 1-12 (default: 1)
+  columns?: number; // Grid columns, 1-12 (default: 3)
+  showRowColumnControls?: boolean; // Show row/column input fields (default: true)
+  controls?: IControl[]; // Custom IControl instances
   defaultControls?: DefaultControlName[]; // Built-in control names (26 available)
-  gap?: number;                           // Gap between cells in pixels (default: 6)
-  basemapStyleUrl?: string;               // Basemap style URL for SwipeControl
-  excludeLayers?: string[];               // Layer patterns to exclude from SwipeControl
+  gap?: number; // Gap between cells in pixels (default: 6)
+  basemapStyleUrl?: string; // Basemap style URL for SwipeControl
+  excludeLayers?: string[]; // Layer patterns to exclude from SwipeControl
   streetViewOptions?: Partial<StreetViewControlOptions>; // Optional API keys and StreetView config overrides
   backgroundColor?: string;
   padding?: number;
@@ -1610,20 +1622,20 @@ Mapillary viewer CSS is bundled by `maplibre-gl-components`, so no extra `mapill
 
 ```typescript
 // Methods
-controlGrid.addControl(control)       // Add a control to the grid
-controlGrid.removeControl(control)    // Remove a control from the grid
-controlGrid.getControls()             // Get all controls in the grid
-controlGrid.getAdapters()             // Get layer adapters for LayerControl integration
-controlGrid.show()
-controlGrid.hide()
-controlGrid.expand()
-controlGrid.collapse()
-controlGrid.toggle()
-controlGrid.setRows(n)
-controlGrid.setColumns(n)
-controlGrid.getState()
-controlGrid.on(event, handler)        // 'show' | 'hide' | 'expand' | 'collapse' | 'controladd' | 'controlremove'
-controlGrid.off(event, handler)
+controlGrid.addControl(control); // Add a control to the grid
+controlGrid.removeControl(control); // Remove a control from the grid
+controlGrid.getControls(); // Get all controls in the grid
+controlGrid.getAdapters(); // Get layer adapters for LayerControl integration
+controlGrid.show();
+controlGrid.hide();
+controlGrid.expand();
+controlGrid.collapse();
+controlGrid.toggle();
+controlGrid.setRows(n);
+controlGrid.setColumns(n);
+controlGrid.getState();
+controlGrid.on(event, handler); // 'show' | 'hide' | 'expand' | 'collapse' | 'controladd' | 'controlremove'
+controlGrid.off(event, handler);
 ```
 
 **Usage:**
@@ -1636,15 +1648,24 @@ const controlGrid = new ControlGrid({
   columns: 5,
   collapsible: true,
   collapsed: true,
-  basemapStyleUrl: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+  basemapStyleUrl:
+    "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
   streetViewOptions: {
     // Optional explicit override (otherwise auto-read from VITE_* env vars)
     googleApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     mapillaryAccessToken: import.meta.env.VITE_MAPILLARY_ACCESS_TOKEN,
   },
   defaultControls: [
-    "globe", "fullscreen", "north", "terrain", "search",
-    "viewState", "inspect", "basemap", "measure", "bookmark",
+    "globe",
+    "fullscreen",
+    "north",
+    "terrain",
+    "search",
+    "viewState",
+    "inspect",
+    "basemap",
+    "measure",
+    "bookmark",
   ],
 });
 map.addControl(controlGrid, "top-right");
@@ -1677,13 +1698,14 @@ const grid = addControlGrid(map, {
 
 // With basemap style for SwipeControl layer grouping
 const grid = addControlGrid(map, {
-  basemapStyleUrl: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+  basemapStyleUrl:
+    "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
 });
 ```
 
 ```typescript
 interface AddControlGridOptions extends ControlGridOptions {
-  exclude?: DefaultControlName[];  // Controls to exclude (ignored if defaultControls is set)
+  exclude?: DefaultControlName[]; // Controls to exclude (ignored if defaultControls is set)
 }
 ```
 

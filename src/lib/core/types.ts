@@ -1765,6 +1765,12 @@ export interface ZarrLayerInfo {
   selector?: Record<string, number | string>;
   /** Layer opacity. */
   opacity: number;
+  /** CRS the layer rendered with, when one was set or detected. */
+  crs?: string;
+  /** proj4 definition the layer rendered with, when one applied. */
+  proj4?: string;
+  /** Spatial bounds the layer rendered with, in the store's own CRS. */
+  bounds?: [number, number, number, number];
 }
 
 /**
@@ -1801,6 +1807,14 @@ export interface ZarrLayerControlOptions {
   defaultOpacity?: number;
   /** Default layer name to pre-fill. If not specified, name is auto-generated. */
   defaultLayerName?: string;
+  /**
+   * CRS identifier to pre-fill in the panel, e.g. `"EPSG:4326"`. Only the
+   * renderer's built-in projections are recognized by identifier; any other CRS
+   * needs a matching {@link defaultProj4}.
+   */
+  defaultCrs?: string;
+  /** proj4 definition to pre-fill in the panel, for a projected store. */
+  defaultProj4?: string;
   /** Whether Zarr layers are pickable (clickable to show info). Default: true. */
   defaultPickable?: boolean;
   /** Width of the panel in pixels. Default: 300. */
@@ -1896,6 +1910,10 @@ export interface ZarrLayerControlState {
   selector?: Record<string, number | string>;
   /** Current layer name (optional, auto-generated if empty). */
   layerName: string;
+  /** Current CRS identifier (empty to detect it from the store's metadata). */
+  crs: string;
+  /** Current proj4 definition (empty to detect it from the store's metadata). */
+  proj4: string;
   /** Current opacity (0-1). */
   layerOpacity: number;
   /** Whether layers are pickable (clickable). */

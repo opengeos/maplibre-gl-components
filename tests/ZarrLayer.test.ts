@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { ZarrLayerControl } from "../src/lib/core/ZarrLayer";
+import {
+  pickDataVariables,
+  ZarrLayerControl,
+  zarrSpatialMetadataFromAttributes,
+  zarrSpatialMetadataFromV2Consolidated,
+  zarrSpatialMetadataFromV3Root,
+} from "../src/lib/core/ZarrLayer";
 
 /** Minimal mocked MapLibre map sufficient for ZarrLayerControl.onAdd. */
 function makeMockMap() {
@@ -51,7 +57,7 @@ describe("ZarrLayerControl live restyle", () => {
   it("applies a colormap change to the live layer and repaints", () => {
     const preview = container.querySelector("#zarr-colormap-preview");
     const select = preview?.parentElement?.querySelector(
-      "select.maplibre-gl-zarr-layer-select"
+      "select.maplibre-gl-zarr-layer-select",
     ) as HTMLSelectElement;
     expect(select).toBeTruthy();
 
@@ -70,11 +76,9 @@ describe("ZarrLayerControl live restyle", () => {
 
   it("applies a clim change to the live layer and repaints", () => {
     const numberInputs = container.querySelectorAll(
-      'input.maplibre-gl-zarr-layer-input[type="number"]'
+      'input.maplibre-gl-zarr-layer-input[type="number"]',
     );
-    const [minInput, maxInput] = Array.from(
-      numberInputs
-    ) as HTMLInputElement[];
+    const [minInput, maxInput] = Array.from(numberInputs) as HTMLInputElement[];
     expect(minInput).toBeTruthy();
     expect(maxInput).toBeTruthy();
 
@@ -90,7 +94,7 @@ describe("ZarrLayerControl live restyle", () => {
 
   it("preserves a clim max of 0 instead of coercing it to 1", () => {
     const maxInput = container.querySelectorAll(
-      'input.maplibre-gl-zarr-layer-input[type="number"]'
+      'input.maplibre-gl-zarr-layer-input[type="number"]',
     )[1] as HTMLInputElement;
     maxInput.value = "0";
     maxInput.dispatchEvent(new Event("input"));
@@ -102,5 +106,207 @@ describe("ZarrLayerControl live restyle", () => {
     control._zarrLayers.clear();
     expect(() => control._updateColormap()).not.toThrow();
     expect(() => control._updateClim()).not.toThrow();
+  });
+});
+
+describe("ZarrLayerControl CRS panel fields", () => {
+  it("renders CRS and proj4 inputs that update the control state", () => {
+    // A projected store (a national grid, a polar stereographic grid) is read as
+    // WGS84 without a CRS, so it renders in the wrong place. The panel has to
+    // offer somewhere to put one.
+    const control = new ZarrLayerControl({ collapsed: false }) as any;
+    const container = control.onAdd(makeMockMap());
+
+    const crsInput = container.querySelector(
+      '#zarr-crs, input[placeholder*="EPSG:4326"]',
+    ) as HTMLInputElement;
+    const proj4Input = container.querySelector(
+      'input[placeholder^="+proj="]',
+    ) as HTMLInputElement;
+
+    expect(crsInput).toBeTruthy();
+    expect(proj4Input).toBeTruthy();
+
+    crsInput.value = "EPSG:3857";
+    crsInput.dispatchEvent(new Event("input"));
+    proj4Input.value = "+proj=stere +lat_0=-90 +units=m +no_defs";
+    proj4Input.dispatchEvent(new Event("input"));
+
+    expect(control.getState().crs).toBe("EPSG:3857");
+    expect(control.getState().proj4).toBe(
+      "+proj=stere +lat_0=-90 +units=m +no_defs",
+    );
+  });
+
+  it("pre-fills the fields from the control options", () => {
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      defaultCrs: "EPSG:4326",
+      defaultProj4: "+proj=longlat +datum=WGS84 +no_defs",
+    }) as any;
+    control.onAdd(makeMockMap());
+
+    expect(control.getState().crs).toBe("EPSG:4326");
+    expect(control.getState().proj4).toBe(
+      "+proj=longlat +datum=WGS84 +no_defs",
+    );
+  });
+});
+
+describe("pickDataVariables", () => {
+  it("lists the data variables of a Zarr v3 consolidated store", () => {
+    // The node names of zarr-layer's antarctic_era5 demo store: one data
+    // variable plus the coordinate arrays that describe it.
+    expect(
+      pickDataVariables(["spatial_ref", "time", "wind_speed", "x", "y"]),
+    ).toEqual(["wind_speed"]);
+  });
+
+  it("keeps the leaf name of a nested v2 path", () => {
+    expect(pickDataVariables(["5/climate", "5/x", "5/y", "5/time"])).toEqual([
+      "climate",
+    ]);
+  });
+
+  it("deduplicates a variable that appears at several pyramid levels", () => {
+    expect(pickDataVariables(["0/climate", "1/climate", "2/climate"])).toEqual([
+      "climate",
+    ]);
+  });
+
+  it("falls back to every name when only coordinate arrays are present", () => {
+    // Better to offer something than to leave the user with an empty list.
+    expect(pickDataVariables(["x", "y"])).toEqual(["x", "y"]);
+  });
+
+  it("returns nothing for a store with no arrays", () => {
+    expect(pickDataVariables([])).toEqual([]);
+  });
+});
+
+describe("zarrSpatialMetadataFromAttributes", () => {
+  it("reads a proj4 definition and bounds", () => {
+    expect(
+      zarrSpatialMetadataFromAttributes({
+        proj4: " +proj=stere +lat_0=-90 +units=m +no_defs ",
+        bounds: [-3315363.2, -3316901.5, 3316909.4, 3315371.1],
+      }),
+    ).toEqual({
+      proj4: "+proj=stere +lat_0=-90 +units=m +no_defs",
+      bounds: [-3315363.2, -3316901.5, 3316909.4, 3315371.1],
+    });
+  });
+
+  it("ignores bounds that are not four finite numbers", () => {
+    expect(zarrSpatialMetadataFromAttributes({ bounds: [0, 1, 2] })).toEqual(
+      {},
+    );
+    expect(
+      zarrSpatialMetadataFromAttributes({ bounds: [0, 1, 2, "x"] }),
+    ).toEqual({});
+    expect(
+      zarrSpatialMetadataFromAttributes({ bounds: [0, 1, 2, Number.NaN] }),
+    ).toEqual({});
+  });
+
+  it("ignores crs_wkt, which the renderer cannot consume", () => {
+    expect(
+      zarrSpatialMetadataFromAttributes({ crs_wkt: 'PROJCS["unknown",...]' }),
+    ).toEqual({});
+  });
+
+  it("tolerates a missing or non-object attributes block", () => {
+    expect(zarrSpatialMetadataFromAttributes(undefined)).toEqual({});
+    expect(zarrSpatialMetadataFromAttributes("nope")).toEqual({});
+  });
+});
+
+describe("zarrSpatialMetadataFromV3Root", () => {
+  it("reads the root group attributes of a v3 store", () => {
+    const detected = zarrSpatialMetadataFromV3Root({
+      zarr_format: 3,
+      node_type: "group",
+      attributes: {
+        proj4:
+          "+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +datum=WGS84 +units=m +no_defs",
+        bounds: [-3315363.2, -3316901.5, 3316909.4, 3315371.1],
+      },
+      consolidated_metadata: {
+        metadata: { wind_speed: { node_type: "array" } },
+      },
+    });
+
+    expect(detected.proj4).toContain("+proj=stere");
+    expect(detected.bounds).toEqual([
+      -3315363.2, -3316901.5, 3316909.4, 3315371.1,
+    ]);
+  });
+
+  it("falls back to a CF-style spatial_ref coordinate", () => {
+    const detected = zarrSpatialMetadataFromV3Root({
+      attributes: {},
+      consolidated_metadata: {
+        metadata: {
+          spatial_ref: {
+            node_type: "array",
+            attributes: {
+              proj4: "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs",
+            },
+          },
+        },
+      },
+    });
+
+    expect(detected.proj4).toBe(
+      "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs",
+    );
+  });
+
+  it("prefers the root over spatial_ref when both declare a definition", () => {
+    const detected = zarrSpatialMetadataFromV3Root({
+      attributes: { proj4: "+proj=root" },
+      consolidated_metadata: {
+        metadata: { spatial_ref: { attributes: { proj4: "+proj=child" } } },
+      },
+    });
+
+    expect(detected.proj4).toBe("+proj=root");
+  });
+
+  it("detects nothing for a WGS84 store that declares no reference", () => {
+    // The pre-existing behavior for plain lat/lon stores must not change.
+    expect(
+      zarrSpatialMetadataFromV3Root({ attributes: {}, node_type: "group" }),
+    ).toEqual({});
+    expect(zarrSpatialMetadataFromV3Root(null)).toEqual({});
+  });
+});
+
+describe("zarrSpatialMetadataFromV2Consolidated", () => {
+  it("reads the root attributes under the .zattrs key", () => {
+    const detected = zarrSpatialMetadataFromV2Consolidated({
+      metadata: {
+        ".zattrs": { crs: "EPSG:3857" },
+        "climate/.zarray": { shape: [1] },
+      },
+    });
+
+    expect(detected.crs).toBe("EPSG:3857");
+  });
+
+  it("falls back to spatial_ref/.zattrs", () => {
+    const detected = zarrSpatialMetadataFromV2Consolidated({
+      metadata: {
+        ".zattrs": {},
+        "spatial_ref/.zattrs": { proj4: "+proj=laea +lat_0=52 +lon_0=10" },
+      },
+    });
+
+    expect(detected.proj4).toBe("+proj=laea +lat_0=52 +lon_0=10");
+  });
+
+  it("detects nothing from an empty or absent metadata block", () => {
+    expect(zarrSpatialMetadataFromV2Consolidated({})).toEqual({});
+    expect(zarrSpatialMetadataFromV2Consolidated(undefined)).toEqual({});
   });
 });
