@@ -69,13 +69,54 @@ function clickAt(
   ctx.fire("click", { lngLat: { lng, lat } });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mountExpanded(): { control: MeasureControl; ctx: any } {
-  const ctx = createMapMock();
-  const control = new MeasureControl({ collapsed: false });
+function finish(
+  ctx: ReturnType<typeof createMapMock>,
+  lng: number,
+  lat: number,
+) {
+  ctx.fire("contextmenu", { preventDefault: vi.fn(), lngLat: { lng, lat } });
+}
+
+function mountExpanded(
+  options?: ConstructorParameters<typeof MeasureControl>[0],
+): {
+  control: MeasureControl;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  control.onAdd(ctx.map as any);
-  return { control, ctx };
+  ctx: any;
+  container: HTMLElement;
+} {
+  const ctx = createMapMock();
+  const control = new MeasureControl({ collapsed: false, ...options });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const container = control.onAdd(ctx.map as any);
+  return { control, ctx, container };
+}
+
+/** The "Total Distance"/"Total Area" readout, as the user sees it. */
+function readTotal(container: HTMLElement): string {
+  const value = container.querySelector(".result-value")?.textContent ?? "";
+  const unit = container.querySelector(".result-unit")?.textContent ?? "";
+  return `${value} ${unit}`;
+}
+
+/** The numeric part of the total readout. */
+function totalNumber(container: HTMLElement): number {
+  return Number.parseFloat(
+    container.querySelector(".result-value")?.textContent ?? "",
+  );
+}
+
+/** Inline display of the total readout container. */
+function resultDisplay(container: HTMLElement): string {
+  return (container.querySelector(".measure-result") as HTMLElement).style
+    .display;
+}
+
+/** The saved-measurements list entries, as the user sees them. */
+function readList(container: HTMLElement): string[] {
+  return [...container.querySelectorAll(".measurement-value")].map(
+    (el) => el.textContent ?? "",
+  );
 }
 
 describe("MeasureControl", () => {
@@ -93,7 +134,10 @@ describe("MeasureControl", () => {
     // A double-click fires two clicks at the same spot before the dblclick.
     clickAt(ctx, 2, 0);
     clickAt(ctx, 2, 0);
-    ctx.fire("dblclick", { preventDefault: vi.fn(), lngLat: { lng: 2, lat: 0 } });
+    ctx.fire("dblclick", {
+      preventDefault: vi.fn(),
+      lngLat: { lng: 2, lat: 0 },
+    });
 
     const measurements = control.getMeasurements();
     expect(measurements).toHaveLength(1);
@@ -109,7 +153,10 @@ describe("MeasureControl", () => {
   it("ignores a premature finish and keeps the drawing active", () => {
     const { control, ctx } = mountExpanded();
     clickAt(ctx, 0, 0);
-    ctx.fire("dblclick", { preventDefault: vi.fn(), lngLat: { lng: 0, lat: 0 } });
+    ctx.fire("dblclick", {
+      preventDefault: vi.fn(),
+      lngLat: { lng: 0, lat: 0 },
+    });
     expect(control.getMeasurements()).toHaveLength(0);
     expect(control.getState().isDrawing).toBe(true);
   });
@@ -118,7 +165,10 @@ describe("MeasureControl", () => {
     const { control, ctx } = mountExpanded();
     clickAt(ctx, 0, 0);
     clickAt(ctx, 1, 1);
-    ctx.fire("dblclick", { preventDefault: vi.fn(), lngLat: { lng: 1, lat: 1 } });
+    ctx.fire("dblclick", {
+      preventDefault: vi.fn(),
+      lngLat: { lng: 1, lat: 1 },
+    });
     expect(control.getMeasurements()).toHaveLength(1);
     expect(control.getState().isDrawing).toBe(true);
     expect(control.getState().currentPoints).toHaveLength(0);
@@ -134,6 +184,121 @@ describe("MeasureControl", () => {
     });
     expect(control.getMeasurements()).toHaveLength(1);
     expect(control.getMeasurements()[0].mode).toBe("distance");
+  });
+
+  it("keeps a saved zero-value measurement's readout visible after Escape", () => {
+    const { control, ctx, container } = mountExpanded();
+    // Two coincident clicks finished with right-click save a measurement whose
+    // distance is legitimately zero.
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 0, 0);
+    finish(ctx, 0, 0);
+    expect(control.getMeasurements()).toHaveLength(1);
+    expect(totalNumber(container)).toBe(0);
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(resultDisplay(container)).toBe("block");
+  });
+
+  it("hides the readout when Escape leaves nothing measured", () => {
+    const { ctx, container } = mountExpanded();
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 1, 0);
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(resultDisplay(container)).toBe("none");
+  });
+
+  it("keeps the total on screen after a measurement finishes", () => {
+    const { ctx, container } = mountExpanded();
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 1, 0);
+    const whileDrawing = readTotal(container);
+    finish(ctx, 1, 0);
+
+    // Re-arming the tool resets the in-progress value, but the readout is
+    // labelled "Total Distance" and must still report the finished measurement.
+    expect(readTotal(container)).toBe(whileDrawing);
+    expect(readTotal(container)).not.toMatch(/^0\.00 /);
+    expect(readList(container)).toEqual([whileDrawing]);
+  });
+
+  it("sums completed measurements of the active mode", () => {
+    const { ctx, container } = mountExpanded();
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 1, 0);
+    finish(ctx, 1, 0);
+    const one = totalNumber(container);
+
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 1, 0);
+    finish(ctx, 1, 0);
+    // The readout rounds to two decimals, so compare with that slack.
+    expect(totalNumber(container)).toBeCloseTo(one * 2, 1);
+
+    // A third, in-progress measurement adds to the running total.
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 1, 0);
+    expect(totalNumber(container)).toBeCloseTo(one * 3, 1);
+  });
+
+  it("excludes measurements taken in the other mode from the total", () => {
+    const { control, ctx, container } = mountExpanded();
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 1, 0);
+    finish(ctx, 1, 0);
+    expect(totalNumber(container)).toBeGreaterThan(0);
+
+    control.setMode("area");
+    expect(totalNumber(container)).toBe(0);
+
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 1, 0);
+    clickAt(ctx, 1, 1);
+    finish(ctx, 1, 1);
+    const areaTotal = totalNumber(container);
+    expect(areaTotal).toBeGreaterThan(0);
+
+    control.setMode("distance");
+    expect(totalNumber(container)).not.toBe(areaTotal);
+    expect(totalNumber(container)).toBeGreaterThan(0);
+  });
+
+  it("drops a deleted measurement from the total", () => {
+    const { ctx, container } = mountExpanded();
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 1, 0);
+    finish(ctx, 1, 0);
+    const one = totalNumber(container);
+
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 1, 0);
+    finish(ctx, 1, 0);
+    expect(totalNumber(container)).toBeCloseTo(one * 2, 1);
+
+    const deleteBtn = container.querySelector(
+      ".measurement-delete",
+    ) as HTMLButtonElement;
+    deleteBtn.click();
+    expect(totalNumber(container)).toBeCloseTo(one, 1);
+  });
+
+  it("re-renders the total and the saved list when the unit selector changes", () => {
+    const { ctx, container } = mountExpanded();
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 1, 0);
+    finish(ctx, 1, 0);
+    const kilometers = totalNumber(container);
+
+    const select = container.querySelector(
+      ".measure-unit select",
+    ) as HTMLSelectElement;
+    select.value = "meters";
+    select.dispatchEvent(new Event("change"));
+
+    expect(totalNumber(container) / kilometers).toBeCloseTo(1000, 0);
+    expect(readTotal(container)).toMatch(/Meters$/);
+    // The saved list must follow the selector too, not keep the old unit.
+    expect(readList(container)).toEqual([readTotal(container)]);
   });
 
   it("preserves in-progress points when switching mode mid-draw", () => {
