@@ -549,3 +549,222 @@ describe("spatial metadata detection", () => {
     expect(detected).toEqual({ crs: "EPSG:4326" });
   });
 });
+
+describe("local folder store", () => {
+  const encode = (value: unknown) => new TextEncoder().encode(JSON.stringify(value));
+
+  /** A folder-backed store holding one consolidated v2 dataset. */
+  function makeLocalStore(name = "demo.zarr") {
+    return {
+      name,
+      store: {
+        get: vi.fn(async (key: string) =>
+          key === ".zmetadata"
+            ? encode({
+                metadata: {
+                  "air/.zarray": { shape: [3, 4, 5] },
+                  "time/.zarray": { shape: [3] },
+                },
+              })
+            : undefined,
+        ),
+      },
+    };
+  }
+
+  it("shows no browse button when the host supplies no provider", () => {
+    const control = new ZarrLayerControl({ collapsed: false }) as any;
+    const container = control.onAdd(makeMockMap());
+    const labels = Array.from(
+      container.querySelectorAll<HTMLButtonElement>("button"),
+    ).map((button) => button.textContent);
+    expect(labels).not.toContain("Browse folder...");
+  });
+
+  it("adopts a picked folder and shows its name", async () => {
+    const picked = makeLocalStore();
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      localStoreProvider: async () => picked,
+    }) as any;
+    const container = control.onAdd(makeMockMap());
+
+    const browse = Array.from(
+      container.querySelectorAll<HTMLButtonElement>("button"),
+    ).find((button) => button.textContent === "Browse folder...");
+    expect(browse).toBeTruthy();
+
+    await control._pickLocalStore();
+
+    expect(control._localStore).toBe(picked);
+    // The identifier is minted here: a folder has no address to record.
+    expect(control._localStoreUrl).toMatch(/^local-zarr:demo\.zarr\?\d+$/);
+    expect(control._state.url).toBe("");
+    expect(
+      control._container.querySelector(".maplibre-gl-zarr-layer-local-store-name")
+        ?.textContent,
+    ).toBe("demo.zarr");
+  });
+
+  it("keeps two folders of the same name apart", async () => {
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      localStoreProvider: async () => makeLocalStore(),
+    }) as any;
+    control.onAdd(makeMockMap());
+
+    await control._pickLocalStore();
+    const first = control._localStoreUrl;
+    await control._pickLocalStore();
+
+    expect(control._localStoreUrl).not.toBe(first);
+  });
+
+  it("honors a host-supplied identifier", async () => {
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      localStoreProvider: async () => ({ ...makeLocalStore(), url: "host:chosen" }),
+    }) as any;
+    control.onAdd(makeMockMap());
+
+    await control._pickLocalStore();
+
+    expect(control._localStoreUrl).toBe("host:chosen");
+  });
+
+  it("lists variables through the store rather than fetching", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    try {
+      const picked = makeLocalStore();
+      const control = new ZarrLayerControl({
+        collapsed: false,
+        localStoreProvider: async () => picked,
+      }) as any;
+      control.onAdd(makeMockMap());
+      await control._pickLocalStore();
+
+      const variables = await control.fetchVariables();
+
+      expect(variables).toEqual(["air"]);
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(picked.store.get).toHaveBeenCalledWith(".zmetadata");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("drops the picked folder once a URL is typed", async () => {
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      localStoreProvider: async () => makeLocalStore(),
+    }) as any;
+    const container = control.onAdd(makeMockMap());
+    await control._pickLocalStore();
+    expect(control._localStore).toBeTruthy();
+
+    const urlInput = container.querySelector<HTMLInputElement>(
+      'input.maplibre-gl-zarr-layer-input[placeholder^="https://"]',
+    );
+    urlInput!.value = "https://example.com/data.zarr";
+    urlInput!.dispatchEvent(new Event("input"));
+
+    expect(control._localStore).toBeNull();
+    expect(control._localStoreUrl).toBe("");
+    expect(control._state.url).toBe("https://example.com/data.zarr");
+  });
+
+  it("no longer demands a URL once a folder is picked", async () => {
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      localStoreProvider: async () => makeLocalStore(),
+    }) as any;
+    control.onAdd(makeMockMap());
+    await control._pickLocalStore();
+    control._state.variable = "";
+
+    await control._addLayer();
+
+    // The variable is still required; the URL is not.
+    expect(control._state.error).toBe("Please enter a variable name.");
+  });
+});
+
+describe("Fetch button availability", () => {
+  it("is enabled by a picked folder even though the URL field is empty", async () => {
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      localStoreProvider: async () => ({
+        name: "demo.zarr",
+        store: { get: async () => undefined },
+      }),
+    }) as any;
+    const container = control.onAdd(makeMockMap());
+
+    const fetchOf = (root: HTMLElement) =>
+      Array.from(root.querySelectorAll<HTMLButtonElement>("button")).find(
+        (button) => button.textContent === "Fetch",
+      );
+    expect(fetchOf(container)?.disabled).toBe(true);
+
+    await control._pickLocalStore();
+
+    // The panel re-rendered, so re-query rather than reuse the stale node.
+    expect(fetchOf(control._container).disabled).toBe(false);
+  });
+});
+
+describe("fetched variable reconciliation", () => {
+  const encode = (value: unknown) => new TextEncoder().encode(JSON.stringify(value));
+
+  it("adopts the first fetched variable when the panel's is not in the store", async () => {
+    // Otherwise the picker displays the first option while the state still holds
+    // the previous store's variable, and Add Layer asks for one that is absent.
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      defaultVariable: "climate",
+      localStoreProvider: async () => ({
+        name: "demo.zarr",
+        store: {
+          get: async (key: string) =>
+            key === ".zmetadata"
+              ? encode({ metadata: { "air/.zarray": { shape: [3, 4, 5] } } })
+              : undefined,
+        },
+      }),
+    }) as any;
+    control.onAdd(makeMockMap());
+    await control._pickLocalStore();
+
+    await control.fetchVariables();
+
+    expect(control._availableVariables).toEqual(["air"]);
+    expect(control._state.variable).toBe("air");
+  });
+
+  it("keeps a variable the store does have", async () => {
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      defaultVariable: "sst",
+      localStoreProvider: async () => ({
+        name: "demo.zarr",
+        store: {
+          get: async (key: string) =>
+            key === ".zmetadata"
+              ? encode({
+                  metadata: {
+                    "air/.zarray": { shape: [3, 4, 5] },
+                    "sst/.zarray": { shape: [3, 4, 5] },
+                  },
+                })
+              : undefined,
+        },
+      }),
+    }) as any;
+    control.onAdd(makeMockMap());
+    await control._pickLocalStore();
+
+    await control.fetchVariables();
+
+    expect(control._state.variable).toBe("sst");
+  });
+});
