@@ -91,6 +91,13 @@ function getColormapColors(name: ColormapName): string[] {
 const ZARR_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`;
 
 /**
+ * How long the Selector (JSON) field waits after the last keystroke before
+ * re-slicing the live layers. Long enough to type one more digit, short enough
+ * that a finished edit still feels immediate.
+ */
+const SELECTOR_UPDATE_DEBOUNCE_MS = 400;
+
+/**
  * Coordinate/dimension arrays a Zarr store carries alongside its data variables.
  * They are valid arrays but never what a user wants to render.
  */
@@ -297,6 +304,10 @@ export class ZarrLayerControl implements IControl {
   /** Per-store spatial reference read from the store's own metadata. */
   private _spatialMetadataCache = new Map<string, ZarrSpatialMetadata>();
   private _variablesLoading: boolean = false;
+  /** Pending debounce for {@link _scheduleSelectorUpdate}. */
+  private _selectorUpdateTimer?: ReturnType<typeof setTimeout>;
+  /** Serializes {@link _updateSelector} runs; see that method. */
+  private _selectorUpdate: Promise<void> = Promise.resolve();
 
   constructor(options?: ZarrLayerControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
@@ -367,6 +378,10 @@ export class ZarrLayerControl implements IControl {
   }
 
   onRemove(): void {
+    if (this._selectorUpdateTimer !== undefined) {
+      clearTimeout(this._selectorUpdateTimer);
+      this._selectorUpdateTimer = undefined;
+    }
     this._removeLayer(); // Remove all layers on cleanup
 
     if (this._map && this._handleZoom) {
@@ -1029,7 +1044,9 @@ export class ZarrLayerControl implements IControl {
         this._state.selector = parsed;
       } catch {
         // Invalid JSON, ignore
+        return;
       }
+      this._scheduleSelectorUpdate();
     });
     selectorGroup.appendChild(selectorInput);
     panel.appendChild(selectorGroup);
@@ -1510,6 +1527,60 @@ export class ZarrLayerControl implements IControl {
     if (this._map) {
       this._map.triggerRepaint();
     }
+  }
+
+  /**
+   * Debounce a selector change from the panel's Selector (JSON) field.
+   *
+   * Unlike clim/colormap, re-selecting a dimension makes the renderer fetch new
+   * chunks, and the field fires on every keystroke: typing `12` into a `month`
+   * passes through the valid intermediate `1`, which would fetch a slice nobody
+   * asked for. Waiting out the typing keeps that to a single read.
+   */
+  private _scheduleSelectorUpdate(): void {
+    if (this._selectorUpdateTimer !== undefined) {
+      clearTimeout(this._selectorUpdateTimer);
+    }
+    this._selectorUpdateTimer = setTimeout(() => {
+      this._selectorUpdateTimer = undefined;
+      this._updateSelector();
+    }, SELECTOR_UPDATE_DEBOUNCE_MS);
+  }
+
+  /**
+   * Apply the current selector to every live Zarr layer (and record it in the
+   * per-layer props), so editing Selector (JSON) re-slices the layers in place
+   * instead of only affecting the *next* Add Layer. Mirrors {@link _updateClim},
+   * with two differences that come from `setSelector` being asynchronous:
+   *
+   * - runs are chained, because two overlapping `setSelector` calls on one layer
+   *   race to decide which slice ends up on screen;
+   * - the selector is read when the run starts, not when it is queued, so a
+   *   burst of edits collapses onto the latest value rather than replaying each
+   *   intermediate one.
+   */
+  private _updateSelector(): void {
+    if (this._zarrLayers.size === 0) return;
+    this._selectorUpdate = this._selectorUpdate.then(async () => {
+      const selector = this._state.selector;
+      if (!selector) return;
+      await Promise.all(
+        Array.from(this._zarrLayers, async ([layerId, layer]) => {
+          if (typeof layer.setSelector !== "function") return;
+          try {
+            await layer.setSelector(selector);
+          } catch {
+            // A selector naming a dimension or value the store does not have is
+            // ordinary while typing; leave the layer on its current slice.
+            return;
+          }
+          const props = this._zarrLayerPropsMap.get(layerId);
+          if (props) props.selector = selector;
+        }),
+      );
+      this._state.layers = this._buildLayerInfoList();
+      this._map?.triggerRepaint();
+    });
   }
 
   /**
