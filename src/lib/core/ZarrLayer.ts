@@ -12,6 +12,7 @@ import type {
   ZarrLayerEventHandler,
   ZarrLayerInfo,
   ZarrLayerAddOptions,
+  ZarrReadableStore,
   ColormapName,
 } from "./types";
 import type { ZarrLayerOptions } from "@carbonplan/zarr-layer";
@@ -1314,7 +1315,7 @@ export class ZarrLayerControl implements IControl {
       const detected =
         overrides?.crs || overrides?.proj4 || panelCrs || panelProj4
           ? {}
-          : await this._detectSpatialMetadata(this._state.url);
+          : await this._detectSpatialMetadata(this._state.url, overrides?.store);
       const crs = overrides?.crs ?? (panelCrs || detected.crs);
       const proj4 = overrides?.proj4 ?? (panelProj4 || detected.proj4);
       const bounds = overrides?.bounds ?? detected.bounds;
@@ -1594,49 +1595,68 @@ export class ZarrLayerControl implements IControl {
    * and needs a proj4 string for anything else, and converting WKT would mean a
    * new dependency.
    *
+   * A layer added with a custom `store` is read **through that store**. Its URL
+   * is only an identifier in that case — a kerchunk manifest, or a marker for a
+   * store on local disk — so fetching `<url>/zarr.json` would raise an error in
+   * the console for a document that was never there, and detect nothing for
+   * stores that can in fact answer.
+   *
    * Failures are silent: detection is a convenience, and a store that says
    * nothing simply renders as WGS84 the way it did before.
    */
   private async _detectSpatialMetadata(
     url: string,
+    store?: ZarrReadableStore,
   ): Promise<ZarrSpatialMetadata> {
     const trimmed = url?.replace(/\/$/, "");
-    if (!trimmed) return {};
+    // A custom store needs no URL to be readable, but without one there is
+    // nothing to cache under, so each add re-reads it.
+    if (!trimmed && !store) return {};
 
-    const cached = this._spatialMetadataCache.get(trimmed);
+    const cached = trimmed ? this._spatialMetadataCache.get(trimmed) : undefined;
     if (cached) return cached;
 
-    const detected = await this._readSpatialMetadata(trimmed);
-    this._spatialMetadataCache.set(trimmed, detected);
+    const detected = await this._readSpatialMetadata(trimmed, store);
+    if (trimmed) this._spatialMetadataCache.set(trimmed, detected);
     return detected;
   }
 
   private async _readSpatialMetadata(
     url: string,
+    store?: ZarrReadableStore,
   ): Promise<ZarrSpatialMetadata> {
+    const readJson = store
+      ? async (key: string) => {
+          const bytes = await store.get(key);
+          return bytes ? JSON.parse(new TextDecoder().decode(bytes)) : undefined;
+        }
+      : async (key: string) => {
+          const response = await fetch(`${url}/${key}`);
+          return response.ok ? await response.json() : undefined;
+        };
+
     try {
       // Zarr v3: the root zarr.json carries the group attributes, and a
       // consolidated store embeds every child node's metadata with it.
-      const v3 = await fetch(`${url}/zarr.json`);
-      if (v3.ok) return zarrSpatialMetadataFromV3Root(await v3.json());
+      const v3 = await readJson("zarr.json");
+      if (v3 !== undefined) return zarrSpatialMetadataFromV3Root(v3);
     } catch {
       // Not a v3 store, or the request failed: fall through to v2.
     }
 
     try {
       // Zarr v2: consolidated metadata keeps the root attributes under ".zattrs".
-      const consolidated = await fetch(`${url}/.zmetadata`);
-      if (consolidated.ok) {
-        return zarrSpatialMetadataFromV2Consolidated(await consolidated.json());
+      const consolidated = await readJson(".zmetadata");
+      if (consolidated !== undefined) {
+        return zarrSpatialMetadataFromV2Consolidated(consolidated);
       }
     } catch {
       // Nothing to detect.
     }
 
     try {
-      const attrs = await fetch(`${url}/.zattrs`);
-      if (attrs.ok)
-        return zarrSpatialMetadataFromAttributes(await attrs.json());
+      const attrs = await readJson(".zattrs");
+      if (attrs !== undefined) return zarrSpatialMetadataFromAttributes(attrs);
     } catch {
       // Nothing to detect.
     }

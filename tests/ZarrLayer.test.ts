@@ -477,3 +477,75 @@ describe("sample dataset settings", () => {
   });
 });
 
+
+describe("spatial metadata detection", () => {
+  const encode = (value: unknown) => new TextEncoder().encode(JSON.stringify(value));
+
+  it("reads a custom store's own metadata instead of fetching its URL", async () => {
+    // A store-backed layer's URL is only an identifier (a kerchunk manifest, a
+    // marker for a folder on disk), so fetching it would log errors for
+    // documents that were never there and detect nothing.
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    try {
+      const control = new ZarrLayerControl() as any;
+      const store = {
+        get: vi.fn(async (key: string) =>
+          key === ".zmetadata"
+            ? encode({ metadata: { ".zattrs": { proj4: "+proj=stere +lat_0=90" } } })
+            : undefined,
+        ),
+      };
+
+      const detected = await control._detectSpatialMetadata("local-zarr:demo", store);
+
+      expect(detected).toEqual({ proj4: "+proj=stere +lat_0=90" });
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(store.get).toHaveBeenCalledWith("zarr.json");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("detects nothing, and still does not fetch, for a silent custom store", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    try {
+      const control = new ZarrLayerControl() as any;
+      const detected = await control._detectSpatialMetadata("local-zarr:demo", {
+        get: async () => undefined,
+      });
+      expect(detected).toEqual({});
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("still fetches for a plain URL store", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
+      async (input: any) =>
+        ({
+          ok: String(input).endsWith("/.zmetadata"),
+          json: async () => ({ metadata: { ".zattrs": { crs: "EPSG:3857" } } }),
+        }) as any,
+    );
+    try {
+      const control = new ZarrLayerControl() as any;
+      const detected = await control._detectSpatialMetadata("https://example.com/demo.zarr");
+      expect(detected).toEqual({ crs: "EPSG:3857" });
+      expect(fetchSpy).toHaveBeenCalledWith("https://example.com/demo.zarr/zarr.json");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("reads a store with no URL at all", async () => {
+    const control = new ZarrLayerControl() as any;
+    const detected = await control._detectSpatialMetadata("", {
+      get: async (key: string) =>
+        key === "zarr.json"
+          ? encode({ attributes: { crs: "EPSG:4326" } })
+          : undefined,
+    });
+    expect(detected).toEqual({ crs: "EPSG:4326" });
+  });
+});
