@@ -396,13 +396,13 @@ export class MeasureControl implements IControl {
     this._updateUnitOptions(select);
     select.addEventListener("change", (e) => {
       const value = (e.target as HTMLSelectElement).value;
+      // Go through the public setters so the saved measurements list is
+      // re-rendered in the new unit too, not just the total readout.
       if (this._state.mode === "distance") {
-        this._state.distanceUnit = value as DistanceUnit;
+        this.setDistanceUnit(value as DistanceUnit);
       } else {
-        this._state.areaUnit = value as AreaUnit;
+        this.setAreaUnit(value as AreaUnit);
       }
-      this._updateResult();
-      this._emit("unitchange");
     });
     content.appendChild(unitDiv);
 
@@ -667,8 +667,8 @@ export class MeasureControl implements IControl {
     const startBtn = this._panel?.querySelector(".start-btn span");
     if (startBtn) startBtn.textContent = "Finish";
 
-    // Show result area, reset to zero so a re-armed tool does not keep showing
-    // the previously completed measurement's total.
+    // Show the result area and refresh it. The in-progress value restarts at
+    // zero, but the readout still carries the completed measurements' total.
     const resultDiv = this._panel?.querySelector(
       ".measure-result",
     ) as HTMLElement;
@@ -858,11 +858,15 @@ export class MeasureControl implements IControl {
     this._state.currentSegments = [];
     this._updateMapGeometry();
 
-    // Hide result
+    // Keep the total on screen while completed measurements remain; only an
+    // empty tool has nothing to report.
+    this._updateResult();
     const resultDiv = this._panel?.querySelector(
       ".measure-result",
     ) as HTMLElement;
-    if (resultDiv) resultDiv.style.display = "none";
+    if (resultDiv) {
+      resultDiv.style.display = this._totalValue() > 0 ? "block" : "none";
+    }
 
     // Reset instructions
     if (this._instructionsEl) {
@@ -899,21 +903,38 @@ export class MeasureControl implements IControl {
   }
 
   /**
+   * Total value for the active mode, in base units (meters or square meters).
+   *
+   * The readout is labelled "Total Distance" / "Total Area", so it sums every
+   * completed measurement of the current mode plus the one being drawn. Without
+   * the completed measurements it would drop back to zero the moment a drawing
+   * finishes and the tool re-arms, even though the results are still listed.
+   */
+  private _totalValue(): number {
+    const completed = this._state.measurements.reduce((sum, m) => {
+      if (m.mode !== this._state.mode) return sum;
+      return sum + (m.mode === "distance" ? m.distance || 0 : m.area || 0);
+    }, 0);
+    return completed + this._state.currentValue;
+  }
+
+  /**
    * Update the result display.
    */
   private _updateResult(): void {
     if (!this._resultValueEl || !this._resultUnitEl) return;
 
+    const total = this._totalValue();
     let displayValue: number;
     let unitLabel: string;
 
     if (this._state.mode === "distance") {
       const factor = DISTANCE_UNITS[this._state.distanceUnit].factor;
-      displayValue = this._state.currentValue * factor;
+      displayValue = total * factor;
       unitLabel = DISTANCE_UNITS[this._state.distanceUnit].label;
     } else {
       const factor = AREA_UNITS[this._state.areaUnit].factor;
-      displayValue = this._state.currentValue * factor;
+      displayValue = total * factor;
       unitLabel = AREA_UNITS[this._state.areaUnit].label;
     }
 
@@ -1124,6 +1145,8 @@ export class MeasureControl implements IControl {
     this._state.measurements.splice(index, 1);
     this._updateMapGeometry();
     this._updateMeasurementsList();
+    // The deleted measurement was part of the total; drop it from the readout.
+    this._updateResult();
 
     // Disable clear button if no measurements
     if (this._state.measurements.length === 0) {
