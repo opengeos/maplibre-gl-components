@@ -859,13 +859,18 @@ export class MeasureControl implements IControl {
     this._updateMapGeometry();
 
     // Keep the total on screen while completed measurements remain; only an
-    // empty tool has nothing to report.
+    // empty tool has nothing to report. Test for a saved measurement rather
+    // than a non-zero total, since coincident points and degenerate polygons
+    // are saved with a legitimately zero value.
     this._updateResult();
     const resultDiv = this._panel?.querySelector(
       ".measure-result",
     ) as HTMLElement;
     if (resultDiv) {
-      resultDiv.style.display = this._totalValue() > 0 ? "block" : "none";
+      const hasCompleted = this._state.measurements.some(
+        (m) => m.mode === this._state.mode,
+      );
+      resultDiv.style.display = hasCompleted ? "block" : "none";
     }
 
     // Reset instructions

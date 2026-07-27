@@ -106,6 +106,12 @@ function totalNumber(container: HTMLElement): number {
   );
 }
 
+/** Inline display of the total readout container. */
+function resultDisplay(container: HTMLElement): string {
+  return (container.querySelector(".measure-result") as HTMLElement).style
+    .display;
+}
+
 /** The saved-measurements list entries, as the user sees them. */
 function readList(container: HTMLElement): string[] {
   return [...container.querySelectorAll(".measurement-value")].map(
@@ -178,6 +184,28 @@ describe("MeasureControl", () => {
     });
     expect(control.getMeasurements()).toHaveLength(1);
     expect(control.getMeasurements()[0].mode).toBe("distance");
+  });
+
+  it("keeps a saved zero-value measurement's readout visible after Escape", () => {
+    const { control, ctx, container } = mountExpanded();
+    // Two coincident clicks finished with right-click save a measurement whose
+    // distance is legitimately zero.
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 0, 0);
+    finish(ctx, 0, 0);
+    expect(control.getMeasurements()).toHaveLength(1);
+    expect(totalNumber(container)).toBe(0);
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(resultDisplay(container)).toBe("block");
+  });
+
+  it("hides the readout when Escape leaves nothing measured", () => {
+    const { ctx, container } = mountExpanded();
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 1, 0);
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(resultDisplay(container)).toBe("none");
   });
 
   it("keeps the total on screen after a measurement finishes", () => {
