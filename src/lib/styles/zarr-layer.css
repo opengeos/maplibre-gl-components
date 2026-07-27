@@ -347,3 +347,12 @@
 .maplibre-gl-zarr-layer-popup-table td:last-child {
   color: #333;
 }
+
+/* The folder shown under "Browse folder"; a deep path should wrap, not widen
+   the panel. Inherits the panel's font color so it follows a host theme. */
+.maplibre-gl-zarr-layer-panel .maplibre-gl-zarr-layer-local-store-name {
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.75;
+  overflow-wrap: anywhere;
+}

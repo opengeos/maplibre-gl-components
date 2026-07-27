@@ -1835,7 +1835,40 @@ export interface ZarrLayerControlOptions {
   minzoom?: number;
   /** Maximum zoom level at which the control is visible. */
   maxzoom?: number;
+  /**
+   * Lets the panel open a Zarr store that lives in a folder rather than behind
+   * a URL. Supplying it adds a "Browse folder" button beside the Zarr URL, and
+   * the layer added next reads through the store the provider returns.
+   *
+   * The provider belongs to the host because reading a folder is not something
+   * a map plugin can do: it needs a desktop app's filesystem API, or the
+   * browser's `showDirectoryPicker()`. Leave it unset and the button does not
+   * appear, which is also how to hide it where neither is available.
+   */
+  localStoreProvider?: ZarrLocalStoreProvider;
 }
+
+/** A folder-backed Zarr store the host opened for the panel. */
+export interface ZarrLocalStore {
+  /** Folder name, shown in the panel and used to name the layer. */
+  name: string;
+  /** Reads the store's keys out of that folder. */
+  store: ZarrReadableStore;
+  /**
+   * Identifier to record as the layer's source. It is never fetched, so any
+   * URL-shaped string will do; the panel derives one from `name` when the host
+   * does not supply it. Supply your own to keep two folders of the same name
+   * apart, since per-layer state is keyed by this string.
+   */
+  url?: string;
+}
+
+/**
+ * Opens a folder dialog and returns read access to the chosen Zarr store.
+ *
+ * @returns The chosen store, or null when the dialog was dismissed.
+ */
+export type ZarrLocalStoreProvider = () => Promise<ZarrLocalStore | null>;
 
 /**
  * Minimal zarrita-compatible store. Implement this to back a Zarr layer with a

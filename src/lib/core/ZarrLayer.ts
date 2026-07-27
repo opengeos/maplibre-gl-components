@@ -12,6 +12,8 @@ import type {
   ZarrLayerEventHandler,
   ZarrLayerInfo,
   ZarrLayerAddOptions,
+  ZarrLocalStore,
+  ZarrLocalStoreProvider,
   ZarrReadableStore,
   ColormapName,
 } from "./types";
@@ -256,6 +258,7 @@ const DEFAULT_OPTIONS: Required<ZarrLayerControlOptions> = {
   fontColor: "#333",
   minzoom: 0,
   maxzoom: 24,
+  localStoreProvider: null as unknown as ZarrLocalStoreProvider,
 };
 
 /**
@@ -305,6 +308,17 @@ export class ZarrLayerControl implements IControl {
   /** Per-store spatial reference read from the store's own metadata. */
   private _spatialMetadataCache = new Map<string, ZarrSpatialMetadata>();
   private _variablesLoading: boolean = false;
+  /**
+   * The folder-backed store the user picked, if any. While one is held it wins
+   * over the URL field: the next Add Layer reads through it, and the variable
+   * lookup goes through it too. Cleared by typing a URL or picking a sample.
+   */
+  private _localStore: ZarrLocalStore | null = null;
+  /** The identifier a folder-backed layer records as its source. */
+  private _localStoreUrl = "";
+  private _localStoreLoading = false;
+  /** Distinguishes two picked folders that happen to share a name. */
+  private _localStoreSequence = 0;
   /** Pending debounce for {@link _scheduleSelectorUpdate}. */
   private _selectorUpdateTimer?: ReturnType<typeof setTimeout>;
   /** Serializes {@link _updateSelector} runs; see that method. */
@@ -483,9 +497,28 @@ export class ZarrLayerControl implements IControl {
     this._render();
   }
 
+  /**
+   * Record a freshly fetched variable list and make sure the panel's chosen
+   * variable is one of them.
+   *
+   * The picker renders `selected` on the option matching `_state.variable`; when
+   * none matches, the browser still shows the first option, so the panel would
+   * claim a variable the state does not hold and Add Layer would ask the store
+   * for the *previous* store's variable. Adopting the first entry keeps what is
+   * displayed and what is added the same thing.
+   */
+  private _adoptFetchedVariables(variables: string[]): void {
+    this._availableVariables = variables;
+    if (variables.length > 0 && !variables.includes(this._state.variable)) {
+      this._state.variable = variables[0];
+    }
+  }
+
   private _syncFetchButton(): void {
     if (!this._fetchButton) return;
-    this._fetchButton.disabled = this._variablesLoading || !this._state.url;
+    // A picked folder is a source too, even though the URL field is empty.
+    this._fetchButton.disabled =
+      this._variablesLoading || (!this._state.url && !this._localStore);
   }
 
   private _reflowPanel(): void {
@@ -627,13 +660,28 @@ export class ZarrLayerControl implements IControl {
    * Fetch available variables from the Zarr store.
    */
   async fetchVariables(): Promise<string[]> {
-    if (!this._state.url) return [];
+    if (!this._state.url && !this._localStore) return [];
 
     this._variablesLoading = true;
     this._render();
 
     try {
       const url = this._state.url.replace(/\/$/, "");
+      // A picked folder is read through its store; a URL is fetched. Both
+      // resolve a metadata key to a parsed document, or undefined when absent,
+      // so the probes below do not care which source is active.
+      const localStore = this._activeLocalStore();
+      const readJson = localStore
+        ? async (key: string) => {
+            const bytes = await localStore.get(key);
+            return bytes
+              ? JSON.parse(new TextDecoder().decode(bytes))
+              : undefined;
+          }
+        : async (key: string) => {
+            const response = await fetch(`${url}/${key}`);
+            return response.ok ? await response.json() : undefined;
+          };
 
       // Zarr v3 first: a consolidated store's root zarr.json embeds every child
       // node's metadata, so the arrays can be listed from the one response.
@@ -641,9 +689,8 @@ export class ZarrLayerControl implements IControl {
       // / `.zgroup` requests below, which would 404 and surface as errors in a
       // host's network diagnostics even though the store is perfectly valid.
       try {
-        const response = await fetch(`${url}/zarr.json`);
-        if (response.ok) {
-          const metadata = await response.json();
+        const metadata = await readJson("zarr.json");
+        if (metadata !== undefined) {
           const nodes = metadata?.consolidated_metadata?.metadata ?? {};
           const arrays = Object.entries(nodes as Record<string, unknown>)
             .filter(
@@ -653,7 +700,7 @@ export class ZarrLayerControl implements IControl {
             .map(([name]) => name);
           const variables = pickDataVariables(arrays);
           if (variables.length > 0) {
-            this._availableVariables = variables;
+            this._adoptFetchedVariables(variables);
             this._variablesLoading = false;
             this._render();
             return variables;
@@ -673,9 +720,8 @@ export class ZarrLayerControl implements IControl {
 
       // Try to fetch .zmetadata (consolidated metadata for Zarr v2)
       try {
-        const response = await fetch(`${url}/.zmetadata`);
-        if (response.ok) {
-          const metadata = await response.json();
+        const metadata = await readJson(".zmetadata");
+        if (metadata !== undefined) {
           const allPaths = Object.keys(metadata.metadata || {})
             .filter((key) => key.endsWith("/.zarray"))
             .map((key) => key.replace("/.zarray", ""))
@@ -684,7 +730,7 @@ export class ZarrLayerControl implements IControl {
           const variables = pickDataVariables(allPaths);
 
           if (variables.length > 0) {
-            this._availableVariables = variables;
+            this._adoptFetchedVariables(variables);
             this._variablesLoading = false;
             this._render();
             return variables;
@@ -694,17 +740,9 @@ export class ZarrLayerControl implements IControl {
         // .zmetadata not available
       }
 
-      // Try to fetch .zgroup and then list directory contents
-      try {
-        const zgroupResponse = await fetch(`${url}/.zgroup`);
-        if (zgroupResponse.ok) {
-          // It's a Zarr v2 group but without consolidated metadata
-          // We can't easily list contents without server-side directory listing
-          // Some servers support this via index.html or directory listing
-        }
-      } catch {
-        // Not a standard Zarr structure
-      }
+      // A Zarr v2 group with no consolidated metadata cannot be listed without
+      // a directory listing, which neither a plain HTTP server nor the store
+      // interface offers, so the variable name is left for manual entry.
 
       this._variablesLoading = false;
       this._render();
@@ -844,6 +882,8 @@ export class ZarrLayerControl implements IControl {
     urlInput.value = this._state.url;
     urlInput.addEventListener("input", () => {
       this._state.url = urlInput.value;
+      // A typed URL is a different source, so it replaces any picked folder.
+      this._clearLocalStore();
       this._syncFetchButton();
     });
     urlGroup.appendChild(urlInput);
@@ -853,12 +893,15 @@ export class ZarrLayerControl implements IControl {
       (url, sample) => {
         urlInput.value = url;
         this._state.url = url;
+        this._clearLocalStore();
         this._applySampleDefaults(sample);
         this._syncFetchButton();
       },
     );
     if (sampleDropdown) panel.appendChild(sampleDropdown);
     panel.appendChild(urlGroup);
+    const localStoreRow = this._createLocalStoreRow();
+    if (localStoreRow) panel.appendChild(localStoreRow);
 
     // Variable input with fetch button
     const varGroup = this._createFormGroup("Variable", "variable");
@@ -906,11 +949,14 @@ export class ZarrLayerControl implements IControl {
     const fetchBtn = document.createElement("button");
     fetchBtn.className = "maplibre-gl-zarr-layer-btn";
     fetchBtn.textContent = this._variablesLoading ? "..." : "Fetch";
-    fetchBtn.disabled = this._variablesLoading || !this._state.url;
     fetchBtn.style.padding = "5px 10px";
     fetchBtn.style.flexShrink = "0";
     fetchBtn.addEventListener("click", () => this.fetchVariables());
     this._fetchButton = fetchBtn;
+    // Through the shared rule rather than inline, so a freshly rendered button
+    // agrees with the one the URL handler updates — a picked folder is a source
+    // even though the URL field is empty.
+    this._syncFetchButton();
     varRow.appendChild(fetchBtn);
 
     varGroup.appendChild(varRow);
@@ -1225,6 +1271,95 @@ export class ZarrLayerControl implements IControl {
     requestAnimationFrame(() => this._reflowPanel());
   }
 
+  /**
+   * The "Browse folder" row, or null when the host supplied no
+   * {@link ZarrLayerControlOptions.localStoreProvider} — in which case the panel
+   * looks exactly as it did before.
+   */
+  private _createLocalStoreRow(): HTMLElement | null {
+    if (!this._options.localStoreProvider) return null;
+
+    const group = document.createElement("div");
+    group.className = "maplibre-gl-zarr-layer-form-group";
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "maplibre-gl-zarr-layer-btn";
+    button.textContent = this._localStoreLoading
+      ? "Opening..."
+      : this._localStore
+        ? "Choose a different folder"
+        : "Browse folder...";
+    button.disabled = this._localStoreLoading;
+    button.addEventListener("click", () => void this._pickLocalStore());
+    group.appendChild(button);
+
+    if (this._localStore) {
+      const name = document.createElement("div");
+      name.className = "maplibre-gl-zarr-layer-local-store-name";
+      name.textContent = this._localStore.name;
+      name.title = this._localStore.name;
+      group.appendChild(name);
+    }
+
+    return group;
+  }
+
+  /**
+   * Run the host's folder picker and adopt what it returns.
+   *
+   * The picked store replaces the URL as the source: the URL a folder-backed
+   * layer records is only an identifier, so it is minted here (unless the host
+   * supplied one) with a sequence number, since two folders can share a name
+   * and per-layer state is keyed by this string.
+   */
+  private async _pickLocalStore(): Promise<void> {
+    const provider = this._options.localStoreProvider;
+    if (!provider || this._localStoreLoading) return;
+
+    this._localStoreLoading = true;
+    this._render();
+    let picked: ZarrLocalStore | null = null;
+    try {
+      picked = await provider();
+    } catch (error) {
+      this._state.error =
+        error instanceof Error ? error.message : String(error);
+      this._emit("error", { error: this._state.error });
+    } finally {
+      this._localStoreLoading = false;
+    }
+
+    if (picked) {
+      this._localStoreSequence += 1;
+      this._localStore = picked;
+      this._localStoreUrl =
+        picked.url ??
+        `local-zarr:${encodeURIComponent(picked.name || "zarr")}?${this._localStoreSequence}`;
+      // Empty the URL field rather than leave a stale address next to a folder
+      // that has replaced it as the source.
+      this._state.url = "";
+      // The list belongs to whatever store was read last; keep a stale one and
+      // the picker would offer variables this folder has never heard of.
+      this._availableVariables = [];
+      this._state.error = null;
+    }
+    this._render();
+  }
+
+  /** Forget the picked folder, so the URL field is the source again. */
+  private _clearLocalStore(): void {
+    if (!this._localStore) return;
+    this._localStore = null;
+    this._localStoreUrl = "";
+    this._availableVariables = [];
+  }
+
+  /** The store a new layer should read through, when it is not a URL. */
+  private _activeLocalStore(): ZarrReadableStore | undefined {
+    return this._localStore?.store;
+  }
+
   private _createFormGroup(labelText: string, id: string): HTMLElement {
     const group = document.createElement("div");
     group.className = "maplibre-gl-zarr-layer-form-group";
@@ -1254,7 +1389,9 @@ export class ZarrLayerControl implements IControl {
   }
 
   private async _addLayer(overrides?: ZarrLayerAddOptions): Promise<void> {
-    const hasStore = !!overrides?.store;
+    // A store — the caller's, or the folder the user picked — stands in for the
+    // URL, so only the variable is still required.
+    const hasStore = !!overrides?.store || !!this._localStore;
     if (
       !this._map ||
       (!hasStore && !this._state.url) ||
@@ -1296,10 +1433,15 @@ export class ZarrLayerControl implements IControl {
         selector,
       };
       // A custom store replaces source, but keep the URL (when given) as the
-      // layer's identifying source for display and persistence.
-      if (this._state.url) layerOptions.source = this._state.url;
-      if (overrides?.store) {
-        layerOptions.store = overrides.store as ZarrLayerOptions["store"];
+      // layer's identifying source for display and persistence. A folder picked
+      // in the panel supplies both: its own store, and the identifier minted
+      // for it, since there is no address to record.
+      const localStore = this._activeLocalStore();
+      const source = localStore ? this._localStoreUrl : this._state.url;
+      if (source) layerOptions.source = source;
+      const store = overrides?.store ?? localStore;
+      if (store) {
+        layerOptions.store = store as ZarrLayerOptions["store"];
       }
       if (overrides?.zarrVersion)
         layerOptions.zarrVersion = overrides.zarrVersion;
@@ -1315,7 +1457,7 @@ export class ZarrLayerControl implements IControl {
       const detected =
         overrides?.crs || overrides?.proj4 || panelCrs || panelProj4
           ? {}
-          : await this._detectSpatialMetadata(this._state.url, overrides?.store);
+          : await this._detectSpatialMetadata(source, store);
       const crs = overrides?.crs ?? (panelCrs || detected.crs);
       const proj4 = overrides?.proj4 ?? (panelProj4 || detected.proj4);
       const bounds = overrides?.bounds ?? detected.bounds;
