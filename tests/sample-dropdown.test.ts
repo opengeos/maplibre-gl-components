@@ -51,9 +51,37 @@ describe("createSampleDropdown", () => {
     (
       dropdown.querySelector(".maplibre-gl-sample-option") as HTMLButtonElement
     ).click();
-    expect(onSelect).toHaveBeenCalledWith("https://example.com/counties.fgb");
+    // The entry travels with the URL so a control can apply its own settings.
+    expect(onSelect).toHaveBeenCalledWith("https://example.com/counties.fgb", {
+      label: "Counties",
+      url: "https://example.com/counties.fgb",
+    });
     expect(menu.hidden).toBe(true);
 
     dropdown.remove();
   });
 });
+
+describe("per-sample settings", () => {
+  it("hands the picked entry back so a control can apply its settings", () => {
+    // The URL alone is not enough: a control's `default*` options are shared by
+    // every sample it offers, so the entry has to travel with it.
+    const onSelect = vi.fn();
+    const sample = {
+      label: "Sea surface temperature",
+      url: "https://example.com/sst.zarr",
+      variable: "sst",
+      clim: [-2, 32] as [number, number],
+      colormap: ["#000000", "#ffffff"],
+      selector: {},
+    };
+    const dropdown = createSampleDropdown([sample], "Load sample data...", onSelect)!;
+    document.body.appendChild(dropdown);
+
+    (dropdown.querySelector(".maplibre-gl-sample-trigger") as HTMLButtonElement).click();
+    (dropdown.querySelector(".maplibre-gl-sample-option") as HTMLButtonElement).click();
+
+    expect(onSelect).toHaveBeenCalledWith("https://example.com/sst.zarr", sample);
+  });
+});
+

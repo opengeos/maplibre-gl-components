@@ -5,12 +5,32 @@
  * its URL.
  */
 
-/** A named sample dataset offered as a one-click entry in the dropdown. */
+/**
+ * A named sample dataset offered as a one-click entry in the dropdown.
+ *
+ * Beyond the URL, an entry may carry the settings that sample needs to render
+ * sensibly. A control's own `default*` options apply to every sample it offers,
+ * so without these a second sample inherits the first one's variable and color
+ * limits and lands looking broken -- a sea-surface-temperature cube drawn
+ * against a 0-300 ramp is a flat wash. Each control applies the fields it
+ * understands and ignores the rest.
+ */
 export interface MaplibreSampleDataset {
   /** Label shown in the dropdown. */
   label: string;
   /** URL filled into the input when this entry is picked. */
   url: string;
+  /** Array/variable to select for this sample (Zarr). */
+  variable?: string;
+  /** Color limits `[min, max]` to apply for this sample (Zarr). */
+  clim?: [number, number];
+  /** Colormap stops to apply for this sample (Zarr). */
+  colormap?: string[];
+  /**
+   * Dimension selector to apply for this sample (Zarr). Pass `{}` to clear a
+   * selector left over from another sample whose dimensions this store lacks.
+   */
+  selector?: Record<string, number | string>;
 }
 
 /**
@@ -18,13 +38,14 @@ export interface MaplibreSampleDataset {
  *
  * @param samples - The named sample datasets to offer.
  * @param placeholder - Trigger placeholder text shown before a selection.
- * @param onSelect - Called with the chosen sample's URL.
+ * @param onSelect - Called with the chosen sample's URL and the entry itself,
+ *   so a control can also apply that sample's own settings.
  * @returns The dropdown element, or null when `samples` is empty.
  */
 export function createSampleDropdown(
   samples: MaplibreSampleDataset[],
   placeholder: string,
-  onSelect: (url: string) => void,
+  onSelect: (url: string, sample: MaplibreSampleDataset) => void,
 ): HTMLElement | null {
   if (samples.length === 0) return null;
 
@@ -68,7 +89,7 @@ export function createSampleDropdown(
       event.stopPropagation();
       setMenuOpen(false);
       trigger.focus();
-      onSelect(sample.url);
+      onSelect(sample.url, sample);
     });
     menu.appendChild(option);
   }

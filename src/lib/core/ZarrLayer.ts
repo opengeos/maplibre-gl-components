@@ -1,6 +1,6 @@
 import "../styles/common.css";
 import "../styles/zarr-layer.css";
-import { createSampleDropdown } from "./sampleDropdown";
+import { createSampleDropdown, type MaplibreSampleDataset } from "./sampleDropdown";
 import maplibregl, {
   type IControl,
   type Map as MapLibreMap,
@@ -434,6 +434,39 @@ export class ZarrLayerControl implements IControl {
    * (which sets the input value programmatically and would not otherwise fire an
    * `input` event), so Fetch enables as soon as there is a URL.
    */
+  /**
+   * Apply a picked sample's own settings, then re-render so the variable,
+   * colormap, color-limit and selector inputs show them.
+   *
+   * A control's `default*` options are shared by every sample it offers, so
+   * without this a second sample inherits the first one's variable and color
+   * limits: a sea-surface-temperature cube drawn against a 0-300 ramp is a flat
+   * wash, and a selector naming dimensions the store does not have is sent
+   * anyway. Fields the sample omits are left as they are, so a sample that only
+   * supplies a URL behaves exactly as before.
+   *
+   * Stale variable choices are dropped either way: the list belongs to whatever
+   * store was fetched last, and keeping it would offer variables this one has
+   * no idea about.
+   */
+  private _applySampleDefaults(sample: MaplibreSampleDataset): void {
+    this._availableVariables = [];
+    if (sample.variable !== undefined) this._state.variable = sample.variable;
+    if (sample.clim !== undefined) this._state.clim = [...sample.clim] as [number, number];
+    if (sample.selector !== undefined) {
+      // An empty selector is meaningful: it clears one left over from a sample
+      // whose dimensions this store does not share.
+      this._state.selector =
+        Object.keys(sample.selector).length > 0 ? { ...sample.selector } : undefined;
+    }
+    if (sample.colormap !== undefined) {
+      this._state.colormap = [...sample.colormap];
+      this._colormapName = findColormapName(sample.colormap);
+      this._customColormap = this._colormapName === "custom" ? [...sample.colormap] : undefined;
+    }
+    this._render();
+  }
+
   private _syncFetchButton(): void {
     if (!this._fetchButton) return;
     this._fetchButton.disabled = this._variablesLoading || !this._state.url;
@@ -801,9 +834,10 @@ export class ZarrLayerControl implements IControl {
     const sampleDropdown = createSampleDropdown(
       this._options.sampleData,
       this._options.sampleDataLabel,
-      (url) => {
+      (url, sample) => {
         urlInput.value = url;
         this._state.url = url;
+        this._applySampleDefaults(sample);
         this._syncFetchButton();
       },
     );
