@@ -31,7 +31,19 @@ function makeFakeLayer() {
     setColormap: vi.fn(),
     setClim: vi.fn(),
     setOpacity: vi.fn(),
+    setSelector: vi.fn().mockResolvedValue(undefined),
   };
+}
+
+/** The panel's Selector (JSON) field. */
+function selectorInputOf(container: HTMLElement): HTMLInputElement {
+  const input = Array.from(
+    container.querySelectorAll<HTMLInputElement>(
+      'input.maplibre-gl-zarr-layer-input[type="text"]',
+    ),
+  ).find((el) => el.placeholder.includes('"band"'));
+  expect(input).toBeTruthy();
+  return input!;
 }
 
 describe("ZarrLayerControl live restyle", () => {
@@ -106,6 +118,94 @@ describe("ZarrLayerControl live restyle", () => {
     control._zarrLayers.clear();
     expect(() => control._updateColormap()).not.toThrow();
     expect(() => control._updateClim()).not.toThrow();
+  });
+
+  it("re-slices the live layer when the selector is edited", async () => {
+    vi.useFakeTimers();
+    try {
+      const input = selectorInputOf(container);
+      input.value = '{"band":"prec","month":12}';
+      input.dispatchEvent(new Event("input"));
+
+      // Debounced: nothing reaches the renderer until the typing settles.
+      expect(fake.setSelector).not.toHaveBeenCalled();
+      await vi.runAllTimersAsync();
+
+      expect(fake.setSelector).toHaveBeenCalledTimes(1);
+      expect(fake.setSelector).toHaveBeenCalledWith({
+        band: "prec",
+        month: 12,
+      });
+      expect(control._zarrLayerPropsMap.get("layer-1").selector).toEqual({
+        band: "prec",
+        month: 12,
+      });
+      expect(map.triggerRepaint).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("collapses a burst of edits onto the latest selector", async () => {
+    vi.useFakeTimers();
+    try {
+      const input = selectorInputOf(container);
+      // Typing "12" one digit at a time passes through a valid `month: 1`.
+      input.value = '{"month":1}';
+      input.dispatchEvent(new Event("input"));
+      input.value = '{"month":12}';
+      input.dispatchEvent(new Event("input"));
+      await vi.runAllTimersAsync();
+
+      expect(fake.setSelector).toHaveBeenCalledTimes(1);
+      expect(fake.setSelector).toHaveBeenCalledWith({ month: 12 });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("ignores an incomplete selector and keeps the last valid one", async () => {
+    vi.useFakeTimers();
+    try {
+      const input = selectorInputOf(container);
+      input.value = '{"month":3}';
+      input.dispatchEvent(new Event("input"));
+      await vi.runAllTimersAsync();
+      expect(fake.setSelector).toHaveBeenCalledWith({ month: 3 });
+
+      fake.setSelector.mockClear();
+      input.value = '{"month":';
+      input.dispatchEvent(new Event("input"));
+      await vi.runAllTimersAsync();
+      expect(fake.setSelector).not.toHaveBeenCalled();
+      expect(control._state.selector).toEqual({ month: 3 });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("leaves the layer on its slice when setSelector rejects", async () => {
+    vi.useFakeTimers();
+    try {
+      control._zarrLayerPropsMap.get("layer-1").selector = { month: 1 };
+      fake.setSelector.mockRejectedValueOnce(new Error("no such dimension"));
+      const input = selectorInputOf(container);
+      input.value = '{"nope":9}';
+      input.dispatchEvent(new Event("input"));
+      await vi.runAllTimersAsync();
+
+      expect(fake.setSelector).toHaveBeenCalledTimes(1);
+      expect(control._zarrLayerPropsMap.get("layer-1").selector).toEqual({
+        month: 1,
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("_updateSelector is a safe no-op with no layers", () => {
+    control._zarrLayers.clear();
+    expect(() => control._updateSelector()).not.toThrow();
   });
 });
 
