@@ -310,3 +310,70 @@ describe("zarrSpatialMetadataFromV2Consolidated", () => {
     expect(zarrSpatialMetadataFromV2Consolidated(undefined)).toEqual({});
   });
 });
+
+describe("sample dataset settings", () => {
+  /** Open the panel and click the sample entry at `index`. */
+  function pickSample(control: ZarrLayerControl, index: number): void {
+    const container = control.onAdd(makeMockMap());
+    document.body.appendChild(container);
+    (
+      container.querySelector(".maplibre-gl-sample-trigger") as HTMLButtonElement
+    ).click();
+    const options = [
+      ...container.querySelectorAll(".maplibre-gl-sample-option"),
+    ] as HTMLButtonElement[];
+    options[index].click();
+  }
+
+  it("applies the picked sample's variable, clim, colormap and selector", () => {
+    // Without this the second sample inherits the first one's settings: a
+    // sea-surface-temperature cube against a 0-300 ramp is a flat wash, and a
+    // `{ band, month }` selector names dimensions it does not have.
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      defaultVariable: "climate",
+      defaultClim: [0, 300],
+      defaultSelector: { band: "prec", month: 1 },
+      sampleData: [
+        { label: "Climate", url: "https://example.com/climate.zarr" },
+        {
+          label: "Sea surface temperature",
+          url: "https://example.com/sst.zarr",
+          variable: "sst",
+          clim: [-2, 32],
+          colormap: ["#111111", "#eeeeee"],
+          selector: {},
+        },
+      ],
+    });
+
+    pickSample(control, 1);
+
+    const state = control.getState();
+    expect(state.url).toBe("https://example.com/sst.zarr");
+    expect(state.variable).toBe("sst");
+    expect(state.clim).toEqual([-2, 32]);
+    expect(state.colormap).toEqual(["#111111", "#eeeeee"]);
+    // An empty selector clears the one the other sample needs.
+    expect(state.selector).toBeUndefined();
+  });
+
+  it("leaves the control's own defaults alone for a URL-only sample", () => {
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      defaultVariable: "climate",
+      defaultClim: [0, 300],
+      defaultSelector: { band: "prec", month: 1 },
+      sampleData: [{ label: "Climate", url: "https://example.com/climate.zarr" }],
+    });
+
+    pickSample(control, 0);
+
+    const state = control.getState();
+    expect(state.url).toBe("https://example.com/climate.zarr");
+    expect(state.variable).toBe("climate");
+    expect(state.clim).toEqual([0, 300]);
+    expect(state.selector).toEqual({ band: "prec", month: 1 });
+  });
+});
+
