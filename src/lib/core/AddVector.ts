@@ -1,6 +1,10 @@
 import "../styles/common.css";
 import "../styles/add-vector.css";
-import maplibregl, {
+// Named imports, not a default one: MapLibre v6 is ESM-only and dropped its
+// default export.
+import {
+  GeoJSONSource,
+  Popup,
   type IControl,
   type Map as MapLibreMap,
 } from "maplibre-gl";
@@ -129,7 +133,7 @@ export class AddVectorControl implements IControl {
   private _userPanelSize: UserPanelSize | null = null;
   private _mapResizeHandler?: () => void;
   private _vectorLayers: Map<string, AddVectorLayerInfo> = new Map();
-  private _activePopup?: maplibregl.Popup;
+  private _activePopup?: Popup;
   private _viewportLoadingLayers: Set<string> = new Set();
   private _viewportHandler?: () => void;
   private _viewportLoadingState: Map<string, boolean> = new Map();
@@ -1303,7 +1307,7 @@ export class AddVectorControl implements IControl {
               this._activePopup.remove();
             }
 
-            this._activePopup = new maplibregl.Popup({
+            this._activePopup = new Popup({
               closeButton: true,
               maxWidth: "300px",
             })
@@ -1359,7 +1363,7 @@ export class AddVectorControl implements IControl {
           const fullGeojson = await this._loadGeoParquet(sourceUrl);
           const source = this._map!.getSource(sourceId);
           if (source && source.type === "geojson") {
-            (source as maplibregl.GeoJSONSource).setData(fullGeojson);
+            (source as GeoJSONSource).setData(fullGeojson);
           }
           layerInfo.featureCount = fullGeojson.features.length;
           this._state.layers = Array.from(this._vectorLayers.values());
@@ -1702,7 +1706,7 @@ export class AddVectorControl implements IControl {
       // Update source data
       const source = this._map.getSource(layerInfo.sourceId);
       if (source && source.type === "geojson") {
-        (source as maplibregl.GeoJSONSource).setData(geojson);
+        (source as GeoJSONSource).setData(geojson);
       }
 
       // Update feature count in layer info

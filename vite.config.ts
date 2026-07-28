@@ -73,6 +73,13 @@ export default defineConfig({
         // LidarControl resize handle in >=0.16) still gets the old bundled UI.
         'maplibre-gl-lidar',
         'maplibre-gl-usgs-lidar',
+        // Same reasoning for Geoman, which reaches this build only through
+        // maplibre-gl-geo-editor (where it is already a peer dependency, so
+        // consumers resolve their own copy). Inlining it here also baked its
+        // `import maplibregl from 'maplibre-gl'` into our dist, which is a hard
+        // bundling error for consumers on MapLibre v6 — that library is
+        // ESM-only and has no default export.
+        '@geoman-io/maplibre-geoman-free',
       ],
       onwarn(warning, defaultHandler) {
         // Suppress "spawn" not exported warning from @loaders.gl/worker-utils

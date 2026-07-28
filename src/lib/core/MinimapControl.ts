@@ -1,11 +1,10 @@
 import "../styles/common.css";
 import "../styles/minimap-control.css";
-import maplibregl from "maplibre-gl";
-import type {
-  IControl,
-  Map as MapLibreMap,
-  ControlPosition,
-} from "maplibre-gl";
+// Named import, not a default one: MapLibre v6 is ESM-only and dropped its
+// default export. A class is both a value and a type, so `Map` covers both
+// uses here.
+import { Map as MapLibreMap } from "maplibre-gl";
+import type { IControl, ControlPosition, GeoJSONSource } from "maplibre-gl";
 import type {
   MinimapControlOptions,
   MinimapControlState,
@@ -76,7 +75,7 @@ export class MinimapControl implements IControl {
   private _eventHandlers: Map<MinimapEvent, Set<MinimapEventHandler>> =
     new Map();
   private _map?: MapLibreMap;
-  private _minimapMap?: maplibregl.Map;
+  private _minimapMap?: MapLibreMap;
   private _handleMove?: () => void;
   private _handleZoom?: () => void;
   private _zoomVisible: boolean = true;
@@ -231,7 +230,7 @@ export class MinimapControl implements IControl {
     const mainZoom = this._map.getZoom();
     const minimapZoom = Math.max(0, mainZoom + this._options.zoomOffset);
 
-    this._minimapMap = new maplibregl.Map({
+    this._minimapMap = new MapLibreMap({
       container: mapDiv,
       style: this._options.style as string,
       center: mainCenter,
@@ -435,7 +434,7 @@ export class MinimapControl implements IControl {
       [sw.lng, sw.lat],
     ];
 
-    (source as maplibregl.GeoJSONSource).setData({
+    (source as GeoJSONSource).setData({
       type: "Feature",
       geometry: { type: "Polygon", coordinates: [coordinates] },
       properties: {},

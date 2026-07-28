@@ -361,6 +361,9 @@ export type {
 } from "./lib/converters";
 
 // Auto-install Map.prototype.addControlGrid
-import maplibregl from "maplibre-gl";
+// Named import, not a default one: MapLibre v6 is ESM-only and dropped its
+// default export. (Patching Map.prototype still works on v6 — it is the
+// module namespace, not the prototype, that became immutable.)
+import { Map as MapLibreMap } from "maplibre-gl";
 import { installAddControlGrid } from "./lib/addControlGrid";
-installAddControlGrid(maplibregl.Map);
+installAddControlGrid(MapLibreMap);
