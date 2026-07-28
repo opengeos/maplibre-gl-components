@@ -1,10 +1,16 @@
 import "../styles/common.css";
 import "../styles/inspect-control.css";
-import maplibregl, {
+// Named imports, not a default one: MapLibre v6 is ESM-only and dropped its
+// default export.
+import {
+  Popup,
+  type FilterSpecification,
   type IControl,
   type Map as MapLibreMap,
+  type MapGeoJSONFeature,
   type MapMouseEvent,
-  Popup,
+  type PointLike,
+  type Source,
 } from "maplibre-gl";
 import type {
   InspectControlOptions,
@@ -497,8 +503,8 @@ export class InspectControl implements IControl {
    * Queries features at a point.
    */
   private _queryFeatures(
-    point: maplibregl.PointLike,
-  ): maplibregl.MapGeoJSONFeature[] {
+    point: PointLike,
+  ): MapGeoJSONFeature[] {
     if (!this._map) return [];
 
     const queryOptions: { layers?: string[] } = {};
@@ -546,7 +552,7 @@ export class InspectControl implements IControl {
     const addLayers = (layerBase: {
       source: string;
       "source-layer"?: string;
-      filter?: maplibregl.FilterSpecification;
+      filter?: FilterSpecification;
     }): void => {
       if (geometryType === "Point" || geometryType === "MultiPoint") {
         const layerId = `${this._highlightSourceId}-circle`;
@@ -616,7 +622,7 @@ export class InspectControl implements IControl {
       const layerBase: {
         source: string;
         "source-layer"?: string;
-        filter?: maplibregl.FilterSpecification;
+        filter?: FilterSpecification;
       } = { source: highlightTarget.sourceId };
 
       if (highlightTarget.sourceLayer) {
@@ -648,7 +654,7 @@ export class InspectControl implements IControl {
   private _getHighlightTarget(inspectedFeature: InspectedFeature): {
     sourceId: string;
     sourceLayer?: string;
-    filter: maplibregl.FilterSpecification;
+    filter: FilterSpecification;
   } | null {
     if (!this._map) return null;
 
@@ -657,7 +663,7 @@ export class InspectControl implements IControl {
     if (featureId === null || featureId === undefined) return null;
 
     const source = this._map.getSource(sourceId) as
-      | maplibregl.Source
+      | Source
       | undefined;
     if (!source) return null;
 
@@ -665,7 +671,7 @@ export class InspectControl implements IControl {
 
     // Use legacy $id syntax which is universally compatible
     // Don't combine with layerFilter as it may use incompatible filter syntax
-    const idFilter: maplibregl.FilterSpecification = ["==", "$id", featureId];
+    const idFilter: FilterSpecification = ["==", "$id", featureId];
 
     return { sourceId, sourceLayer, filter: idFilter };
   }

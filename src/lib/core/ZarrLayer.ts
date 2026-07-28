@@ -1,7 +1,10 @@
 import "../styles/common.css";
 import "../styles/zarr-layer.css";
 import { createSampleDropdown, type MaplibreSampleDataset } from "./sampleDropdown";
-import maplibregl, {
+// Named imports, not a default one: MapLibre v6 is ESM-only and dropped its
+// default export.
+import {
+  Popup,
   type IControl,
   type Map as MapLibreMap,
 } from "maplibre-gl";
@@ -301,7 +304,7 @@ export class ZarrLayerControl implements IControl {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _zarrLayerPropsMap: Map<string, Record<string, any>> = new Map();
   private _layerCounter = 0;
-  private _activePopup?: maplibregl.Popup;
+  private _activePopup?: Popup;
   private _colormapName: ColormapName | "custom" = "viridis";
   private _customColormap?: string[];
   private _availableVariables: string[] = [];
@@ -1553,7 +1556,7 @@ export class ZarrLayerControl implements IControl {
       html += "</table>";
       html += "</div>";
 
-      this._activePopup = new maplibregl.Popup({
+      this._activePopup = new Popup({
         closeButton: true,
         maxWidth: "250px",
       })

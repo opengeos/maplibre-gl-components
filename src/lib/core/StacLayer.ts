@@ -1,6 +1,9 @@
 import "../styles/common.css";
 import "../styles/stac-layer.css";
-import maplibregl, {
+// Named imports, not a default one: MapLibre v6 is ESM-only and dropped its
+// default export.
+import {
+  Popup,
   type IControl,
   type Map as MapLibreMap,
 } from "maplibre-gl";
@@ -256,7 +259,7 @@ export class StacLayerControl implements IControl {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _cogLayerPropsMap: Map<string, Record<string, any>> = new Map();
   private _layerCounter = 0;
-  private _activePopup?: maplibregl.Popup;
+  private _activePopup?: Popup;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _mapClickHandler?: (e: any) => void;
 
@@ -1248,7 +1251,7 @@ export class StacLayerControl implements IControl {
       }
       html += "</table></div>";
 
-      this._activePopup = new maplibregl.Popup({
+      this._activePopup = new Popup({
         closeButton: true,
         maxWidth: "280px",
       })

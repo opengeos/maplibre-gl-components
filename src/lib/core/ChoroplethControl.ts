@@ -1,6 +1,10 @@
 import "../styles/common.css";
 import "../styles/choropleth-control.css";
-import maplibregl, {
+// Named imports, not a default one: MapLibre v6 is ESM-only and dropped its
+// default export.
+import {
+  Popup,
+  type ExpressionSpecification,
   type IControl,
   type Map as MapLibreMap,
 } from "maplibre-gl";
@@ -299,7 +303,7 @@ export class ChoroplethControl implements IControl {
   private _zoomVisible: boolean = true;
   private _choroplethLayers: Map<string, ChoroplethLayerInfo> = new Map();
   private _legendControls: Map<string, Legend> = new Map();
-  private _activePopup?: maplibregl.Popup;
+  private _activePopup?: Popup;
   // Cache of loaded GeoJSON data and their numeric columns
   private _cachedGeojson?: GeoJSON.FeatureCollection;
   private _cachedColumns: string[] = [];
@@ -1339,9 +1343,9 @@ export class ChoroplethControl implements IControl {
               ],
               paint: {
                 "fill-extrusion-color":
-                  fillExtrusionColorExpr as maplibregl.ExpressionSpecification,
+                  fillExtrusionColorExpr as ExpressionSpecification,
                 "fill-extrusion-height":
-                  fillExtrusionHeightExpr as maplibregl.ExpressionSpecification,
+                  fillExtrusionHeightExpr as ExpressionSpecification,
                 "fill-extrusion-base": 10, // Small offset to avoid z-fighting on globe projection
                 "fill-extrusion-opacity": opacity,
               },
@@ -1366,7 +1370,7 @@ export class ChoroplethControl implements IControl {
                 "fill-color": [
                   "get",
                   "_choropleth_color",
-                ] as unknown as maplibregl.ExpressionSpecification,
+                ] as unknown as ExpressionSpecification,
                 "fill-opacity": opacity,
                 "fill-outline-color": outlineColor,
               },
@@ -1417,7 +1421,7 @@ export class ChoroplethControl implements IControl {
               "line-color": [
                 "get",
                 "_choropleth_color",
-              ] as unknown as maplibregl.ExpressionSpecification,
+              ] as unknown as ExpressionSpecification,
               "line-width": 2,
               "line-opacity": opacity,
             },
@@ -1443,7 +1447,7 @@ export class ChoroplethControl implements IControl {
               "circle-color": [
                 "get",
                 "_choropleth_color",
-              ] as unknown as maplibregl.ExpressionSpecification,
+              ] as unknown as ExpressionSpecification,
               "circle-radius": 6,
               "circle-stroke-color": outlineColor,
               "circle-stroke-width": showOutline ? 1 : 0,
@@ -1491,7 +1495,7 @@ export class ChoroplethControl implements IControl {
               this._activePopup.remove();
             }
 
-            this._activePopup = new maplibregl.Popup({
+            this._activePopup = new Popup({
               closeButton: true,
               maxWidth: "300px",
             })
