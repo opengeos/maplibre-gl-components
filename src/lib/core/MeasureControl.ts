@@ -22,6 +22,17 @@ import type {
 import { generateId } from "../utils/helpers";
 
 /**
+ * Mean radius of the Earth in meters, the default body the control measures on.
+ *
+ * Distances and areas are derived from lon/lat angles, so the only thing that
+ * ties a measurement to a particular planet is the radius those angles are
+ * multiplied by. Override it with the `radius` option (or {@link
+ * MeasureControl.setRadius}) to measure on another body — 3389500 for Mars,
+ * 1737400 for the Moon, and so on.
+ */
+export const EARTH_RADIUS_METERS = 6371000;
+
+/**
  * Default options for the MeasureControl.
  */
 const DEFAULT_OPTIONS: Required<MeasureControlOptions> = {
@@ -49,6 +60,7 @@ const DEFAULT_OPTIONS: Required<MeasureControlOptions> = {
   fontColor: "",
   minzoom: 0,
   maxzoom: 24,
+  radius: EARTH_RADIUS_METERS,
 };
 
 /**
@@ -103,9 +115,15 @@ const AREA_UNITS: Record<AreaUnit, { label: string; factor: number }> = {
 
 /**
  * Calculate the distance between two points using the Haversine formula.
+ *
+ * @param radius Radius of the body in meters. Defaults to Earth's.
  */
-function haversineDistance(p1: MeasurePoint, p2: MeasurePoint): number {
-  const R = 6371000; // Earth's radius in meters
+function haversineDistance(
+  p1: MeasurePoint,
+  p2: MeasurePoint,
+  radius: number = EARTH_RADIUS_METERS,
+): number {
+  const R = radius;
   const lat1 = (p1.lat * Math.PI) / 180;
   const lat2 = (p2.lat * Math.PI) / 180;
   const deltaLat = ((p2.lat - p1.lat) * Math.PI) / 180;
@@ -124,11 +142,16 @@ function haversineDistance(p1: MeasurePoint, p2: MeasurePoint): number {
 
 /**
  * Calculate the area of a polygon using the Shoelace formula (spherical approximation).
+ *
+ * @param radius Radius of the body in meters. Defaults to Earth's.
  */
-function calculatePolygonArea(points: MeasurePoint[]): number {
+function calculatePolygonArea(
+  points: MeasurePoint[],
+  radius: number = EARTH_RADIUS_METERS,
+): number {
   if (points.length < 3) return 0;
 
-  const R = 6371000; // Earth's radius in meters
+  const R = radius;
   let area = 0;
 
   for (let i = 0; i < points.length; i++) {
@@ -892,7 +915,11 @@ export class MeasureControl implements IControl {
       const segments: number[] = [];
 
       for (let i = 1; i < points.length; i++) {
-        const dist = haversineDistance(points[i - 1], points[i]);
+        const dist = haversineDistance(
+          points[i - 1],
+          points[i],
+          this._options.radius,
+        );
         segments.push(dist);
         total += dist;
       }
@@ -901,7 +928,10 @@ export class MeasureControl implements IControl {
       this._state.currentSegments = segments;
     } else {
       // Calculate area
-      this._state.currentValue = calculatePolygonArea(points);
+      this._state.currentValue = calculatePolygonArea(
+        points,
+        this._options.radius,
+      );
     }
 
     this._updateResult();
@@ -1281,6 +1311,67 @@ export class MeasureControl implements IControl {
     this._updateMeasurementsList();
     this._emit("unitchange");
     return this;
+  }
+
+  /**
+   * Get the radius, in meters, measurements are currently computed against.
+   */
+  getRadius(): number {
+    return this._options.radius;
+  }
+
+  /**
+   * Set the radius of the body being measured, in meters.
+   *
+   * Distances and areas come from lon/lat angles scaled by this radius, so
+   * pointing it at another body's radius is what makes the readouts correct
+   * there (3389500 for Mars, 1737400 for the Moon, and so on). Measurements
+   * already on the map are recomputed from their points, so switching bodies
+   * mid-session updates every result rather than leaving a mix of the two.
+   *
+   * Ignores a non-finite or non-positive radius, which would make every
+   * subsequent measurement `NaN` or zero.
+   */
+  setRadius(radius: number): this {
+    if (!Number.isFinite(radius) || radius <= 0) return this;
+    if (radius === this._options.radius) return this;
+    this._options.radius = radius;
+    this._recomputeMeasurements();
+    // Anything that cached a value derived from a measurement (a host's own
+    // panel section, a saved report) has just gone stale by the same ratio.
+    this._emit("radiuschange");
+    return this;
+  }
+
+  /**
+   * Recompute every stored measurement, plus the drawing in progress, against
+   * the current radius and refresh the panel.
+   */
+  private _recomputeMeasurements(): void {
+    for (const measurement of this._state.measurements) {
+      if (measurement.mode === "distance") {
+        const segments: number[] = [];
+        for (let i = 1; i < measurement.points.length; i++) {
+          segments.push(
+            haversineDistance(
+              measurement.points[i - 1],
+              measurement.points[i],
+              this._options.radius,
+            ),
+          );
+        }
+        measurement.segments = segments;
+        measurement.distance = segments.reduce((sum, d) => sum + d, 0);
+      } else {
+        measurement.area = calculatePolygonArea(
+          measurement.points,
+          this._options.radius,
+        );
+      }
+    }
+    // Re-derives the in-progress value and calls _updateResult() for us.
+    this._updateMeasurement();
+    this._updateMeasurementsList();
   }
 
   /**

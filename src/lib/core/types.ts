@@ -2989,6 +2989,17 @@ export interface MeasureControlOptions {
   minzoom?: number;
   /** Maximum zoom level at which the control is visible. */
   maxzoom?: number;
+  /**
+   * Radius of the body being measured, in meters. Default: 6371000 (Earth's
+   * mean radius).
+   *
+   * Distances and areas are lon/lat angles scaled by this radius, so it is the
+   * single value that decides which body the readouts describe. Set it to
+   * another body's mean radius (3389500 for Mars, 1737400 for the Moon) to
+   * measure there, or call `MeasureControl.setRadius` to switch bodies after
+   * the control is on the map.
+   */
+  radius?: number;
 }
 
 /**
@@ -3052,6 +3063,7 @@ export type MeasureEvent =
   | ComponentEvent
   | "modechange"
   | "unitchange"
+  | "radiuschange"
   | "drawstart"
   | "drawupdate"
   | "drawend"

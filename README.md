@@ -1311,6 +1311,19 @@ stacSearch.off(event, handler); // Unsubscribe from events
 
 A control for measuring distances and areas on the map.
 
+Measurements are lon/lat angles scaled by a body radius, which defaults to
+Earth's mean radius (6371000 m). Pass a different `radius` to measure on another
+body, or call `setRadius()` to switch bodies after the control is on the map -
+measurements already taken are recomputed rather than left in the old body's
+units.
+
+```typescript
+const measure = new MeasureControl({ radius: 3389500 }); // Mars
+map.addControl(measure, "top-right");
+
+measure.setRadius(1737400); // switch to the Moon
+```
+
 See the [measure-control example](./examples/measure-control/) for a complete working example.
 
 ### BookmarkControl

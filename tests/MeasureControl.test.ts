@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { MeasureControl } from "../src/lib/core/MeasureControl";
+import {
+  EARTH_RADIUS_METERS,
+  MeasureControl,
+} from "../src/lib/core/MeasureControl";
+
+/** Mars' mean radius, the stand-in for "some other body" in these tests. */
+const MARS_RADIUS_METERS = 3389500;
 
 // Vertex markers are rendered through an async `import("maplibre-gl")` that
 // pulls in the real Marker implementation, which a lightweight map stub cannot
@@ -309,5 +315,98 @@ describe("MeasureControl", () => {
     expect(control.getState().mode).toBe("area");
     expect(control.getState().currentPoints).toHaveLength(2);
     expect(control.getState().isDrawing).toBe(true);
+  });
+
+  describe("radius", () => {
+    it("defaults to Earth's mean radius", () => {
+      const { control } = mountExpanded();
+      expect(control.getRadius()).toBe(EARTH_RADIUS_METERS);
+    });
+
+    it("scales distances by the configured body radius", () => {
+      const earth = mountExpanded();
+      clickAt(earth.ctx, 0, 0);
+      clickAt(earth.ctx, 1, 0);
+      finish(earth.ctx, 1, 0);
+
+      const mars = mountExpanded({ radius: MARS_RADIUS_METERS });
+      clickAt(mars.ctx, 0, 0);
+      clickAt(mars.ctx, 1, 0);
+      finish(mars.ctx, 1, 0);
+
+      const ratio = MARS_RADIUS_METERS / EARTH_RADIUS_METERS;
+      expect(mars.control.getMeasurements()[0].distance!).toBeCloseTo(
+        earth.control.getMeasurements()[0].distance! * ratio,
+        6,
+      );
+    });
+
+    it("scales areas by the square of the body radius ratio", () => {
+      const earth = mountExpanded({ defaultMode: "area" });
+      [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+      ].forEach(([lng, lat]) => clickAt(earth.ctx, lng, lat));
+      finish(earth.ctx, 1, 1);
+
+      const mars = mountExpanded({
+        defaultMode: "area",
+        radius: MARS_RADIUS_METERS,
+      });
+      [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+      ].forEach(([lng, lat]) => clickAt(mars.ctx, lng, lat));
+      finish(mars.ctx, 1, 1);
+
+      const ratio = MARS_RADIUS_METERS / EARTH_RADIUS_METERS;
+      expect(mars.control.getMeasurements()[0].area!).toBeCloseTo(
+        earth.control.getMeasurements()[0].area! * ratio * ratio,
+        6,
+      );
+    });
+
+    it("recomputes saved measurements and the readout when the radius changes", () => {
+      const { control, ctx, container } = mountExpanded();
+      clickAt(ctx, 0, 0);
+      clickAt(ctx, 1, 0);
+      finish(ctx, 1, 0);
+
+      const earthDistance = control.getMeasurements()[0].distance!;
+      const earthTotal = totalNumber(container);
+
+      control.setRadius(MARS_RADIUS_METERS);
+
+      const ratio = MARS_RADIUS_METERS / EARTH_RADIUS_METERS;
+      const measurement = control.getMeasurements()[0];
+      expect(measurement.distance!).toBeCloseTo(earthDistance * ratio, 6);
+      expect(measurement.segments![0]).toBeCloseTo(earthDistance * ratio, 6);
+      // The panel follows, rather than keeping the Earth numbers on screen.
+      expect(totalNumber(container)).toBeCloseTo(earthTotal * ratio, 2);
+      expect(readList(container)).toEqual([readTotal(container)]);
+    });
+
+    it("emits radiuschange so hosts can refresh derived readouts", () => {
+      const { control } = mountExpanded();
+      const seen: string[] = [];
+      control.on("radiuschange", (event) => seen.push(event.type));
+
+      control.setRadius(MARS_RADIUS_METERS);
+      expect(seen).toEqual(["radiuschange"]);
+
+      // Setting the same radius again is a no-op, not a second event.
+      control.setRadius(MARS_RADIUS_METERS);
+      expect(seen).toEqual(["radiuschange"]);
+    });
+
+    it("ignores a non-positive or non-finite radius", () => {
+      const { control } = mountExpanded();
+      control.setRadius(0);
+      control.setRadius(-1);
+      control.setRadius(Number.NaN);
+      expect(control.getRadius()).toBe(EARTH_RADIUS_METERS);
+    });
   });
 });

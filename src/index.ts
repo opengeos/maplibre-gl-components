@@ -59,7 +59,10 @@ export { AddVectorControl } from "./lib/core/AddVector";
 export { ChoroplethControl } from "./lib/core/ChoroplethControl";
 export { StacLayerControl } from "./lib/core/StacLayer";
 export { StacSearchControl } from "./lib/core/StacSearch";
-export { MeasureControl } from "./lib/core/MeasureControl";
+export {
+  MeasureControl,
+  EARTH_RADIUS_METERS,
+} from "./lib/core/MeasureControl";
 export { BookmarkControl } from "./lib/core/BookmarkControl";
 export { PrintControl } from "./lib/core/PrintControl";
 export { MinimapControl } from "./lib/core/MinimapControl";
