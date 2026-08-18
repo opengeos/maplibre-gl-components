@@ -33,6 +33,16 @@ import { generateId } from "../utils/helpers";
 export const EARTH_RADIUS_METERS = 6371000;
 
 /**
+ * Whether a radius can actually be measured against. A zero or negative radius
+ * collapses every measurement to zero or flips its sign, and a non-finite one
+ * makes every readout `NaN`, so both the constructor and {@link
+ * MeasureControl.setRadius} fall back to Earth rather than accept one.
+ */
+function isUsableRadius(radius: unknown): radius is number {
+  return typeof radius === "number" && Number.isFinite(radius) && radius > 0;
+}
+
+/**
  * Default options for the MeasureControl.
  */
 const DEFAULT_OPTIONS: Required<MeasureControlOptions> = {
@@ -223,6 +233,11 @@ export class MeasureControl implements IControl {
    */
   constructor(options?: MeasureControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
+    // Normalize up front so an unusable radius cannot reach the maths;
+    // setRadius applies the same rule to every later change.
+    if (!isUsableRadius(this._options.radius)) {
+      this._options.radius = EARTH_RADIUS_METERS;
+    }
     this._state = {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
@@ -1333,7 +1348,7 @@ export class MeasureControl implements IControl {
    * subsequent measurement `NaN` or zero.
    */
   setRadius(radius: number): this {
-    if (!Number.isFinite(radius) || radius <= 0) return this;
+    if (!isUsableRadius(radius)) return this;
     if (radius === this._options.radius) return this;
     this._options.radius = radius;
     this._recomputeMeasurements();

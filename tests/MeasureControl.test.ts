@@ -406,7 +406,20 @@ describe("MeasureControl", () => {
       control.setRadius(0);
       control.setRadius(-1);
       control.setRadius(Number.NaN);
+      control.setRadius(Number.POSITIVE_INFINITY);
       expect(control.getRadius()).toBe(EARTH_RADIUS_METERS);
+    });
+
+    it("falls back to Earth for an unusable radius option", () => {
+      for (const radius of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+        const { control } = mountExpanded({ radius });
+        expect(control.getRadius()).toBe(EARTH_RADIUS_METERS);
+      }
+    });
+
+    it("measures against a valid radius option rather than discarding it", () => {
+      const { control } = mountExpanded({ radius: MARS_RADIUS_METERS });
+      expect(control.getRadius()).toBe(MARS_RADIUS_METERS);
     });
   });
 });
