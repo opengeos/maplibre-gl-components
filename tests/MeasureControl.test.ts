@@ -12,6 +12,9 @@ const MARS_RADIUS_METERS = 3389500;
 // satisfy. These tests cover measurement logic, not marker rendering, so stub
 // the private helper to keep the dynamic import out of the way.
 beforeEach(() => {
+  document
+    .querySelectorAll(".maplibre-gl-measure-live")
+    .forEach((el) => el.remove());
   vi.spyOn(
     MeasureControl.prototype as unknown as { _addMarker: () => void },
     "_addMarker",
@@ -47,6 +50,7 @@ function createMapMock() {
     removeSource: vi.fn(),
     getZoom: vi.fn().mockReturnValue(5),
     getCanvas: vi.fn().mockReturnValue({ style: {} as CSSStyleDeclaration }),
+    getContainer: vi.fn().mockReturnValue(document.body),
     // Identity-ish projection so duplicate-vertex detection can run.
     project: vi.fn((lngLat: [number, number]) => ({
       x: lngLat[0] * 100,
@@ -126,6 +130,68 @@ function readList(container: HTMLElement): string[] {
 }
 
 describe("MeasureControl", () => {
+  it("shows live segment length, bearing, and total beside the cursor", () => {
+    const { ctx } = mountExpanded({ distanceUnit: "meters" });
+    clickAt(ctx, 0, 0);
+    ctx.fire("mousemove", {
+      lngLat: { lng: 1, lat: 0 },
+      point: { x: 100, y: 80 },
+    });
+
+    const preview = document.querySelector(
+      ".maplibre-gl-measure-live",
+    ) as HTMLElement;
+    expect(preview.textContent).toMatch(/111194\.93 Meters/);
+    expect(preview.textContent).toContain("90.0°");
+    expect(preview.textContent).toContain("Total");
+    expect(preview.style.left).toBe("114px");
+  });
+
+  it("creates a circle from a center and edge with radius and area", () => {
+    const { control, ctx } = mountExpanded({
+      defaultMode: "circle",
+      distanceUnit: "meters",
+    });
+    clickAt(ctx, 0, 0);
+    ctx.fire("mousemove", {
+      lngLat: { lng: 1, lat: 0 },
+      point: { x: 100, y: 80 },
+    });
+    expect(
+      document.querySelector(".maplibre-gl-measure-live")?.textContent,
+    ).toContain("Radius");
+    clickAt(ctx, 1, 0);
+
+    const measurement = control.getMeasurements()[0];
+    expect(measurement.mode).toBe("circle");
+    expect(measurement.radius).toBeCloseTo(111194.93, 1);
+    expect(measurement.area).toBeCloseTo(Math.PI * measurement.radius! ** 2, 1);
+    expect(ctx.data?.features[0].geometry.type).toBe("Polygon");
+  });
+
+  it("adds an exact geodesic segment from numeric length and bearing", () => {
+    const { control, ctx, container } = mountExpanded({
+      distanceUnit: "meters",
+    });
+    clickAt(ctx, 0, 0);
+    const length = container.querySelector(
+      ".precision-length",
+    ) as HTMLInputElement;
+    const bearing = container.querySelector(
+      ".precision-bearing",
+    ) as HTMLInputElement;
+    length.value = "1000";
+    bearing.value = "90";
+    container
+      .querySelector(".measure-precision")!
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
+    const points = control.getState().currentPoints;
+    expect(points).toHaveLength(2);
+    expect(points[1].lat).toBeCloseTo(0, 6);
+    expect(control.getState().currentValue).toBeCloseTo(1000, 6);
+  });
+
   it("starts drawing as soon as the panel opens (no separate Start click)", () => {
     const { control, ctx } = mountExpanded();
     expect(control.getState().isDrawing).toBe(true);

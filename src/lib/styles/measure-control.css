@@ -207,6 +207,58 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
+.maplibre-gl-measure-control .measure-precision {
+  margin-bottom: 10px;
+}
+
+.maplibre-gl-measure-control .measure-precision > label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ms-muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.maplibre-gl-measure-control .precision-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 4px;
+}
+
+.maplibre-gl-measure-control .precision-row input,
+.maplibre-gl-measure-control .precision-row button {
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid var(--ms-border);
+  border-radius: 4px;
+  background: var(--ms-input-bg);
+  color: var(--ms-input-text);
+  font: inherit;
+}
+
+.maplibre-gl-measure-control .precision-row button {
+  cursor: pointer;
+}
+
+.maplibre-gl-measure-live {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: rgba(17, 24, 39, 0.9);
+  color: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  font:
+    500 12px/1.25 -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  white-space: nowrap;
+}
+
 .maplibre-gl-measure-control .measure-result {
   padding: 10px;
   background: var(--ms-subtle-bg);

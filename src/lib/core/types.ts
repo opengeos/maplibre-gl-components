@@ -2929,7 +2929,7 @@ export type AreaUnit =
 /**
  * Measurement mode.
  */
-export type MeasureMode = "distance" | "area";
+export type MeasureMode = "distance" | "area" | "circle";
 
 /**
  * Options for configuring the MeasureControl.
@@ -3026,6 +3026,8 @@ export interface Measurement {
   distance?: number;
   /** Total area in square meters (for area mode). */
   area?: number;
+  /** Circle radius in meters (for circle mode). */
+  radius?: number;
   /** Segment distances in meters. */
   segments?: number[];
 }

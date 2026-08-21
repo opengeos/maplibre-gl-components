@@ -88,6 +88,8 @@ const DISTANCE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 2
  */
 const AREA_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>`;
 
+const CIRCLE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>`;
+
 /**
  * SVG icon for close button.
  */
@@ -178,6 +180,55 @@ function calculatePolygonArea(
   return area;
 }
 
+/** Initial great-circle bearing, clockwise from true north. */
+export function bearingBetween(p1: MeasurePoint, p2: MeasurePoint): number {
+  const lat1 = (p1.lat * Math.PI) / 180;
+  const lat2 = (p2.lat * Math.PI) / 180;
+  const deltaLng = ((p2.lng - p1.lng) * Math.PI) / 180;
+  const y = Math.sin(deltaLng) * Math.cos(lat2);
+  const x =
+    Math.cos(lat1) * Math.sin(lat2) -
+    Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
+/** Destination reached from a point by following a great-circle bearing. */
+export function destinationPoint(
+  start: MeasurePoint,
+  distanceMeters: number,
+  bearingDegrees: number,
+  radius = EARTH_RADIUS_METERS,
+): MeasurePoint {
+  const angular = distanceMeters / radius;
+  const bearing = (bearingDegrees * Math.PI) / 180;
+  const lat1 = (start.lat * Math.PI) / 180;
+  const lng1 = (start.lng * Math.PI) / 180;
+  const lat2 = Math.asin(
+    Math.sin(lat1) * Math.cos(angular) +
+      Math.cos(lat1) * Math.sin(angular) * Math.cos(bearing),
+  );
+  const lng2 =
+    lng1 +
+    Math.atan2(
+      Math.sin(bearing) * Math.sin(angular) * Math.cos(lat1),
+      Math.cos(angular) - Math.sin(lat1) * Math.sin(lat2),
+    );
+  return {
+    lng: (((lng2 * 180) / Math.PI + 540) % 360) - 180,
+    lat: (lat2 * 180) / Math.PI,
+  };
+}
+
+function circlePoints(
+  center: MeasurePoint,
+  radiusMeters: number,
+  radius: number,
+): MeasurePoint[] {
+  return Array.from({ length: 64 }, (_, index) =>
+    destinationPoint(center, radiusMeters, (index * 360) / 64, radius),
+  );
+}
+
 /**
  * A control for measuring distances and areas on the map.
  *
@@ -217,6 +268,7 @@ export class MeasureControl implements IControl {
   private _segmentListEl?: HTMLElement;
   private _instructionsEl?: HTMLElement;
   private _measurementsListEl?: HTMLElement;
+  private _livePreviewEl?: HTMLElement;
 
   // Event handlers
   private _boundClickHandler?: (e: MapMouseEvent) => void;
@@ -284,6 +336,7 @@ export class MeasureControl implements IControl {
     this._stopDrawing();
     this._cleanupMapSources();
     this._clearMarkers();
+    this._removeLivePreview();
 
     if (this._handleZoom && this._map) {
       this._map.off("zoom", this._handleZoom);
@@ -354,7 +407,7 @@ export class MeasureControl implements IControl {
     this._button = document.createElement("button");
     this._button.type = "button";
     this._button.className = "measure-button";
-    this._button.title = "Measure distances and areas";
+    this._button.title = "Measure distances, areas, and circles";
     this._button.innerHTML = MEASURE_ICON;
     this._button.addEventListener("click", () => this._togglePanel());
     container.appendChild(this._button);
@@ -412,6 +465,10 @@ export class MeasureControl implements IControl {
         ${AREA_ICON}
         <span>Area</span>
       </button>
+      <button type="button" class="mode-btn ${this._state.mode === "circle" ? "active" : ""}" data-mode="circle">
+        ${CIRCLE_ICON}
+        <span>Circle</span>
+      </button>
     `;
     modeToggle.querySelectorAll(".mode-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
@@ -436,7 +493,7 @@ export class MeasureControl implements IControl {
       const value = (e.target as HTMLSelectElement).value;
       // Go through the public setters so the saved measurements list is
       // re-rendered in the new unit too, not just the total readout.
-      if (this._state.mode === "distance") {
+      if (this._state.mode !== "area") {
         this.setDistanceUnit(value as DistanceUnit);
       } else {
         this.setAreaUnit(value as AreaUnit);
@@ -444,12 +501,30 @@ export class MeasureControl implements IControl {
     });
     content.appendChild(unitDiv);
 
+    const precision = document.createElement("form");
+    precision.className = "measure-precision";
+    precision.style.display =
+      this._state.mode === "distance" ? "block" : "none";
+    precision.innerHTML = `
+      <label>Exact segment</label>
+      <div class="precision-row">
+        <input class="precision-length" type="number" min="0" step="any" placeholder="Length" aria-label="Exact segment length">
+        <input class="precision-bearing" type="number" step="any" placeholder="Bearing °" aria-label="Exact segment bearing">
+        <button type="submit" title="Add exact segment">Add</button>
+      </div>
+    `;
+    precision.addEventListener("submit", (event) => {
+      event.preventDefault();
+      this._addExactSegment();
+    });
+    content.appendChild(precision);
+
     // Result display
     const resultDiv = document.createElement("div");
     resultDiv.className = "measure-result";
     resultDiv.style.display = "none";
     resultDiv.innerHTML = `
-      <div class="result-label">${this._state.mode === "distance" ? "Total Distance" : "Total Area"}</div>
+      <div class="result-label">${this._resultLabel()}</div>
       <div>
         <span class="result-value">0</span>
         <span class="result-unit">${this._getCurrentUnitLabel()}</span>
@@ -511,11 +586,11 @@ export class MeasureControl implements IControl {
    */
   private _updateUnitOptions(select: HTMLSelectElement): void {
     select.innerHTML = "";
-    const units = this._state.mode === "distance" ? DISTANCE_UNITS : AREA_UNITS;
+    const units = this._state.mode === "area" ? AREA_UNITS : DISTANCE_UNITS;
     const currentUnit =
-      this._state.mode === "distance"
-        ? this._state.distanceUnit
-        : this._state.areaUnit;
+      this._state.mode === "area"
+        ? this._state.areaUnit
+        : this._state.distanceUnit;
 
     Object.entries(units).forEach(([key, { label }]) => {
       const option = document.createElement("option");
@@ -530,10 +605,16 @@ export class MeasureControl implements IControl {
    * Get the current unit label.
    */
   private _getCurrentUnitLabel(): string {
-    if (this._state.mode === "distance") {
+    if (this._state.mode !== "area") {
       return DISTANCE_UNITS[this._state.distanceUnit].label;
     }
     return AREA_UNITS[this._state.areaUnit].label;
+  }
+
+  private _resultLabel(): string {
+    if (this._state.mode === "distance") return "Total Distance";
+    if (this._state.mode === "circle") return "Radius";
+    return "Total Area";
   }
 
   /**
@@ -616,11 +697,15 @@ export class MeasureControl implements IControl {
     if (select) {
       this._updateUnitOptions(select);
     }
+    const precision = this._panel?.querySelector(
+      ".measure-precision",
+    ) as HTMLElement | null;
+    if (precision)
+      precision.style.display = mode === "distance" ? "block" : "none";
 
     const resultLabel = this._panel?.querySelector(".result-label");
     if (resultLabel) {
-      resultLabel.textContent =
-        mode === "distance" ? "Total Distance" : "Total Area";
+      resultLabel.textContent = this._resultLabel();
     }
 
     if (changed) this._emit("modechange");
@@ -718,7 +803,9 @@ export class MeasureControl implements IControl {
       this._instructionsEl.textContent =
         this._state.mode === "distance"
           ? "Click to add points. Double-click, right-click, or Enter to finish."
-          : "Click to add vertices. Double-click, right-click, or Enter to close the polygon.";
+          : this._state.mode === "circle"
+            ? "Click a center, then click the edge. Drag either point to refine it."
+            : "Click to add vertices. Double-click, right-click, or Enter to close the polygon.";
     }
 
     // Set up event handlers
@@ -778,6 +865,7 @@ export class MeasureControl implements IControl {
 
     this._map.getCanvas().style.cursor = "";
     this._state.isDrawing = false;
+    this._removeLivePreview();
 
     // Update button text
     const startBtn = this._panel?.querySelector(".start-btn span");
@@ -798,6 +886,14 @@ export class MeasureControl implements IControl {
     this._updateMeasurement();
     this._updateMapGeometry();
     this._emit("drawupdate");
+
+    // A circle is completely defined by its center and one edge point.
+    if (
+      this._state.mode === "circle" &&
+      this._state.currentPoints.length === 2
+    ) {
+      this._finishDrawing();
+    }
   }
 
   /**
@@ -812,6 +908,7 @@ export class MeasureControl implements IControl {
       { lng: e.lngLat.lng, lat: e.lngLat.lat },
     ];
     this._updateMapGeometry(tempPoints);
+    this._updateLivePreview(tempPoints, e);
   }
 
   /**
@@ -836,12 +933,16 @@ export class MeasureControl implements IControl {
 
     if (this._state.mode === "distance") {
       measurement.distance = this._state.currentValue;
+    } else if (this._state.mode === "circle") {
+      measurement.radius = this._state.currentValue;
+      measurement.area = Math.PI * this._state.currentValue ** 2;
     } else {
       measurement.area = this._state.currentValue;
     }
 
     this._state.measurements.push(measurement);
     this._stopDrawing();
+    this._removeLivePreview();
     this._updateMapGeometry();
     this._updateMeasurementsList();
 
@@ -895,6 +996,7 @@ export class MeasureControl implements IControl {
     this._state.currentValue = 0;
     this._state.currentSegments = [];
     this._updateMapGeometry();
+    this._removeLivePreview();
 
     // Keep the total on screen while completed measurements remain; only an
     // empty tool has nothing to report. Test for a saved measurement rather
@@ -941,6 +1043,12 @@ export class MeasureControl implements IControl {
 
       this._state.currentValue = total;
       this._state.currentSegments = segments;
+    } else if (this._state.mode === "circle") {
+      this._state.currentValue =
+        points.length >= 2
+          ? haversineDistance(points[0], points[1], this._options.radius)
+          : 0;
+      this._state.currentSegments = [];
     } else {
       // Calculate area
       this._state.currentValue = calculatePolygonArea(
@@ -963,7 +1071,9 @@ export class MeasureControl implements IControl {
   private _totalValue(): number {
     const completed = this._state.measurements.reduce((sum, m) => {
       if (m.mode !== this._state.mode) return sum;
-      return sum + (m.mode === "distance" ? m.distance || 0 : m.area || 0);
+      if (m.mode === "distance") return sum + (m.distance || 0);
+      if (m.mode === "circle") return sum + (m.radius || 0);
+      return sum + (m.area || 0);
     }, 0);
     return completed + this._state.currentValue;
   }
@@ -978,7 +1088,7 @@ export class MeasureControl implements IControl {
     let displayValue: number;
     let unitLabel: string;
 
-    if (this._state.mode === "distance") {
+    if (this._state.mode !== "area") {
       const factor = DISTANCE_UNITS[this._state.distanceUnit].factor;
       displayValue = total * factor;
       unitLabel = DISTANCE_UNITS[this._state.distanceUnit].label;
@@ -1016,6 +1126,83 @@ export class MeasureControl implements IControl {
     }
   }
 
+  /** Add a precisely dimensioned geodesic segment from the last point. */
+  private _addExactSegment(): void {
+    if (
+      this._state.mode !== "distance" ||
+      this._state.currentPoints.length === 0
+    ) {
+      if (this._instructionsEl) {
+        this._instructionsEl.textContent =
+          "Place a starting point before adding an exact segment.";
+      }
+      return;
+    }
+    const lengthInput = this._panel?.querySelector(
+      ".precision-length",
+    ) as HTMLInputElement | null;
+    const bearingInput = this._panel?.querySelector(
+      ".precision-bearing",
+    ) as HTMLInputElement | null;
+    const displayedLength = Number(lengthInput?.value);
+    const bearing = Number(bearingInput?.value);
+    if (!(displayedLength > 0) || !Number.isFinite(bearing)) return;
+
+    const meters =
+      displayedLength / DISTANCE_UNITS[this._state.distanceUnit].factor;
+    const start =
+      this._state.currentPoints[this._state.currentPoints.length - 1];
+    const point = destinationPoint(
+      start,
+      meters,
+      bearing,
+      this._options.radius,
+    );
+    this._state.currentPoints.push(point);
+    this._addMarker(point);
+    this._updateMeasurement();
+    this._updateMapGeometry();
+    this._emit("drawupdate");
+    if (lengthInput) lengthInput.value = "";
+  }
+
+  /** Render the moving segment's dimensions beside the cursor. */
+  private _updateLivePreview(points: MeasurePoint[], e: MapMouseEvent): void {
+    if (!this._map || points.length < 2) return;
+    if (!this._livePreviewEl) {
+      this._livePreviewEl = document.createElement("div");
+      this._livePreviewEl.className = "maplibre-gl-measure-live";
+      this._map.getContainer().appendChild(this._livePreviewEl);
+    }
+    const last = points[points.length - 1];
+    const previous = points[points.length - 2];
+    const segment = haversineDistance(previous, last, this._options.radius);
+    const factor = DISTANCE_UNITS[this._state.distanceUnit].factor;
+    const unit = DISTANCE_UNITS[this._state.distanceUnit].label;
+    const bearing = bearingBetween(previous, last);
+    if (this._state.mode === "circle") {
+      const areaFactor = AREA_UNITS[this._state.areaUnit].factor;
+      this._livePreviewEl.textContent =
+        `Radius ${(segment * factor).toFixed(this._options.precision)} ${unit} · ` +
+        `Area ${(Math.PI * segment ** 2 * areaFactor).toFixed(this._options.precision)} ${AREA_UNITS[this._state.areaUnit].label}`;
+    } else {
+      const committed = this._state.currentValue;
+      this._livePreviewEl.textContent =
+        `${(segment * factor).toFixed(this._options.precision)} ${unit} · ` +
+        `${bearing.toFixed(1)}° · Total ${((committed + segment) * factor).toFixed(this._options.precision)} ${unit}`;
+    }
+    const point = e.point;
+    if (point) {
+      this._livePreviewEl.style.left = `${point.x + 14}px`;
+      this._livePreviewEl.style.top = `${point.y + 14}px`;
+    }
+  }
+
+  private _removeLivePreview(): void {
+    this._livePreviewEl?.remove();
+    this._livePreviewEl = undefined;
+  }
+
   /**
    * Update the map geometry (lines/polygons).
    */
@@ -1037,6 +1224,19 @@ export class MeasureControl implements IControl {
             type: "LineString",
             coordinates: m.points.map((p) => [p.lng, p.lat]),
           },
+        });
+      } else if (m.mode === "circle" && m.points.length >= 2) {
+        const coords = circlePoints(
+          m.points[0],
+          m.radius ??
+            haversineDistance(m.points[0], m.points[1], this._options.radius),
+          this._options.radius,
+        ).map((p) => [p.lng, p.lat]);
+        coords.push(coords[0]);
+        features.push({
+          type: "Feature",
+          properties: { id: m.id, mode: m.mode },
+          geometry: { type: "Polygon", coordinates: [coords] },
         });
       } else {
         const coords = m.points.map((p) => [p.lng, p.lat]);
@@ -1063,6 +1263,18 @@ export class MeasureControl implements IControl {
             type: "LineString",
             coordinates: drawPoints.map((p) => [p.lng, p.lat]),
           },
+        });
+      } else if (this._state.mode === "circle") {
+        const circle = circlePoints(
+          drawPoints[0],
+          haversineDistance(drawPoints[0], drawPoints[1], this._options.radius),
+          this._options.radius,
+        ).map((p) => [p.lng, p.lat]);
+        circle.push(circle[0]);
+        features.push({
+          type: "Feature",
+          properties: { current: true, mode: "circle" },
+          geometry: { type: "Polygon", coordinates: [circle] },
         });
       } else if (drawPoints.length >= 3) {
         const coords = drawPoints.map((p) => [p.lng, p.lat]);
@@ -1115,9 +1327,17 @@ export class MeasureControl implements IControl {
       el.style.boxShadow = "0 1px 4px rgba(0,0,0,0.3)";
       el.style.cursor = "pointer";
 
-      const marker = new MaplibreMarker({ element: el })
+      const marker = new MaplibreMarker({ element: el, draggable: true })
         .setLngLat([point.lng, point.lat])
         .addTo(this._map);
+
+      marker.on("drag", () => {
+        const lngLat = marker.getLngLat();
+        point.lng = lngLat.lng;
+        point.lat = lngLat.lat;
+        this._recomputeMeasurements();
+        this._updateMapGeometry();
+      });
 
       this._markers.push(marker);
     });
@@ -1152,6 +1372,10 @@ export class MeasureControl implements IControl {
           const factor = DISTANCE_UNITS[this._state.distanceUnit].factor;
           value = `${((m.distance || 0) * factor).toFixed(2)} ${DISTANCE_UNITS[this._state.distanceUnit].label}`;
           icon = DISTANCE_ICON;
+        } else if (m.mode === "circle") {
+          const factor = DISTANCE_UNITS[this._state.distanceUnit].factor;
+          value = `${((m.radius || 0) * factor).toFixed(2)} ${DISTANCE_UNITS[this._state.distanceUnit].label} radius`;
+          icon = CIRCLE_ICON;
         } else {
           const factor = AREA_UNITS[this._state.areaUnit].factor;
           value = `${((m.area || 0) * factor).toFixed(2)} ${AREA_UNITS[this._state.areaUnit].label}`;
@@ -1377,6 +1601,16 @@ export class MeasureControl implements IControl {
         }
         measurement.segments = segments;
         measurement.distance = segments.reduce((sum, d) => sum + d, 0);
+      } else if (
+        measurement.mode === "circle" &&
+        measurement.points.length >= 2
+      ) {
+        measurement.radius = haversineDistance(
+          measurement.points[0],
+          measurement.points[1],
+          this._options.radius,
+        );
+        measurement.area = Math.PI * measurement.radius ** 2;
       } else {
         measurement.area = calculatePolygonArea(
           measurement.points,
