@@ -192,6 +192,20 @@ describe("MeasureControl", () => {
     expect(control.getState().currentValue).toBeCloseTo(1000, 6);
   });
 
+  it("does not finish drawing when Enter is pressed in a precision input", () => {
+    const { control, ctx, container } = mountExpanded();
+    clickAt(ctx, 0, 0);
+    clickAt(ctx, 1, 0);
+    const length = container.querySelector(
+      ".precision-length",
+    ) as HTMLInputElement;
+    length.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+    expect(control.getMeasurements()).toHaveLength(0);
+    expect(control.getState().isDrawing).toBe(true);
+  });
+
   it("starts drawing as soon as the panel opens (no separate Start click)", () => {
     const { control, ctx } = mountExpanded();
     expect(control.getState().isDrawing).toBe(true);

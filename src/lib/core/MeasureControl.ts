@@ -822,6 +822,13 @@ export class MeasureControl implements IControl {
       this._finishDrawing();
     };
     this._boundKeyHandler = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLSelectElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
       if (e.key === "Enter") {
         this._finishDrawing();
       } else if (e.key === "Escape") {
