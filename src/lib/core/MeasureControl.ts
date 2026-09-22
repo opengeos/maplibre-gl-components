@@ -344,6 +344,7 @@ export class MeasureControl implements IControl {
 
     this._container?.remove();
     this._container = undefined;
+    this._panel = undefined;
     this._map = undefined;
   }
 
@@ -652,10 +653,14 @@ export class MeasureControl implements IControl {
    * Show the panel.
    */
   private _showPanel(): void {
-    if (!this._panel && this._container) {
+    if (!this._container) return;
+    if (!this._panel) {
       this._panel = this._createPanel();
-      this._container.appendChild(this._panel);
     }
+
+    this._container.appendChild(this._panel);
+
+    this._panel.style.display = "block";
     this._button?.classList.add("active");
 
     // Opening the tool puts the map straight into drawing mode so the user can
@@ -671,8 +676,11 @@ export class MeasureControl implements IControl {
    */
   private _hidePanel(): void {
     this._stopDrawing();
-    this._panel?.remove();
-    this._panel = undefined;
+
+    if (this._panel) {
+      this._panel.style.display = "none";
+    }
+
     this._button?.classList.remove("active");
   }
 
