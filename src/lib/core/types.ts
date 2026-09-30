@@ -3511,7 +3511,7 @@ export interface PrintControlOptions {
   titleFontColor?: string;
   /** Title background. Default: 'rgba(255,255,255,0.8)'. */
   titleBackground?: string;
-  /** Whether to show size options (Current/Custom). Default: false. */
+  /** Whether to show size options (Current/Custom). Default: true. */
   showSizeOptions?: boolean;
   /** Width override for export (pixels). If not set, uses current canvas size. */
   width?: number;
@@ -3543,7 +3543,7 @@ export interface PrintControlOptions {
    * `'fit'`.
    */
   fitMode?: PrintFitMode;
-  /** Whether to show the page options (size/orientation/DPI) in the panel. Default: false. */
+  /** Whether to show the page options (size/orientation/DPI) in the panel. Default: true. */
   showPageOptions?: boolean;
   /** Panel width in pixels. Default: 280. */
   panelWidth?: number;
