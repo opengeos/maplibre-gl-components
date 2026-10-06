@@ -59,16 +59,30 @@ const DEFAULT_OPTIONS: Required<Omit<PrintControlOptions, "colorbar">> & {
   titleFontSize: 24,
   titleFontColor: "#333333",
   titleBackground: "rgba(255,255,255,0.8)",
-  showSizeOptions: false,
+  // Surface the size and page-option controls by default: the PrintControl's
+  // whole reason to exist is producing a page-sized, print-resolution export,
+  // and with these off a first-time user got a screen-resolution screenshot
+  // with no way to change it (#135). Users who want the legacy "just export
+  // the current canvas" behavior pass `showSizeOptions: false,
+  // showPageOptions: false` back in.
+  showSizeOptions: true,
   width: 0,
   height: 0,
-  pageSize: "fit",
+  // A concrete paper preset (not "fit") is the universal "print" case, so the
+  // default export gets a physical size and DPI rather than a plain screen
+  // capture. "fit" remains available as an option.
+  pageSize: "a4",
   orientation: "auto",
-  dpi: 96,
-  margin: 0,
+  // 150 DPI is the common print-ready raster baseline: above screen (96) so
+  // the default has legible, printable output, below 300/600 so the file does
+  // not balloon. The DPI menu (72/96/150/300/600) covers the rest.
+  dpi: 150,
+  // A small page margin keeps the map image off the physical edge so it can
+  // be printed without content clipped at the page boundary.
+  margin: 24,
   pageBackground: "#ffffff",
   fitMode: "contain",
-  showPageOptions: false,
+  showPageOptions: true,
   panelWidth: 280,
   maxHeight: 500,
   backgroundColor: "",
