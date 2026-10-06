@@ -167,7 +167,7 @@
     "maplibre-gl-layer-control": ">=0.14.1",
     "maplibre-gl-lidar": ">=0.16.0",
     "maplibre-gl-planetary-computer": ">=0.2.2",
-    "maplibre-gl-splat": ">=0.2.2",
+    "maplibre-gl-splat": ">=0.2.9",
     "maplibre-gl-streetview": ">=0.4.0",
     "maplibre-gl-swipe": ">=0.7.1",
     "maplibre-gl-usgs-lidar": ">=0.7.3",

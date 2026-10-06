@@ -63,6 +63,15 @@ export default defineConfig({
         /^@math\.gl\//,
         /^@probe\.gl\//,
         'three',
+        /^three\//,
+        // These ship three-based code (maplibre-gl-splat) or pull in a prebuilt
+        // bundle that carries its own Three.js (maplibre-gl-streetview imports
+        // mapillary-js). Inlining them baked extra Three.js copies into dist, so
+        // a host app loaded three several times ("Multiple instances of
+        // Three.js"). As imports, the consumer resolves one copy of each.
+        'maplibre-gl-splat',
+        'maplibre-gl-streetview',
+        'mapillary-js',
         /^@dvt3d\//,
         /^@developmentseed\//,
         /^@carbonplan\//,
