@@ -305,6 +305,15 @@ export class ZarrLayerControl implements IControl {
   private _zarrLayerPropsMap: Map<string, Record<string, any>> = new Map();
   private _layerCounter = 0;
   private _activePopup?: Popup;
+  /** The layer the open pick popup describes, so removing it closes the popup. */
+  private _activePopupLayerId?: string;
+  /**
+   * The map "click" listener each pickable layer registered, so removing the
+   * layer (or the whole control) can unregister it. Without this a removed
+   * layer kept answering every map click with an empty pick popup.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _clickHandlers: Map<string, (e: any) => void> = new Map();
   private _colormapName: ColormapName | "custom" = "viridis";
   private _customColormap?: string[];
   private _availableVariables: string[] = [];
@@ -1534,10 +1543,12 @@ export class ZarrLayerControl implements IControl {
     const clickHandler = (e: any) => {
       if (!this._state.pickable) return;
 
+      // A layer removed behind the control's back (its map layer gone) has
+      // nothing left to pick.
+      if (!this._zarrLayers.has(layerId)) return;
+
       // Close existing popup
-      if (this._activePopup) {
-        this._activePopup.remove();
-      }
+      this._closePopup();
 
       const { lngLat } = e;
 
@@ -1563,6 +1574,7 @@ export class ZarrLayerControl implements IControl {
         .setLngLat(lngLat)
         .setHTML(html)
         .addTo(map);
+      this._activePopupLayerId = layerId;
 
       // Ensure popup is above any overlay layers
       const popupEl = this._activePopup.getElement();
@@ -1572,13 +1584,36 @@ export class ZarrLayerControl implements IControl {
     };
 
     // Store handler reference for cleanup
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (this._zarrLayers.get(layerId) as any)._clickHandler = clickHandler;
+    this._detachClickHandler(layerId);
+    this._clickHandlers.set(layerId, clickHandler);
     map.on("click", clickHandler);
   }
 
+  /**
+   * Unregister a layer's pick listener and close a popup that describes it.
+   *
+   * @param layerId - The layer whose listener to drop.
+   */
+  private _detachClickHandler(layerId: string): void {
+    const handler = this._clickHandlers.get(layerId);
+    if (handler) {
+      this._map?.off("click", handler);
+      this._clickHandlers.delete(layerId);
+    }
+    if (this._activePopupLayerId === layerId) this._closePopup();
+  }
+
+  /** Close the open pick popup, if any. */
+  private _closePopup(): void {
+    this._activePopup?.remove();
+    this._activePopup = undefined;
+    this._activePopupLayerId = undefined;
+  }
+
   private _updatePickable(): void {
-    // Pickable state is checked in click handler, no layer rebuild needed
+    // Pickable state is checked in click handler, no layer rebuild needed,
+    // but a popup left open would contradict an unchecked box.
+    if (!this._state.pickable) this._closePopup();
   }
 
   private _removeLayer(id?: string): void {
@@ -1586,6 +1621,7 @@ export class ZarrLayerControl implements IControl {
 
     if (id) {
       // Remove a specific layer
+      this._detachClickHandler(id);
       const layer = this._zarrLayers.get(id);
       if (layer) {
         try {
@@ -1604,6 +1640,10 @@ export class ZarrLayerControl implements IControl {
       this._emit("layerremove", { layerId: id });
     } else {
       // Remove all layers (cleanup)
+      for (const layerId of [...this._clickHandlers.keys()]) {
+        this._detachClickHandler(layerId);
+      }
+      this._closePopup();
       for (const [layerId] of this._zarrLayers) {
         try {
           this._map.removeLayer(layerId);
