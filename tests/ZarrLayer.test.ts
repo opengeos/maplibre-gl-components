@@ -7,6 +7,14 @@ import {
   zarrSpatialMetadataFromV3Root,
 } from "../src/lib/core/ZarrLayer";
 
+// The real renderer needs WebGL; the control only constructs it and hands it to
+// map.addLayer, so a stand-in is enough for the add flow.
+vi.mock("@carbonplan/zarr-layer", () => ({
+  ZarrLayer: class {
+    constructor(public options: unknown) {}
+  },
+}));
+
 /** Minimal mocked MapLibre map sufficient for ZarrLayerControl.onAdd. */
 function makeMockMap() {
   return {
@@ -766,5 +774,98 @@ describe("fetched variable reconciliation", () => {
     await control.fetchVariables();
 
     expect(control._state.variable).toBe("sst");
+  });
+});
+
+describe("pick popup teardown", () => {
+  let control: any;
+  let map: ReturnType<typeof makeMockMap>;
+
+  /** The "click" listener the control registered on the map, if any. */
+  function clickListener(): ((e: unknown) => void) | undefined {
+    const call = map.on.mock.calls.find(([type]: [string]) => type === "click");
+    return call?.[1];
+  }
+
+  beforeEach(() => {
+    control = new ZarrLayerControl({ collapsed: false, defaultPickable: true });
+    map = makeMockMap();
+    control.onAdd(map);
+    control._zarrLayers.set("layer-1", makeFakeLayer());
+    control._zarrLayerPropsMap.set("layer-1", { variable: "sst" });
+    control._setupLayerClickHandler("layer-1");
+  });
+
+  it("unregisters a removed layer's click listener", () => {
+    const listener = clickListener();
+    expect(listener).toBeTypeOf("function");
+
+    control.removeLayer("layer-1");
+
+    expect(map.off).toHaveBeenCalledWith("click", listener);
+  });
+
+  it("unregisters every click listener when all layers are removed", () => {
+    control._zarrLayers.set("layer-2", makeFakeLayer());
+    control._setupLayerClickHandler("layer-2");
+    const listeners = map.on.mock.calls
+      .filter(([type]: [string]) => type === "click")
+      .map(([, fn]: [string, unknown]) => fn);
+    expect(listeners).toHaveLength(2);
+
+    control.removeLayer();
+
+    for (const listener of listeners) {
+      expect(map.off).toHaveBeenCalledWith("click", listener);
+    }
+  });
+
+  it("unregisters click listeners when the control is removed", () => {
+    const listener = clickListener();
+
+    control.onRemove();
+
+    expect(map.off).toHaveBeenCalledWith("click", listener);
+  });
+
+  it("closes the popup of a removed layer", () => {
+    const popup = { remove: vi.fn() };
+    control._activePopup = popup;
+    control._activePopupLayerId = "layer-1";
+
+    control.removeLayer("layer-1");
+
+    expect(popup.remove).toHaveBeenCalled();
+    expect(control._activePopup).toBeUndefined();
+  });
+
+  it("ignores a click once the layer is gone from the control", () => {
+    const listener = clickListener()!;
+    control._zarrLayers.delete("layer-1");
+
+    listener({ lngLat: { lng: 0, lat: 0 } });
+
+    expect(control._activePopup).toBeUndefined();
+  });
+});
+
+describe("pick handler registration", () => {
+  it("registers the pick handler even when Pickable starts unchecked", async () => {
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      defaultPickable: false,
+      defaultUrl: "https://example.com/data.zarr",
+      defaultVariable: "sst",
+    }) as any;
+    const map = makeMockMap();
+    control.onAdd(map);
+
+    await control.addLayer(undefined, undefined, { crs: "EPSG:4326" });
+
+    expect(control._state.layerCount).toBe(1);
+    const clicks = map.on.mock.calls.filter(
+      ([type]: [string]) => type === "click",
+    );
+    expect(clicks).toHaveLength(1);
   });
 });
