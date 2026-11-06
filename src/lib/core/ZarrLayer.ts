@@ -1513,10 +1513,9 @@ export class ZarrLayerControl implements IControl {
         this._map.addLayer(newLayer);
       }
 
-      // Set up pickable click handler if enabled
-      if (this._state.pickable) {
-        this._setupLayerClickHandler(layerId);
-      }
+      // Register the pick handler whatever Pickable says now: it checks the
+      // box at click time, so checking Pickable later reaches this layer too.
+      this._setupLayerClickHandler(layerId);
 
       this._state.hasLayer = this._zarrLayers.size > 0;
       this._state.layerCount = this._zarrLayers.size;

@@ -7,6 +7,14 @@ import {
   zarrSpatialMetadataFromV3Root,
 } from "../src/lib/core/ZarrLayer";
 
+// The real renderer needs WebGL; the control only constructs it and hands it to
+// map.addLayer, so a stand-in is enough for the add flow.
+vi.mock("@carbonplan/zarr-layer", () => ({
+  ZarrLayer: class {
+    constructor(public options: unknown) {}
+  },
+}));
+
 /** Minimal mocked MapLibre map sufficient for ZarrLayerControl.onAdd. */
 function makeMockMap() {
   return {
@@ -838,5 +846,26 @@ describe("pick popup teardown", () => {
     listener({ lngLat: { lng: 0, lat: 0 } });
 
     expect(control._activePopup).toBeUndefined();
+  });
+});
+
+describe("pick handler registration", () => {
+  it("registers the pick handler even when Pickable starts unchecked", async () => {
+    const control = new ZarrLayerControl({
+      collapsed: false,
+      defaultPickable: false,
+      defaultUrl: "https://example.com/data.zarr",
+      defaultVariable: "sst",
+    }) as any;
+    const map = makeMockMap();
+    control.onAdd(map);
+
+    await control.addLayer(undefined, undefined, { crs: "EPSG:4326" });
+
+    expect(control._state.layerCount).toBe(1);
+    const clicks = map.on.mock.calls.filter(
+      ([type]: [string]) => type === "click",
+    );
+    expect(clicks).toHaveLength(1);
   });
 });
