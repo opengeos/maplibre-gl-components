@@ -255,6 +255,7 @@ export class MeasureControl implements IControl {
     new Map();
   private _map?: MapLibreMap;
   private _handleZoom?: () => void;
+  private _handleStyleLoad?: () => void;
   private _zoomVisible: boolean = true;
 
   // Source and layer IDs
@@ -320,6 +321,13 @@ export class MeasureControl implements IControl {
     } else {
       map.once("styledata", () => this._setupMapSources());
     }
+    // A setStyle() call (a basemap swap) drops every source and layer the
+    // control added. Put them back, with the geometry measured so far.
+    this._handleStyleLoad = () => {
+      this._setupMapSources();
+      this._updateMapGeometry();
+    };
+    map.on("style.load", this._handleStyleLoad);
     this._setupZoomHandler();
 
     if (!this._state.collapsed) {
@@ -341,11 +349,49 @@ export class MeasureControl implements IControl {
     if (this._handleZoom && this._map) {
       this._map.off("zoom", this._handleZoom);
     }
+    if (this._handleStyleLoad && this._map) {
+      this._map.off("style.load", this._handleStyleLoad);
+    }
+    this._handleStyleLoad = undefined;
 
     this._container?.remove();
     this._container = undefined;
     this._panel = undefined;
     this._map = undefined;
+  }
+
+  /**
+   * Get the panel element, so a host can add its own sections to it.
+   *
+   * The panel is built the first time it is shown, so this returns
+   * `undefined` until then (and after the control is removed).
+   *
+   * @returns The panel element, or `undefined` when it has not been built.
+   */
+  getPanelElement(): HTMLElement | undefined {
+    return this._panel;
+  }
+
+  /**
+   * Get the ID of the GeoJSON source that holds the measured geometry.
+   *
+   * The source carries completed measurements and the one being drawn, so a
+   * host can read or mirror the geometry (for example to redraw it above
+   * another renderer). The ID is fixed for the life of the control.
+   *
+   * @returns The measurement source ID.
+   */
+  getSourceId(): string {
+    return this._sourceId;
+  }
+
+  /**
+   * Get the IDs of the map layers that draw the measured geometry.
+   *
+   * @returns The fill and line layer IDs.
+   */
+  getLayerIds(): { fill: string; line: string } {
+    return { fill: this._fillLayerId, line: this._lineLayerId };
   }
 
   /**
@@ -737,33 +783,38 @@ export class MeasureControl implements IControl {
   private _setupMapSources(): void {
     if (!this._map) return;
 
-    // Add source
-    this._map.addSource(this._sourceId, {
-      type: "geojson",
-      data: { type: "FeatureCollection", features: [] },
-    });
+    // Idempotent: the first styledata and a later style.load can both land
+    // here, and a source or layer added twice throws.
+    if (!this._map.getSource(this._sourceId)) {
+      this._map.addSource(this._sourceId, {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+    }
 
     // Add fill layer for polygons
-    this._map.addLayer({
-      id: this._fillLayerId,
-      type: "fill",
-      source: this._sourceId,
-      filter: ["==", "$type", "Polygon"],
-      paint: {
-        "fill-color": this._options.fillColor,
-      },
-    });
+    if (!this._map.getLayer(this._fillLayerId))
+      this._map.addLayer({
+        id: this._fillLayerId,
+        type: "fill",
+        source: this._sourceId,
+        filter: ["==", "$type", "Polygon"],
+        paint: {
+          "fill-color": this._options.fillColor,
+        },
+      });
 
     // Add line layer
-    this._map.addLayer({
-      id: this._lineLayerId,
-      type: "line",
-      source: this._sourceId,
-      paint: {
-        "line-color": this._options.lineColor,
-        "line-width": this._options.lineWidth,
-      },
-    });
+    if (!this._map.getLayer(this._lineLayerId))
+      this._map.addLayer({
+        id: this._lineLayerId,
+        type: "line",
+        source: this._sourceId,
+        paint: {
+          "line-color": this._options.lineColor,
+          "line-width": this._options.lineWidth,
+        },
+      });
   }
 
   /**

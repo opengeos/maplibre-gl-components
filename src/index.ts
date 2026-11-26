@@ -54,15 +54,15 @@ export {
 export type { AddControlGridOptions } from "./lib/addControlGrid";
 export { CogLayerControl } from "./lib/core/CogLayer";
 export { ZarrLayerControl } from "./lib/core/ZarrLayer";
-export { PMTilesLayerControl } from "./lib/core/PMTilesLayer";
+export {
+  PMTilesLayerControl,
+  pmtilesSourceLayerId,
+} from "./lib/core/PMTilesLayer";
 export { AddVectorControl } from "./lib/core/AddVector";
 export { ChoroplethControl } from "./lib/core/ChoroplethControl";
 export { StacLayerControl } from "./lib/core/StacLayer";
 export { StacSearchControl } from "./lib/core/StacSearch";
-export {
-  MeasureControl,
-  EARTH_RADIUS_METERS,
-} from "./lib/core/MeasureControl";
+export { MeasureControl, EARTH_RADIUS_METERS } from "./lib/core/MeasureControl";
 export { BookmarkControl } from "./lib/core/BookmarkControl";
 export { PrintControl } from "./lib/core/PrintControl";
 export { MinimapControl } from "./lib/core/MinimapControl";
@@ -331,6 +331,7 @@ export type {
   ComponentEventHandler,
   ColormapDefinition,
   ColorbarGuiControlOptions,
+  GuiOutputStyle,
   ColorbarGuiControlState,
   ColorbarGuiEvent,
   ColorbarGuiEventHandler,

@@ -502,4 +502,65 @@ describe("MeasureControl", () => {
       expect(control.getRadius()).toBe(MARS_RADIUS_METERS);
     });
   });
+
+  describe("public host API", () => {
+    it("exposes the panel element and the measurement source and layer ids", () => {
+      const collapsed = new MeasureControl({ collapsed: true });
+      const ctx = createMapMock();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      collapsed.onAdd(ctx.map as any);
+      expect(collapsed.getPanelElement()).toBeUndefined();
+      collapsed.expand();
+      expect(collapsed.getPanelElement()).toBeInstanceOf(HTMLElement);
+
+      const { control, ctx: ctx2, container } = mountExpanded();
+      const sourceId = control.getSourceId();
+      const { fill, line } = control.getLayerIds();
+      expect(container.contains(control.getPanelElement() ?? null)).toBe(true);
+      expect(sourceId).toMatch(/-source$/);
+      const addedLayers = ctx2.map.addLayer.mock.calls.map(
+        ([layer]: [{ id: string; source: string }]) => layer,
+      );
+      // The mock reports the source as present, so only the layers are added.
+      expect(addedLayers.map((layer: { id: string }) => layer.id)).toEqual([
+        fill,
+        line,
+      ]);
+      for (const layer of addedLayers) expect(layer.source).toBe(sourceId);
+    });
+
+    it("re-adds its source and layers and redraws on style.load", () => {
+      const { control, ctx } = mountExpanded();
+      clickAt(ctx, 0, 0);
+      clickAt(ctx, 1, 0);
+      ctx.fire("dblclick", { lngLat: { lng: 1, lat: 0 }, preventDefault() {} });
+
+      // A setStyle() drops every source and layer the control added.
+      const source = ctx.map.getSource();
+      ctx.map.getSource.mockReturnValue(undefined);
+      ctx.map.getLayer.mockReturnValue(undefined);
+      ctx.map.addSource.mockImplementation(() => {
+        ctx.map.getSource.mockReturnValue(source);
+      });
+      ctx.map.addLayer.mockClear();
+      source.setData.mockClear();
+
+      ctx.fire("style.load", {});
+
+      expect(ctx.map.addSource).toHaveBeenCalledWith(
+        control.getSourceId(),
+        expect.objectContaining({ type: "geojson" }),
+      );
+      expect(ctx.map.addLayer).toHaveBeenCalledTimes(2);
+      expect(source.setData).toHaveBeenCalled();
+      expect(ctx.data?.features.length).toBeGreaterThan(0);
+    });
+
+    it("stops listening for style.load once removed", () => {
+      const { control, ctx } = mountExpanded();
+      expect(ctx.handlerCount("style.load")).toBe(1);
+      control.onRemove();
+      expect(ctx.handlerCount("style.load")).toBe(0);
+    });
+  });
 });

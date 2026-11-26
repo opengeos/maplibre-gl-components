@@ -503,3 +503,95 @@ describe("GUI controls multiple instances", () => {
     removeSpy.mockRestore();
   });
 });
+
+describe("GUI controls output style", () => {
+  const cases = [
+    ["ColorbarGuiControl", ColorbarGuiControl, ".colorbar-gui-add-btn"],
+    ["LegendGuiControl", LegendGuiControl, ".legend-gui-add-btn"],
+    ["HtmlGuiControl", HtmlGuiControl, ".html-gui-add-btn"],
+  ] as const;
+
+  function mockMap() {
+    return {
+      addControl: vi.fn(),
+      removeControl: vi.fn(),
+      hasControl: vi.fn().mockReturnValue(true),
+      on: vi.fn(),
+      off: vi.fn(),
+      getZoom: vi.fn().mockReturnValue(10),
+    };
+  }
+
+  /** The resolved options of an output, as it will render them. */
+  function outputOptions(output: unknown): Record<string, unknown> {
+    return (output as { _options: Record<string, unknown> })._options;
+  }
+
+  for (const [name, Control, addSelector] of cases) {
+    it(`${name} creates its outputs with outputStyle, not the panel colors`, () => {
+      const map = mockMap();
+      const control = new Control({
+        collapsed: false,
+        backgroundColor: "white",
+        fontColor: "black",
+        outputStyle: { backgroundColor: "var(--bg)", fontColor: "var(--fg)" },
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const container = control.onAdd(map as any);
+      (container.querySelector(addSelector) as HTMLButtonElement).click();
+
+      const output = map.addControl.mock.calls[0][0];
+      expect(outputOptions(output).backgroundColor).toBe("var(--bg)");
+      expect(outputOptions(output).fontColor).toBe("var(--fg)");
+      expect(control.getOutputStyle()).toEqual({
+        backgroundColor: "var(--bg)",
+        fontColor: "var(--fg)",
+      });
+    });
+
+    it(`${name} keeps the output defaults without outputStyle`, () => {
+      const map = mockMap();
+      const control = new Control({ collapsed: false });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const container = control.onAdd(map as any);
+      (container.querySelector(addSelector) as HTMLButtonElement).click();
+
+      const output = map.addControl.mock.calls[0][0];
+      expect(outputOptions(output).backgroundColor).not.toBeUndefined();
+      expect(control.getOutputStyle()).toEqual({});
+    });
+
+    it(`${name} restyles existing and later outputs with setOutputStyle`, () => {
+      const map = mockMap();
+      const control = new Control({ collapsed: false });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const container = control.onAdd(map as any);
+      const add = container.querySelector(addSelector) as HTMLButtonElement;
+      add.click();
+      const first = map.addControl.mock.calls[0][0];
+      const update = vi.spyOn(first, "update");
+
+      control.setOutputStyle({ backgroundColor: "#111" });
+      expect(update).toHaveBeenCalledWith({ backgroundColor: "#111" });
+      expect(outputOptions(first).backgroundColor).toBe("#111");
+
+      control.setOutputStyle({ fontColor: "#eee" });
+      expect(control.getOutputStyle()).toEqual({
+        backgroundColor: "#111",
+        fontColor: "#eee",
+      });
+
+      // The state restore path builds new outputs; they take the style too.
+      const restoredMap = mockMap();
+      const restored = new Control();
+      restored.setOutputStyle({ backgroundColor: "#222", fontColor: "#ddd" });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      restored.onAdd(restoredMap as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      restored.setState(control.getState() as any);
+      const output = restoredMap.addControl.mock.calls[0][0];
+      expect(outputOptions(output).backgroundColor).toBe("#222");
+      expect(outputOptions(output).fontColor).toBe("#ddd");
+    });
+  }
+});

@@ -1,5 +1,10 @@
-import { describe, it, expect } from "vitest";
-import { resolvePMTilesViewTarget } from "../src/lib/core/PMTilesLayer";
+import { describe, it, expect, vi } from "vitest";
+import {
+  PMTilesLayerControl,
+  pmtilesSourceLayerId,
+  resolvePMTilesViewTarget,
+} from "../src/lib/core/PMTilesLayer";
+import type { PMTilesLayerInfo } from "../src/lib/core/types";
 
 describe("resolvePMTilesViewTarget", () => {
   it("prefers bounds over a null-island center for a global archive", () => {
@@ -120,5 +125,82 @@ describe("resolvePMTilesViewTarget", () => {
         }),
       ).toEqual({ type: "center", center: [10, 10], zoom: 0 });
     }
+  });
+});
+
+describe("pmtilesSourceLayerId", () => {
+  it("names a source layer's map layer from the raw source-layer name", () => {
+    expect(pmtilesSourceLayerId("pmtiles-source-0", "roads", "line")).toBe(
+      "pmtiles-source-0-roads-line",
+    );
+    // Not encoded: a name with a slash or a space is used as is.
+    expect(pmtilesSourceLayerId("s", "a/b c", "fill")).toBe("s-a/b c-fill");
+  });
+});
+
+describe("PMTilesLayerControl source removal", () => {
+  /** A map stub whose style holds the given layers on the given sources. */
+  function mapWithLayers(layers: Array<{ id: string; source: string }>) {
+    const style = { layers: [...layers] };
+    const sources = new Set(layers.map((layer) => layer.source));
+    return {
+      style,
+      sources,
+      getLayer: (id: string) => style.layers.find((layer) => layer.id === id),
+      removeLayer: vi.fn((id: string) => {
+        style.layers = style.layers.filter((layer) => layer.id !== id);
+      }),
+      getSource: (id: string) => (sources.has(id) ? {} : undefined),
+      getStyle: () => style,
+      removeSource: vi.fn((id: string) => {
+        if (style.layers.some((layer) => layer.source === id)) {
+          throw new Error(`Source "${id}" cannot be removed while in use`);
+        }
+        sources.delete(id);
+      }),
+    };
+  }
+
+  function controlWith(map: ReturnType<typeof mapWithLayers>) {
+    const control = new PMTilesLayerControl();
+    const internals = control as unknown as {
+      _map: unknown;
+      _pmtilesLayers: Map<string, PMTilesLayerInfo>;
+      _render: () => void;
+    };
+    internals._map = map;
+    internals._render = () => {};
+    internals._pmtilesLayers.set("src", {
+      id: "src",
+      url: "https://example.com/a.pmtiles",
+      tileType: "vector",
+      sourceLayers: ["roads"],
+      layerIds: ["src-roads-line"],
+      opacity: 1,
+      pickable: false,
+    });
+    return control;
+  }
+
+  it("removes a host layer still reading the source, then the source", () => {
+    const map = mapWithLayers([
+      { id: "src-roads-line", source: "src" },
+      { id: "host-arrows", source: "src" },
+      { id: "other", source: "elsewhere" },
+    ]);
+    controlWith(map).removeLayer("src");
+    expect(map.style.layers.map((layer) => layer.id)).toEqual(["other"]);
+    expect(map.sources.has("src")).toBe(false);
+    expect(map.sources.has("elsewhere")).toBe(true);
+  });
+
+  it("does the same when every archive is removed", () => {
+    const map = mapWithLayers([
+      { id: "src-roads-line", source: "src" },
+      { id: "host-arrows", source: "src" },
+    ]);
+    controlWith(map).removeLayer();
+    expect(map.style.layers).toEqual([]);
+    expect(map.sources.has("src")).toBe(false);
   });
 });
