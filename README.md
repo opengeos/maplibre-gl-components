@@ -1326,6 +1326,36 @@ measure.setRadius(1737400); // switch to the Moon
 
 See the [measure-control example](./examples/measure-control/) for a complete working example.
 
+The control re-adds its source and layers, with the geometry measured so far,
+after `map.setStyle()` (a basemap swap), so measurements survive a style change.
+
+A host extending the control can reach the pieces it owns through public
+getters instead of private fields:
+
+```typescript
+measure.getPanelElement(); // The panel, or undefined until it is first shown
+measure.getSourceId();     // GeoJSON source holding the measured geometry
+measure.getLayerIds();     // { fill, line } layer IDs drawing it
+```
+
+### Colorbar, Legend and HTML GUI controls
+
+`ColorbarGuiControl`, `LegendGuiControl` and `HtmlGuiControl` are editors that
+create on-map `Colorbar`, `Legend` and `HtmlControl` outputs. Their
+`backgroundColor`/`fontColor` options style only the editor panel. Use
+`outputStyle` to style the outputs they create, and `setOutputStyle()` to
+restyle every existing output (and the ones created later), for example to
+follow a host theme. This also works for the GUI controls a `ControlGrid`
+creates, through `grid.getControls()`.
+
+```typescript
+const legendGui = new LegendGuiControl({
+  outputStyle: { backgroundColor: "var(--app-bg)", fontColor: "var(--app-fg)" },
+});
+legendGui.setOutputStyle({ backgroundColor: "#1e1e1e", fontColor: "#eee" });
+legendGui.getOutputStyle(); // { backgroundColor: "#1e1e1e", fontColor: "#eee" }
+```
+
 ### BookmarkControl
 
 A control for saving and restoring map views with localStorage persistence. The

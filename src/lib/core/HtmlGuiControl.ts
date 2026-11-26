@@ -6,12 +6,14 @@ import type {
   ControlPosition,
 } from "maplibre-gl";
 import type {
+  GuiOutputStyle,
   HtmlGuiControlOptions,
   HtmlGuiControlState,
   HtmlGuiEntryState,
   HtmlGuiEvent,
   HtmlGuiEventHandler,
 } from "./types";
+import { definedOutputStyle } from "../utils/outputStyle";
 import { HtmlControl } from "./HtmlControl";
 import {
   addPanelResizeHandles,
@@ -42,6 +44,7 @@ const DEFAULT_OPTIONS: Required<HtmlGuiControlOptions> = {
   fontColor: "#333",
   minzoom: 0,
   maxzoom: 24,
+  outputStyle: {},
 };
 
 /** SVG icon for the HTML control button. */
@@ -68,6 +71,7 @@ const CLOSE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
  * ```
  */
 export class HtmlGuiControl implements IControl {
+  private _outputStyle: GuiOutputStyle = {};
   private _container?: HTMLElement;
   private _button?: HTMLButtonElement;
   private _panel?: HTMLElement;
@@ -100,6 +104,7 @@ export class HtmlGuiControl implements IControl {
 
   constructor(options?: HtmlGuiControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
+    this._outputStyle = definedOutputStyle(this._options.outputStyle);
     this._state = {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
@@ -199,6 +204,30 @@ export class HtmlGuiControl implements IControl {
       ...this._state,
       htmls: this._htmlEntries.map((entry) => ({ ...entry })),
     };
+  }
+
+  /**
+   * Get the style applied to the on-map controls this GUI creates.
+   *
+   * @returns A copy of the current output style.
+   */
+  getOutputStyle(): GuiOutputStyle {
+    return { ...this._outputStyle };
+  }
+
+  /**
+   * Restyle the on-map controls this GUI creates: every existing output now,
+   * and each one created later. Fields left out keep their current value.
+   * This does not touch the editor panel (see `backgroundColor`/`fontColor`).
+   *
+   * @param style - Background and text colors for the outputs.
+   * @returns This control, for chaining.
+   */
+  setOutputStyle(style: GuiOutputStyle): this {
+    const changes = definedOutputStyle(style);
+    this._outputStyle = { ...this._outputStyle, ...changes };
+    this._htmlControls.forEach((output) => output.update(changes));
+    return this;
   }
 
   setState(state: Partial<HtmlGuiControlState>): this {
@@ -469,6 +498,7 @@ export class HtmlGuiControl implements IControl {
       html: entry.html,
       collapsible: entry.collapsible,
       collapsed: false,
+      ...this._outputStyle,
     });
   }
 

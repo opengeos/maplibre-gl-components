@@ -6,6 +6,7 @@ import type {
   ControlPosition,
 } from "maplibre-gl";
 import type {
+  GuiOutputStyle,
   ColorbarGuiControlOptions,
   ColorbarGuiControlState,
   ColorbarGuiEntryState,
@@ -16,6 +17,7 @@ import type {
   ColorbarOrientation,
   ColorbarStackOrientation,
 } from "./types";
+import { definedOutputStyle } from "../utils/outputStyle";
 import { Colorbar } from "./Colorbar";
 import { getColormap, getColormapNames } from "../colormaps";
 import {
@@ -43,6 +45,7 @@ const DEFAULT_OPTIONS: Required<ColorbarGuiControlOptions> = {
   minzoom: 0,
   maxzoom: 24,
   stackOrientation: "vertical",
+  outputStyle: {},
 };
 
 /** SVG icon for the colorbar button – gradient bar only, no lines. */
@@ -69,6 +72,7 @@ const CLOSE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
  * ```
  */
 export class ColorbarGuiControl implements IControl {
+  private _outputStyle: GuiOutputStyle = {};
   private _container?: HTMLElement;
   private _button?: HTMLButtonElement;
   private _panel?: HTMLElement;
@@ -116,6 +120,7 @@ export class ColorbarGuiControl implements IControl {
 
   constructor(options?: ColorbarGuiControlOptions) {
     this._options = { ...DEFAULT_OPTIONS, ...options };
+    this._outputStyle = definedOutputStyle(this._options.outputStyle);
     this._state = {
       visible: this._options.visible,
       collapsed: this._options.collapsed,
@@ -221,6 +226,30 @@ export class ColorbarGuiControl implements IControl {
       ...this._state,
       colorbars: this._colorbarEntries.map((entry) => ({ ...entry })),
     };
+  }
+
+  /**
+   * Get the style applied to the on-map controls this GUI creates.
+   *
+   * @returns A copy of the current output style.
+   */
+  getOutputStyle(): GuiOutputStyle {
+    return { ...this._outputStyle };
+  }
+
+  /**
+   * Restyle the on-map controls this GUI creates: every existing output now,
+   * and each one created later. Fields left out keep their current value.
+   * This does not touch the editor panel (see `backgroundColor`/`fontColor`).
+   *
+   * @param style - Background and text colors for the outputs.
+   * @returns This control, for chaining.
+   */
+  setOutputStyle(style: GuiOutputStyle): this {
+    const changes = definedOutputStyle(style);
+    this._outputStyle = { ...this._outputStyle, ...changes };
+    this._positionControls.forEach((output) => output.update(changes));
+    return this;
   }
 
   setState(state: Partial<ColorbarGuiControlState>): this {
@@ -703,7 +732,9 @@ export class ColorbarGuiControl implements IControl {
    * @param entry - The configured colorbar entry.
    * @returns The resolved colorbar item options.
    */
-  private _buildColorbarItem(entry: ColorbarGuiEntryState): ColorbarItemOptions {
+  private _buildColorbarItem(
+    entry: ColorbarGuiEntryState,
+  ): ColorbarItemOptions {
     const colormap =
       entry.mode === "custom"
         ? entry.customColors
@@ -774,6 +805,7 @@ export class ColorbarGuiControl implements IControl {
       colorbars: items,
       position,
       stackOrientation: this._state.stackOrientation,
+      ...this._outputStyle,
     });
     this._map.addControl(control, position);
     this._positionControls.set(position, control);

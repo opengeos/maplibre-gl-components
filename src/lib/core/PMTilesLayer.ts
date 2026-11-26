@@ -129,6 +129,26 @@ export function resolvePMTilesViewTarget(
 }
 
 /**
+ * The ID of the map layer a {@link PMTilesLayerControl} adds for one source
+ * layer of a vector archive: `${sourceId}-${sourceLayer}-${kind}`.
+ *
+ * The source-layer name is used as is (not encoded), so a host matching the
+ * control's layers can build the same IDs instead of copying the rule.
+ *
+ * @param sourceId - The archive's map source ID.
+ * @param sourceLayer - The vector source-layer name.
+ * @param kind - Which of the three layers drawn per source layer.
+ * @returns The map layer ID.
+ */
+export function pmtilesSourceLayerId(
+  sourceId: string,
+  sourceLayer: string,
+  kind: "fill" | "line" | "circle",
+): string {
+  return `${sourceId}-${sourceLayer}-${kind}`;
+}
+
+/**
  * A control for adding PMTiles layers to the map.
  *
  * Supports both vector and raster PMTiles files.
@@ -1320,9 +1340,21 @@ export class PMTilesLayerControl implements IControl {
           sourceLayerColors[sourceLayer] = color;
 
           // Determine layer type based on geometry (simplified - add all types)
-          const fillLayerId = `${sourceId}-${sourceLayer}-fill`;
-          const lineLayerId = `${sourceId}-${sourceLayer}-line`;
-          const circleLayerId = `${sourceId}-${sourceLayer}-circle`;
+          const fillLayerId = pmtilesSourceLayerId(
+            sourceId,
+            sourceLayer,
+            "fill",
+          );
+          const lineLayerId = pmtilesSourceLayerId(
+            sourceId,
+            sourceLayer,
+            "line",
+          );
+          const circleLayerId = pmtilesSourceLayerId(
+            sourceId,
+            sourceLayer,
+            "circle",
+          );
 
           // Add fill layer
           this._map.addLayer(
@@ -1475,22 +1507,7 @@ export class PMTilesLayerControl implements IControl {
       // Remove a specific source and its layers
       const info = this._pmtilesLayers.get(id);
       if (info) {
-        for (const layerId of info.layerIds) {
-          try {
-            if (this._map.getLayer(layerId)) {
-              this._map.removeLayer(layerId);
-            }
-          } catch {
-            // Layer may already be removed
-          }
-        }
-        try {
-          if (this._map.getSource(id)) {
-            this._map.removeSource(id);
-          }
-        } catch {
-          // Source may already be removed
-        }
+        this._removeSourceWithLayers(id, info.layerIds);
       }
       this._pmtilesLayers.delete(id);
       this._state.hasLayer = this._pmtilesLayers.size > 0;
@@ -1502,22 +1519,7 @@ export class PMTilesLayerControl implements IControl {
     } else {
       // Remove all layers (cleanup)
       for (const [sourceId, info] of this._pmtilesLayers) {
-        for (const layerId of info.layerIds) {
-          try {
-            if (this._map.getLayer(layerId)) {
-              this._map.removeLayer(layerId);
-            }
-          } catch {
-            // ignore
-          }
-        }
-        try {
-          if (this._map.getSource(sourceId)) {
-            this._map.removeSource(sourceId);
-          }
-        } catch {
-          // ignore
-        }
+        this._removeSourceWithLayers(sourceId, info.layerIds);
       }
       this._pmtilesLayers.clear();
       this._state.hasLayer = false;
@@ -1526,6 +1528,45 @@ export class PMTilesLayerControl implements IControl {
       this._state.status = null;
       this._state.error = null;
       this._emit("layerremove");
+    }
+  }
+
+  /**
+   * Remove an archive's source together with every style layer reading it.
+   *
+   * The control's own layers go first. A host may also have added layers on
+   * the control's source (labels, decorations); MapLibre refuses to remove a
+   * source a layer still reads, firing an error event and leaving the source
+   * behind, so those layers are removed too before the source is.
+   *
+   * @param sourceId - The archive's source ID.
+   * @param layerIds - The layer IDs the control added for it.
+   */
+  private _removeSourceWithLayers(sourceId: string, layerIds: string[]): void {
+    const map = this._map;
+    if (!map) return;
+    const removeLayer = (layerId: string) => {
+      try {
+        if (map.getLayer(layerId)) map.removeLayer(layerId);
+      } catch {
+        // Layer may already be removed
+      }
+    };
+    layerIds.forEach(removeLayer);
+    try {
+      if (!map.getSource(sourceId)) return;
+      let styleLayers: Array<{ id: string; source?: unknown }> = [];
+      try {
+        styleLayers = (map.getStyle()?.layers ?? []) as typeof styleLayers;
+      } catch {
+        // The style may be mid-load; remove what the control knows about.
+      }
+      styleLayers
+        .filter((layer) => layer.source === sourceId)
+        .forEach((layer) => removeLayer(layer.id));
+      map.removeSource(sourceId);
+    } catch {
+      // Source may already be removed
     }
   }
 

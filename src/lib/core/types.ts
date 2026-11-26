@@ -1166,6 +1166,18 @@ export type ViewStateEventHandler = (event: {
 // =============================================================================
 
 /**
+ * Style applied to the on-map controls a GUI control (ColorbarGuiControl,
+ * LegendGuiControl, HtmlGuiControl) creates. Any CSS color works, including
+ * `var(--x)` so the outputs follow a host theme.
+ */
+export interface GuiOutputStyle {
+  /** Background color of each output. */
+  backgroundColor?: string;
+  /** Text color of each output. */
+  fontColor?: string;
+}
+
+/**
  * Options for the ColorbarGuiControl (GUI wrapper for adding colorbars).
  */
 export interface ColorbarGuiControlOptions {
@@ -1205,6 +1217,13 @@ export interface ColorbarGuiControlOptions {
    * Default: `"vertical"`.
    */
   stackOrientation?: ColorbarStackOrientation;
+  /**
+   * Style for the on-map controls this GUI creates (its outputs), as opposed
+   * to `backgroundColor`/`fontColor`, which style only the editor panel.
+   * Fields left out keep the output's own default. Change it later with
+   * `setOutputStyle`.
+   */
+  outputStyle?: GuiOutputStyle;
 }
 
 /**
@@ -1305,6 +1324,13 @@ export interface LegendGuiControlOptions {
   minzoom?: number;
   /** Maximum zoom. */
   maxzoom?: number;
+  /**
+   * Style for the on-map controls this GUI creates (its outputs), as opposed
+   * to `backgroundColor`/`fontColor`, which style only the editor panel.
+   * Fields left out keep the output's own default. Change it later with
+   * `setOutputStyle`.
+   */
+  outputStyle?: GuiOutputStyle;
 }
 
 /**
@@ -1391,6 +1417,13 @@ export interface HtmlGuiControlOptions {
   minzoom?: number;
   /** Maximum zoom. */
   maxzoom?: number;
+  /**
+   * Style for the on-map controls this GUI creates (its outputs), as opposed
+   * to `backgroundColor`/`fontColor`, which style only the editor panel.
+   * Fields left out keep the output's own default. Change it later with
+   * `setOutputStyle`.
+   */
+  outputStyle?: GuiOutputStyle;
 }
 
 /**
